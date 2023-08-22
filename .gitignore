@@ -1,0 +1,55 @@
+# Compiled files
+*.py[cod]
+*.so
+__pycache__
+*$py.class
+
+# Other generated files
+.coverage
+MANIFEST
+.ipynb_checkpoints
+
+# Packages/installer info
+*.egg
+*.egg-info
+dist
+build
+eggs
+.eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+distribute-*.tar.gz
+
+# Other
+.vs
+.vscode
+.cache
+.tox
+.*.sw[op]
+*~
+.project
+.pydevproject
+.settings
+pip-wheel-metadata/
+.env
+env
+.conda
+*.db
+*.prof
+*.pyc
+__pycache__/
+*.egg-info/
+*.vscode
+*.idea
+*.pytest_cache
+*.devcontainer
+output/*
+
+# Mac OSX
+.DS_Store
+*.DS_store
+
