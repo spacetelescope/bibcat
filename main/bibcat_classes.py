@@ -256,6 +256,86 @@ class _Base():
         return list_wordchunks
     #
 
+    ##Method: _ax_confusion_matrix()
+    ##Purpose: Plot rectangular confusion matrix for given data and labels
+    def _ax_confusion_matrix(matr, ax, x_labels, y_labels, x_title, y_title, cbar_title, ax_title, is_norm, cmap=plt.cm.BuPu, fontsize=16, ticksize=16, valsize=14, y_rotation=30, x_rotation=30):
+        """
+        Method: _ax_confusion_matrix
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Plots confusion matrix within given axis.
+        """
+        #Set global variables
+        if is_norm:
+            vmin = 0
+            vmax = 1
+        else:
+            vmin = 0 #None
+            #Ignore nonmatch verdict to avoid spikes in color scaling if present
+            tmpmatr = matr.copy()
+            if (preset.verdict_rejection.upper() in x_labels):
+                tmpmatr[:,x_labels.index(preset.verdict_rejection.upper())] = -1
+            if (preset.verdict_rejection.upper() in y_labels):
+                tmpmatr[y_labels.index(preset.verdict_rejection.upper()),:] = -1
+            vmax = tmpmatr.max() #None
+        #
+
+        #Plot the confusion matrix and colorbar
+        image = ax.imshow(matr, origin="lower", cmap=cmap, vmin=vmin, vmax=vmax)
+
+        #Fetch the matrix dimensions
+        ydim = matr.shape[0]
+        xdim = matr.shape[1]
+
+        #Write in the values
+        for yy in range(0, ydim):
+            for xx in range(0, xdim):
+                #Set current text color based on background grayscale value
+                if is_norm:
+                    curr_gray = np.mean(cmap(matr[yy,xx])[0:3])
+                else:
+                    curr_gray = np.mean(cmap(matr[yy,xx] / vmax)[0:3])
+                #
+                if curr_gray <= 0.6:
+                    curr_color = "white"
+                else:
+                    curr_color = "black"
+                #
+
+                #Write current text
+                if is_norm:
+                    plt.text(xx, yy, "{0:.3f}".format(matr[yy,xx]),
+                            color=curr_color, horizontalalignment="center",
+                            verticalalignment="center", fontsize=valsize)
+                else:
+                    plt.text(xx, yy, "{0:.0f}".format(matr[yy,xx]),
+                            color=curr_color, horizontalalignment="center",
+                            verticalalignment="center", fontsize=valsize)
+            #
+        #
+
+        #Generate the colorbar
+        cbarax = make_axes_locatable(ax).append_axes("right",size="5%",pad=0.05)
+        cbar = plt.colorbar(image, cax=cbarax, extend="max")
+        cbar.ax.tick_params(labelsize=valsize)
+
+        #Set the tick and axis labels
+        ax.tick_params(axis="both", which="both", labelsize=ticksize)
+        ax.set_xticks(np.arange(0, xdim, 1))
+        ax.set_xticklabels([item.title() for item in x_labels],
+                            rotation=x_rotation)
+        ax.set_yticks(np.arange(0, ydim, 1))
+        ax.set_yticklabels([item.title() for item in y_labels],
+                            rotation=y_rotation)
+        ax.set_xlabel(x_title, fontsize=fontsize)
+        ax.set_ylabel(y_title, fontsize=fontsize)
+
+        #Set the subplot title
+        ax.set_title("{0}\n{1}".format(ax_title, cbar_title), fontsize=fontsize)
+
+        #Exit the method
+        return
+    #
+
     ##Method: _check_importance()
     ##Purpose: Determine if given text is important (e.g., is a keyword)
     def _check_importance(self, text, include_Ipronouns=True, include_terms=True, include_etal=True, keyword_objs=None, version_NLP=None):
