@@ -5806,7 +5806,7 @@ class Operator(_Base):
     #
 
     ##Method: classify
-    ##Purpose: Inspect text and either reject as false target or give class
+    ##Purpose: Inspect text and either reject as false target or give classifications
     def classify(self, text, lookup, threshold, do_check_truematch, do_raise_innererror, buffer=0, do_verbose=None, do_verbose_deep=None):
         """
         Method: classify
@@ -5910,6 +5910,130 @@ class Operator(_Base):
         #Return the verdict with modif included
         dict_verdicts["modif"] = modif
         return dict_verdicts
+    #
+
+    ##Method: classify_set
+    ##Purpose: Classify set of texts as false target or give classifications
+    def classify_set(self, texts, threshold, do_check_truematch, do_raise_innererror, buffer=0, print_freq=25, do_verbose=None, do_verbose_deep=None):
+        """
+        Method: classify_set
+        Purpose:
+          - !
+          - Accept text and process it into modifs (using Grammar, Paper classes).
+          - Classify that text (using stored classifier).
+        Arguments:
+          - !
+          - do_verbose [bool (default=False)]:
+            - Whether or not to print surface-level log information and tests.
+          - do_verbose_deep [bool (default=False)]:
+            - Whether or not to print inner log information and tests.
+        Returns:
+          - List of dicts, each containing:
+            - 'modif': the modif.
+            - 'verdict': the classification.
+            - 'scores_comb': the final score.
+            - 'scores_indiv': the individual scores.
+            - 'uncertainty': the uncertainty of the classification.
+        """
+        ##Fetch global variables
+        if (do_verbose is None):
+            do_verbose = self._get_info("do_verbose")
+        if (do_verbose_deep is None):
+            do_verbose_deep = self._get_info("do_verbose_deep")
+        #
+        classifier = self._get_info("classifier")
+        all_kobjs = self._get_info("keyword_objs")
+        num_texts = len(texts)
+        num_kobjs = len(all_kobjs)
+        #
+        #Print some notes
+        if do_verbose:
+            print("\n> Running classify_set()!")
+        #
+
+        ##Classify every text against every mission
+        dict_results = {}
+        #Iterate through texts
+        for ii in range(0, num_texts):
+            curr_dict = {} #Dictionary to hold set of results for this text
+            dict_results[str(ii)] = curr_dict #Store this dictionary
+            curr_text = texts[ii] #Current text to classify
+            #Iterate through keyword objects
+            for jj in range(0, num_kobjs):
+                curr_kobj = all_kobjs[jj]
+                curr_name = curr_kobj._get_info("name")
+                #Classify current text for current mission
+                curr_result = self.classify(text=curr_text, lookup=curr_name,
+                                        threshold=threshold, buffer=buffer,
+                                        do_check_truematch=do_check_truematch,
+                                        do_raise_innererror=do_raise_innererror,
+                                        do_verbose=do_verbose_deep)
+                #
+                #Store current result
+                curr_dict[curr_name] = curr_result
+            #
+            #Print some notes at given frequency, if requested
+            if (do_verbose and ((ii % print_freq) == 0)):
+                print("Classification for text #{0} of {1} complete..."
+                        .format((ii+1), num_texts))
+        #
+
+        ##Return the classification results
+        if do_verbose:
+            print("\nRun of classify_set() complete!\n")
+        #
+        return dict_results
+    #
+
+    ##Method: evaluate_performance
+    ##Purpose: Evaluate the basic performance of the internal classifier on a test set of data
+    def evaluate_performance_basic(self, dir_text=None, max_texts=None, do_verbose=None, do_verbose_deep=None):
+        """
+        Method: evaluate_performance_basic
+        Purpose:
+          - Evaluate the performance of the internally stored classifier on a test set of data.
+        Arguments:
+          - !
+          - do_verbose [bool (default=False)]:
+            - Whether or not to print surface-level log information and tests.
+          - do_verbose_deep [bool (default=False)]:
+            - Whether or not to print inner log information and tests.
+        Returns:
+          - dict:
+            - !
+        """
+        #Fetch global variables
+        if (do_verbose is None):
+            do_verbose = self._get_info("do_verbose")
+        if (do_verbose_deep is None):
+            do_verbose_deep = self._get_info("do_verbose_deep")
+        #
+        classifier = self._get_info("classifier")
+        #
+
+        #Classify set of texts from the test set (if folder not given); should be read in and classified one by one perhaps by classify_set method of sorts; iterate through all missions
+
+        #Take results and plot them using method for generating conf. matrix
+
+        #
+
+        #Fetch keyword object matching to the given keyword
+        keyobj = self._fetch_keyword_object(lookup=lookup)
+        if do_verbose:
+            print("Best matching keyword object (keyobj) for keyword {0}:\n{1}"
+                    .format(lookup, keyobj))
+        #
+
+        #Process text into modifs using Grammar class
+        if do_verbose:
+            print("\nPreprocessing and extracting modifs from the text...")
+        output = self.process(text=text, do_check_truematch=do_check_truematch,
+                                buffer=buffer, lookup=lookup,keyword_obj=keyobj,
+                                do_verbose=do_verbose,
+                                do_verbose_deep=do_verbose_deep)
+        modif = output["modif"]
+        forest = output["forest"]
+        #
     #
 
     ##Method: process
