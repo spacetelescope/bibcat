@@ -9,10 +9,10 @@ import os
 #
 
 ##Global filepaths
-path_json = "path/to/dataset_combined_all.json"
+path_json = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/BibTracking/scratchwork/dataset_combined_all.json")
 #"path/to/file.json" #Path+Filename for .json file containing pre-classified texts. Each entry in the .json file should be a dictionary-style entry, containing the following key:value structure: {"text":<the text as a string>, "class":<the class name as a string>, "id":<None or <an identifier for this item>}
-dir_allmodels = "path/to/overarching/folder/where/you/will/keep/all/of/your/models" #Path to directory for saving or loading a model
-name_model = "name_of_model" #Name of model run to save or load
+dir_allmodels = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/BibTracking/scratchwork") #Path to directory for saving or loading a model
+name_model = "test_model2" #Name of model run to save or load
 #
 
 #Classification parameters

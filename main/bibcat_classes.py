@@ -6021,7 +6021,6 @@ class Operator(_Base):
         if (do_verbose_deep is None):
             do_verbose_deep = self._get_info("do_verbose_deep")
         #
-        classifier = self._get_info("classifier")
         all_kobjs = self._get_info("keyword_objs")
         num_texts = len(texts)
         num_kobjs = len(all_kobjs)
@@ -6114,6 +6113,101 @@ class Operator(_Base):
         modif = output["modif"]
         forest = output["forest"]
         #
+    #
+
+    ##Method: plot_performance_confusion_matrix
+    ##Purpose: Plot confusion matrix for given performance counters
+    def plot_performance_confusion_matrix(list_evaluations, list_mappers, list_titles, filepath_plot, filename_plot, figsize=(20, 6), fontsize=16, hspace=15, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd):
+        """
+        Method: plot_performance_confusion_matrix
+        Purpose:
+          - !
+        Arguments:
+          - !
+          - do_verbose [bool (default=False)]:
+            - Whether or not to print surface-level log information and tests.
+          - do_verbose_deep [bool (default=False)]:
+            - Whether or not to print inner log information and tests.
+        Returns:
+          - dict:
+            - !
+        """
+        ##Fetch global variables
+        if (do_verbose is None):
+            do_verbose = self._get_info("do_verbose")
+        if (do_verbose_deep is None):
+            do_verbose_deep = self._get_info("do_verbose_deep")
+        #
+        num_evals = len(list_evaluations)
+        #Print some notes
+        if do_verbose:
+            print("\n> Running plot_performance_confusion_matrix()!")
+        #
+
+        ##Prepare the base figure
+        fig = plt.figure(figsize=figsize)
+
+        ##Plot confusion matrix for each evaluation
+        for ii in range(0, num_evals):
+            #Use current mapper to determine actual vs measured classifs
+            tmp_out = self._fetch_mapper_outputs(mapper=list_mappers[ii])
+            act_classifs = tmp_out["actual"]
+            meas_classifs = tmp_out["measured"]
+            num_act = len(act_classifs)
+            num_meas = len(meas_classifs)
+
+            #Initialize container for current confusion matrix
+            confmatr_abs = np.zeros(shape=(num_act, num_meas)) #Unnormalized
+            confmatr_norm = np.ones(shape=(num_act, num_meas))*np.nan#Normalized
+
+            #Fetch counters from current evaluation
+            curr_counts = list_evaluations[ii]["counters"]
+
+            #Accumulate the confusion matrices
+            for yy in range(0, num_act): #Iterate through actual classifs
+                curr_total = curr_counts[act_classifs[yy]]["total"] #Total act.
+                for xx in range(0, num_meas): #Iterate through measured classifs
+                    #For the unnormalized confusion matrix
+                    curr_val = curr_counts[act_classifs[yy]][meas_classifs[xx]]
+                    confmatr_abs[yy,xx] += curr_val
+                    #
+                    #For the normalized confusion matrix
+                    confmatr_norm[yy,xx] = (confmatr_abs[yy,xx] / curr_total)
+                #
+            #
+
+            #Plot the current set of confusion matrices
+            #For the unnormalized matrix
+            ax = fig.add_subplot(nrow, ncol, ((ii*1)+1))
+            self.ax_confusion_matrix(matr=confmatr_abs, ax=ax,
+                x_labels=meas_classifs, y_labels=act_classifs,
+                y_title="Actual", x_title="Classification",
+                cbar_title="Absolute Count",
+                ax_title="{0}".format(list_titles[ii]), cmap=cmap_abs,
+                fontsize=fontsize, is_norm=False)
+            #
+            #For the normalized matrix
+            ax = fig.add_subplot(nrow, ncol, ((ii*1)+1))
+            self.ax_confusion_matrix(matr=confmatr_norm, ax=ax,
+                x_labels=meas_classifs, y_labels=act_classifs,
+                y_title="Actual", x_title="Classification",
+                cbar_title="Normalized Count",
+                ax_title="{0}".format(list_titles[ii]), cmap=cmap_norm,
+                fontsize=fontsize, is_norm=True)
+            #
+        #
+
+        #Save and close the figure
+        plt.tight_layout()
+        plt.subplots_adjust(hspace=hspace)
+        plt.savefig(os.path.join(filepath_plot, filename_plot))
+        plt.close()
+
+        #Exit the method
+        if do_verbose:
+            print("\nRun of plot_performance_confusion_matrix() complete!")
+        #
+        return
     #
 
     ##Method: process
