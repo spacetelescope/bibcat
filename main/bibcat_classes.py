@@ -5889,7 +5889,7 @@ class Operator(_Base):
 
     ##Method: classify
     ##Purpose: Inspect text and either reject as false target or give classifications
-    def classify(self, text, modif, lookup, threshold, do_check_truematch, do_raise_innererror, buffer=0, do_verbose=None, do_verbose_deep=None):
+    def classify(self, text, lookup, threshold, do_check_truematch, do_raise_innererror, modif=None, forest=None, buffer=0, do_verbose=None, do_verbose_deep=None):
         """
         Method: classify
         Purpose:
@@ -5936,19 +5936,29 @@ class Operator(_Base):
                     .format(lookup, keyobj))
         #
 
-        #Process text into modifs using Grammar class
-        if do_verbose:
-            print("\nPreprocessing and extracting modifs from the text...")
-        output = self.process(text=text, do_check_truematch=do_check_truematch,
+        #Process text into modifs using Grammar class, if modif not given
+        if (modif is None):
+            if do_verbose:
+                print("\nPreprocessing and extracting modifs from the text...")
+            output = self.process(text=text,
+                                do_check_truematch=do_check_truematch,
                                 buffer=buffer, lookup=lookup,keyword_obj=keyobj,
                                 do_verbose=do_verbose,
                                 do_verbose_deep=do_verbose_deep)
-        modif = output["modif"]
-        forest = output["forest"]
+            modif = output["modif"]
+            forest = output["forest"]
+            #
+            #Print some notes
+            if do_verbose:
+                print("Text has been processed into modif.")
         #
-        #Print some notes
-        if do_verbose:
-            print("Text has been processed into modif.")
+        #Otherwise, use given modif
+        else:
+            #Print some notes
+            if do_verbose:
+                print("Modif given. No text processing will be done.")
+            #
+            pass
         #
 
         #Set rejected verdict if empty text
@@ -5996,7 +6006,7 @@ class Operator(_Base):
 
     ##Method: classify_set
     ##Purpose: Classify set of texts as false target or give classifications
-    def classify_set(self, texts, threshold, do_check_truematch, do_raise_innererror, buffer=0, print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def classify_set(self, texts, threshold, do_check_truematch, do_raise_innererror, modifs=None, forests=None, buffer=0, print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: classify_set
         Purpose:
@@ -6034,17 +6044,32 @@ class Operator(_Base):
 
         ##Classify every text against every mission
         dict_results = {}
+        curr_text = None
+        curr_modif = None
+        curr_forest = None
         #Iterate through texts
         for ii in range(0, num_texts):
             curr_dict = {} #Dictionary to hold set of results for this text
             dict_results[str(ii)] = curr_dict #Store this dictionary
-            curr_text = texts[ii] #Current text to classify
+            #
+            #Extract current text if given in raw (not processed) form
+            if (texts is not None):
+                curr_text = texts[ii] #Current text to classify
+            #
+            #Extract current modifs and forests if already processed text
+            if (modifs is not None):
+                curr_modif = modifs[ii]
+            #
+            if (forests is not None):
+                curr_forest = forests[ii]
+            #
             #Iterate through keyword objects
             for jj in range(0, num_kobjs):
                 curr_kobj = all_kobjs[jj]
                 curr_name = curr_kobj._get_info("name")
                 #Classify current text for current mission
                 curr_result = self.classify(text=curr_text, lookup=curr_name,
+                                        modif=curr_modif, forest=curr_forest,
                                         threshold=threshold, buffer=buffer,
                                         do_check_truematch=do_check_truematch,
                                         do_raise_innererror=do_raise_innererror,
@@ -6387,32 +6412,32 @@ class Performance(_Base):
         if (do_verbose_deep is None):
             do_verbose_deep = self._get_info("do_verbose_deep")
         #
-        classifier = self._get_info("classifier")
+
+        #Evaluate classifier within each operator
+        evaluations = self._generate_evaluation(operators=operators,
+                        dict_texts=dict_texts, mappers=mappers,
+                        thresholds=thresholds,
+                        do_verify_truematch=do_verify_truematch,
+                        do_raise_innererror=do_raise_innererror,
+                        do_save_evaluation=do_save_evaluation,
+                        do_save_misclassif=do_save_misclassif,
+                        filepath_output=filepath_output,
+                        fileroot_evaluation=fileroot_evaluation,
+                        fileroot_misclassif=fileroot_misclassif,
+                        print_freq=print_freq,
+                        do_verbose=do_verbose, do_verbose_deep=do_verbose_deep)
         #
 
-        #Classify set of texts from the test set (if folder not given); should be read in and classified one by one perhaps by classify_set method of sorts; iterate through all missions
-
-        #Take results and plot them using method for generating conf. matrix
-
+        #Plot grid of confusion matrices for classifier performance
+        self.plot_performance_confusion_matrix(list_evaluations=evaluations,
+                        list_mappers=mappers, list_titles=titles,
+                        filepath_plot=filepath_plot,filename_plot=filename_plot,
+                        figsize=figsize, fontsize=fontsize, hspace=hspace,
+                        cmap_abs=cmap_abs, cmap_norm=cmap_norm)
         #
 
-        #Fetch keyword object matching to the given keyword
-        keyobj = self._fetch_keyword_object(lookup=lookup)
-        if do_verbose:
-            print("Best matching keyword object (keyobj) for keyword {0}:\n{1}"
-                    .format(lookup, keyobj))
-        #
-
-        #Process text into modifs using Grammar class
-        if do_verbose:
-            print("\nPreprocessing and extracting modifs from the text...")
-        output = self.process(text=text, do_check_truematch=do_check_truematch,
-                                buffer=buffer, lookup=lookup,keyword_obj=keyobj,
-                                do_verbose=do_verbose,
-                                do_verbose_deep=do_verbose_deep)
-        modif = output["modif"]
-        forest = output["forest"]
-        #
+        #Exit the method
+        return
     #
 
     ##Method: _generate_evaluation
@@ -6457,6 +6482,10 @@ class Performance(_Base):
                         for ii in range(0, len(list_keys))] #Forced order
         list_texts = [dict_classified[list_keys[ii]]["text"]
                         for ii in range(0, len(list_keys))] #Forced order
+        list_modifs = [dict_classified[list_keys[ii]]["modif"]
+                        for ii in range(0, len(list_keys))] #Forced order
+        list_forests = [dict_classified[list_keys[ii]]["forest"]
+                        for ii in range(0, len(list_keys))] #Forced order
         #
 
         ##Use each operator to classify the set of texts and measure performance
@@ -6468,6 +6497,7 @@ class Performance(_Base):
             curr_op = operators[ii] #Current operator
             curr_name = curr_op._get_info("name")
             curr_results = curr_op.classify_set(texts=list_texts,
+                                modifs=list_modifs, forests=list_forests,
                                 threshold=thresholds[ii], buffer=buffers[ii],
                                 do_check_truematch=do_check_truematch,
                                 do_raise_innererror=do_raise_innererror,
