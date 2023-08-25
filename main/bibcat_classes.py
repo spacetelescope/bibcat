@@ -5784,6 +5784,8 @@ class Operator(_Base):
           - Target missions; terms will be used to search the text.
         - mode [str]:
           - Mode of modification for generating modifs using the Grammar class.
+        - name [str (default="operator")]:
+          - A unique name for this Operator.
         - load_check_truematch [bool (default=True)]:
           - Whether nor not to load external data for verifying ambiguous terms as true vs false matches to mission.
         - do_verbose [bool (default=False)]:
@@ -5791,7 +5793,7 @@ class Operator(_Base):
     """
     ##Method: __init__
     ##Purpose: Initialize this class instance
-    def __init__(self, classifier, mode, keyword_objs, do_verbose, load_check_truematch=True, do_verbose_deep=False):
+    def __init__(self, classifier, mode, keyword_objs, do_verbose, name="operator", load_check_truematch=True, do_verbose_deep=False):
         """
         Method: __init__
         WARNING! This method is *not* meant to be used directly by users.
@@ -6343,7 +6345,7 @@ class Performance(_Base):
     """
     ##Method: __init__
     ##Purpose: Initialize this class instance
-    def __init__(self, operators):
+    def __init__(self):
         """
         Method: __init__
         WARNING! This method is *not* meant to be used directly by users.
@@ -6351,7 +6353,6 @@ class Performance(_Base):
         """
         #Initialize storage
         self._storage = {}
-        self._store_info(operators, "operators")
         self._store_info(do_verbose, "do_verbose")
         self._store_info(do_verbose_deep, "do_verbose_deep")
         #
@@ -6414,333 +6415,130 @@ class Performance(_Base):
         #
     #
 
-    ##Method: generate_evaluation
+    ##Method: _generate_evaluation
     ##Purpose: Generate performance evaluation of full classification pipeline (text to rejection/verdict)
-    def _generate_evaluation(dict_papers, all_keyobjs, surface_mapper, actual_mapper, which_textform, threshold_ML, threshold_rules, do_allkeyobjs, do_verify_truematch, do_raise_innererror, fileloc_ML=None, filepath_model=None, do_verbose=False, do_verbose_deep=False, do_rules=True, do_ML=True, do_savemisclass=False, fileroot_savemisclass=None):
-        ##Prepare global variables
-        all_paper_missions = extract_all_paper_missions()#All missions within papers
-        tmp_res = fetch_classifs(mapper=actual_mapper)
-        allowed_classifs = tmp_res["allowed"]
-        converted_classifs = tmp_res["converted"]
-        tmp_res = None
+    def _generate_evaluation(self, operators, dict_texts, mappers, thresholds, do_verify_truematch, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filepath_output=None, fileroot_evaluation=None, fileroot_misclassif=None, print_freq=25, do_verbose=False, do_verbose_deep=False):
+        """
+        Method: _generate_evaluation
+        Purpose:
+          - !
+        Arguments:
+          - !
+          - do_verbose [bool (default=False)]:
+            - Whether or not to print surface-level log information and tests.
+          - do_verbose_deep [bool (default=False)]:
+            - Whether or not to print inner log information and tests.
+        Returns:
+          - dict:
+            - !
+        """
+        ##Fetch global variables
+        if (do_verbose is None):
+            do_verbose = self._get_info("do_verbose")
+        if (do_verbose_deep is None):
+            do_verbose_deep = self._get_info("do_verbose_deep")
         #
-        paper_ids = list(dict_papers.keys())
-        num_papers = len(paper_ids)
-        num_keyobjs = len(all_keyobjs)
-        #
-
-        ##Initialize full pipeline for each approach
-        #For rule-based approach
-        if do_rules:
-            classifier_rules = bibcat.Classifier_Rules()
-            tabby_rules = bibcat.Operator(classifier=classifier_rules,
-                                #mode=preset.full_textform.lower(),
-                                mode=full_textform.lower(),
-                                keyword_objs=all_keyobjs, do_verbose=do_verbose_deep, do_verbose_deep=(spec_id is not None)) #True)
-        #For ML-based approach
-        if do_ML:
-            classifier_ML = bibcat.Classifier_ML(filepath_model=filepath_model,
-                                fileloc_ML=fileloc_ML,
-                                class_names=converted_classifs)
-            tabby_ML = bibcat.Operator(classifier=classifier_ML,
-                                mode=which_textform.lower(),
-                                keyword_objs=all_keyobjs, do_verbose=do_verbose_deep)
+        num_ops = len(operators)
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _generate_evaluation()!")
         #
 
-        ##Classify each paper using each approach
-        dict_results_ML = {}
-        dict_results_rules = {}
-        i_track = 0 #Keep track of keyword paragraphs to use as ids
-        #Iterate through papers
-        for ii in range(0, num_papers):
+        ##Throw error if operators do not have unique names
+        if (len(set([item._get_info("name") for item in operators])) !=num_ops):
+            raise ValueError("Err: Please give each operator a unique name."
+                        +"\nCurrently, the names are:\n{0}"
+                        .format([item._get_info("name") for item in operators]))
+        #
+
+        ##Unpack the classified information
+        list_keys = list(dict_classified.keys()) #All keys for accessing texts
+        list_texts = [dict_classified[list_keys[ii]]["text"]
+                        for ii in range(0, len(list_keys))] #Forced order
+        list_actclassifs = [dict_classified[list_keys[ii]]["class"]
+                        for ii in range(0, len(list_keys))] #Forced order
+        list_missions = [dict_classified[list_keys[ii]]["mission"]
+                        for ii in range(0, len(list_keys))] #Forced order
+        #
+
+        ##Use each operator to classify the set of texts and measure performance
+        lists_measclassifs = [None]*num_ops
+        list_counters = [None]*num_ops
+        list_misclassifs = [None]*num_ops
+        for ii in range(0, num_ops):
+            #Classify texts with current operator
+            curr_op = operators[ii] #Current operator
+            curr_name = curr_op._get_info("name")
+            curr_results = curr_op.classify_set(texts=list_texts,
+                                threshold=thresholds[ii], buffer=buffers[ii],
+                                do_check_truematch=do_check_truematch,
+                                do_raise_innererror=do_raise_innererror,
+                                print_freq=print_freq, do_verbose=do_verbose,
+                                do_verbose_deep=do_verbose_deep)
+            #
+
+            #Measure performance of current operator against actual answers
+            tmp_res = self._generate_performance_counter(stuff)
+            curr_counter = tmp_res["counter"]
+            curr_misclassifs = tmp_res["misclassifs"]
+            #
+
+            #Store the current results
+            lists_measclassifs[ii] = curr_results #Measured classifications
+            list_counters[ii] = curr_counter #Performance counter
+            list_misclassifs[ii] = curr_misclassifs #Misclassified ids and info
+
+            ##Save the misclassified cases, if so requested
+            if do_save_misclassif:
+                #Build string of misclassification information
+                list_str = [("Internal ID: {0}\nBibcode: {1}\nMission: {2}\n"
+                            +"Actual Classification: {3}\n"
+                            +"Measured Classification: {4}\n"
+                            +"Modif: ''{5}''")
+                            .format(curr_misclassifs[key]["id"],
+                                    curr_misclassifs[key]["bibcode"],
+                                    curr_misclassifs[key]["mission"],
+                                    curr_misclassifs[key]["act_classif"],
+                                    curr_misclassifs[key]["meas_classif"],
+                                    curr_misclassifs[key]["modif"])
+                            for key in curr_misclassifs]
+                #
+                str_misclassif = "\n---\n".join(list_str) #Combined string
+
+                #Save the full string of misclassifications
+                tmp_filename="{0}_{1}.txt".format(fileroot_misclassif,curr_name)
+                tmp_filepath = os.path.join(filepath_output, tmp_filename)
+                self._write_text(text=str_misclassif, filepath=tmp_filepath)
+                #
+                #Print some notes
+                if do_verbose:
+                    print("\nMisclassifications saved at: {0}".format(tmp_filepath))
+            #
+        #
+        #Collect the results
+        dict_evaluation={"counters":list_counters,"classifs":lists_measclassifs}
+        #
+        #Print some notes
+        if do_verbose:
+            print("!")
+        #
+
+        ##Save the evaluation components, if so requested
+        if do_save_evaluation:
+            tmp_filepath = os.path.join(filepath_output,
+                                        (fileroot_evaluation+".npy"))
+            np.save(tmp_filepath, dict_evaluation)
+            #
             #Print some notes
             if do_verbose:
-                print("---"*20)
-                print("Starting classification of paper {0}.".format(ii))
-            #
-
-            #Extract the current text
-            curr_paperid = paper_ids[ii]
-            curr_text = dict_papers[curr_paperid]["body"]
-            curr_bibcode = dict_papers[curr_paperid]["bibcode"]
-            if "class_missions" in dict_papers[curr_paperid]:
-                curr_missiondict = dict_papers[curr_paperid]["class_missions"]
-                curr_ignored = dict_papers[curr_paperid]["ignored_missions"]
-            else:
-                curr_missiondict = {}
-                curr_ignored = {}
-            #
-
-            #Iterate through target keyword objects
-            for jj in range(0, num_keyobjs):
-                curr_istr = str(i_track)
-                #Match this keyword to one of missions in papers
-                tmp_kw = all_keyobjs[jj]._get_info("keywords")
-                tmp_acr = all_keyobjs[jj]._get_info("acronyms")
-                curr_lookup = [item for item in (tmp_acr+tmp_kw)
-                                if (item in all_paper_missions)]
-                if (len(curr_lookup) == 1): #Should just be 1 match
-                    curr_lookup = curr_lookup[0]
-                else:
-                    raise ValueError("Whoa! Not just 1 lookup for {0}?\n{1}\n{2}"
-                        .format(curr_lookup, all_paper_missions, (tmp_kw+tmp_acr)))
-                #
-
-                #Throw serious error if id already in dictionaries
-                if (curr_istr in dict_results_rules):
-                    raise ValueError("Whoa! Duplicate id for rules?!\n{0}: {1}\n{2}"
-                                .format(ii, curr_paperid,
-                                        dict_results_rules[curr_istr]))
-                if (curr_istr in dict_results_ML):
-                    raise ValueError("Whoa! Duplicate id for ML?!\n{0}: {1}\n{2}"
-                                .format(ii, curr_paperid,
-                                        dict_results_ML[curr_istr]))
-                #
-
-                #Print some notes
-                if do_verbose:
-                    print("\nCurrent paper id: {0}".format(curr_paperid))
-                    print("Current keyobj lookup: {0}".format(curr_lookup))
-                    print("Current mission dict: {0}".format(curr_missiondict))
-                #
-
-                #If not considering all keyobjs (e.g., not do_falsehits), check
-                if (not do_allkeyobjs) and (curr_lookup not in curr_missiondict):
-                    if do_verbose:
-                        print("Skipping {0} since not in missions and not allkobj."
-                                .format(curr_lookup))
-                    continue
-                #
-
-                #Extract actual results for keyobj for current text
-                curr_res_act = {"mission":curr_lookup, "id_paper":curr_paperid}
-                if ((curr_lookup in curr_missiondict)
-                                    and (curr_lookup not in curr_ignored)):
-                    curr_res_act["act_classif_real"] = curr_missiondict[curr_lookup
-                                                                ]["papertype_init"]
-                #Otherwise, store rejection verdict
-                elif ((curr_lookup not in curr_missiondict)
-                                    and (curr_lookup not in curr_ignored)):
-                    curr_res_act["act_classif_real"] = preset.verdict_rejection
-                #Otherwise, store that this was ignored (e.g., test-only)
-                elif ((curr_lookup not in curr_missiondict)
-                                    and (curr_lookup in curr_ignored)):
-                    curr_res_act["act_classif_real"] = preset.verdict_ignored
-                else:
-                    raise ValueError("Whoa! Unrecognized scenario for {0}!?"
-                                    .format(curr_missiondict))
-                #
-
-                #If classif not allowed, skip
-                if (curr_res_act["act_classif_real"] in actual_mapper):
-                    if (actual_mapper[curr_res_act["act_classif_real"]] is None):
-                        if do_verbose:
-                            print("Classif in {0} not allowed:\n{1}\nSkipping."
-                                    .format(curr_res_act, actual_mapper.keys()))
-                        #
-                        continue
-                    #
-                #
-
-                #Set surface transformation of actual verdict, if requested
-                if (surface_mapper is not None):
-                    curr_res_act["act_classif_surf"] = surface_mapper[
-                                        curr_res_act["act_classif_real"].upper()]
-                #Otherwise, just set actual value
-                else:
-                    curr_res_act["act_classif_surf"] = None
-                #
-
-                #Run each pipeline on the current text and keyobj and store results
-                if do_rules:
-                    #Extract results vs actual for current text+keyobj
-                    curr_res_rules = tabby_rules.classify(text=curr_text,
-                                        lookup=curr_lookup, buffer=buffer,
-                                        threshold=threshold_rules,
-                                        do_raise_innererror=do_raise_innererror,
-                                        do_check_truematch=do_verify_truematch).copy()
-                    curr_res_rules["meas_classif_real"
-                                                ] = curr_res_rules["verdict"]
-                    #Store surface transformation, if requested
-                    if (surface_mapper is not None):
-                        curr_res_rules["meas_classif_surf"
-                            ] = surface_mapper[
-                                    curr_res_rules["meas_classif_real"].upper()]
-                    else:
-                        curr_res_rules["meas_classif_surf"] = None
-                    #
-                    #Fold in actual classif and bibcode info
-                    curr_res_rules.update(curr_res_act)
-                    curr_res_rules["bibcode"] = curr_bibcode
-                    #Store the full dictionary of actual and measured results
-                    dict_results_rules[curr_istr] = curr_res_rules
-                    curr_res_rules = None
-                #
-                if do_ML:
-                    curr_res_ML = tabby_ML.classify(text=curr_text,
-                                        lookup=curr_lookup, buffer=buffer,
-                                        do_check_truematch=do_verify_truematch,
-                                        do_raise_innererror=do_raise_innererror,
-                                        threshold=threshold_ML).copy()
-                    curr_res_ML["meas_classif_real"
-                                                ] = curr_res_ML["verdict"]
-                    #Store surface transformation, if requested
-                    if (surface_mapper is not None):
-                        curr_res_ML["meas_classif_surf"
-                            ] = surface_mapper[
-                                    curr_res_ML["meas_classif_real"].upper()]
-                    else:
-                        curr_res_ML["meas_classif_surf"] = None
-                    #
-                    #Fold in actual classif and bibcode info
-                    curr_res_ML.update(curr_res_act)
-                    curr_res_ML["bibcode"] = curr_bibcode
-                    #Store the full dictionary of actual and measured results
-                    dict_results_ML[curr_istr] = curr_res_ML
-                    curr_res_ML = None
-                #
-
-                #Print some notes
-                if do_verbose:
-                    print("Done with classification of paper {0} ({1}: {2})."
-                            .format(ii, curr_istr, curr_bibcode))
-                    #
-                    if do_rules:
-                        #if ("modif" in curr_res_rules):
-                        print("Current keyword paragraph for rule approach:\n{0}."
-                        .format(dict_results_rules[curr_istr]["modif"]))
-                        print("Actual verdict (real): {0}."
-                        .format(dict_results_rules[curr_istr]["act_classif_real"]))
-                        print("Measured verdict (real): {0}."
-                        .format(dict_results_rules[curr_istr]["meas_classif_real"]))
-                        print("Actual verdict (surf.): {0}."
-                        .format(dict_results_rules[curr_istr]["act_classif_surf"]))
-                        print("Measured verdict (surf.): {0}."
-                        .format(dict_results_rules[curr_istr]["meas_classif_surf"]))
-                    #
-                    if do_ML:
-                        print("\nCurrent keyword paragraph for ML approach:\n{0}."
-                        .format(dict_results_ML[curr_istr]["modif"]))
-                        print("Actual verdict (real): {0}."
-                        .format(dict_results_ML[curr_istr]["act_classif_real"]))
-                        print("Measured verdict (real): {0}."
-                        .format(dict_results_ML[curr_istr]["meas_classif_real"]))
-                        print("Actual verdict (surf.): {0}."
-                        .format(dict_results_ML[curr_istr]["act_classif_surf"]))
-                        print("Measured verdict (surf.): {0}."
-                        .format(dict_results_ML[curr_istr]["meas_classif_surf"]))
-                    #
-                    print("---"*20)
-                #
-
-                #For error checks and whatnot
-                if (spec_id is not None) and (curr_paperid == spec_id):
-                    print(woo)
-                #
-
-                #Increment tracker of keyword paragraphs
-                i_track += 1
+                print("\nEvaluation saved at: {0}".format(tmp_filepath))
         #
 
-        ##Calculate performance for each classifier
-        dict_perf = {}
-        if do_rules:
-            dict_perf["rule"] = _calculate_performance(actual_mapper=actual_mapper,
-                dict_results=dict_results_rules, surface_mapper=surface_mapper,
-                do_verbose=do_verbose, do_savemisclass=do_savemisclass,
-                fileroot_savemisclass=fileroot_savemisclass+"_rule")
-            dict_perf["rule"]["threshold"] = threshold_rules #Store prob. thres
-        else:
-            dict_perf["rule"] = None
+        ##Return the evaluation components
+        if do_verbose:
+            print("\nRun of _generate_evaluation() complete!")
         #
-        if do_ML:
-            dict_perf["ML"] = _calculate_performance(actual_mapper=actual_mapper,
-                dict_results=dict_results_ML, surface_mapper=surface_mapper,
-                do_verbose=do_verbose, do_savemisclass=do_savemisclass,
-                fileroot_savemisclass=fileroot_savemisclass+"_ML")
-            dict_perf["ML"]["threshold"] = threshold_ML #Store prob. thres
-        else:
-            dict_perf["ML"] = None
-        #
-
-        ##Record mutual error, if requested
-        if do_savemisclass and (do_rules and do_ML):
-            #Extract misclassification info
-            dict_misclass_rule = dict_perf["rule"]["dict_misclass"]
-            dict_misclass_ML = dict_perf["ML"]["dict_misclass"]
-
-            #Extract common ids
-            common_misclass_istrs = list(set(list(dict_misclass_rule.keys())
-                                    ).intersection(list(dict_misclass_ML.keys())))
-            #
-
-            #Save info for all common misclassifs
-            str_misclass = "{0}\n---\n\n".format(fileroot_savemisclass)
-            for ii in range(0, len(common_misclass_istrs)):
-                #Extract current information
-                curr_rules = dict_misclass_rule[common_misclass_istrs[ii]]
-                curr_ML = dict_misclass_ML[common_misclass_istrs[ii]]
-
-                #Record information including None/error output
-                str_misclass += ("\n" + ("-"*20) + "\n")
-                str_misclass += ( #For rule-based classification
-                    ("RULES:\nPaper Internal IDs: istr={0}, ID={1}\n"
-                        +"Bibcode: {2}\nMission: {3}\n"
-                        +"Actual Classification: {4} ({5})\n"
-                        +"Measured Classification: {6} ({7})\nText:\n'''\n{8}\n'''"
-                        )
-                        .format(curr_rules["i_str"], curr_rules["id_paper"],
-                                curr_rules["bibcode"], curr_rules["mission"],
-                                curr_rules["act_surf"], curr_rules["act_real"],
-                                curr_rules["meas_surf"], curr_rules["meas_real"],
-                                curr_rules["modif"])
-                )
-                str_misclass += "\n\n"
-                str_misclass += ( #For ML classification
-                    ("ML:\nPaper Internal IDs: istr={0}, ID={1}\n"
-                        +"Bibcode: {2}\nMission: {3}\n"
-                        +"Actual Classification: {4} ({5})\n"
-                        +"Measured Classification: {6} ({7})\nText:\n'''\n{8}\n'''"
-                        )
-                        .format(curr_ML["i_str"], curr_ML["id_paper"],
-                                curr_ML["bibcode"], curr_ML["mission"],
-                                curr_ML["act_surf"], curr_ML["act_real"],
-                                curr_ML["meas_surf"], curr_ML["meas_real"],
-                                curr_ML["modif"])
-                )
-                str_misclass += ("\n-----\n")
-                #
-                """
-                str_misclass += ("\n-----\n")
-                str_misclass += ("RULES:\n")
-                str_misclass += (
-                    "Mission,istr={0}:{5}\nActual: {1} ({2})\nMeasured: {3} ({4})\n"
-                        .format(curr_rules["mission"], curr_rules["act_surf"],
-                                curr_rules["act_real"], curr_rules["meas_surf"],
-                                curr_rules["meas_real"], curr_rules["i_str"])
-                    + "Text (ID={1}): {0}\n"
-                        .format(curr_rules["modif"], curr_rules["id_paper"]))
-                str_misclass += ("\n\n")
-                str_misclass += ("ML:\n")
-                str_misclass += (
-                    "Mission,istr={0}:{5}\nActual: {1} ({2})\nMeasured: {3} ({4})\n"
-                        .format(curr_ML["mission"], curr_ML["act_surf"],
-                                curr_ML["act_real"], curr_ML["meas_surf"],
-                                curr_ML["meas_real"], curr_ML["i_str"])
-                    + "Text (ID={1}): {0}\n"
-                        .format(curr_ML["modif"], curr_ML["id_paper"]))
-                str_misclass += (("-"*20) + "\n")
-                #"""
-            #
-
-            ##Save the misclassification .txt file
-            write_text(text=str_misclass,
-                        filepath=(fileroot_savemisclass+"_both.txt"))
-            #
-        #
-
-        ##Return the calculated performance
-        return dict_perf
+        return dict_evaluation
     #
 
     ##Method: plot_performance_confusion_matrix
