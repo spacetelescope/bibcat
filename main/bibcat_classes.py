@@ -3278,8 +3278,14 @@ class _Classifier(_Base):
         #
 
         ##Save the dictionary of text information to its own file
+        !!!
+        tmp_thing = curr_texts[jj]["forest"]["none"][0]["struct_words_updated"][0]
+        print(tmp_thing.keys())
+        dict_info = tmp_thing # {key:dict_info[key]["forest"]["none"][0]["struct_verbs_updated"][0]["is_important"] for key in dict_info}
+        !!!
         tmp_filesave = os.path.join(dir_model, "dict_textinfo.npy")
         np.save(tmp_filesave, dict_info)
+        print(woo)
         #Print some notes
         if do_verbose:
             print("Dictionary of background text information saved at: {0}."
@@ -6289,16 +6295,17 @@ class Operator(_Base):
             for curr_key in dataset:
                 old_dict = dataset[curr_key]
                 #Extract modif for current text
-                curr_modif = self.process(text=old_dict["text"],
+                curr_res = self.process(text=old_dict["text"],
                                     do_check_truematch=False, buffer=buffer,
                                     lookup=old_dict["mission"],
                                     keyword_obj=None,do_verbose=do_verbose_deep,
                                     do_verbose_deep=do_verbose_deep
-                                    )["modif"]
+                                    )
                 #
                 #Store the modif and previous classification information
-                new_dict = {"text":curr_modif, "class":old_dict["class"],
-                            "id":old_dict["id"], "mission":old_dict["mission"]}
+                new_dict = {"text":curr_res["modif"],"class":old_dict["class"],
+                            "id":old_dict["id"], "mission":old_dict["mission"],
+                            "forest":curr_res["forest"]}
                 dict_modifs[curr_key] = new_dict
                 #
                 #Increment count of modifs generated

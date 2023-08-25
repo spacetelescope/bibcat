@@ -12,7 +12,7 @@ import os
 path_json = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/BibTracking/scratchwork/dataset_combined_all.json")
 #"path/to/file.json" #Path+Filename for .json file containing pre-classified texts. Each entry in the .json file should be a dictionary-style entry, containing the following key:value structure: {"text":<the text as a string>, "class":<the class name as a string>, "id":<None or <an identifier for this item>}
 dir_allmodels = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/BibTracking/scratchwork") #Path to directory for saving or loading a model
-name_model = "test_model3" #Name of model run to save or load
+name_model = "test_model_2023_08_25a" #Name of model run to save or load
 #
 
 #Classification parameters
