@@ -5889,7 +5889,7 @@ class Operator(_Base):
 
     ##Method: classify
     ##Purpose: Inspect text and either reject as false target or give classifications
-    def classify(self, text, lookup, threshold, do_check_truematch, do_raise_innererror, buffer=0, do_verbose=None, do_verbose_deep=None):
+    def classify(self, text, modif, lookup, threshold, do_check_truematch, do_raise_innererror, buffer=0, do_verbose=None, do_verbose_deep=None):
         """
         Method: classify
         Purpose:
@@ -6366,7 +6366,7 @@ class Performance(_Base):
 
     ##Method: evaluate_performance
     ##Purpose: Evaluate the basic performance of the internal classifier on a test set of data
-    def evaluate_performance_basic(self, dir_text=None, max_texts=None, do_verbose=None, do_verbose_deep=None):
+    def evaluate_performance_basic(self, operators, dict_texts, mappers, thresholds, do_verify_truematch, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filepath_output=None, fileroot_evaluation=None, fileroot_misclassif=None, print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: evaluate_performance_basic
         Purpose:
@@ -6453,11 +6453,9 @@ class Performance(_Base):
 
         ##Unpack the classified information
         list_keys = list(dict_classified.keys()) #All keys for accessing texts
+        list_data = [dict_classified[list_keys[ii]]
+                        for ii in range(0, len(list_keys))] #Forced order
         list_texts = [dict_classified[list_keys[ii]]["text"]
-                        for ii in range(0, len(list_keys))] #Forced order
-        list_actclassifs = [dict_classified[list_keys[ii]]["class"]
-                        for ii in range(0, len(list_keys))] #Forced order
-        list_missions = [dict_classified[list_keys[ii]]["mission"]
                         for ii in range(0, len(list_keys))] #Forced order
         #
 
@@ -6541,6 +6539,90 @@ class Performance(_Base):
         return dict_evaluation
     #
 
+    ##Method: _generate_performance_counter
+    ##Purpose: Generate performance counter for set of measured classifications vs actual classifications
+    def _generate_performance_counter(self, operator, mapper, list_actdicts, list_measdicts, print_freq=25, do_verbose=False, do_verbose_deep=False):
+        """
+        Method: _generate_performance_counter
+        Purpose:
+          - !
+        Arguments:
+          - !
+          - do_verbose [bool (default=False)]:
+            - Whether or not to print surface-level log information and tests.
+          - do_verbose_deep [bool (default=False)]:
+            - Whether or not to print inner log information and tests.
+        Returns:
+          - dict:
+            - !
+        """
+        #Fetch global variables
+        if (do_verbose is None):
+            do_verbose = self._get_info("do_verbose")
+        if (do_verbose_deep is None):
+            do_verbose_deep = self._get_info("do_verbose_deep")
+        #
+        num_texts = len(list_measdicts)
+        meas_classifs =operator._get_info("classifier")._get_info("class_names")
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _generate_performance_counter()!")
+        #
+
+        #Initialize container for counters and misclassifications
+        dict_counters = {act_key:{meas_key:0 for meas_key in meas_classifs
+                        for act_key in mapper}}
+        dict_misclassifs = {}
+        #
+
+        #Count up classifications from given texts and classifications
+        i_misclassif = 0 #Count of misclassifications
+        for ii in range(0, num_texts):
+            curr_actdict = list_actdicts[ii]
+            curr_measdict = list_measdicts[ii]
+            #Iterate through classified missions
+            for curr_key in curr_measdict:
+                #Extract current actual and measured classifs
+                if (mapper is not None): #Map to masked value if so requested
+                    curr_actval = mapper[curr_actdict["class"]]
+                    curr_measval = mapper[curr_measdict["class"]]
+                else:
+                    curr_actval = curr_actdict["class"]
+                    curr_measval = curr_measdict["class"]
+                #
+
+                #Increment current counter
+                dict_counters[curr_actval][curr_measval] += 1
+
+                #If misclassification, take note
+                if (curr_actval != curr_measval):
+                    curr_info = {"act_classif":curr_actval,
+                                "meas_classif":curr_measval,
+                                "bibcode":curr_actdict["bibcode"],
+                                "id":curr_actdict["id"],
+                                "modif":curr_measdict["modif"]}
+                    #
+                    dict_misclassifs[str(i_misclassif)] = curr_info
+                    #Increment count of misclassifications
+                    i_misclassif += 1
+                #
+            #
+        #
+
+        #Compute internal counter totals
+        for key_1 in dict_counters:
+            curr_sum = sum([dict_counters[key_1][key_2]
+                            for key_2 in dict_counters[key_1]])
+            dict_counters[key_1]["_total"] = curr_sum
+        #
+
+        ##Return the counters and misclassifications
+        if do_verbose:
+            print("\nRun of _generate_performance_counter() complete!")
+        #
+        return {"counters":dict_counters, "misclassifs":dict_misclassifs}
+    #
+
     ##Method: plot_performance_confusion_matrix
     ##Purpose: Plot confusion matrix for given performance counters
     def plot_performance_confusion_matrix(list_evaluations, list_mappers, list_titles, filepath_plot, filename_plot, figsize=(20, 6), fontsize=16, hspace=15, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd):
@@ -6591,7 +6673,7 @@ class Performance(_Base):
 
             #Accumulate the confusion matrices
             for yy in range(0, num_act): #Iterate through actual classifs
-                curr_total = curr_counts[act_classifs[yy]]["total"] #Total act.
+                curr_total = curr_counts[act_classifs[yy]]["_total"] #Total act.
                 for xx in range(0, num_meas): #Iterate through measured classifs
                     #For the unnormalized confusion matrix
                     curr_val = curr_counts[act_classifs[yy]][meas_classifs[xx]]
