@@ -2218,7 +2218,7 @@ class Grammar(_Base):
                     print("Word-struct.:")
                     for key1 in curr_struct_words:
                         print("- {0}={1}: {2}".format(
-                                        curr_struct_words[key1]["word"].i,
+                                        curr_struct_words[key1]["index"], #.i,
                                         curr_struct_words[key1]["word"],
                                         curr_struct_words[key1]))
             #
@@ -2364,7 +2364,7 @@ class Grammar(_Base):
         tag_verb = word.tag_
 
         #Initialize dictionary to hold characteristics of this verb
-        dict_verb = {"i_verb":word.i, "verb":word, "is_important":False,
+        dict_verb = {"i_verb":word.i, "verb":word.text, "is_important":False,
                     "i_postverbs":[], "i_branchwords_all":[], "verbtype":[]}
 
         #Determine tense, etc. as types of this verb
@@ -2462,8 +2462,14 @@ class Grammar(_Base):
 
             ##Characterize the general word
             #For word itself
-            dict_word["word"] = word
-            dict_word["wordchunk"] = NLP_wordchunk
+            dict_word["word"] = word.text
+            dict_word["index"] = word.i
+            dict_word["_dep"] = word.dep_
+            dict_word["_pos"] = word.pos_
+            dict_word["_tag"] = word.tag_
+            dict_word["wordchunk"] = np.array([item.text
+                                                for item in NLP_wordchunk])
+            dict_word["sentence"] = word.sent.text
             #
             #For importance
             #If important, mark as important
@@ -2507,7 +2513,7 @@ class Grammar(_Base):
         #
         new_trail = None
         new_headoftrail = i_headoftrail
-        i_main = [list_dict_words[ww]["word"].i for ww in range(0, num_words)
+        i_main = [list_dict_words[ww]["index"] for ww in range(0, num_words)
                     ].index(node.i) #Wordchunk index for main node
         #
         #If this word chunk necessitates a new trail
@@ -2641,7 +2647,7 @@ class Grammar(_Base):
         #Initialize storage for modified versions of grammar structure
         num_words = len(struct_words)
         arr_is_keep = np.ones(num_words).astype(bool)
-        arr_text_keep = np.array([struct_words[ii]["word"].text
+        arr_text_keep = np.array([struct_words[ii]["word"]#.text
                                 for ii in range(0, num_words)])
         text_updated = " ".join(arr_text_keep) #Starting text
         #
@@ -2874,7 +2880,7 @@ class Grammar(_Base):
         #
         #Handle special case of incomplete sentences (e.g., root is noun)
         elif is_root:
-            storage_verbs[node.i] = {"i_verb":node.i, "verb":node,
+            storage_verbs[node.i] = {"i_verb":node.i, "verb":node.text,
                                     "is_important":False, "i_postverbs":[],
                                     "i_branchwords_all":[], "verbtype":[]}
             #Iterate through previous verb chains
@@ -3278,14 +3284,8 @@ class _Classifier(_Base):
         #
 
         ##Save the dictionary of text information to its own file
-        !!!
-        tmp_thing = curr_texts[jj]["forest"]["none"][0]["struct_words_updated"][0]
-        print(tmp_thing.keys())
-        dict_info = tmp_thing # {key:dict_info[key]["forest"]["none"][0]["struct_verbs_updated"][0]["is_important"] for key in dict_info}
-        !!!
         tmp_filesave = os.path.join(dir_model, "dict_textinfo.npy")
         np.save(tmp_filesave, dict_info)
-        print(woo)
         #Print some notes
         if do_verbose:
             print("Dictionary of background text information saved at: {0}."
@@ -4896,8 +4896,11 @@ class Classifier_Rules(_Classifier):
     ##Purpose: Categorize topic of given verb
     def _categorize_verb(self, i_verb, struct_words):
         ##Extract global variables
-        verb_NLP = struct_words[i_verb]["word"]
-        verb = verb_NLP.text
+        verb = struct_words[i_verb]["word"]
+        verb_dep = struct_words[i_verb]["_dep"]
+        verb_pos = struct_words[i_verb]["_pos"]
+        #verb_NLP = struct_words[i_verb]["word"]
+        #verb = verb_NLP.text
         do_verbose = self._get_info("do_verbose")
         list_category_names = preset.list_category_names
         list_category_synsets = preset.list_category_synsets
@@ -4918,7 +4921,7 @@ class Classifier_Rules(_Classifier):
         #
 
         ##Handle non-verb roots
-        if (verb_NLP.dep_ in ["ROOT"]) and (verb_NLP.pos_ in ["NOUN"]):
+        if (verb_dep in ["ROOT"]) and (verb_pos in ["NOUN"]):
             if do_verbose:
                 print("Verb {0} is a root noun. Marking as such.")
             #
@@ -5470,8 +5473,8 @@ class Classifier_Rules(_Classifier):
             #Otherwise, throw error
             else:
                 raise ValueError("Err: Nothing important:\n{0}\n\n{1}\n\n{2}"
-                        .format(curr_struct_words[list(curr_struct_words.keys())[0]]
-                                    ["word"].sent, curr_struct_verbs,
+                    .format(curr_struct_words[list(curr_struct_words.keys())[0]]
+                                    ["sentence"], curr_struct_verbs,
                                     curr_struct_words))
             #
             list_nest_main[ii] = list_nests[ii][id_main]
@@ -5565,14 +5568,14 @@ class Classifier_Rules(_Classifier):
                 print("Upcoming KeyError! Context:")
                 print("Word: {0}".format(curr_info["word"]))
                 print("Word info: {0}".format(curr_info))
-                tmp_sent = np.asarray(list(curr_info["word"].sent))
+                tmp_sent = np.asarray(list(curr_info["sentence"]))
                 print("Sentence: {0}".format(tmp_sent))
-                tmp_chunk = struct_words[i_verb]["wordchunk"] #tmp_sent[curr_info["i_wordchunk"]]
-                print("Wordchunk:")
-                for aa in range(0, len(tmp_chunk)):
-                    print("{0}: {1}: {2}, {3}, {4}"
-                            .format(aa, tmp_chunk[aa], tmp_chunk[aa].dep_,
-                                    tmp_chunk[aa].pos_, tmp_chunk[aa].tag_))
+                tmp_chunk = struct_words[i_verb]["wordchunk"]
+                print("Wordchunk: {0}".format(tmp_chunk))
+                #for aa in range(0, len(tmp_chunk)):
+                #    print("{0}: {1}: {2}, {3}, {4}"
+                #            .format(aa, tmp_chunk[aa], tmp_chunk[aa].dep_,
+                #                    tmp_chunk[aa].pos_, tmp_chunk[aa].tag_))
                 print("Chosen main pos.: {0}".format(curr_pos_raw))
                 #
                 curr_pos = lookup_pos[curr_pos_raw]
