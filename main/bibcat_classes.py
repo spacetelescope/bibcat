@@ -3237,6 +3237,7 @@ class _Classifier(_Base):
         #
 
         ##Save texts to .txt files within class directories
+        dict_info = {}
         #Iterate through classes
         for curr_key in name_classes:
             #Fetch all texts within this class
@@ -3251,17 +3252,38 @@ class _Classifier(_Base):
                     curr_filename = "{0}_{1}_{2}".format("text", curr_key, jj)
                     if (curr_texts[jj]["id"] is not None): #Add id, if given
                         curr_filename += "_{0}".format(curr_texts[jj]["id"])
-                    curr_filename += ".txt"
+                    #
+                    if (curr_filename in dict_info): #Throw error if not unique
+                        raise ValueError("Err: Non-unique filename: {0}"
+                                        .format(curr_filename))
+                    #
+                    #Store information for this text in overarching dictionary
+                    curr_info = {"id":curr_texts[jj]["id"],
+                                "modif":curr_texts[jj]["text"],
+                                "mission":curr_texts[jj]["mission"],
+                                "class":curr_texts[jj]["class"],
+                                "forest":curr_texts[jj]["forest"]}
+                    dict_info[curr_filename] = curr_info
+                    #
                     #Write this text to new file
                     self._write_text(text=curr_texts[jj]["text"],
                                     filepath=os.path.join(curr_filebase,
-                                                            curr_filename))
+                                                        (curr_filename+".txt")))
                 #
             #
         #
         #Print some notes
         if do_verbose:
             print("Files saved to new TVT directories.")
+        #
+
+        ##Save the dictionary of text information to its own file
+        tmp_filesave = os.path.join(dir_model, "dict_textinfo.npy")
+        np.save(tmp_filesave, dict_info)
+        #Print some notes
+        if do_verbose:
+            print("Dictionary of background text information saved at: {0}."
+                    .format(tmp_filesave))
         #
 
         ##Verify that count of saved .txt files adds up to original data count
