@@ -5963,7 +5963,7 @@ class Operator(_Base):
         #
 
         #Fetch keyword object matching to the given keyword
-        keyobj = self._fetch_keyword_object(lookup=lookup)
+        keyobj = self._fetch_keyword_object(lookup=lookup,do_verbose=do_verbose)
         if do_verbose:
             print("Best matching keyword object (keyobj) for keyword {0}:\n{1}"
                     .format(lookup, keyobj))
@@ -6578,7 +6578,8 @@ class Performance(_Base):
                                 threshold=thresholds[ii], buffer=buffers[ii],
                                 do_check_truematch=do_verify_truematch,
                                 do_raise_innererror=do_raise_innererror,
-                                print_freq=print_freq, do_verbose=do_verbose,
+                                print_freq=print_freq,
+                                do_verbose=do_verbose_deep,
                                 do_verbose_deep=do_verbose_deep)
             #
             #Print some notes
@@ -6711,11 +6712,21 @@ class Performance(_Base):
         #Initialize container for counters and misclassifications
         if (mapper is not None): #Use mask classifications, if given
             act_classnames = list(mapper.keys())
-            meas_classnames = list(mapper.keys())
+            meas_classnames_raw = list(mapper.keys())
         else: #Otherwise, use internal classifications
             act_classnames = meas_classifs
-            meas_classnames = meas_classifs
+            meas_classnames_raw = meas_classifs
         #
+        #Extend measured allowed class names to include low-uncertainty, etc.
+        meas_classnames = (meas_classnames_raw + preset.list_other_verdicts)
+        #
+        #Streamline the class names
+        act_classnames = [item.lower().replace("_","")
+                            for item in act_classnames]
+        meas_classnames = [item.lower().replace("_","")
+                            for item in meas_classnames]
+        #
+        #Form containers
         dict_counters = {act_key:{meas_key:0 for meas_key in meas_classnames}
                         for act_key in act_classnames}
         dict_misclassifs = {}
@@ -6733,15 +6744,23 @@ class Performance(_Base):
             curr_actdict = list_actdicts[ii]
             curr_measdict = list_measdicts[ii]
             #
-            #Iterate through classified missions
+            #Iterate through missions that were considered
             for curr_key in curr_measdict:
+                #lookup = operator._fetch_keyword_object(lookup=curr_key
+                #                                        )._get_info("name")
+                lookup = curr_key
                 #Extract current actual and measured classifs
                 if (mapper is not None): #Map to masked value if so requested
-                    curr_actval = mapper[curr_actdict["class"]]
-                    curr_measval = mapper[curr_measdict[curr_key]["verdict"]]
+                    curr_actval = mapper[curr_actdict["missions"][
+                                                            lookup]["class"]]
+                    curr_measval = mapper[curr_measdict[lookup]["verdict"]]
                 else:
-                    curr_actval = curr_actdict["class"]
-                    curr_measval = curr_measdict[curr_key]["verdict"]
+                    curr_actval = curr_actdict["missions"][lookup]["class"]
+                    curr_measval = curr_measdict[lookup]["verdict"]
+                #
+                #Streamline the class names
+                curr_actval = curr_actval.lower().replace("_","")
+                curr_measval = curr_measval.lower().replace("_","")
                 #
 
                 #Increment current counter
@@ -6752,8 +6771,9 @@ class Performance(_Base):
                     curr_info = {"act_classif":curr_actval,
                                 "meas_classif":curr_measval,
                                 "bibcode":curr_actdict["bibcode"],
+                                "mission":lookup,
                                 "id":curr_actdict["id"],
-                                "modif":curr_measdict["modif"]}
+                                "modif":curr_measdict[lookup]["modif"]}
                     #
                     dict_misclassifs[str(i_misclassif)] = curr_info
                     #Increment count of misclassifications
@@ -6770,7 +6790,7 @@ class Performance(_Base):
         #
         #Print some notes
         if do_verbose:
-            print("Performance counter generated:")
+            print("\n-\nPerformance counter generated:")
             for key_1 in dict_counters:
                 print("Actual {0} total: {1}"
                         .format(key_1, dict_counters[key_1]["_total"]))
@@ -6781,7 +6801,7 @@ class Performance(_Base):
 
         #Return the counters and misclassifications
         if do_verbose:
-            print("\nRun of _generate_performance_counter() complete!")
+            print("\n-\n\nRun of _generate_performance_counter() complete!")
         #
         return {"counters":dict_counters, "misclassifs":dict_misclassifs,
             "act_classnames":act_classnames, "meas_classnames":meas_classnames}

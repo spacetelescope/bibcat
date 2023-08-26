@@ -167,6 +167,7 @@ special_synsets_fig = ["table.n.01", "tab.n.04", "figure.n.01", "section.n.01", 
 verdict_error = "z_error"
 verdict_lowprob = "z_lowprob"
 verdict_rejection = "z_notmatch"
+list_other_verdicts = [verdict_error, verdict_lowprob, verdict_rejection]
 #
 #For preset custom verdict outputs
 dictverdict_lowprob = {
