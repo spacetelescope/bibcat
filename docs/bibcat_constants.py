@@ -15,7 +15,7 @@ from nltk.corpus import wordnet
 
 tfoutput_prefix = "tfoutput_"
 folders_TVT = {"train":"dir_train", "validate":"dir_validate", "test":"dir_test"}
-
+classifs_rules = ["SCIENCE", "MENTION", "DATA_INFLUENCED"]
 
 
 

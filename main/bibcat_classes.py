@@ -14,6 +14,7 @@ import numpy as np
 import itertools as iterer
 import collections
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 #
 #Internal presets/constants
 import bibcat_constants as preset
@@ -258,7 +259,7 @@ class _Base():
 
     ##Method: _ax_confusion_matrix()
     ##Purpose: Plot rectangular confusion matrix for given data and labels
-    def _ax_confusion_matrix(matr, ax, x_labels, y_labels, x_title, y_title, cbar_title, ax_title, is_norm, cmap=plt.cm.BuPu, fontsize=16, ticksize=16, valsize=14, y_rotation=30, x_rotation=30):
+    def _ax_confusion_matrix(self, matr, ax, x_labels, y_labels, x_title, y_title, cbar_title, ax_title, is_norm, cmap=plt.cm.BuPu, fontsize=16, ticksize=16, valsize=14, y_rotation=30, x_rotation=30):
         """
         Method: _ax_confusion_matrix
         WARNING! This method is *not* meant to be used directly by users.
@@ -1194,6 +1195,21 @@ class _Base():
         #
     #
 
+    ##Method: _load_text
+    ##Purpose: Load text from given file
+    def _load_text(self, filepath):
+        """
+        Method: _load_text
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Load text from a given filepath.
+        """
+        #Load text from file
+        with open(filepath, 'r') as openfile:
+            text = openfile.read()
+        #Return the loaded text
+        return text
+    #
+
     ##Method: _process_database_ambig()
     ##Purpose: Process database of ambig. phrases into lookups and dictionary
     def _process_database_ambig(self, keyword_objs=None, do_verbose=False):
@@ -1365,6 +1381,21 @@ class _Base():
 
         #Return streamlined text
         return text
+    #
+
+    ##Method: _write_text
+    ##Purpose: Write given text to given filepath
+    def _write_text(self, text, filepath):
+        """
+        Method: _write_text
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Write given text to given filepath.
+        """
+        #Write text to file
+        with open(filepath, 'w') as openfile:
+            openfile.write(text)
+        #Exit the method
+        return
     #
 #
 
@@ -3314,21 +3345,6 @@ class _Classifier(_Base):
         return
     #
 
-    ##Method: _load_text
-    ##Purpose: Load text from given file
-    def _load_text(self, filepath):
-        """
-        Method: _load_text
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Load text from a given filepath.
-        """
-        #Load text from file
-        with open(filepath, 'r') as openfile:
-            text = openfile.read()
-        #Return the loaded text
-        return text
-    #
-
     ##Method: _process_text
     ##Purpose: Load text and process into modifs using Grammar class
     def _process_text(self, text, keyword_obj, which_mode, do_check_truematch, buffer=0, do_verbose=False):
@@ -3353,21 +3369,6 @@ class _Classifier(_Base):
 
         #Return all processed statements
         return {"modif":modif, "forest":forest}
-    #
-
-    ##Method: _write_text
-    ##Purpose: Write given text to given filepath
-    def _write_text(self, text, filepath):
-        """
-        Method: _write_text
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Write given text to given filepath.
-        """
-        #Write text to file
-        with open(filepath, 'w') as openfile:
-            openfile.write(text)
-        #Exit the method
-        return
     #
 #
 
@@ -3824,9 +3825,9 @@ class Classifier_Rules(_Classifier):
         #self._store_info(do_anoncites, "do_anoncites")
         self._store_info(do_verbose, "do_verbose")
         self._store_info(do_verbose_deep, "do_verbose_deep")
-        if which_classifs is None:
+        if (which_classifs is None):
             which_classifs = preset.list_default_verdicts_decisiontree
-        self._store_info(which_classifs, "which_classifs")
+        self._store_info(which_classifs, "class_names")
 
         ##Assemble the fixed decision tree
         decision_tree = self._assemble_decision_tree()
@@ -3851,7 +3852,7 @@ class Classifier_Rules(_Classifier):
     def _apply_decision_tree(self, decision_tree, tree_nest):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
-        which_classifs = self._get_info("which_classifs")
+        which_classifs = self._get_info("class_names")
         keys_main = preset.nest_keys_main
         keys_matter = [item for item in keys_main if (item.endswith("matter"))]
         bool_keyword = "is_keyword"
@@ -3963,7 +3964,7 @@ class Classifier_Rules(_Classifier):
     def _assemble_decision_tree(self):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
-        which_classifs = self._get_info("which_classifs")
+        which_classifs = self._get_info("class_names")
         dict_possible_values = preset.dict_tree_possible_values
         #dict_valid_combos = preset.dict_tree_valid_value_combinations
         keys_matter = preset.nest_keys_matter
@@ -5834,6 +5835,7 @@ class Operator(_Base):
         self._storage = {}
         self._store_info(classifier, "classifier")
         self._store_info(mode, "mode")
+        self._store_info(name, "name")
         self._store_info(keyword_objs, "keyword_objs")
         self._store_info(do_verbose, "do_verbose")
         self._store_info(load_check_truematch, "load_check_truematch")
@@ -6065,8 +6067,15 @@ class Operator(_Base):
             do_verbose_deep = self._get_info("do_verbose_deep")
         #
         all_kobjs = self._get_info("keyword_objs")
-        num_texts = len(texts)
         num_kobjs = len(all_kobjs)
+        #
+        #Throw error if both texts and modifs given
+        if ((texts is not None) and (modifs is not None)):
+            raise ValueError("Err: texts OR modifs should be given, not both.")
+        elif (texts is not None):
+            num_texts = len(texts)
+        elif (modifs is not None):
+            num_texts = len(modifs)
         #
         #Print some notes
         if do_verbose:
@@ -6074,14 +6083,14 @@ class Operator(_Base):
         #
 
         ##Classify every text against every mission
-        dict_results = {}
+        list_results = [None]*num_texts
         curr_text = None
         curr_modif = None
         curr_forest = None
         #Iterate through texts
         for ii in range(0, num_texts):
             curr_dict = {} #Dictionary to hold set of results for this text
-            dict_results[str(ii)] = curr_dict #Store this dictionary
+            list_results[ii] = curr_dict #Store this dictionary
             #
             #Extract current text if given in raw (not processed) form
             if (texts is not None):
@@ -6119,7 +6128,7 @@ class Operator(_Base):
         if do_verbose:
             print("\nRun of classify_set() complete!\n")
         #
-        return dict_results
+        return list_results
     #
 
     ##Method: process
@@ -6402,7 +6411,7 @@ class Performance(_Base):
     """
     ##Method: __init__
     ##Purpose: Initialize this class instance
-    def __init__(self):
+    def __init__(self, do_verbose=False, do_verbose_deep=False):
         """
         Method: __init__
         WARNING! This method is *not* meant to be used directly by users.
@@ -6423,7 +6432,7 @@ class Performance(_Base):
 
     ##Method: evaluate_performance
     ##Purpose: Evaluate the basic performance of the internal classifier on a test set of data
-    def evaluate_performance_basic(self, operators, dict_texts, mappers, thresholds, do_verify_truematch, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filepath_output=None, fileroot_evaluation=None, fileroot_misclassif=None, print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def evaluate_performance_basic(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filename_plot="confmatr.png", fileroot_evaluation=None, fileroot_misclassif=None, figsize=(20, 20), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: evaluate_performance_basic
         Purpose:
@@ -6444,11 +6453,16 @@ class Performance(_Base):
         if (do_verbose_deep is None):
             do_verbose_deep = self._get_info("do_verbose_deep")
         #
+        #Print some notes
+        if do_verbose:
+            print("\n> Running evaluate_performance_basic()!")
+            print("Generating evaluation for the given operators...")
+        #
 
         #Evaluate classifier within each operator
-        evaluations = self._generate_evaluation(operators=operators,
-                        dict_texts=dict_texts, mappers=mappers,
-                        thresholds=thresholds,
+        dict_evaluations = self._generate_evaluation(operators=operators,
+                        dicts_texts=dicts_texts, mappers=mappers,
+                        buffers=buffers, is_text_processed=is_text_processed,
                         do_verify_truematch=do_verify_truematch,
                         do_raise_innererror=do_raise_innererror,
                         do_save_evaluation=do_save_evaluation,
@@ -6456,25 +6470,42 @@ class Performance(_Base):
                         filepath_output=filepath_output,
                         fileroot_evaluation=fileroot_evaluation,
                         fileroot_misclassif=fileroot_misclassif,
-                        print_freq=print_freq,
+                        print_freq=print_freq, thresholds=thresholds,
                         do_verbose=do_verbose, do_verbose_deep=do_verbose_deep)
+        #
+        #Print some notes
+        if do_verbose:
+            print("\nEvaluations generated.")
+            print("Plotting confusion matrices...")
         #
 
         #Plot grid of confusion matrices for classifier performance
-        self.plot_performance_confusion_matrix(list_evaluations=evaluations,
+        titles = [item._get_info("name") for item in operators]
+        list_evaluations = [dict_evaluations[item] for item in titles]
+        self.plot_performance_confusion_matrix(
+                        list_evaluations=list_evaluations,
                         list_mappers=mappers, list_titles=titles,
-                        filepath_plot=filepath_plot,filename_plot=filename_plot,
+                        filepath_plot=filepath_output,
+                        filename_plot=filename_plot,
                         figsize=figsize, fontsize=fontsize, hspace=hspace,
                         cmap_abs=cmap_abs, cmap_norm=cmap_norm)
         #
+        #Print some notes
+        if do_verbose:
+            print("Confusion matrices have been plotted at:\n{0}"
+                    .format(filepath_output))
+        #
 
         #Exit the method
+        if do_verbose:
+            print("\nRun of evaluate_performance_basic() complete!")
+        #
         return
     #
 
     ##Method: _generate_evaluation
     ##Purpose: Generate performance evaluation of full classification pipeline (text to rejection/verdict)
-    def _generate_evaluation(self, operators, dict_texts, mappers, thresholds, do_verify_truematch, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filepath_output=None, fileroot_evaluation=None, fileroot_misclassif=None, print_freq=25, do_verbose=False, do_verbose_deep=False):
+    def _generate_evaluation(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filepath_output=None, fileroot_evaluation=None, fileroot_misclassif=None, print_freq=25, do_verbose=False, do_verbose_deep=False):
         """
         Method: _generate_evaluation
         Purpose:
@@ -6496,60 +6527,100 @@ class Performance(_Base):
             do_verbose_deep = self._get_info("do_verbose_deep")
         #
         num_ops = len(operators)
-        #Print some notes
-        if do_verbose:
-            print("\n> Running _generate_evaluation()!")
-        #
-
-        ##Throw error if operators do not have unique names
+        #Throw error if operators do not have unique names
         if (len(set([item._get_info("name") for item in operators])) !=num_ops):
             raise ValueError("Err: Please give each operator a unique name."
                         +"\nCurrently, the names are:\n{0}"
                         .format([item._get_info("name") for item in operators]))
         #
-
-        ##Unpack the classified information
-        list_keys = list(dict_classified.keys()) #All keys for accessing texts
-        list_data = [dict_classified[list_keys[ii]]
-                        for ii in range(0, len(list_keys))] #Forced order
-        list_texts = [dict_classified[list_keys[ii]]["text"]
-                        for ii in range(0, len(list_keys))] #Forced order
-        list_modifs = [dict_classified[list_keys[ii]]["modif"]
-                        for ii in range(0, len(list_keys))] #Forced order
-        list_forests = [dict_classified[list_keys[ii]]["forest"]
-                        for ii in range(0, len(list_keys))] #Forced order
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _generate_evaluation()!")
+            print("Iterating through Operators to classify each set of text...")
         #
 
         ##Use each operator to classify the set of texts and measure performance
-        lists_measclassifs = [None]*num_ops
-        list_counters = [None]*num_ops
-        list_misclassifs = [None]*num_ops
+        #lists_measclassifs = [None]*num_ops
+        #list_counters = [None]*num_ops
+        #list_misclassifs = [None]*num_ops
+        dict_evaluations = {item._get_info("name"):None for item in operators}
         for ii in range(0, num_ops):
-            #Classify texts with current operator
             curr_op = operators[ii] #Current operator
             curr_name = curr_op._get_info("name")
-            curr_results = curr_op.classify_set(texts=list_texts,
-                                modifs=list_modifs, forests=list_forests,
+            curr_data = dicts_texts[ii]
+            #
+            #Print some notes
+            if do_verbose:
+                print("Classifying with Operator #{0}...".format(ii))
+            #
+
+            #Unpack the classified information for this operator
+            curr_keys = list(curr_data.keys()) #All keys for accessing texts
+            curr_actdicts = [curr_data[curr_keys[jj]]
+                            for jj in range(0, len(curr_keys))] #Forced order
+            #Load in as either raw or preprocessed data
+            if is_text_processed: #If given text preprocessed
+                curr_texts = None
+                curr_modifs = [curr_data[curr_keys[jj]]["text"]
+                                for jj in range(0, len(curr_keys))]
+                curr_forests = [curr_data[curr_keys[jj]]["forest"]
+                                for jj in range(0, len(curr_keys))]
+            else: #If given text needs to be preprocessed
+                curr_texts = [curr_data[curr_keys[jj]]["text"]
+                                for jj in range(0, len(curr_keys))]
+                curr_modifs = None
+                curr_forests = None
+            #
+
+            #Classify texts with current operator
+            curr_results = curr_op.classify_set(texts=curr_texts,
+                                modifs=curr_modifs, forests=curr_forests,
                                 threshold=thresholds[ii], buffer=buffers[ii],
-                                do_check_truematch=do_check_truematch,
+                                do_check_truematch=do_verify_truematch,
                                 do_raise_innererror=do_raise_innererror,
                                 print_freq=print_freq, do_verbose=do_verbose,
                                 do_verbose_deep=do_verbose_deep)
             #
+            #Print some notes
+            if do_verbose:
+                print("Classification complete for Operator #{0}.".format(ii))
+                print("Generating the performance counter...")
+            #
 
             #Measure performance of current operator against actual answers
-            tmp_res = self._generate_performance_counter(stuff)
-            curr_counter = tmp_res["counter"]
+            tmp_res = self._generate_performance_counter(operator=curr_op,
+                            mapper=mappers[ii], list_actdicts=curr_actdicts,
+                            list_measdicts=curr_results, print_freq=print_freq,
+                            do_verbose=do_verbose,
+                            do_verbose_deep=do_verbose_deep)
+            curr_counter = tmp_res["counters"]
             curr_misclassifs = tmp_res["misclassifs"]
+            curr_meas_classnames = tmp_res["meas_classnames"]
+            curr_act_classnames = tmp_res["act_classnames"]
+            #
+            #Print some notes
+            if do_verbose:
+                print("Performance counter complete.")
             #
 
             #Store the current results
-            lists_measclassifs[ii] = curr_results #Measured classifications
-            list_counters[ii] = curr_counter #Performance counter
-            list_misclassifs[ii] = curr_misclassifs #Misclassified ids and info
+            #lists_measclassifs[ii] = curr_results #Measured classifications
+            #list_counters[ii] = curr_counter #Performance counter
+            #list_misclassifs[ii] = curr_misclassifs #Misclassified ids and info
+            dict_evaluations[curr_name] = {"counters":curr_counter,
+                                        "misclassifs":curr_misclassifs,
+                                        "actual_results":curr_actdicts,
+                                        "measured_results":curr_results,
+                                        "act_classnames":curr_act_classnames,
+                                        "meas_classnames":curr_meas_classnames}
+            #
 
             ##Save the misclassified cases, if so requested
             if do_save_misclassif:
+                #Print some notes
+                if do_verbose:
+                    print("Saving misclassifications...")
+                #
                 #Build string of misclassification information
                 list_str = [("Internal ID: {0}\nBibcode: {1}\nMission: {2}\n"
                             +"Actual Classification: {3}\n"
@@ -6574,9 +6645,15 @@ class Performance(_Base):
                 if do_verbose:
                     print("\nMisclassifications saved at: {0}".format(tmp_filepath))
             #
+
+            #Print some notes
+            if do_verbose:
+                print("All work complete for Operator #{0}.".format(ii))
+            #
         #
         #Collect the results
-        dict_evaluation={"counters":list_counters,"classifs":lists_measclassifs}
+        #dict_evaluation={"counters":list_counters,"classifs":lists_measclassifs,
+        #                "}
         #
         #Print some notes
         if do_verbose:
@@ -6587,7 +6664,7 @@ class Performance(_Base):
         if do_save_evaluation:
             tmp_filepath = os.path.join(filepath_output,
                                         (fileroot_evaluation+".npy"))
-            np.save(tmp_filepath, dict_evaluation)
+            np.save(tmp_filepath, dict_evaluations)
             #
             #Print some notes
             if do_verbose:
@@ -6598,7 +6675,7 @@ class Performance(_Base):
         if do_verbose:
             print("\nRun of _generate_evaluation() complete!")
         #
-        return dict_evaluation
+        return dict_evaluations
     #
 
     ##Method: _generate_performance_counter
@@ -6632,9 +6709,22 @@ class Performance(_Base):
         #
 
         #Initialize container for counters and misclassifications
-        dict_counters = {act_key:{meas_key:0 for meas_key in meas_classifs
-                        for act_key in mapper}}
+        if (mapper is not None): #Use mask classifications, if given
+            act_classnames = list(mapper.keys())
+            meas_classnames = list(mapper.keys())
+        else: #Otherwise, use internal classifications
+            act_classnames = meas_classifs
+            meas_classnames = meas_classifs
+        #
+        dict_counters = {act_key:{meas_key:0 for meas_key in meas_classnames}
+                        for act_key in act_classnames}
         dict_misclassifs = {}
+        #
+        #Print some notes
+        if do_verbose:
+            print("Accumulating performance over {0} texts.".format(num_texts))
+            print("Actual class names: {0}\nMeasured class names: {1}"
+                    .format(act_classnames, meas_classnames))
         #
 
         #Count up classifications from given texts and classifications
@@ -6642,15 +6732,16 @@ class Performance(_Base):
         for ii in range(0, num_texts):
             curr_actdict = list_actdicts[ii]
             curr_measdict = list_measdicts[ii]
+            #
             #Iterate through classified missions
             for curr_key in curr_measdict:
                 #Extract current actual and measured classifs
                 if (mapper is not None): #Map to masked value if so requested
                     curr_actval = mapper[curr_actdict["class"]]
-                    curr_measval = mapper[curr_measdict["class"]]
+                    curr_measval = mapper[curr_measdict[curr_key]["verdict"]]
                 else:
                     curr_actval = curr_actdict["class"]
-                    curr_measval = curr_measdict["class"]
+                    curr_measval = curr_measdict[curr_key]["verdict"]
                 #
 
                 #Increment current counter
@@ -6677,17 +6768,28 @@ class Performance(_Base):
                             for key_2 in dict_counters[key_1]])
             dict_counters[key_1]["_total"] = curr_sum
         #
+        #Print some notes
+        if do_verbose:
+            print("Performance counter generated:")
+            for key_1 in dict_counters:
+                print("Actual {0} total: {1}"
+                        .format(key_1, dict_counters[key_1]["_total"]))
+                for key_2 in dict_counters[key_1]:
+                    print("Actual {0} vs Measured {1}: {2}"
+                            .format(key_1, key_2, dict_counters[key_1][key_2]))
+        #
 
-        ##Return the counters and misclassifications
+        #Return the counters and misclassifications
         if do_verbose:
             print("\nRun of _generate_performance_counter() complete!")
         #
-        return {"counters":dict_counters, "misclassifs":dict_misclassifs}
+        return {"counters":dict_counters, "misclassifs":dict_misclassifs,
+            "act_classnames":act_classnames, "meas_classnames":meas_classnames}
     #
 
     ##Method: plot_performance_confusion_matrix
     ##Purpose: Plot confusion matrix for given performance counters
-    def plot_performance_confusion_matrix(list_evaluations, list_mappers, list_titles, filepath_plot, filename_plot, figsize=(20, 6), fontsize=16, hspace=15, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd):
+    def plot_performance_confusion_matrix(self, list_evaluations, list_mappers, list_titles, filepath_plot, filename_plot, figsize=(20, 6), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, do_verbose=None, do_verbose_deep=None):
         """
         Method: plot_performance_confusion_matrix
         Purpose:
@@ -6716,13 +6818,14 @@ class Performance(_Base):
 
         ##Prepare the base figure
         fig = plt.figure(figsize=figsize)
+        nrow = 2
+        ncol = num_evals
 
         ##Plot confusion matrix for each evaluation
         for ii in range(0, num_evals):
             #Use current mapper to determine actual vs measured classifs
-            tmp_out = self._fetch_mapper_outputs(mapper=list_mappers[ii])
-            act_classifs = tmp_out["actual"]
-            meas_classifs = tmp_out["measured"]
+            act_classifs = list_evaluations[ii]["act_classnames"]
+            meas_classifs = list_evaluations[ii]["meas_classnames"]
             num_act = len(act_classifs)
             num_meas = len(meas_classifs)
 
@@ -6748,8 +6851,8 @@ class Performance(_Base):
 
             #Plot the current set of confusion matrices
             #For the unnormalized matrix
-            ax = fig.add_subplot(nrow, ncol, ((ii*1)+1))
-            self.ax_confusion_matrix(matr=confmatr_abs, ax=ax,
+            ax = fig.add_subplot(nrow, ncol, (ii+1))
+            self._ax_confusion_matrix(matr=confmatr_abs, ax=ax,
                 x_labels=meas_classifs, y_labels=act_classifs,
                 y_title="Actual", x_title="Classification",
                 cbar_title="Absolute Count",
@@ -6757,8 +6860,8 @@ class Performance(_Base):
                 fontsize=fontsize, is_norm=False)
             #
             #For the normalized matrix
-            ax = fig.add_subplot(nrow, ncol, ((ii*1)+1))
-            self.ax_confusion_matrix(matr=confmatr_norm, ax=ax,
+            ax = fig.add_subplot(nrow, ncol, (ii+ncol+1))
+            self._ax_confusion_matrix(matr=confmatr_norm, ax=ax,
                 x_labels=meas_classifs, y_labels=act_classifs,
                 y_title="Actual", x_title="Classification",
                 cbar_title="Normalized Count",
@@ -6769,7 +6872,8 @@ class Performance(_Base):
 
         #Save and close the figure
         plt.tight_layout()
-        plt.subplots_adjust(hspace=hspace)
+        if (hspace is not None):
+            plt.subplots_adjust(hspace=hspace)
         plt.savefig(os.path.join(filepath_plot, filename_plot))
         plt.close()
 
