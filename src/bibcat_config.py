@@ -6,13 +6,27 @@
 
 ##Import external packages
 import os
+SRC_ROOT = os.path.dirname(__file__)
+PATH_MODELS = os.path.join(SRC_ROOT, "models")
+PATH_RULES = os.path.join(SRC_ROOT, "rules")
+_parent = os.path.dirname(SRC_ROOT)
+PATH_DOCS = os.path.join(_parent, "docs")
+
+print(f"Root directory ={SRC_ROOT}, parent directory={_parent}")
 #
+KW_AMBIG= os.path.join(PATH_RULES, "keywords_ambig.txt")
+PHR_AMBIG = os.path.join(PATH_RULES, "phrases_ambig.txt")
 
 ##Global filepaths
-path_json = "path/to/dataset_combined_all.json"
+# path_json = "path/to/dataset_combined_all.json"
+path_json ="/Users/jyoon/asb/bibliography_automation/bibcat_datasets/dataset_combined_all.json"
+
 #"path/to/file.json" #Path+Filename for .json file containing pre-classified texts. Each entry in the .json file should be a dictionary-style entry, containing the following key:value structure: {"text":<the text as a string>, "class":<the class name as a string>, "id":<None or <an identifier for this item>}
-dir_allmodels = "path/to/overarching/folder/where/you/will/keep/all/of/your/models" #Path to directory for saving or loading a model
-name_model = "name_of_model" #Name of model run to save or load
+
+dir_allmodels = PATH_MODELS #Path to directory for saving or loading a model
+
+#name_model = "dict_model_ML_map_3exact_set8a_skim_exact_minimum_TVTseed10" #Name of model run to save or load
+name_model ="lamb_real_run"
 #
 
 #Classification parameters
@@ -24,8 +38,8 @@ ML_label_model = "categorical"
 ML_activation_dense = "softmax"
 ML_batch_size = 32 #32 #5 #32 #10 #5 #32
 ML_model_key = "small_bert/bert_en_uncased_L-4_H-512_A-8"
-ML_type_optimizer = "adamw"
-ML_name_optimizer = "AdamWeightDecay"
+ML_type_optimizer = "lamb" 
+ML_name_optimizer = "LAMB"
 ML_frac_dropout = 0.2 #0.1 #0.2 instead?
 ML_frac_steps_warmup = 0.1
 ML_num_epochs = 5 ###leave at 5; x-10 #20 #1 #8 #8 #5 #20 #5
