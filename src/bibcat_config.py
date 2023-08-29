@@ -8,14 +8,14 @@
 import os
 SRC_ROOT = os.path.dirname(__file__)
 PATH_MODELS = os.path.join(SRC_ROOT, "models")
-PATH_RULES = os.path.join(SRC_ROOT, "rules")
+PATH_CONFIG = os.path.join(SRC_ROOT, "config")
 _parent = os.path.dirname(SRC_ROOT)
 PATH_DOCS = os.path.join(_parent, "docs")
 
 print(f"Root directory ={SRC_ROOT}, parent directory={_parent}")
 #
-KW_AMBIG= os.path.join(PATH_RULES, "keywords_ambig.txt")
-PHR_AMBIG = os.path.join(PATH_RULES, "phrases_ambig.txt")
+KW_AMBIG= os.path.join(PATH_CONFIG, "keywords_ambig.txt")
+PHR_AMBIG = os.path.join(PATH_CINFIG, "phrases_ambig.txt")
 
 ##Global filepaths
 # path_json = "path/to/dataset_combined_all.json"
