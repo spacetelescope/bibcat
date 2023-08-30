@@ -29,7 +29,7 @@ Save the file outside the bibcat folder on your local computer and you will set 
 - First, set the variables `path_json` (JSON file location path)  and `name_model` (Model name of your choice to save or load) in src/`bibcat_config.py`.
 - Next, run `bibcat_tutorial_trainingML.ipynb` to create a training model.  
 - Then, run `bibcat_tutorial_workflow.ipynb` to see the bibcat workflow overview.
-- Finally, run `bibcat_tutorial_performance.ipynb` to see some output below
-    - loss and accuracy plot: `fig_model_lossandacc.png`
+- Finally, run `bibcat_tutorial_performance.ipynb` to see some output (output/) below.
     - confusion matrix plot: `confmatr.png`
     - mis-classification lists: `test_misclassif_Operator_1.txt` and `test_misclassif_Operator_2.txt`
+    - `test_eval.npy`

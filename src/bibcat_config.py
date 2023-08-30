@@ -7,12 +7,28 @@
 ##Import external packages
 import os
 SRC_ROOT = os.path.dirname(__file__)
+_parent = os.path.dirname(SRC_ROOT)
+print(f"Root directory ={SRC_ROOT}, parent directory={_parent}")
+
 PATH_MODELS = os.path.join(SRC_ROOT, "models")
 PATH_CONFIG = os.path.join(SRC_ROOT, "config")
-_parent = os.path.dirname(SRC_ROOT)
 PATH_DOCS = os.path.join(_parent, "docs")
+PATH_OUTPUT = os.path.join(_parent,"output")
 
-print(f"Root directory ={SRC_ROOT}, parent directory={_parent}")
+if not os.path.isdir(PATH_MODELS):
+    os.makedirs(PATH_MODELS)
+    print("created folder : ", PATH_MODELS)
+else:
+    print(PATH_MODELS, "folder already exists.")    
+
+if not os.path.isdir(PATH_OUTPUT):
+    os.makedirs(PATH_OUTPUT)
+    print("created folder : ", PATH_OUTPUT)
+else:
+    print(PATH_OUTPUT, "folder already exists.")    
+
+
+
 #
 KW_AMBIG= os.path.join(PATH_CONFIG, "keywords_ambig.txt")
 PHR_AMBIG = os.path.join(PATH_CONFIG, "phrases_ambig.txt")
