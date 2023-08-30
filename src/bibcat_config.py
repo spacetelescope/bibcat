@@ -15,18 +15,18 @@ PATH_DOCS = os.path.join(_parent, "docs")
 print(f"Root directory ={SRC_ROOT}, parent directory={_parent}")
 #
 KW_AMBIG= os.path.join(PATH_CONFIG, "keywords_ambig.txt")
-PHR_AMBIG = os.path.join(PATH_CINFIG, "phrases_ambig.txt")
+PHR_AMBIG = os.path.join(PATH_CONFIG, "phrases_ambig.txt")
 
 ##Global filepaths
-# path_json = "path/to/dataset_combined_all.json"
-path_json ="/Users/jyoon/asb/bibliography_automation/bibcat_datasets/dataset_combined_all.json"
+path_json = "path/to/dataset_combined_all.json" # set the path to the location of the JSON file you downloaded from Box
+#path_json ="/Users/jyoon/asb/bibliography_automation/bibcat_datasets/dataset_combined_all.json"
 
 #"path/to/file.json" #Path+Filename for .json file containing pre-classified texts. Each entry in the .json file should be a dictionary-style entry, containing the following key:value structure: {"text":<the text as a string>, "class":<the class name as a string>, "id":<None or <an identifier for this item>}
 
 dir_allmodels = PATH_MODELS #Path to directory for saving or loading a model
 
-#name_model = "dict_model_ML_map_3exact_set8a_skim_exact_minimum_TVTseed10" #Name of model run to save or load
-name_model ="lamb_real_run"
+name_model = "your_choice_of_model_name" #Name of model run to save or load
+#name_model ="lamb_real_run"
 #
 
 #Classification parameters
