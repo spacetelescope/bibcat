@@ -8,25 +8,16 @@
 import os
 import nltk
 from nltk.corpus import wordnet
+import bibcat_config as config
 #
-
-
-
 
 tfoutput_prefix = "tfoutput_"
 folders_TVT = {"train":"dir_train", "validate":"dir_validate", "test":"dir_test"}
 classifs_rules = ["SCIENCE", "MENTION", "DATA_INFLUENCED"]
-
-
-
-#-----
-
 ##For file paths and locations
-filepath_datasets_global = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/BibTracking/Datasets")
-filepath_keywords_ambig = os.path.join(filepath_datasets_global, "keywords_ambig.txt")
-filepath_phrases_ambig = os.path.join(filepath_datasets_global, "phrases_ambig.txt")
-#
 
+filepath_keywords_ambig = config.KW_AMBIG
+filepath_phrases_ambig = config.PHR_AMBIG
 
 ##Text processing and regular expressions
 #Placeholders for replacing various substrings in text
