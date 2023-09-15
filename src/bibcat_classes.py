@@ -6430,9 +6430,9 @@ class Performance(_Base):
         return
     #
 
-    ##Method: evaluate_performance
+    ##Method: evaluate_performance_basic
     ##Purpose: Evaluate the basic performance of the internal classifier on a test set of data
-    def evaluate_performance_basic(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filename_plot="confmatr.png", fileroot_evaluation=None, fileroot_misclassif=None, figsize=(20, 20), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def evaluate_performance_basic(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filename_plot="confmatr_basic.png", fileroot_evaluation=None, fileroot_misclassif=None, figsize=(20, 20), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: evaluate_performance_basic
         Purpose:
@@ -6503,9 +6503,88 @@ class Performance(_Base):
         return
     #
 
+    ##Method: evaluate_performance_uncertainty
+    ##Purpose: Evaluate the performance of the internal classifier on a test set of data as a function of uncertainty
+    def evaluate_performance_uncertainty(self, operators, dicts_texts, mappers, threshold_arrays, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filename_plot="confmatr_uncertainty.png", fileroot_evaluation=None, fileroot_misclassif=None, figsize=(20, 20), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
+        """
+        Method: evaluate_performance_uncertainty
+        Purpose:
+          - Evaluate the performance of the internally stored classifier on a test set of data as a function of uncertainty.
+        Arguments:
+          - !
+          - do_verbose [bool (default=False)]:
+            - Whether or not to print surface-level log information and tests.
+          - do_verbose_deep [bool (default=False)]:
+            - Whether or not to print inner log information and tests.
+        Returns:
+          - dict:
+            - !
+        """
+        #Fetch global variables
+        num_ops = len(operators)
+        if (do_verbose is None):
+            do_verbose = self._get_info("do_verbose")
+        if (do_verbose_deep is None):
+            do_verbose_deep = self._get_info("do_verbose_deep")
+        #
+        #Print some notes
+        if do_verbose:
+            print("\n> Running evaluate_performance_uncertainty()!")
+            print("Generating evaluations for operators and uncertainties...")
+        #
+
+        #Evaluate classifier for each operator at each uncertainty level
+        for ii in range(0, num_ops):
+            curr_array = threshold_arrays[ii] #Current uncertainties
+            num_points = len(curr_array) #Number of uncertainties
+            #
+            !
+            dict_evaluations = self._generate_evaluation(operators=operators,
+                        dicts_texts=dicts_texts, mappers=mappers,
+                        buffers=buffers, is_text_processed=is_text_processed,
+                        do_verify_truematch=do_verify_truematch,
+                        do_raise_innererror=do_raise_innererror,
+                        do_save_evaluation=do_save_evaluation,
+                        do_save_misclassif=do_save_misclassif,
+                        filepath_output=filepath_output,
+                        fileroot_evaluation=fileroot_evaluation,
+                        fileroot_misclassif=fileroot_misclassif,
+                        print_freq=print_freq, thresholds=thresholds,
+                        do_verbose=do_verbose, do_verbose_deep=do_verbose_deep)
+        #
+        #Print some notes
+        if do_verbose:
+            print("\nEvaluations generated.")
+            print("Plotting confusion matrices...")
+        #
+
+        #Plot grid of confusion matrices for classifier performance
+        titles = [item._get_info("name") for item in operators]
+        list_evaluations = [dict_evaluations[item] for item in titles]
+        self.plot_performance_confusion_matrix(
+                        list_evaluations=list_evaluations,
+                        list_mappers=mappers, list_titles=titles,
+                        filepath_plot=filepath_output,
+                        filename_plot=filename_plot,
+                        figsize=figsize, fontsize=fontsize, hspace=hspace,
+                        cmap_abs=cmap_abs, cmap_norm=cmap_norm)
+        #
+        #Print some notes
+        if do_verbose:
+            print("Confusion matrices have been plotted at:\n{0}"
+                    .format(filepath_output))
+        #
+
+        #Exit the method
+        if do_verbose:
+            print("\nRun of evaluate_performance_basic() complete!")
+        #
+        return
+    #
+
     ##Method: _generate_evaluation
     ##Purpose: Generate performance evaluation of full classification pipeline (text to rejection/verdict)
-    def _generate_evaluation(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filepath_output=None, fileroot_evaluation=None, fileroot_misclassif=None, print_freq=25, do_verbose=False, do_verbose_deep=False):
+    def _generate_evaluation(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, do_raise_innererror, array_thresholds=None, do_save_evaluation=False, do_save_misclassif=False, filepath_output=None, fileroot_evaluation=None, fileroot_misclassif=None, print_freq=25, do_verbose=False, do_verbose_deep=False):
         """
         Method: _generate_evaluation
         Purpose:
@@ -6589,15 +6668,34 @@ class Performance(_Base):
             #
 
             #Measure performance of current operator against actual answers
-            tmp_res = self._generate_performance_counter(operator=curr_op,
+            #For standard evaluation
+            if (array_thresholds is None): #Store per uncertainty, if given
+                tmp_res = self._generate_performance_counter(operator=curr_op,
                             mapper=mappers[ii], list_actdicts=curr_actdicts,
                             list_measdicts=curr_results, print_freq=print_freq,
                             do_verbose=do_verbose,
                             do_verbose_deep=do_verbose_deep)
-            curr_counter = tmp_res["counters"]
-            curr_misclassifs = tmp_res["misclassifs"]
-            curr_meas_classnames = tmp_res["meas_classnames"]
-            curr_act_classnames = tmp_res["act_classnames"]
+                curr_counter = tmp_res["counters"]
+                curr_misclassifs = tmp_res["misclassifs"]
+                curr_meas_classnames = tmp_res["meas_classnames"]
+                curr_act_classnames = tmp_res["act_classnames"]
+            #
+            #For evaluations against multiple uncertainty values
+            else:
+                tmp_res = [self._generate_performance_counter(operator=curr_op,
+                            mapper=mappers[ii], list_actdicts=curr_actdicts,
+                            list_measdicts=curr_results, print_freq=print_freq,
+                            do_verbose=do_verbose,
+                            threshold=array_thresholds[ii][jj],
+                            do_verbose_deep=do_verbose_deep)
+                            for jj in range(0, len(array_thresholds[ii]))
+                            ]
+                curr_counter = [item["counters"] for item in tmp_res]
+                curr_misclassifs = [item["misclassifs"] for item in tmp_res]
+                curr_meas_classnames = [item["meas_classnames"]
+                                        for item in tmp_res]
+                curr_act_classnames = [item["act_classnames"]
+                                        for item in tmp_res]
             #
             #Print some notes
             if do_verbose:
@@ -6617,7 +6715,7 @@ class Performance(_Base):
             #
 
             ##Save the misclassified cases, if so requested
-            if do_save_misclassif:
+            if (do_save_misclassif and (array_thresholds is None)):
                 #Print some notes
                 if do_verbose:
                     print("Saving misclassifications...")
@@ -6681,7 +6779,7 @@ class Performance(_Base):
 
     ##Method: _generate_performance_counter
     ##Purpose: Generate performance counter for set of measured classifications vs actual classifications
-    def _generate_performance_counter(self, operator, mapper, list_actdicts, list_measdicts, print_freq=25, do_verbose=False, do_verbose_deep=False):
+    def _generate_performance_counter(self, operator, mapper, list_actdicts, list_measdicts, threshold=None, print_freq=25, do_verbose=False, do_verbose_deep=False):
         """
         Method: _generate_performance_counter
         Purpose:
@@ -6749,6 +6847,23 @@ class Performance(_Base):
                 #lookup = operator._fetch_keyword_object(lookup=curr_key
                 #                                        )._get_info("name")
                 lookup = curr_key
+                #
+                #Extract actual classif
+                curr_actval = curr_actdict["missions"][lookup]["class"]
+                if (mapper is not None): #Map to masked value if so requested
+                    curr_actval = mapper[curr_actval]
+                #
+                #Extract measured classif, or remeasure if threshold given
+                curr_measval = curr_measdict[lookup]["verdict"]
+                if (threshold is not None): #Remeasure if new threshold given
+                    tmp_pass = curr_measdict[lookup]["uncertainties"][curr_measval]
+                    if (tmp_pass < threshold):
+                        curr_measval = preset.dictverdict_lowprob.copy()["verdict"]
+                #Map to new masking value, if mapper given
+                if (mapper is not None):
+                    curr_measval = mapper[curr_measval]
+                #
+
                 #Extract current actual and measured classifs
                 if (mapper is not None): #Map to masked value if so requested
                     curr_actval = mapper[curr_actdict["missions"][
