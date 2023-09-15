@@ -6432,7 +6432,7 @@ class Performance(_Base):
 
     ##Method: evaluate_performance_basic
     ##Purpose: Evaluate the basic performance of the internal classifier on a test set of data
-    def evaluate_performance_basic(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filename_plot="confmatr_basic.png", fileroot_evaluation=None, fileroot_misclassif=None, figsize=(20, 20), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def evaluate_performance_basic(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filename_plot="performance_confmatr_basic.png", fileroot_evaluation=None, fileroot_misclassif=None, figsize=(20, 20), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: evaluate_performance_basic
         Purpose:
@@ -6505,7 +6505,7 @@ class Performance(_Base):
 
     ##Method: evaluate_performance_uncertainty
     ##Purpose: Evaluate the performance of the internal classifier on a test set of data as a function of uncertainty
-    def evaluate_performance_uncertainty(self, operators, dicts_texts, mappers, threshold_arrays, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filename_plot="confmatr_uncertainty.png", fileroot_evaluation=None, fileroot_misclassif=None, figsize=(20, 20), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def evaluate_performance_uncertainty(self, operators, dicts_texts, mappers, threshold_arrays, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filename_plot="performance_grid_uncertainty.png", fileroot_evaluation=None, fileroot_misclassif=None, figsize=(20, 20), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: evaluate_performance_uncertainty
         Purpose:
@@ -6534,12 +6534,7 @@ class Performance(_Base):
         #
 
         #Evaluate classifier for each operator at each uncertainty level
-        for ii in range(0, num_ops):
-            curr_array = threshold_arrays[ii] #Current uncertainties
-            num_points = len(curr_array) #Number of uncertainties
-            #
-            !
-            dict_evaluations = self._generate_evaluation(operators=operators,
+        dict_evaluations = self._generate_evaluation(operators=operators,
                         dicts_texts=dicts_texts, mappers=mappers,
                         buffers=buffers, is_text_processed=is_text_processed,
                         do_verify_truematch=do_verify_truematch,
@@ -6549,35 +6544,77 @@ class Performance(_Base):
                         filepath_output=filepath_output,
                         fileroot_evaluation=fileroot_evaluation,
                         fileroot_misclassif=fileroot_misclassif,
-                        print_freq=print_freq, thresholds=thresholds,
+                        print_freq=print_freq,
+                        thresholds=thresholds=[0,0], #Placeholder
+                        array_thresholds=threshold_arrays, #Actual uncertainties
                         do_verbose=do_verbose, do_verbose_deep=do_verbose_deep)
         #
         #Print some notes
         if do_verbose:
             print("\nEvaluations generated.")
-            print("Plotting confusion matrices...")
+            print("Plotting performance as a function of uncertainty level...")
         #
 
-        #Plot grid of confusion matrices for classifier performance
+        ##Plot grid of classifier performance as function of uncertainty
         titles = [item._get_info("name") for item in operators]
         list_evaluations = [dict_evaluations[item] for item in titles]
-        self.plot_performance_confusion_matrix(
-                        list_evaluations=list_evaluations,
-                        list_mappers=mappers, list_titles=titles,
-                        filepath_plot=filepath_output,
-                        filename_plot=filename_plot,
-                        figsize=figsize, fontsize=fontsize, hspace=hspace,
-                        cmap_abs=cmap_abs, cmap_norm=cmap_norm)
+        #Prepare base figure
+        fig = plt.figure(figsize=figsize)
+        nrow = num_ops
+        ncol = max([len([item["act_classnames"] for item in list_evaluations])])
+        #
+        #Iterate through operators (one row per operator)
+        for ii in range(0, num_ops):
+            curr_xs = threshold_arrays[ii]
+            curr_eval = list_evaluations[ii]
+            curr_counters = curr_eval["counters"]
+            curr_actlabels = curr_eval["act_classnames"]
+            curr_measlabels = curr_eval["meas_classnames"]
+            #Iterate through current actual classifs
+            for jj in range(0, len(curr_actlabels)):
+                curr_act = curr_actlabels[jj]
+                #Prepare subplot
+                ax0 = fig.add_subplot(nrow, ncol, ((ii*ncol)+jj+1))
+                #Iterate through measured classifs
+                for kk in range(0, len(curr_measlabels)):
+                    curr_meas = curr_measlabels[kk]
+                    curr_ys = [curr_counters[zz][curr_act][curr_meas]
+                                for zz in range(0, len(curr_xs))
+                                ] #Current count of act. vs. meas. classifs
+                    #Plot results as function of uncertainty
+                    ax0.plot(curr_xs, curr_ys, alpha=alphas[kk],
+                            color=colors[kk], linewidth=linewidths[kk],
+                            linestyle=linestyles[kk], marker=markers[kk])
+                    #Highlight correct answers
+                    if (curr_act = curr_meas):
+                        ax0.plot(curr_xs, curr_ys, alpha=alpha_match,
+                                color=color_match, linewidth=linewidth_match,
+                                linestyle=linestyle_match, marker=marker_match)
+                #
+                #Label the subplot
+                ax0.set_xlabel("Uncertainty Threshold")
+                ax0.set_ylabel("Classification for\n{0} Texts".format(curr_act))
+                ax0.set_title("Count of Classifications")
+                #
+                #Add legend, if last subplot in row
+                if (jj == (len(curr_actlabels)-1)):
+                    ax0.legend(loc="best", frameon=False)
+            #
+        #
+        #Save and close the figure
+        fig.suptitle("Performance vs. Uncertainty")
+        plt.savefig(os.path.join(filepath_output, filename_plot))
+        plt.close()
         #
         #Print some notes
         if do_verbose:
-            print("Confusion matrices have been plotted at:\n{0}"
+            print("Results have been plotted at:\n{0}"
                     .format(filepath_output))
         #
 
         #Exit the method
         if do_verbose:
-            print("\nRun of evaluate_performance_basic() complete!")
+            print("\nRun of evaluate_performance_uncertainty() complete!")
         #
         return
     #
@@ -6692,10 +6729,8 @@ class Performance(_Base):
                             ]
                 curr_counter = [item["counters"] for item in tmp_res]
                 curr_misclassifs = [item["misclassifs"] for item in tmp_res]
-                curr_meas_classnames = [item["meas_classnames"]
-                                        for item in tmp_res]
-                curr_act_classnames = [item["act_classnames"]
-                                        for item in tmp_res]
+                curr_meas_classnames = tmp_res[0]["meas_classnames"]
+                curr_act_classnames = tmp_res[0]["act_classnames"]
             #
             #Print some notes
             if do_verbose:
@@ -6848,31 +6883,27 @@ class Performance(_Base):
                 #                                        )._get_info("name")
                 lookup = curr_key
                 #
+
                 #Extract actual classif
                 curr_actval = curr_actdict["missions"][lookup]["class"]
                 if (mapper is not None): #Map to masked value if so requested
                     curr_actval = mapper[curr_actval]
                 #
+
                 #Extract measured classif, or remeasure if threshold given
                 curr_measval = curr_measdict[lookup]["verdict"]
                 if (threshold is not None): #Remeasure if new threshold given
-                    tmp_pass = curr_measdict[lookup]["uncertainties"][curr_measval]
+                    tmp_pass = curr_measdict[lookup]["uncertainties"
+                                                                ][curr_measval]
                     if (tmp_pass < threshold):
-                        curr_measval = preset.dictverdict_lowprob.copy()["verdict"]
+                        curr_measval = preset.dictverdict_lowprob.copy(
+                                                                    )["verdict"]
+                #
                 #Map to new masking value, if mapper given
                 if (mapper is not None):
                     curr_measval = mapper[curr_measval]
                 #
 
-                #Extract current actual and measured classifs
-                if (mapper is not None): #Map to masked value if so requested
-                    curr_actval = mapper[curr_actdict["missions"][
-                                                            lookup]["class"]]
-                    curr_measval = mapper[curr_measdict[lookup]["verdict"]]
-                else:
-                    curr_actval = curr_actdict["missions"][lookup]["class"]
-                    curr_measval = curr_measdict[lookup]["verdict"]
-                #
                 #Streamline the class names
                 curr_actval = curr_actval.lower().replace("_","")
                 curr_measval = curr_measval.lower().replace("_","")
