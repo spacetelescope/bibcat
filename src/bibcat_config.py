@@ -10,16 +10,10 @@ SRC_ROOT = os.path.dirname(__file__)
 _parent = os.path.dirname(SRC_ROOT)
 print(f"Root directory ={SRC_ROOT}, parent directory={_parent}")
 
-#PATH_MODELS = os.path.join(SRC_ROOT, "models")
+PATH_MODELS = os.path.join(SRC_ROOT, "models")
 PATH_CONFIG = os.path.join(SRC_ROOT, "config")
 PATH_DOCS = os.path.join(_parent, "docs")
-#PATH_OUTPUT = os.path.join(_parent,"output")
-
-#J.P.-specific section
-filebase_output = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/BibTracking/scratchwork")
-PATH_MODELS = os.path.join(filebase_output, "models")
-PATH_OUTPUT = os.path.join(filebase_output,"output")
-#
+PATH_OUTPUT = os.path.join(_parent,"output")
 
 if not os.path.isdir(PATH_MODELS):
     os.makedirs(PATH_MODELS)
@@ -40,15 +34,14 @@ KW_AMBIG= os.path.join(PATH_CONFIG, "keywords_ambig.txt")
 PHR_AMBIG = os.path.join(PATH_CONFIG, "phrases_ambig.txt")
 
 ##Global filepaths
-path_json = os.path.join(filebase_output, "dataset_combined_all.json") # set the path to the location of the JSON file you downloaded from Box
-#path_json = "path/to/dataset_combined_all.json" # set the path to the location of the JSON file you downloaded from Box
+path_json = "path/to/dataset_combined_all.json" # set the path to the location of the JSON file you downloaded from Box
 #path_json ="/Users/jyoon/asb/bibliography_automation/bibcat_datasets/dataset_combined_all.json"
 
 #"path/to/file.json" #Path+Filename for .json file containing pre-classified texts. Each entry in the .json file should be a dictionary-style entry, containing the following key:value structure: {"text":<the text as a string>, "class":<the class name as a string>, "id":<None or <an identifier for this item>}
 
 dir_allmodels = PATH_MODELS #Path to directory for saving or loading a model
 
-name_model = "test_run" #Name of model run to save or load
+name_model = "your_choice_of_model_name" #Name of model run to save or load
 #name_model ="lamb_real_run"
 #
 
