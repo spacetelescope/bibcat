@@ -19,13 +19,13 @@ if not os.path.isdir(PATH_MODELS):
     os.makedirs(PATH_MODELS)
     print("created folder : ", PATH_MODELS)
 else:
-    print(PATH_MODELS, "folder already exists.")    
+    print(PATH_MODELS, "folder already exists.")
 
 if not os.path.isdir(PATH_OUTPUT):
     os.makedirs(PATH_OUTPUT)
     print("created folder : ", PATH_OUTPUT)
 else:
-    print(PATH_OUTPUT, "folder already exists.")    
+    print(PATH_OUTPUT, "folder already exists.")
 
 
 
