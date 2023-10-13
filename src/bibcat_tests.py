@@ -16,14 +16,30 @@ import nltk
 from nltk.corpus import wordnet
 import bibcat_classes as bibcat
 import bibcat_constants as preset
+import bibcat_config as config
 #
 #-------------------------------------------------------------------------------
 ###Set global test variables
 ##File paths and locations
-filepath_base_global = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/BibTracking")
-filepath_models_global = os.path.join(filepath_base_global, "models")
-filepath_model = os.path.join(filepath_models_global, "dict_model_ML_map_3exact_set8a_skim_exact_minimum_TVTseed10_metrics.npy")
-fileloc_ML = os.path.join(filepath_models_global, "dict_model_ML_map_3exact_set8a_skim_exact_minimum_TVTseed10")
+#filepath_base_global = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/BibTracking")
+#filepath_models_global = os.path.join(filepath_base_global, "models")
+#filepath_model = os.path.join(filepath_models_global, "dict_model_ML_map_3exact_set8a_skim_exact_minimum_TVTseed10_metrics.npy")
+#fileloc_ML = os.path.join(filepath_models_global, "dict_model_ML_map_3exact_set8a_skim_exact_minimum_TVTseed10")
+#
+#Fetch filepaths for model and data
+name_model = config.name_model
+filepath_json = config.path_json
+output_path = config.PATH_OUTPUT
+dir_model = os.path.join(config.dir_allmodels, name_model)
+filepath_model = os.path.join(dir_model, (name_model+".npy"))
+fileloc_ML = os.path.join(dir_model, (preset.tfoutput_prefix+name_model))
+#
+#Set directories for storing performance output
+filepath_output = output_path #Where to store the performance output, such as the confusion matrices
+#
+#Set directories for fetching text
+dir_info = dir_model
+dir_test = os.path.join(dir_model, "dir_test")
 #
 
 ##Mission terms
@@ -63,10 +79,10 @@ converted_classifs = np.unique([map_papertypes[key] for key in allowed_classifs]
 
 ##Classifiers
 #ML classifier
-classifier_ML_forpipeline = bibcat.Classifier_ML(filepath_model=filepath_model, fileloc_ML=fileloc_ML, class_names=converted_classifs)
+#classifier_ML_forpipeline = bibcat.Classifier_ML(filepath_model=filepath_model, fileloc_ML=fileloc_ML, class_names=converted_classifs)
 #
 #Rule-based classifier
-classifier_rules_forpipeline = bibcat.Classifier_Rules()
+#classifier_rules_forpipeline = bibcat.Classifier_Rules()
 #
 #-------------------------------------------------------------------------------
 
