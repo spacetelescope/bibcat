@@ -1742,7 +1742,8 @@ class TestGrammar(unittest.TestCase):
 
                 #Prepare and run test for bibcat class instance
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
-                                        do_check_truematch=True)
+                                        do_check_truematch=True,
+                                        do_verbose=True)
                 testbase.run_modifications(which_modes=None)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:
