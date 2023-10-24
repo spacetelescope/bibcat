@@ -3187,7 +3187,7 @@ class _Classifier(_Base):
             dict_bibcode_textids[curr_bibcode].append(curr_key)
             #Store this classif for this bibcode, if not already stored
             if (curr_classif not in dict_bibcode_classifs[curr_bibcode]):
-                dict_bibcode_classifs.append(curr_classif) #Store classif
+                dict_bibcode_classifs[curr_bibcode].append(curr_classif) #Store
             #
         #
         #Print some notes
@@ -3204,8 +3204,16 @@ class _Classifier(_Base):
         all_bibcodes_multiclassif = [key for key in unique_bibcodes
                                     if (len(dict_bibcode_classifs[key]) > 1)]
         #
+        #Print some notes
+        if do_verbose:
+            print(("\nNumber of bibcodes with single unique classif: {0}"
+                    +"\nNumber of bibcodes with multiple classifs: {1}")
+                    .format(sum([len(all_bibcodes_oneclassif[key])
+                                        for key in unique_classes]),
+                            len(all_bibcodes_multiclassif)))
+        #
         #Throw an error if separated bibcode count does not equal original count
-        tmp_check = sum(len([all_bibcodes_oneclassif[key]
+        tmp_check = (sum([len(all_bibcodes_oneclassif[key])
                             for key in unique_classes])
                         + len(all_bibcodes_multiclassif))
         if (tmp_check != len(unique_bibcodes)):
@@ -3214,7 +3222,7 @@ class _Classifier(_Base):
                             .format(len([all_bibcodes_oneclassif[key]
                                             for key in unique_classes]),
                                     len(all_bibcodes_multiclassif),
-                                    len(unique_bibcodes))
+                                    len(unique_bibcodes)))
         #
         #Shuffle the list of multi-classif bibcodes, if requested
         if do_shuffle:
@@ -3291,7 +3299,7 @@ class _Classifier(_Base):
         if do_verbose:
             print("Fractions given for TVT split: {0}\nMode requested: {1}"
                     .format(fraction_TVT, mode_TVT))
-            print("TVT partition per class:")
+            print("Target TVT partition for bibcodes:")
             for curr_key in unique_classes:
                 print("{0}: {1}".format(curr_key, dict_split[curr_key]))
         #
@@ -3354,6 +3362,9 @@ class _Classifier(_Base):
 
         ##Save texts to .txt files within class directories
         dict_info = {}
+        all_texts_partitioned_counts = {key1:{key2:0 for key2 in unique_classes}
+                                        for key1 in name_folderTVT
+                                        } #Count of texts per TVT, per classif
         #Iterate through classes
         for curr_key in unique_classes:
             #Save each text to assigned TVT
@@ -3368,7 +3379,7 @@ class _Classifier(_Base):
                                         "folder_TVT":name_folderTVT[ind_TVT]}
                     #
                     #Iterate through texts associated with this bibcode
-                    for curr_textid in dict_bibcodes_textids[curr_bibcode]:
+                    for curr_textid in dict_bibcode_textids[curr_bibcode]:
                         curr_data = dataset[curr_textid] #Data for this text
                         curr_filename = "{0}_{1}_{2}".format("text", curr_key,
                                                             curr_textid)
@@ -3384,12 +3395,19 @@ class _Classifier(_Base):
                         self._write_text(text=curr_data["text"],
                                         filepath=os.path.join(curr_filebase,
                                                         (curr_filename+".txt")))
+                        #
+                        #Increment count of texts in this classif. and TVT dir.
+                        all_texts_partitioned_counts[name_folderTVT[ind_TVT]][
+                                                    curr_key] += 1
+                    #
                 #
             #
         #
         #Print some notes
         if do_verbose:
             print("Files saved to new TVT directories.")
+            print("Final partition of texts across classes and TVT dirs.:\n{0}"
+                    .format(all_texts_partitioned_counts))
         #
 
         ##Save the dictionary of TVT bibcode partitioning to its own file
@@ -6500,7 +6518,7 @@ class Operator(_Base):
 
     ##Method: train_model_ML
     ##Purpose: Process text into modifs and then train ML model on the modifs
-    def train_model_ML(self, dir_model, name_model, do_reuse_run, seed_TVT=10, seed_ML=8, filename_json=None, dict_texts=None, buffer=0, fraction_TVT=[0.8, 0.1, 0.1], mode_TVT="uniform", do_shuffle=True, print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def train_model_ML(self, dir_model, name_model, do_reuse_run, dict_texts, seed_TVT=10, seed_ML=8, buffer=0, fraction_TVT=[0.8, 0.1, 0.1], mode_TVT="uniform", do_shuffle=True, print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: train_model_ML
         Purpose:
@@ -6531,6 +6549,7 @@ class Operator(_Base):
         if (do_verbose_deep is None):
             do_verbose_deep = self._get_info("do_verbose_deep")
         #
+        dataset = dict_texts
         classifier = self._get_info("classifier")
         folders_TVT = preset.folders_TVT
         savename_ML = (preset.tfoutput_prefix + name_model)
@@ -6575,27 +6594,6 @@ class Operator(_Base):
         else:
             #Print some notes
             if do_verbose:
-                print("Loading data from given .json file or dict. of texts...")
-            #
-            #Load in data based on file format
-            #For data from .json file
-            if (filename_json is not None):
-                with openfile(filename_json, 'r') as openfile:
-                    dataset = json.load(openfile)
-            #
-            #For data from dictionary
-            elif (dict_texts is not None):
-                dataset = dict_texts
-            #
-            #Otherwise, throw error
-            else:
-                raise ValueError("Err: Please pass in either a .json file to"
-                                +" filename_json or a dictionary of"
-                                +" pre-classified texts to dict_texts.")
-            #
-            #Print some notes
-            if do_verbose:
-                print("Text data has been loaded.")
                 print("Processing text data into modifs...")
             #
 
@@ -6631,16 +6629,16 @@ class Operator(_Base):
             #
             #Print some notes
             if do_verbose:
-                print("Text data has been processed into modifs.")
+                print("{0} texts have been processed into modifs."
+                        .format(i_track))
                 print("Storing the data in train+validate+test directories...")
             #
 
             #Store the modifs in new TVT directories
             classifier.generate_directory_TVT(dir_model=dir_model,
                             fraction_TVT=fraction_TVT, mode_TVT=mode_TVT,
-                            filename_json=None, dict_texts=dict_modifs,
-                            do_shuffle=do_shuffle, seed=seed_TVT,
-                            do_verbose=do_verbose)
+                            dict_texts=dict_modifs, do_shuffle=do_shuffle,
+                            seed=seed_TVT, do_verbose=do_verbose)
             #Print some notes
             if do_verbose:
                 print("Train+validate+test directories created in {0}."
