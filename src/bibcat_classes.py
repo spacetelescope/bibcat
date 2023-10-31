@@ -7149,13 +7149,14 @@ class Performance(_Base):
 
         #Initialize container for counters and misclassifications
         if (mapper is not None): #Use mask classifications, if given
-            act_classnames = list(mapper.keys())
+            act_classnames_raw = list(mapper.keys())
             meas_classnames_raw = list(mapper.keys())
         else: #Otherwise, use internal classifications
-            act_classnames = meas_classifs
+            act_classnames_raw = meas_classifs
             meas_classnames_raw = meas_classifs
         #
         #Extend measured allowed class names to include low-uncertainty, etc.
+        act_classnames = (act_classnames_raw + [preset.verdict_rejection])
         meas_classnames = (meas_classnames_raw + preset.list_other_verdicts)
         #
         #Streamline the class names
@@ -7192,7 +7193,7 @@ class Performance(_Base):
                 #Extract actual classif
                 curr_actval = curr_actdict["missions"][lookup]["class"]
                 if (mapper is not None): #Map to masked value if so requested
-                    curr_actval = mapper[curr_actval]
+                    curr_actval = mapper[curr_actval.lower()]
                 #
 
                 #Extract measured classif, or remeasure if threshold given
@@ -7201,6 +7202,10 @@ class Performance(_Base):
                 if ((threshold is not None)
                                 and (curr_measval.lower().replace("_","")
                                         in act_classnames)):
+                    print(curr_measdict[lookup])
+                    print(act_classnames)
+                    print(meas_classnames)
+                    print("")
                     tmp_pass =curr_measdict[lookup]["uncertainty"][curr_measval]
                     if (tmp_pass < threshold):
                         curr_measval = preset.dictverdict_lowprob.copy(
@@ -7208,7 +7213,7 @@ class Performance(_Base):
                 #
                 #Map to new masking value, if mapper given
                 if (mapper is not None):
-                    curr_measval = mapper[curr_measval]
+                    curr_measval = mapper[curr_measval.lower()]
                 #
 
                 #Streamline the class names
