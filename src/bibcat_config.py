@@ -30,7 +30,7 @@ else:
 
 
 #
-KW_AMBIG= os.path.join(PATH_CONFIG, "keywords_ambig.txt")
+KW_AMBIG = os.path.join(PATH_CONFIG, "keywords_ambig.txt")
 PHR_AMBIG = os.path.join(PATH_CONFIG, "phrases_ambig.txt")
 
 ##Global filepaths
