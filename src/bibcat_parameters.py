@@ -35,7 +35,7 @@ all_kobjs = [keyword_obj_HST, keyword_obj_JWST, keyword_obj_TESS, keyword_obj_Ke
 #
 
 #Class parameters
-map_papertypes = {"science":"science", "mention":"mention", "supermention":"mention", "data_influenced":"data_influenced", "unresolved_gray":None, "engineering":None, "instrument":None}
-for curr_class in preset.list_other_verdicts:
-    map_papertypes[curr_class] = curr_class
+map_papertypes = {"science":"science", "mention":"mention", "supermention":"mention", "data_influenced":"data_influenced", "unresolved_gray":"other", "engineering":"other", "instrument":"other"}
+#for curr_class in preset.list_other_verdicts:
+#    map_papertypes[curr_class] = curr_class
 #

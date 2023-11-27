@@ -273,9 +273,9 @@ class _Base():
             vmin = 0 #None
             #Ignore nonmatch verdict to avoid spikes in color scaling if present
             tmpmatr = matr.copy()
-            if (preset.verdict_rejection.upper() in x_labels):
+            if (preset.verdict_rejection.lower() in x_labels):
                 tmpmatr[:,x_labels.index(preset.verdict_rejection.upper())] = -1
-            if (preset.verdict_rejection.upper() in y_labels):
+            if (preset.verdict_rejection.lower() in y_labels):
                 tmpmatr[y_labels.index(preset.verdict_rejection.upper()),:] = -1
             vmax = tmpmatr.max() #None
         #
@@ -6803,7 +6803,7 @@ class Performance(_Base):
 
     ##Method: evaluate_performance_uncertainty
     ##Purpose: Evaluate the performance of the internal classifier on a test set of data as a function of uncertainty
-    def evaluate_performance_uncertainty(self, operators, dicts_texts, mappers, threshold_arrays, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filename_plot="performance_grid_uncertainty.png", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), fontsize=16, ticksize=14, tickwidth=3, tickheight=5, colors=["tomato", "dodgerblue", "purple", "dimgray", "silver", "darkgoldenrod"], alphas=([0.75]*10), linestyles=["-", "-", "-", "--", "--", "--"], linewidths=([3]*10), markers=(["o"]*10), alpha_match=0.5, color_match="black", linestyle_match="-", linewidth_match=8, marker_match="*", print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def evaluate_performance_uncertainty(self, operators, dicts_texts, mappers, threshold_arrays, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filename_plot="performance_grid_uncertainty.png", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), fontsize=16, ticksize=14, tickwidth=3, tickheight=5, colors=["tomato", "dodgerblue", "purple", "dimgray", "silver", "darkgoldenrod", "darkgreen", "green", "cyan"], alphas=([0.75]*10), linestyles=["-", "-", "-", "--", "--", "--", ":", ":", ":"], linewidths=([3]*10), markers=(["o"]*10), alpha_match=0.5, color_match="black", linestyle_match="-", linewidth_match=8, marker_match="*", print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: evaluate_performance_uncertainty
         Purpose:
@@ -7149,8 +7149,10 @@ class Performance(_Base):
 
         #Initialize container for counters and misclassifications
         if (mapper is not None): #Use mask classifications, if given
-            act_classnames_raw = list(mapper.keys())
-            meas_classnames_raw = list(mapper.keys())
+            act_classnames_raw = list(set(
+                                    [item for item in list(mapper.values())]))
+            meas_classnames_raw = list(set(
+                                    [item for item in list(mapper.values())]))
         else: #Otherwise, use internal classifications
             act_classnames_raw = meas_classifs
             meas_classnames_raw = meas_classifs
@@ -7192,7 +7194,8 @@ class Performance(_Base):
 
                 #Extract actual classif
                 curr_actval = curr_actdict["missions"][lookup]["class"]
-                if (mapper is not None): #Map to masked value if so requested
+                if ((mapper is not None) and (curr_actval.lower() in mapper)):
+                    #Map to masked value if so requested
                     curr_actval = mapper[curr_actval.lower()]
                 #
 
@@ -7202,17 +7205,18 @@ class Performance(_Base):
                 if ((threshold is not None)
                                 and (curr_measval.lower().replace("_","")
                                         in act_classnames)):
-                    print(curr_measdict[lookup])
-                    print(act_classnames)
-                    print(meas_classnames)
-                    print("")
-                    tmp_pass =curr_measdict[lookup]["uncertainty"][curr_measval]
-                    if (tmp_pass < threshold):
-                        curr_measval = preset.dictverdict_lowprob.copy(
+                    #tmp_pass =curr_measdict[lookup]["uncertainty"][curr_measval]
+                    #if (tmp_pass < threshold):
+                    #    curr_measval = preset.dictverdict_lowprob.copy(
+                    #                                                )["verdict"]
+                    tmp_pass =curr_measdict[lookup]["uncertainty"]
+                    if (tmp_pass is not None):
+                        if (tmp_pass[curr_measval] < threshold):
+                            curr_measval = preset.dictverdict_lowprob.copy(
                                                                     )["verdict"]
                 #
                 #Map to new masking value, if mapper given
-                if (mapper is not None):
+                if ((mapper is not None) and (curr_measval.lower() in mapper)):
                     curr_measval = mapper[curr_measval.lower()]
                 #
 
