@@ -3190,6 +3190,10 @@ class _Classifier(_Base):
                 dict_bibcode_classifs[curr_bibcode].append(curr_classif) #Store
             #
         #
+        #Record the number of processed text ids for later
+        num_textids = sum([len(dict_bibcode_textids[key])
+                            for key in unique_bibcodes])
+        #
         #Print some notes
         if do_verbose:
             print("\nGiven dataset inverted. Bibcode count: {0}"
@@ -3206,11 +3210,17 @@ class _Classifier(_Base):
         #
         #Print some notes
         if do_verbose:
-            print(("\nNumber of bibcodes with single unique classif: {0}"
-                    +"\nNumber of bibcodes with multiple classifs: {1}")
+            print(("\nNumber of processed text ids: {2}"
+                    +"\nNumber of bibcodes with single unique classif: {0}"
+                    +"\nNumber of bibcodes with multiple classifs: {1}"
+                    +"\nNumber of bibcodes with multiple text ids: {3}")
                     .format(sum([len(all_bibcodes_oneclassif[key])
                                         for key in unique_classes]),
-                            len(all_bibcodes_multiclassif)))
+                            len(all_bibcodes_multiclassif),
+                            num_textids,
+                            len([key for key in dict_bibcode_textids
+                                    if (len(dict_bibcode_textids[key]) > 1)])
+            ))
         #
         #Throw an error if separated bibcode count does not equal original count
         tmp_check = (sum([len(all_bibcodes_oneclassif[key])
@@ -3232,7 +3242,7 @@ class _Classifier(_Base):
         all_bibcodes_partitioned_lists = all_bibcodes_oneclassif.copy()
         all_bibcodes_partitioned_counts = {
                                     key:len(all_bibcodes_partitioned_lists[key])
-                                    for key in all_bibcodes_partitioned_lists
+                                    for key in unique_classes
                                     } #Starting count of bibcodes per repr.clf.
         #Iterate through multi-classif bibcodes
         for curr_bibcode in all_bibcodes_multiclassif:
@@ -3263,7 +3273,7 @@ class _Classifier(_Base):
         #
         #Print some notes
         if do_verbose:
-            print("\nBibcode partitioning across classifications:\n{0}\n"
+            print("\nBibcode partitioning of representative classifs.:\n{0}\n"
                     .format(all_bibcodes_partitioned_counts))
         #
 
@@ -3311,27 +3321,44 @@ class _Classifier(_Base):
         #
 
         ##Prepare indices for extracting TVT sets per class
-        dict_inds = {key:[None for ii in range(0, num_TVT)]
-                    for key in unique_classes}
+        dict_bibcodes_perTVT = {key:[None for ii in range(0, num_TVT)]
+                                for key in unique_classes}
         for curr_key in unique_classes:
-            #Fetch available indices
+            #Fetch bibcodes represented by this class
+            curr_list = np.asarray(all_bibcodes_partitioned_lists[curr_key])
+            #
+            #Fetch available indices to select these bibcodes
             curr_inds = np.arange(0,all_bibcodes_partitioned_counts[curr_key],1)
             #Shuffle, if requested
             if do_shuffle:
                 np.random.shuffle(curr_inds)
             #
-            #Split out the indices
+            #Split out the bibcodes
             i_start = 0 #Accumulated place within overarching index array
             for ii in range(0, num_TVT): #Iterate through TVT
                 i_end = (i_start + dict_split[curr_key][ii]) #Ending point
-                dict_inds[curr_key][ii] = curr_inds[i_start:i_end]
+                dict_bibcodes_perTVT[curr_key][ii] = curr_list[
+                                                    curr_inds[i_start:i_end]]
                 i_start = i_end #Update latest starting place in array
             #
+        #
+        #Throw an error if any bibcodes not accounted for
+        tmp_check = [item2 for key in dict_bibcodes_perTVT
+                    for item1 in dict_bibcodes_perTVT[key]
+                    for item2 in item1] #All bibcodes used
+        if (not np.array_equal(np.sort(tmp_check), np.sort(unique_bibcodes))):
+            raise ValueError("Err: Split bibcodes do not match up with"
+                            +" original bibcodes:\n\n{0}\nvs.\n{1}"
+                        .format(np.sort(tmp_check), np.sort(unique_bibcodes)))
         #
         #Print some notes
         if do_verbose:
             print("\nIndices split per bibcode, per TVT. Shuffling={0}."
                     .format(do_shuffle))
+            print("Number of indices per class, per TVT:")
+            for curr_key in unique_classes:
+                print("{0}: {1}".format(curr_key,
+                        [len(item) for item in dict_bibcodes_perTVT[curr_key]]))
         #
 
         ##Build new directories to hold TVT (or throw error if exists)
@@ -3362,18 +3389,26 @@ class _Classifier(_Base):
 
         ##Save texts to .txt files within class directories
         dict_info = {}
+        saved_filenames = [None]*num_textids
+        used_bibcodes = [None]*len(unique_bibcodes)
         all_texts_partitioned_counts = {key1:{key2:0 for key2 in unique_classes}
                                         for key1 in name_folderTVT
                                         } #Count of texts per TVT, per classif
         #Iterate through classes
+        i_track = 0
+        i_bibcode = 0
         for curr_key in unique_classes:
             #Save each text to assigned TVT
             for ind_TVT in range(0, num_TVT): #Iterate through TVT
                 curr_filebase = os.path.join(dir_model, name_folderTVT[ind_TVT],
                                             curr_key) #TVT path
                 #Iterate through bibcodes assigned to this TVT
-                for ind_bibcode in dict_inds[curr_key][ind_TVT]:
-                    curr_bibcode = unique_bibcodes[ind_bibcode]
+                for curr_bibcode in dict_bibcodes_perTVT[curr_key][ind_TVT]:
+                    #Throw error if used bibcode
+                    if (curr_bibcode in used_bibcodes):
+                        raise ValueError("Err: Used bibcode {0} in {1}:TVT={2}"
+                                        .format(curr_bibcode, curr_key,ind_TVT))
+                    #
                     #Record assigned TVT and representative classif for bibcode
                     dict_info[curr_bibcode] = {"repr_class":curr_key,
                                         "folder_TVT":name_folderTVT[ind_TVT]}
@@ -3387,7 +3422,8 @@ class _Classifier(_Base):
                         if (curr_data["id"] is not None): #Add id
                             curr_filename += "_{0}".format(curr_data["id"])
                         #
-                        if (curr_filename in dict_info): #Throw error if not unique
+                        #Throw error if not unique filename
+                        if (curr_filename in saved_filenames):
                             raise ValueError("Err: Non-unique filename: {0}"
                                             .format(curr_filename))
                         #
@@ -3399,13 +3435,41 @@ class _Classifier(_Base):
                         #Increment count of texts in this classif. and TVT dir.
                         all_texts_partitioned_counts[name_folderTVT[ind_TVT]][
                                                     curr_key] += 1
+                        saved_filenames[i_track] = curr_filename #Check off file
+                        i_track += 1 #Increment place in list of filenames
                     #
+                #Store and increment count of used bibcodes
+                used_bibcodes[i_bibcode] = curr_bibcode
+                i_bibcode += 1
                 #
             #
         #
+        #Throw an error if any bibcodes not accounted for in partitioning
+        tmp_check = len(dict_info)
+        if (tmp_check != len(unique_bibcodes)):
+            raise ValueError("Err: Count of bibcodes does not match original"
+                            +" bibcode count.\n{0} vs. {1}"
+                            .format(tmp_check, len(unique_bibcodes)))
+        #
+        #Throw an error if any text ids not accounted for in partitioning
+        tmp_check = sum([sum(all_texts_partitioned_counts[key].values())
+                        for key in all_texts_partitioned_counts])
+        if (tmp_check != num_textids):
+            raise ValueError("Err: Count of text ids does not match original"
+                            +" text id count.\n{0}\nvs. {1}\n{2}"
+                            .format(tmp_check, num_textids,
+                                    all_texts_partitioned_counts))
+        #
+        #Throw an error if not enough filenames saved
+        if (None in saved_filenames):
+            tmp_check = len([item for item in saved_filenames
+                            if (item is not None)])
+            raise ValueError("Err: Only subset of filenames saved: {0} vs {1}."
+                            .format(tmp_check, num_textids))
+        #
         #Print some notes
         if do_verbose:
-            print("Files saved to new TVT directories.")
+            print("\nFiles saved to new TVT directories.")
             print("Final partition of texts across classes and TVT dirs.:\n{0}"
                     .format(all_texts_partitioned_counts))
         #
@@ -3415,7 +3479,7 @@ class _Classifier(_Base):
         np.save(tmp_filesave, dict_info)
         #Print some notes
         if do_verbose:
-            print("Dictionary of TVT bibcode partitioning info. saved at: {0}."
+            print("Dictionary of TVT bibcode partitioning info saved at: {0}."
                     .format(tmp_filesave))
         #
 
@@ -3674,7 +3738,7 @@ class _Classifier(_Base):
         grammar = Grammar(text, keyword_obj=keyword_obj,
                                     do_check_truematch=do_check_truematch,
                                     do_verbose=do_verbose, buffer=buffer)
-        grammar.run_modifications()
+        grammar.run_modifications(which_modes=[which_mode])
         self._store_info(grammar, "grammar")
         #
         #Fetch modifs and grammar information
@@ -6502,7 +6566,7 @@ class Operator(_Base):
                             do_check_truematch=do_check_truematch,
                             dict_ambigs=dict_ambigs,
                             do_verbose=do_verbose_deep, buffer=buffer)
-        grammar.run_modifications()
+        grammar.run_modifications(which_modes=[mode])
         output = grammar.get_modifs(do_include_forest=True)
         modif = output["modifs"][mode]
         forest = output["_forest"]

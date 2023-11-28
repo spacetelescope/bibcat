@@ -42,7 +42,7 @@ path_json = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Fu
 
 dir_allmodels = PATH_MODELS #Path to directory for saving or loading a model
 
-name_model = "test_run" #Name of model run to save or load
+name_model = "test_run2" #Name of model run to save or load
 #name_model ="lamb_real_run"
 #
 
