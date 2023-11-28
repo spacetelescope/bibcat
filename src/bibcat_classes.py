@@ -3742,8 +3742,8 @@ class _Classifier(_Base):
         #Generate and store instance of Grammar class for this text
         use_these_modes = list(set([mode, "none"]))
         grammar = Grammar(text, keyword_obj=keyword_obj,
-                                    do_check_truematch=do_check_truematch,
-                                    do_verbose=do_verbose, buffer=buffer)
+                            do_check_truematch=do_check_truematch,
+                            do_verbose=do_verbose, buffer=buffer)
         grammar.run_modifications(which_modes=use_these_modes)
         self._store_info(grammar, "grammar")
         #
