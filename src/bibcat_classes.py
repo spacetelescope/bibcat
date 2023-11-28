@@ -896,6 +896,11 @@ class _Base():
         Purpose:
          - Determine if original part-of-speech (p.o.s.) for given word (if conjoined) matches given p.o.s.
         """
+        #Return False if pos is aux (which may not be conjoined)
+        if (pos in preset.pos_aux):
+            return False
+        #
+
         #Check if this word is conjoined
         is_conjoined = self._is_pos_word(word=word, pos="CONJOINED")
         if (not is_conjoined): #Terminate early if not conjoined
@@ -3735,10 +3740,11 @@ class _Classifier(_Base):
         Purpose: Process text into modifs using Grammar class.
         """
         #Generate and store instance of Grammar class for this text
+        use_these_modes = list(set([mode, "none"]))
         grammar = Grammar(text, keyword_obj=keyword_obj,
                                     do_check_truematch=do_check_truematch,
                                     do_verbose=do_verbose, buffer=buffer)
-        grammar.run_modifications(which_modes=[which_mode])
+        grammar.run_modifications(which_modes=use_these_modes)
         self._store_info(grammar, "grammar")
         #
         #Fetch modifs and grammar information
@@ -5819,13 +5825,14 @@ class Classifier_Rules(_Classifier):
             print("\n> Running _make_nest_forest.")
         #
         ##Initialize holder for nests
-        num_trees = len(forest["none"])
+        repr_key = "none" #list(forest.keys())[0] #"none"
+        num_trees = len(forest[repr_key])
         list_nests = [None]*num_trees
         list_nest_main = [None]*num_trees
         #Iterate through trees (sentences)
         for ii in range(0, num_trees):
-            curr_struct_verbs = forest["none"][ii]["struct_verbs_updated"]
-            curr_struct_words = forest["none"][ii]["struct_words_updated"]
+            curr_struct_verbs = forest[repr_key][ii]["struct_verbs_updated"]
+            curr_struct_words = forest[repr_key][ii]["struct_words_updated"]
             num_branches = len(curr_struct_verbs)
             curr_i_verbs = list(curr_struct_verbs.keys())
             curr_i_words = list(curr_struct_words.keys())
@@ -6402,15 +6409,21 @@ class Operator(_Base):
                                             threshold=threshold)
             #
             #Catch certain exceptions and force-print some notes
-            except (ValueError, KeyError, IndexError) as err:
-                if True:
-                    print("-")
-                    print("The following err. was encountered in operate:")
-                    print(err)
-                    print("Error was noted. Continuing.")
-                    print("-")
-                #
+            except Exception as err:
                 dict_verdicts = preset.dictverdict_error.copy()
+                print("-\nThe following err. was encountered in operate:")
+                print(repr(err))
+                print("Error was noted. Continuing.\n-")
+            #
+            #except (ValueError, KeyError, IndexError) as err:
+            #    if True:
+            #        print("-")
+            #        print("The following err. was encountered in operate:")
+            #        print(err)
+            #        print("Error was noted. Continuing.")
+            #        print("-")
+            #    #
+            #    dict_verdicts = preset.dictverdict_error.copy()
         #
 
         #Return the verdict with modif included
@@ -6562,11 +6575,12 @@ class Operator(_Base):
         #Process text into modifs using Grammar class
         if do_verbose:
             print("\nRunning Grammar on the text...")
+        use_these_modes = list(set([mode, "none"]))
         grammar = Grammar(text=text, keyword_obj=keyword_obj,
                             do_check_truematch=do_check_truematch,
                             dict_ambigs=dict_ambigs,
                             do_verbose=do_verbose_deep, buffer=buffer)
-        grammar.run_modifications(which_modes=[mode])
+        grammar.run_modifications(which_modes=use_these_modes)
         output = grammar.get_modifs(do_include_forest=True)
         modif = output["modifs"][mode]
         forest = output["_forest"]
