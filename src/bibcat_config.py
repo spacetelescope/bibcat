@@ -35,8 +35,8 @@ PHR_AMBIG = os.path.join(PATH_CONFIG, "phrases_ambig.txt")
 
 ##Global filepaths
 #path_json = "path/to/dataset_combined_all.json" # set the path to the location of the JSON file you downloaded from Box
-path_json ="/Users/jyoon/asb/bibliography_automation/bibcat_datasets/dataset_combined_all.json"
-#path_json = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/BibTracking/scratchwork/dataset_combined_all.json")
+#path_json ="/Users/jyoon/asb/bibliography_automation/bibcat_datasets/dataset_combined_all.json"
+path_json = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/BibTracking/scratchwork/dataset_combined_all.json")
 
 #"path/to/file.json" #Path+Filename for .json file containing pre-classified texts. Each entry in the .json file should be a dictionary-style entry, containing the following key:value structure: {"text":<the text as a string>, "class":<the class name as a string>, "id":<None or <an identifier for this item>}
 

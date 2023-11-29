@@ -3396,36 +3396,42 @@ class _Classifier(_Base):
         dict_info = {}
         saved_filenames = [None]*num_textids
         used_bibcodes = [None]*len(unique_bibcodes)
+        used_textids = [None]*num_textids
         all_texts_partitioned_counts = {key1:{key2:0 for key2 in unique_classes}
                                         for key1 in name_folderTVT
                                         } #Count of texts per TVT, per classif
         #Iterate through classes
         i_track = 0
         i_bibcode = 0
-        for curr_key in unique_classes:
+        curr_key = None
+        for repr_key in unique_classes:
             #Save each text to assigned TVT
             for ind_TVT in range(0, num_TVT): #Iterate through TVT
-                curr_filebase = os.path.join(dir_model, name_folderTVT[ind_TVT],
-                                            curr_key) #TVT path
                 #Iterate through bibcodes assigned to this TVT
-                for curr_bibcode in dict_bibcodes_perTVT[curr_key][ind_TVT]:
+                for curr_bibcode in dict_bibcodes_perTVT[repr_key][ind_TVT]:
                     #Throw error if used bibcode
                     if (curr_bibcode in used_bibcodes):
                         raise ValueError("Err: Used bibcode {0} in {1}:TVT={2}"
-                                        .format(curr_bibcode, curr_key,ind_TVT))
+                                        .format(curr_bibcode, repr_key,ind_TVT))
                     #
                     #Record assigned TVT and representative classif for bibcode
-                    dict_info[curr_bibcode] = {"repr_class":curr_key,
+                    dict_info[curr_bibcode] = {"repr_class":repr_key,
                                         "folder_TVT":name_folderTVT[ind_TVT]}
                     #
                     #Iterate through texts associated with this bibcode
                     for curr_textid in dict_bibcode_textids[curr_bibcode]:
                         curr_data = dataset[curr_textid] #Data for this text
-                        curr_filename = "{0}_{1}_{2}".format("text", curr_key,
+                        act_key = curr_data["class"] #Actual class of text id
+                        curr_filename = "{0}_{1}_{2}".format("text", act_key,
                                                             curr_textid)
                         #
                         if (curr_data["id"] is not None): #Add id
                             curr_filename += "_{0}".format(curr_data["id"])
+                        #
+                        #Throw error if used text id
+                        if (curr_textid in used_textids):
+                            raise ValueError("Err: Used text id: {0}"
+                                            .format(curr_textid))
                         #
                         #Throw error if not unique filename
                         if (curr_filename in saved_filenames):
@@ -3433,16 +3439,21 @@ class _Classifier(_Base):
                                             .format(curr_filename))
                         #
                         #Write this text to new file
+                        curr_filebase = os.path.join(dir_model,
+                                            name_folderTVT[ind_TVT],
+                                            act_key)#TVT path; use actual class!
                         self._write_text(text=curr_data["text"],
                                         filepath=os.path.join(curr_filebase,
                                                         (curr_filename+".txt")))
                         #
                         #Increment count of texts in this classif. and TVT dir.
                         all_texts_partitioned_counts[name_folderTVT[ind_TVT]][
-                                                    curr_key] += 1
+                                                    act_key] += 1
+                        used_textids[i_track] = curr_textid #Check off text id
                         saved_filenames[i_track] = curr_filename #Check off file
                         i_track += 1 #Increment place in list of filenames
                     #
+                #
                 #Store and increment count of used bibcodes
                 used_bibcodes[i_bibcode] = curr_bibcode
                 i_bibcode += 1
