@@ -3503,7 +3503,7 @@ class _Classifier(_Base):
         #Print some notes
         if do_verbose:
             print("Dictionary of TVT bibcode partitioning info saved at: {0}."
-                    .format(tmp_filesave))
+                    .format(filepath_dictinfo))
         #
 
         ##Verify that count of saved .txt files adds up to original data count
@@ -6614,7 +6614,7 @@ class Operator(_Base):
 
     ##Method: train_model_ML
     ##Purpose: Process text into modifs and then train ML model on the modifs
-    def train_model_ML(self, dir_model, name_model, do_reuse_run, dict_texts, seed_TVT=10, seed_ML=8, buffer=0, fraction_TVT=[0.8, 0.1, 0.1], mode_TVT="uniform", do_shuffle=True, print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def train_model_ML(self, dir_model, name_model, do_reuse_run, dict_texts, mapper, seed_TVT=10, seed_ML=8, buffer=0, fraction_TVT=[0.8, 0.1, 0.1], mode_TVT="uniform", do_shuffle=True, print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: train_model_ML
         Purpose:
@@ -6708,7 +6708,9 @@ class Operator(_Base):
                                     )
                 #
                 #Store the modif and previous classification information
-                new_dict = {"text":curr_res["modif"],"class":old_dict["class"],
+                masked_class = mapper[old_dict["class"].lower()]
+                new_dict = {"text":curr_res["modif"],
+                            "class":masked_class, #Mask class
                             "id":old_dict["id"], "mission":old_dict["mission"],
                             "forest":curr_res["forest"],
                             "bibcode":old_dict["bibcode"]}

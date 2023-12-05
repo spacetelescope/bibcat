@@ -18,6 +18,7 @@ from nltk.corpus import wordnet
 import bibcat_classes as bibcat
 import bibcat_constants as preset
 import bibcat_config as config
+import bibcat_parameters as params
 #
 #-------------------------------------------------------------------------------
 ###Set global test variables
@@ -72,14 +73,17 @@ threshold_rules = 0.75 #None #0.40 #None
 threshold_ML = 0.75 #None
 #
 #Class references
-map_papertypes = {"SCIENCE":"SCIENCE", "MENTION":"MENTION", "SUPERMENTION":"MENTION", "DATA_INFLUENCED":"DATA_INFLUENCED", "UNRESOLVED_GREY":None, "ENGINEERING":None, "INSTRUMENT":None}
-surface_mapper = {"SCIENCE":"ACCEPTED", "MENTION":"ACCEPTED",
-                        "SUPERMENTION":"ACCEPTED", "DATA_INFLUENCED":"ACCEPTED",
-                        preset.verdict_error:"ACCEPTED",
-                        preset.verdict_lowprob:"ACCEPTED",
-                        preset.verdict_rejection:"REJECTED"}
-allowed_classifs = [key for key in map_papertypes if (map_papertypes[key] is not None)]
-converted_classifs = np.unique([map_papertypes[key] for key in allowed_classifs]).tolist()
+#map_papertypes = {"SCIENCE":"SCIENCE", "MENTION":"MENTION", "SUPERMENTION":"MENTION", "DATA_INFLUENCED":"DATA_INFLUENCED", "UNRESOLVED_GREY":None, "ENGINEERING":None, "INSTRUMENT":None}
+#surface_mapper = {"SCIENCE":"ACCEPTED", "MENTION":"ACCEPTED",
+#                        "SUPERMENTION":"ACCEPTED", "DATA_INFLUENCED":"ACCEPTED",
+#                        preset.verdict_error:"ACCEPTED",
+#                        preset.verdict_lowprob:"ACCEPTED",
+#                        preset.verdict_rejection:"REJECTED"}
+mapper = params.map_papertypes
+all_kobjs = params.all_kobjs
+allowed_classifications = config.allowed_classifications
+#allowed_classifs = [key for key in map_papertypes if (map_papertypes[key] is not None)]
+#converted_classifs = np.unique([map_papertypes[key] for key in allowed_classifs]).tolist()
 #
 
 ##Classifiers
@@ -105,17 +109,18 @@ class TestData(unittest.TestCase):
     if True:
         #Test that combined .json file components are correct
         def test__combined_dataset(self):
+            print("Running test__combined_dataset.")
             #Load each of the datasets
             #For the combined dataset
-            with open(path_json, 'r') as openfile:
+            with open(filepath_json, 'r') as openfile:
                 data_combined = json.load(openfile)
             #
             #For the original text data
-            with open(path_papertext, 'r') as openfile:
+            with open(filepath_papertext, 'r') as openfile:
                 data_text = json.load(openfile)
             #
             #For the original classification data
-            with open(path_papertrack, 'r') as openfile:
+            with open(filepath_papertrack, 'r') as openfile:
                 data_classif = json.load(openfile)
             #
 
@@ -124,28 +129,54 @@ class TestData(unittest.TestCase):
             list_bibcodes_classif = [item["bibcode"] for item in data_classif]
 
             #Check each combined data entry against original data sources
-            for curr_key in data_combined:
-                print(data_combined[curr_key].keys())
-                print(woo)
-                print(makesureallimportantkeywordscovered)
-                !
-                curr_bibcode = data_combined[curr_key]["bibcode"] #Curr. bibcode
+            for ii in range(0, len(data_combined)):
+                #Skip if no text stored for this entry
+                if ("body" not in data_combined[ii]):
+                    print("test__combined_dataset: No text for index {0}."
+                            .format(ii))
+                    continue
+
+                #Extract bibcode
+                curr_bibcode = data_combined[ii]["bibcode"] #Curr. bibcode
 
                 #Fetch indices of entries in original data sources
                 ind_text = list_bibcodes_text.index(curr_bibcode)
-                ind_classif = list_bibcodes_classif.index(curr_bibcode)
+                try:
+                    ind_classif = list_bibcodes_classif.index(curr_bibcode)
+                except ValueError:
+                    print("test__combined_dataset: {0} not classified bibcode."
+                            .format(curr_bibcode))
+                    continue
+                #
 
                 #Verify that combined data entry values match back to originals
+                #Check abstract, if exists
+                try:
+                    if ("abstract" in data_combined[ii]):
+                        self.assertEqual(data_combined[ii]["abstract"],
+                                        data_text[ind_text]["abstract"])
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print("Diff. abstract in bibcode {0}:\n\n{1}...\nvs\n{2}..."
+                        .format(curr_bibcode,
+                                data_combined[ii]["abstract"][0:500],
+                                data_text[ind_text]["abtract"][0:500]))
+                    print("---")
+                    print("")
+                    #
+                    raise AssertionError()
+                #
                 #Check text
                 try:
-                    self.assertEqual(data_combined[curr_key]["body"],
+                    self.assertEqual(data_combined[ii]["body"],
                                     data_text[ind_text]["body"])
                 except AssertionError:
                     print("")
                     print(">")
                     print("Different text in bibcode {0}:\n\n{1}...\nvs\n{2}..."
                         .format(curr_bibcode,
-                                data_combined[curr_key]["body"][0:500],
+                                data_combined[ii]["body"][0:500],
                                 data_text[ind_text]["body"][0:500]))
                     print("---")
                     print("")
@@ -174,106 +205,91 @@ class TestData(unittest.TestCase):
                 #Check missions and classes
                 try:
                     self.assertEqual(
-                            len(data_combined[curr_key]["class_missions"]),
-                            len(data_classif[ind_classif]["classes"])
+                            len(data_combined[ii]["class_missions"]),
+                            len(data_classif[ind_classif]["class_missions"])
                             ) #Ensure equal number of classes
-                    for curr_mission in data_combined[curr_key]["class_missions"]:
-                        self.assertEqual(data_combined[curr_key][
-                                            "class_missions"][curr_mission],
-                                        data_classif[ind_classif][
-                                            "classes"][curr_mission])
-                except AssertionError:
+                    for curr_mission in data_combined[ii]["class_missions"]:
+                        tmp_list = [item["mission"] for item in
+                                    data_classif[ind_classif]["class_missions"]]
+                        tmp_ind = tmp_list.index(curr_mission)
+                        self.assertEqual(data_combined[ii][
+                                "class_missions"][curr_mission]["papertype"],
+                            data_classif[ind_classif][
+                                "class_missions"][tmp_ind]["paper_type"])
+                except (IndexError, AssertionError) as err:
                     print("")
                     print(">")
                     print(("Different missions and classes:\nCombined: {0}"
                             +"\nClassif: {1}")
-                        .format(data_combined[curr_key]["class_missions"],
-                                data_classif[ind_classif]["classes"]))
+                        .format(data_combined[ii]["class_missions"],
+                                data_classif[ind_classif]["class_missions"]))
                     print("---")
                     print("")
                     #
                     raise AssertionError()
                 #
             #
+            print("Run of test__combined_dataset complete.")
         #
         #Test that files of TVT directory (if exist) are correctly stored
         def test__TVT_directory(self):
+            print("Running test__TVT_directory.")
             #Load the datasets
-            #TVT information, if exists
-            dict_info = np.load(filepath_dictinfo)
+            #Check if TVT information exists
+            if (not os.path.isfile(filepath_dictinfo)):
+                raise AssertionError("TVT directory does not exist yet at: {0}"
+                                    .format(filepath_dictinfo))
+            #
+            #If exists, carry on with this test
+            dict_info = np.load(filepath_dictinfo, allow_pickle=True).item()
             #Dataset of text and classification information
-            with open(path_json, 'r') as openfile:
+            with open(filepath_json, 'r') as openfile:
                 dataset = json.load(openfile)
             #
-
-            #Ensure TVT storage and combined dataset have same bibcode count
-            try:
-                self.assertEqual(len(dict_info), len(dataset))
-            except AssertionError:
-                print("")
-                print(">")
-                print("Different bibcode counts: {0} vs {1}."
-                    .format(len(dict_info), len(dataset)))
-                print("---")
-                print("")
-                #
-                raise AssertionError()
-            #
+            list_bibcodes_dataset = [item["bibcode"] for item in dataset]
 
             #Ensure each entry in TVT storage has correct mission and class
             for curr_key in dict_info:
+                ind_dataset = list_bibcodes_dataset.index(curr_key)
+                #Fetch only allowed missions and classifs. from dataset
+                curr_actuals = {key:dataset[ind_dataset]["class_missions"][key]
+                            for key in dataset[ind_dataset]["class_missions"]
+                            if ((any([item.is_keyword(key)
+                                    for item in all_kobjs]))
+                                and (dataset[ind_dataset]["class_missions"][key
+                                                                ]["papertype"]
+                                    in allowed_classifications))}
+                #Check each entry
                 try:
+                    ind_dataset = list_bibcodes_dataset.index(curr_key)
                     #Ensure same number of missions for this bibcode
-                    self.assertEqual(len(dataset[curr_key]["class_missions"]),
-                                    len(dict_info[curr_key]["storage"]))
+                    self.assertEqual(
+                                len(curr_actuals),
+                                len(dict_info[curr_key]["storage"]))
                     #
                     for curr_textid in dict_info[curr_key]["storage"]:
-                        curr_mission = dict_info[curr_key]["storage"][
-                                                        curr_textid]["mission"]
-                        curr_class = dict_info[curr_key]["storage"][
-                                                        curr_textid]["class"]
+                        curr_mission = dict_info[curr_key][
+                                            "storage"][curr_textid]["mission"]
+                        curr_class = dict_info[curr_key][
+                                            "storage"][curr_textid]["class"]
                         #Check each mission and class
                         self.assertEqual(curr_class,
-                            dataset[curr_key]["class_missions"][curr_mission])
+                            mapper[curr_actuals[curr_mission
+                                                ]["papertype"].lower()])
                     #
                 #
                 except (KeyError, AssertionError) as err:
                     print("")
                     print(">")
                     print("Different mission breakdown for {2}:\n{0}\nvs\n{1}"
-                        .format(dict_info[curr_key]["storage"],
-                                dataset[curr_key]["class_missions"],
-                                curr_key))
+                        .format(dict_info[curr_key], curr_actuals, curr_key))
                     print("---")
                     print("")
                     #
                     raise AssertionError()
                 #
-
-
-
-dict_info[curr_bibcode]["storage"][curr_textid
-        ] = {"filename":curr_filename, "class":act_key,
-            "mission":dataset[curr_textid]["mission"]}
-            !
-dict_info[curr_bibcode]["storage"][curr_textid
-            ] = {"filename":curr_filename,
-                "class":act_key}
-                #Check text
-                try:
-                    self.assertEqual(data_combined[curr_key]["body"],
-                                    data_text[ind_text]["body"])
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("Different text in bibcode {0}:\n\n{1}...\nvs\n{2}..."
-                        .format(curr_bibcode,
-                                data_combined[curr_key]["body"][0:500],
-                                data_text[ind_text]["body"][0:500]))
-                    print("---")
-                    print("")
-                    #
-                    raise AssertionError()
+            #
+            print("Run of test__TVT_directory complete.")
         #
     #
 #"""

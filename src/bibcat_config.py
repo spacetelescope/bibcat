@@ -54,7 +54,7 @@ path_TVTinfo = os.path.join(dir_allmodels, name_model, "dict_TVTinfo.npy")
 #
 
 #Classification parameters
-allowed_classifications = ["SCIENCE", "DATA_INFLUENCED", "MENTION"]
+allowed_classifications = ["SCIENCE", "DATA_INFLUENCED", "MENTION", "SUPERMENTION"]
 #
 
 ##Machine learning (ML) parameters
