@@ -37,13 +37,20 @@ PHR_AMBIG = os.path.join(PATH_CONFIG, "phrases_ambig.txt")
 #path_json = "path/to/dataset_combined_all.json" # set the path to the location of the JSON file you downloaded from Box
 #path_json ="/Users/jyoon/asb/bibliography_automation/bibcat_datasets/dataset_combined_all.json"
 path_json = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/BibTracking/scratchwork/dataset_combined_all.json")
-
 #"path/to/file.json" #Path+Filename for .json file containing pre-classified texts. Each entry in the .json file should be a dictionary-style entry, containing the following key:value structure: {"text":<the text as a string>, "class":<the class name as a string>, "id":<None or <an identifier for this item>}
+
+#Below are for bibcat_tests.py testing purposes only
+filepath_input = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/BibTracking/Datasets")
+path_papertrack = os.path.join(filepath_input, "papertrack_export_2023-11-06.json")
+path_papertext = os.path.join(filepath_input, "ST_Request2021_use.json")
+#
 
 dir_allmodels = PATH_MODELS #Path to directory for saving or loading a model
 
 name_model = "my_test_run" #Name of model run to save or load
 #name_model ="lamb_real_run"
+#
+path_TVTinfo = os.path.join(dir_allmodels, name_model, "dict_TVTinfo.npy")
 #
 
 #Classification parameters

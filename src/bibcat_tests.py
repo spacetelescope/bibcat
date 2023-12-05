@@ -9,6 +9,7 @@
 import unittest
 import re
 import os
+import json
 import numpy as np
 import spacy
 nlp = spacy.load("en_core_web_sm")
@@ -29,6 +30,9 @@ import bibcat_config as config
 #Fetch filepaths for model and data
 name_model = config.name_model
 filepath_json = config.path_json
+filepath_papertrack = config.path_papertrack
+filepath_papertext = config.path_papertext
+#
 output_path = config.PATH_OUTPUT
 dir_model = os.path.join(config.dir_allmodels, name_model)
 filepath_model = os.path.join(dir_model, (name_model+".npy"))
@@ -40,6 +44,7 @@ filepath_output = output_path #Where to store the performance output, such as th
 #Set directories for fetching text
 dir_info = dir_model
 dir_test = os.path.join(dir_model, "dir_test")
+filepath_dictinfo = config.path_TVTinfo
 #
 
 ##Mission terms
@@ -93,6 +98,186 @@ converted_classifs = np.unique([map_papertypes[key] for key in allowed_classifs]
 #-------------------------------------------------------------------------------
 ###Test Classes
 #
+#class: TestData
+#Purpose: Testing datasets
+class TestData(unittest.TestCase):
+    #For tests of .json dataset file combined from papertrack and papertext:
+    if True:
+        #Test that combined .json file components are correct
+        def test__combined_dataset(self):
+            #Load each of the datasets
+            #For the combined dataset
+            with open(path_json, 'r') as openfile:
+                data_combined = json.load(openfile)
+            #
+            #For the original text data
+            with open(path_papertext, 'r') as openfile:
+                data_text = json.load(openfile)
+            #
+            #For the original classification data
+            with open(path_papertrack, 'r') as openfile:
+                data_classif = json.load(openfile)
+            #
+
+            #Build list of bibcodes for the original data sources
+            list_bibcodes_text = [item["bibcode"] for item in data_text]
+            list_bibcodes_classif = [item["bibcode"] for item in data_classif]
+
+            #Check each combined data entry against original data sources
+            for curr_key in data_combined:
+                print(data_combined[curr_key].keys())
+                print(woo)
+                print(makesureallimportantkeywordscovered)
+                !
+                curr_bibcode = data_combined[curr_key]["bibcode"] #Curr. bibcode
+
+                #Fetch indices of entries in original data sources
+                ind_text = list_bibcodes_text.index(curr_bibcode)
+                ind_classif = list_bibcodes_classif.index(curr_bibcode)
+
+                #Verify that combined data entry values match back to originals
+                #Check text
+                try:
+                    self.assertEqual(data_combined[curr_key]["body"],
+                                    data_text[ind_text]["body"])
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print("Different text in bibcode {0}:\n\n{1}...\nvs\n{2}..."
+                        .format(curr_bibcode,
+                                data_combined[curr_key]["body"][0:500],
+                                data_text[ind_text]["body"][0:500]))
+                    print("---")
+                    print("")
+                    #
+                    raise AssertionError()
+                #
+                #Check bibcodes (redundant test but that's ok)
+                try:
+                    self.assertEqual(curr_bibcode,
+                                    data_text[ind_text]["bibcode"])
+                    self.assertEqual(curr_bibcode,
+                                    data_classif[ind_classif]["bibcode"])
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print(("Different bibcodes:\nCombined: {0}"
+                            +"\nText: {1}\nClassif: {2}")
+                        .format(curr_bibcode,
+                                data_text[ind_text]["bibcode"],
+                                data_classif[ind_classif]["bibcode"]))
+                    print("---")
+                    print("")
+                    #
+                    raise AssertionError()
+                #
+                #Check missions and classes
+                try:
+                    self.assertEqual(
+                            len(data_combined[curr_key]["class_missions"]),
+                            len(data_classif[ind_classif]["classes"])
+                            ) #Ensure equal number of classes
+                    for curr_mission in data_combined[curr_key]["class_missions"]:
+                        self.assertEqual(data_combined[curr_key][
+                                            "class_missions"][curr_mission],
+                                        data_classif[ind_classif][
+                                            "classes"][curr_mission])
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print(("Different missions and classes:\nCombined: {0}"
+                            +"\nClassif: {1}")
+                        .format(data_combined[curr_key]["class_missions"],
+                                data_classif[ind_classif]["classes"]))
+                    print("---")
+                    print("")
+                    #
+                    raise AssertionError()
+                #
+            #
+        #
+        #Test that files of TVT directory (if exist) are correctly stored
+        def test__TVT_directory(self):
+            #Load the datasets
+            #TVT information, if exists
+            dict_info = np.load(filepath_dictinfo)
+            #Dataset of text and classification information
+            with open(path_json, 'r') as openfile:
+                dataset = json.load(openfile)
+            #
+
+            #Ensure TVT storage and combined dataset have same bibcode count
+            try:
+                self.assertEqual(len(dict_info), len(dataset))
+            except AssertionError:
+                print("")
+                print(">")
+                print("Different bibcode counts: {0} vs {1}."
+                    .format(len(dict_info), len(dataset)))
+                print("---")
+                print("")
+                #
+                raise AssertionError()
+            #
+
+            #Ensure each entry in TVT storage has correct mission and class
+            for curr_key in dict_info:
+                try:
+                    #Ensure same number of missions for this bibcode
+                    self.assertEqual(len(dataset[curr_key]["class_missions"]),
+                                    len(dict_info[curr_key]["storage"]))
+                    #
+                    for curr_textid in dict_info[curr_key]["storage"]:
+                        curr_mission = dict_info[curr_key]["storage"][
+                                                        curr_textid]["mission"]
+                        curr_class = dict_info[curr_key]["storage"][
+                                                        curr_textid]["class"]
+                        #Check each mission and class
+                        self.assertEqual(curr_class,
+                            dataset[curr_key]["class_missions"][curr_mission])
+                    #
+                #
+                except (KeyError, AssertionError) as err:
+                    print("")
+                    print(">")
+                    print("Different mission breakdown for {2}:\n{0}\nvs\n{1}"
+                        .format(dict_info[curr_key]["storage"],
+                                dataset[curr_key]["class_missions"],
+                                curr_key))
+                    print("---")
+                    print("")
+                    #
+                    raise AssertionError()
+                #
+
+
+
+dict_info[curr_bibcode]["storage"][curr_textid
+        ] = {"filename":curr_filename, "class":act_key,
+            "mission":dataset[curr_textid]["mission"]}
+            !
+dict_info[curr_bibcode]["storage"][curr_textid
+            ] = {"filename":curr_filename,
+                "class":act_key}
+                #Check text
+                try:
+                    self.assertEqual(data_combined[curr_key]["body"],
+                                    data_text[ind_text]["body"])
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print("Different text in bibcode {0}:\n\n{1}...\nvs\n{2}..."
+                        .format(curr_bibcode,
+                                data_combined[curr_key]["body"][0:500],
+                                data_text[ind_text]["body"][0:500]))
+                    print("---")
+                    print("")
+                    #
+                    raise AssertionError()
+        #
+    #
+#"""
+
 #class: TestBase
 #Purpose: Testing the Base class
 class TestBase(unittest.TestCase):

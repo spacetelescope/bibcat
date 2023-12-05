@@ -3138,6 +3138,7 @@ class _Classifier(_Base):
         """
         ##Load global variables
         dataset = dict_texts
+        filepath_dictinfo = config.path_TVTinfo
         name_folderTVT = [preset.folders_TVT["train"],
                         preset.folders_TVT["validate"],
                         preset.folders_TVT["test"]]
@@ -3416,7 +3417,8 @@ class _Classifier(_Base):
                     #
                     #Record assigned TVT and representative classif for bibcode
                     dict_info[curr_bibcode] = {"repr_class":repr_key,
-                                        "folder_TVT":name_folderTVT[ind_TVT]}
+                                        "folder_TVT":name_folderTVT[ind_TVT],
+                                        "storage":{}}
                     #
                     #Iterate through texts associated with this bibcode
                     for curr_textid in dict_bibcode_textids[curr_bibcode]:
@@ -3445,6 +3447,11 @@ class _Classifier(_Base):
                         self._write_text(text=curr_data["text"],
                                         filepath=os.path.join(curr_filebase,
                                                         (curr_filename+".txt")))
+                        #
+                        #Store record of this storage in info dictionary
+                        dict_info[curr_bibcode]["storage"][curr_textid
+                                ] = {"filename":curr_filename, "class":act_key,
+                                    "mission":dataset[curr_textid]["mission"]}
                         #
                         #Increment count of texts in this classif. and TVT dir.
                         all_texts_partitioned_counts[name_folderTVT[ind_TVT]][
@@ -3491,8 +3498,8 @@ class _Classifier(_Base):
         #
 
         ##Save the dictionary of TVT bibcode partitioning to its own file
-        tmp_filesave = os.path.join(dir_model, "dict_TVTinfo.npy")
-        np.save(tmp_filesave, dict_info)
+        #tmp_filesave = filepath_dictinfo
+        np.save(filepath_dictinfo, dict_info)
         #Print some notes
         if do_verbose:
             print("Dictionary of TVT bibcode partitioning info saved at: {0}."
