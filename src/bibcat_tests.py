@@ -11,48 +11,29 @@ import re
 import os
 import json
 import numpy as np
-import spacy
-nlp = spacy.load("en_core_web_sm")
-import nltk
-from nltk.corpus import wordnet
 import bibcat_classes as bibcat
-import bibcat_constants as preset
 import bibcat_config as config
 import bibcat_parameters as params
+import spacy
+nlp = spacy.load(params.spacy_language_model)
+import nltk
+from nltk.corpus import wordnet
 #
 #-------------------------------------------------------------------------------
 ###Set global test variables
-##File paths and locations
-#filepath_base_global = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/BibTracking")
-#filepath_models_global = os.path.join(filepath_base_global, "models")
-#filepath_model = os.path.join(filepath_models_global, "dict_model_ML_map_3exact_set8a_skim_exact_minimum_TVTseed10_metrics.npy")
-#fileloc_ML = os.path.join(filepath_models_global, "dict_model_ML_map_3exact_set8a_skim_exact_minimum_TVTseed10")
-#
 #Fetch filepaths for model and data
 name_model = config.name_model
 filepath_json = config.path_json
 filepath_papertrack = config.path_papertrack
 filepath_papertext = config.path_papertext
-#
-output_path = config.PATH_OUTPUT
-dir_model = os.path.join(config.dir_allmodels, name_model)
-filepath_model = os.path.join(dir_model, (name_model+".npy"))
-fileloc_ML = os.path.join(dir_model, (preset.tfoutput_prefix+name_model))
-#
-#Set directories for storing performance output
-filepath_output = output_path #Where to store the performance output, such as the confusion matrices
-#
-#Set directories for fetching text
-dir_info = dir_model
-dir_test = os.path.join(dir_model, "dir_test")
 filepath_dictinfo = config.path_TVTinfo
 #
 
 ##Mission terms
 #Keyword objects
-kobj_hubble = bibcat.Keyword(keywords=["Hubble", "Hubble Telescope", "Hubble Space Telescope"], acronyms=["hst", "ht"])
-kobj_kepler = bibcat.Keyword(keywords=["Kepler"], acronyms=None)
-kobj_k2 = bibcat.Keyword(keywords=["K2"], acronyms=None)
+kobj_hubble = params.keyword_obj_HST
+kobj_kepler = params.keyword_obj_Kepler
+kobj_k2 = params.keyword_obj_K2
 #
 #Keyword-object lookups
 list_lookup_kobj = [kobj_hubble, kobj_kepler, kobj_k2]
@@ -60,38 +41,17 @@ dict_lookup_kobj = {"Hubble":kobj_hubble, "Kepler":kobj_kepler, "K2":kobj_k2}
 #
 
 ##Placeholders
-placeholder_anon = preset.placeholder_anon
-placeholder_author = preset.placeholder_author
-placeholder_number = preset.placeholder_number
-placeholder_numeric = preset.placeholder_numeric
-placeholder_website = preset.placeholder_website
+placeholder_anon = config.placeholder_anon
+placeholder_author = config.placeholder_author
+placeholder_number = config.placeholder_number
+placeholder_numeric = config.placeholder_numeric
+placeholder_website = config.placeholder_website
 #
 
 ##Classifier setup
-#Thresholds
-threshold_rules = 0.75 #None #0.40 #None
-threshold_ML = 0.75 #None
-#
-#Class references
-#map_papertypes = {"SCIENCE":"SCIENCE", "MENTION":"MENTION", "SUPERMENTION":"MENTION", "DATA_INFLUENCED":"DATA_INFLUENCED", "UNRESOLVED_GREY":None, "ENGINEERING":None, "INSTRUMENT":None}
-#surface_mapper = {"SCIENCE":"ACCEPTED", "MENTION":"ACCEPTED",
-#                        "SUPERMENTION":"ACCEPTED", "DATA_INFLUENCED":"ACCEPTED",
-#                        preset.verdict_error:"ACCEPTED",
-#                        preset.verdict_lowprob:"ACCEPTED",
-#                        preset.verdict_rejection:"REJECTED"}
 mapper = params.map_papertypes
 all_kobjs = params.all_kobjs
 allowed_classifications = config.allowed_classifications
-#allowed_classifs = [key for key in map_papertypes if (map_papertypes[key] is not None)]
-#converted_classifs = np.unique([map_papertypes[key] for key in allowed_classifs]).tolist()
-#
-
-##Classifiers
-#ML classifier
-#classifier_ML_forpipeline = bibcat.Classifier_ML(filepath_model=filepath_model, fileloc_ML=fileloc_ML, class_names=converted_classifs)
-#
-#Rule-based classifier
-#classifier_rules_forpipeline = bibcat.Classifier_Rules()
 #
 #-------------------------------------------------------------------------------
 
@@ -1457,7 +1417,7 @@ class TestPaper(unittest.TestCase):
     if True:
         #Test processing and extraction of paragraphs of target terms
         def test_processandget_paragraphs__variety(self):
-            placeholder = preset.string_anymatch_ambig
+            placeholder = config.string_anymatch_ambig
             #Prepare text and answers for test
             text1 = "Despite the low S/N of the data, we still detect the stars. Figure 1 plots the Hubble Space Telescope (HST) observations. The HST stars are especially bright. We analyze them in the next section. A filler sentence. Here is another filler sentence (with parentheses). Some more filler content. We summarize our Hubble results next."
             meanings1 = {"Hubble":["Hubble Space Telescope"], "Kepler":None, "K2":None}
@@ -1977,12 +1937,7 @@ class TestGrammar(unittest.TestCase):
 #"""
 #-------------------------------------------------------------------------------
 
-"""
-Notes:
-- Next test: In this work, we have discussed any and all previous observations from HST and compared them to trends measured from previously published archival Spitzer data available in the literature. In their study, they presented new observations from HST and compared them to trends measured from the plethora of archival HST data available in the literature.
-- Fix conjunction issue, finally
-- Readable removal of unecessary preposition clauses? Maybe not since does not guarantee readability
-"""
+
 
 
 

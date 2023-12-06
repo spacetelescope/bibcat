@@ -1,11 +1,10 @@
 ###FILE: bibcat_parameters.py
-###PURPOSE: Temporary container for parameters.
+###PURPOSE: Container for parameters.
 
-#Import necessary packages
+##Import necessary packages
 import bibcat_classes as bibcat
-import bibcat_constants as preset
 
-#Mission parameters
+##Mission parameters
 keyword_obj_HST = bibcat.Keyword(
             keywords=["Hubble", "Hubble Telescope", "Hubble Space Telescope"],
             acronyms=["HST", "HT"])
@@ -34,8 +33,7 @@ keyword_obj_HLA = bibcat.Keyword(
 all_kobjs = [keyword_obj_HST, keyword_obj_JWST, keyword_obj_TESS, keyword_obj_Kepler, keyword_obj_PanSTARRS, keyword_obj_GALEX, keyword_obj_K2, keyword_obj_HLA]
 #
 
-#Class parameters
+##Classification parameters
+allowed_classifications = ["SCIENCE", "DATA_INFLUENCED", "MENTION", "SUPERMENTION"]
 map_papertypes = {"science":"science", "mention":"mention", "supermention":"mention", "data_influenced":"data_influenced", "unresolved_grey":"other", "unresolved_gray":"other", "engineering":"other", "instrument":"other"}
-#for curr_class in preset.list_other_verdicts:
-#    map_papertypes[curr_class] = curr_class
 #
