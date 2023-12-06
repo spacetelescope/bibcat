@@ -15,7 +15,7 @@ import bibcat_classes as bibcat
 import bibcat_config as config
 import bibcat_parameters as params
 import spacy
-nlp = spacy.load(params.spacy_language_model)
+nlp = spacy.load(config.spacy_language_model)
 import nltk
 from nltk.corpus import wordnet
 #
@@ -27,6 +27,10 @@ filepath_json = config.path_json
 filepath_papertrack = config.path_papertrack
 filepath_papertext = config.path_papertext
 filepath_dictinfo = config.path_TVTinfo
+#
+
+##Grammar
+test_which_modes = ["none", "skim", "trim", "anon", "skim_trim_anon"]
 #
 
 ##Mission terms
@@ -51,7 +55,7 @@ placeholder_website = config.placeholder_website
 ##Classifier setup
 mapper = params.map_papertypes
 all_kobjs = params.all_kobjs
-allowed_classifications = config.allowed_classifications
+allowed_classifications = params.allowed_classifications
 #
 #-------------------------------------------------------------------------------
 
@@ -1654,7 +1658,7 @@ class TestGrammar(unittest.TestCase):
                 #Prepare and run test for bibcat class instance
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
                                         do_check_truematch=True)
-                testbase.run_modifications(which_modes=None)
+                testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:
                     #Skip over non-mode keys
@@ -1704,7 +1708,7 @@ class TestGrammar(unittest.TestCase):
                 #Prepare and run test for bibcat class instance
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
                                         do_check_truematch=True)
-                testbase.run_modifications(which_modes=None)
+                testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:
                     #Skip over non-mode keys
@@ -1754,7 +1758,7 @@ class TestGrammar(unittest.TestCase):
                 #Prepare and run test for bibcat class instance
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
                                         do_check_truematch=True)
-                testbase.run_modifications(which_modes=None)
+                testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:
                     #Skip over non-mode keys
@@ -1804,7 +1808,7 @@ class TestGrammar(unittest.TestCase):
                 #Prepare and run test for bibcat class instance
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
                                         do_check_truematch=True)
-                testbase.run_modifications(which_modes=None)
+                testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:
                     #Skip over non-mode keys
@@ -1854,7 +1858,7 @@ class TestGrammar(unittest.TestCase):
                 #Prepare and run test for bibcat class instance
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
                                         do_check_truematch=True)
-                testbase.run_modifications(which_modes=None)
+                testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:
                     #Skip over non-mode keys
@@ -1905,7 +1909,7 @@ class TestGrammar(unittest.TestCase):
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
                                         do_check_truematch=True,
                                         do_verbose=True)
-                testbase.run_modifications(which_modes=None)
+                testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:
                     #Skip over non-mode keys

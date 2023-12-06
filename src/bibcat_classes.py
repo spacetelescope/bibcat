@@ -3576,7 +3576,7 @@ class Classifier_ML(_Classifier):
     """
     ##Method: __init__
     ##Purpose: Initialize this class instance
-    def __init__(self, class_names=None, filepath_model=None, fileloc_ML=None, do_verbose=False):
+    def __init__(self, filepath_model=None, fileloc_ML=None, do_verbose=False):
         """
         Method: __init__
         WARNING! This method is *not* meant to be used directly by users.
@@ -4003,10 +4003,6 @@ class Classifier_Rules(_Classifier):
         ##Initialize storage
         self._storage = {}
         #Store global variables
-        #self._store_info(threshold, "threshold")
-        #self._store_info(do_treetrim, "do_treetrim")
-        #self._store_info(do_filler, "do_filler")
-        #self._store_info(do_anoncites, "do_anoncites")
         self._store_info(do_verbose, "do_verbose")
         self._store_info(do_verbose_deep, "do_verbose_deep")
         if (which_classifs is None):
@@ -4023,8 +4019,6 @@ class Classifier_Rules(_Classifier):
             print("Internal decision tree has been assembled.")
             print("NOTE: Decision tree probabilities:\n{0}\n"
                     .format(decision_tree))
-            #print("NOTE: {0} rules within the internal decision tree.\n"
-            #        .format(len(decision_tree)))
         #
 
         ##Nothing to see here
@@ -4086,8 +4080,6 @@ class Classifier_Rules(_Classifier):
                 #Otherwise, check inclusive and excluded ('!') matching values
                 elif isinstance(curr_branch[key_param], list):
                     #Check for included matching values
-                    #if not all([(item in curr_branch[key_param])
-                    #            for item in dict_nest[key_param]]):
                     if ((not all([(item in dict_nest[key_param])
                                 for item in curr_branch[key_param]
                                 if (not item.startswith("!"))]))
@@ -4100,8 +4092,6 @@ class Classifier_Rules(_Classifier):
                 #Otherwise, check if any of allowed values contained
                 elif isinstance(curr_branch[key_param], set):
                     #Check for any of matching values
-                    #if not any([(item in curr_branch[key_param])
-                    #            for item in dict_nest[key_param]]):
                     if not any([(item in dict_nest[key_param])
                                 for item in curr_branch[key_param]]):
                         is_match = False
@@ -4998,21 +4988,6 @@ class Classifier_Rules(_Classifier):
             decision_tree[itrack] = new_ex
             #
 
-            ##For flipped subj. and obj. matter example
-            """
-            #Extract all parameters and their values
-            new_ex = {key:curr_ex[key] for key in all_params
-                    if (key not in keys_matter)}
-            #Flip the subject and object terms
-            new_ex["subjectmatter"] = curr_ex["objectmatter"]
-            new_ex["objectmatter"] = curr_ex["subjectmatter"]
-            #Normalize and store probabilities for target classifs
-            new_ex.update(curr_probs)
-            #Store this example
-            itrack += 1
-            decision_tree[itrack] = new_ex
-            #"""
-
             ##For passive example
             #For general (not is_any, not set) case
             if ((curr_ex[key_verbtype] == "is_any")):
@@ -5022,24 +4997,6 @@ class Classifier_Rules(_Classifier):
             elif isinstance(curr_ex[key_verbtype], set):
                 #Iterate through set entries
                 for curr_val in curr_ex[key_verbtype]:
-                    #Passive with original subj-obj
-                    #Extract all parameters and their values
-                    """
-                    new_ex = {key:curr_ex[key] for key in all_params
-                            if (key not in (keys_matter+[key_verbtype]))}
-                    #Add in passive term for verbtypes
-                    tmp_vals = [curr_val, "PASSIVE"]
-                    new_ex[key_verbtype] = tmp_vals
-                    #Flip the subject and object terms
-                    new_ex["subjectmatter"] = curr_ex["subjectmatter"]
-                    new_ex["objectmatter"] = curr_ex["objectmatter"]
-                    #Normalize and store probabilities for target classifs
-                    new_ex.update(curr_probs)
-                    #Store this example
-                    itrack += 1
-                    decision_tree[itrack] = new_ex
-                    #"""
-                    #
                     #Passive with flipped subj-obj
                     #Extract all parameters and their values
                     new_ex = {key:curr_ex[key] for key in all_params
@@ -5084,8 +5041,6 @@ class Classifier_Rules(_Classifier):
         verb = struct_words[i_verb]["word"]
         verb_dep = struct_words[i_verb]["_dep"]
         verb_pos = struct_words[i_verb]["_pos"]
-        #verb_NLP = struct_words[i_verb]["word"]
-        #verb = verb_NLP.text
         do_verbose = self._get_info("do_verbose")
         list_category_names = config.list_category_names
         list_category_synsets = config.list_category_synsets
@@ -5144,8 +5099,6 @@ class Classifier_Rules(_Classifier):
 
         ##Throw an error if no categories fit this verb well
         if not any(pass_bools):
-            #raise ValueError("Err: No categories fit verb: {0}, {1}"
-            #                    .format(verb, score_fins))
             if do_verbose:
                 print("No categories fit verb: {0}, {1}\n"
                                 .format(verb, score_fins))
@@ -5175,8 +5128,6 @@ class Classifier_Rules(_Classifier):
                 print("Selecting most extreme verb: {0}\n".format(tmp_extreme))
             #Return the selected most-extreme score
             return tmp_extreme
-            #raise ValueError("Err: Top scores too close: {0}: {1}\n{2}\n{3}."
-            #    .format(verb, root_hypernyms, score_fins,list_category_names))
 
         ##Return the determined topical category with the best score
         best_category = list_category_names[np.argmax(score_fins)]
@@ -5227,7 +5178,6 @@ class Classifier_Rules(_Classifier):
                     curr_comps.append(tmp_stuff["components"])
             #
             #Combine the scores
-            #dict_scores[ii] = self._combine_unlinked_scores(curr_scores)
             if (len(curr_scores) > 0):
                 dict_scores.append(self._combine_unlinked_scores(curr_scores))
                 list_comps.append(curr_comps)
@@ -5249,8 +5199,6 @@ class Classifier_Rules(_Classifier):
         if do_verbose is None:
             do_verbose = self._get_info("do_verbose")
         do_verbose_deep = self._get_info("do_verbose_deep")
-        #do_filler = self._get_info("do_filler")
-        #do_anoncites = self._get_info("do_anoncites")
         #Store/Override latest keyword object and None return of classif.
         self._store_info(keyword_obj, "keyword_obj")
 
@@ -5271,10 +5219,6 @@ class Classifier_Rules(_Classifier):
             print("Verdicts complete.")
             print("Verdict dictionary:\n{0}".format(dict_results))
             print("---")
-
-        #Classify total text based on its verdicts across all statements
-        #dict_verdicts = self._compile_verdicts(dict_results,
-        #                                        do_verbose=do_verbose)
 
         #Return final verdicts
         return dict_results #dict_verdicts
@@ -5382,9 +5326,6 @@ class Classifier_Rules(_Classifier):
                 #Increment count of sentences with max-valued verdict
                 if tmp_compare:
                     dict_results[curr_key]["count_max"] += 1
-                #
-                #Increment count of statements in general
-                #dict_results[curr_key]["count_tot"] += 1
                 #
                 #Increment unnorm. score count
                 dict_results[curr_key]["score_tot_unnorm"] += tmp_unnorm
@@ -5706,12 +5647,10 @@ class Classifier_Rules(_Classifier):
         #
 
         #Iterate through words directly attached to this verb
-        #wordchunk_ids = [item.i for item in struct_words[i_verb]["wordchunk"]]
         tmp_list = list(set((branch_verb["i_branchwords_all"])))
-                            #+ struct_words[i_verb]["i_wordchunk"].tolist()))
-                            #+ wordchunk_ids))
-                        #) #Following words + words in wordchunk; cover all bases
-        tmp_list = [item for item in tmp_list if ((item != i_verb) and (struct_words[item]["pos_main"] != "VERB"))]
+        tmp_list = [item for item in tmp_list
+                    if ((item != i_verb)
+                        and (struct_words[item]["pos_main"] != "VERB"))]
         for ii in tmp_list:
             #Skip word if not stored (i.e., trimmed word for trimming scheme)
             if ii not in struct_words:
@@ -5758,10 +5697,6 @@ class Classifier_Rules(_Classifier):
                 print("Sentence: {0}".format(tmp_sent))
                 tmp_chunk = struct_words[i_verb]["wordchunk"]
                 print("Wordchunk: {0}".format(tmp_chunk))
-                #for aa in range(0, len(tmp_chunk)):
-                #    print("{0}: {1}: {2}, {3}, {4}"
-                #            .format(aa, tmp_chunk[aa], tmp_chunk[aa].dep_,
-                #                    tmp_chunk[aa].pos_, tmp_chunk[aa].tag_))
                 print("Chosen main pos.: {0}".format(curr_pos_raw))
                 #
                 curr_pos = lookup_pos[curr_pos_raw]
@@ -5797,7 +5732,6 @@ class Classifier_Rules(_Classifier):
             #
             #Store current verb class if not stored previously
             dict_nest["link_verbtypes"].append(struct_verbs[vv]["verbtype"])
-            #link_verbclass = self._categorize_verb(struct_verbs[vv]["verb"].text)
             link_verbclass = self._categorize_verb(
                                             i_verb=struct_verbs[vv]["i_verb"],
                                             struct_words=struct_words)
@@ -5956,15 +5890,7 @@ class Classifier_Rules(_Classifier):
                                         and not (is_proandkey)):
                             for key in keys_nonmatter:
                                 comp_main[key] = nest[(prefix_link+key)][ii]
-                #Copy over any precedent terms
-                #for term in curr_matters:
-                #    if (term not in main_matters) and (term in terms_superior):
-                #        comp_main[key_matter_obj].append(term)
-                #        main_matters.append(term)
-                #        #Override main terms with non-matter terms, if 'I'-term
-                #        if (bool_pronounI in curr_matters):
-                #            for key in keys_nonmatter:
-                #                comp_main[key] = nest[(prefix_link+key)][ii]
+                #
 
                 #Print some notes
                 if do_verbose:
@@ -6199,30 +6125,6 @@ class Operator(_Base):
             #
             pass
         #
-        """ #Version before do_raise_innererror and try-except block
-        if (modif is None):
-            if do_verbose:
-                print("\nPreprocessing and extracting modifs from the text...")
-            output = self.process(text=text,
-                                do_check_truematch=do_check_truematch,
-                                buffer=buffer, lookup=lookup,keyword_obj=keyobj,
-                                do_verbose=do_verbose,
-                                do_verbose_deep=do_verbose_deep)
-            modif = output["modif"]
-            forest = output["forest"]
-            #
-            #Print some notes
-            if do_verbose:
-                print("Text has been processed into modif.")
-        #
-        #Otherwise, use given modif
-        else:
-            #Print some notes
-            if do_verbose:
-                print("Modif given. No text processing will be done.")
-            #
-            pass
-        #"""
 
         #Set rejected verdict if empty text
         if (modif.strip() == ""):
@@ -6256,16 +6158,6 @@ class Operator(_Base):
                 print("-\nThe following err. was encountered in operate:")
                 print(repr(err))
                 print("Error was noted. Continuing.\n-")
-            #
-            #except (ValueError, KeyError, IndexError) as err:
-            #    if True:
-            #        print("-")
-            #        print("The following err. was encountered in operate:")
-            #        print(err)
-            #        print("Error was noted. Continuing.")
-            #        print("-")
-            #    #
-            #    dict_verdicts = config.dictverdict_error.copy()
         #
 
         #Return the verdict with modif included
@@ -6883,9 +6775,6 @@ class Performance(_Base):
         #
 
         ##Use each operator to classify the set of texts and measure performance
-        #lists_measclassifs = [None]*num_ops
-        #list_counters = [None]*num_ops
-        #list_misclassifs = [None]*num_ops
         dict_evaluations = {item._get_info("name"):None for item in operators}
         for ii in range(0, num_ops):
             curr_op = operators[ii] #Current operator
@@ -6965,9 +6854,6 @@ class Performance(_Base):
             #
 
             #Store the current results
-            #lists_measclassifs[ii] = curr_results #Measured classifications
-            #list_counters[ii] = curr_counter #Performance counter
-            #list_misclassifs[ii] = curr_misclassifs #Misclassified ids and info
             dict_evaluations[curr_name] = {"counters":curr_counter,
                                         "misclassifs":curr_misclassifs,
                                         "actual_results":curr_actdicts,
@@ -7011,10 +6897,6 @@ class Performance(_Base):
             if do_verbose:
                 print("All work complete for Operator #{0}.".format(ii))
             #
-        #
-        #Collect the results
-        #dict_evaluation={"counters":list_counters,"classifs":lists_measclassifs,
-        #                "}
         #
         #Print some notes
         if do_verbose:
@@ -7109,8 +6991,6 @@ class Performance(_Base):
             #
             #Iterate through missions that were considered
             for curr_key in curr_measdict:
-                #lookup = operator._fetch_keyword_object(lookup=curr_key
-                #                                        )._get_info("name")
                 lookup = curr_key
                 #
 
@@ -7127,10 +7007,6 @@ class Performance(_Base):
                 if ((threshold is not None)
                                 and (curr_measval.lower().replace("_","")
                                         in act_classnames)):
-                    #tmp_pass =curr_measdict[lookup]["uncertainty"][curr_measval]
-                    #if (tmp_pass < threshold):
-                    #    curr_measval = config.dictverdict_lowprob.copy(
-                    #                                                )["verdict"]
                     tmp_pass =curr_measdict[lookup]["uncertainty"]
                     if (tmp_pass is not None):
                         if (tmp_pass[curr_measval] < threshold):
