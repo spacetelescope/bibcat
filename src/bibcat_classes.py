@@ -615,8 +615,9 @@ class _Base():
 
             #Throw error if no match found
             if (len(set_matches) == 0):
-                raise ValueError("Err: Unrecognized ambig. phrase:\n{0}"
-                                .format(curr_chunk))
+                raise ValueError(("Err: Unrecognized ambig. phrase:\n{0}"
+                                    +"\nTaken from this text snippet:\n{1}")
+                                .format(curr_chunk, text))
             #
 
             #Determine and extract best match (=match with shortest substring)
@@ -6379,6 +6380,51 @@ class Operator(_Base):
         if (modif is None):
             if do_verbose:
                 print("\nPreprocessing and extracting modifs from the text...")
+            #
+            if do_raise_innererror: #Allow stop from any exceptions encountered
+                output = self.process(text=text,
+                                do_check_truematch=do_check_truematch,
+                                buffer=buffer, lookup=lookup,keyword_obj=keyobj,
+                                do_verbose=do_verbose,
+                                do_verbose_deep=do_verbose_deep)
+            else: #Otherwise, print any exceptions and keep moving forward
+                try:
+                    output = self.process(text=text,
+                                do_check_truematch=do_check_truematch,
+                                buffer=buffer, lookup=lookup,keyword_obj=keyobj,
+                                do_verbose=do_verbose,
+                                do_verbose_deep=do_verbose_deep)
+                #
+                #Catch any exceptions and force-print some notes
+                except Exception as err:
+                    dict_verdicts = preset.dictverdict_error.copy()
+                    print("-\nThe following err. was encountered in operate:")
+                    print(repr(err))
+                    print("Error was noted. Returning error as verdict.\n-")
+                    dict_verdicts["modif"] = ("<PROCESSING ERROR:\n{0}>"
+                                                .format(repr(err)))
+                    return dict_verdicts
+            #
+            #Fetch the generated output
+            modif = output["modif"]
+            forest = output["forest"]
+            #
+            #Print some notes
+            if do_verbose:
+                print("Text has been processed into modif.")
+        #
+        #Otherwise, use given modif
+        else:
+            #Print some notes
+            if do_verbose:
+                print("Modif given. No text processing will be done.")
+            #
+            pass
+        #
+        """ #Version before do_raise_innererror and try-except block
+        if (modif is None):
+            if do_verbose:
+                print("\nPreprocessing and extracting modifs from the text...")
             output = self.process(text=text,
                                 do_check_truematch=do_check_truematch,
                                 buffer=buffer, lookup=lookup,keyword_obj=keyobj,
@@ -6398,7 +6444,7 @@ class Operator(_Base):
                 print("Modif given. No text processing will be done.")
             #
             pass
-        #
+        #"""
 
         #Set rejected verdict if empty text
         if (modif.strip() == ""):
@@ -7098,7 +7144,7 @@ class Performance(_Base):
                                 do_check_truematch=do_verify_truematch,
                                 do_raise_innererror=do_raise_innererror,
                                 print_freq=print_freq,
-                                do_verbose=do_verbose_deep,
+                                do_verbose=do_verbose,
                                 do_verbose_deep=do_verbose_deep)
             #
             #Print some notes
