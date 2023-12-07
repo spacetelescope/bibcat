@@ -20,7 +20,7 @@ Change `env_name` below with whatever you want to name the environment.
 
 
 ### Input JSON file
-Download the papers+classification JSON file ([dataset_combined_all.json](https://stsci.app.box.com/file/1284375342540)) from the Box folder. This file is accessed only by the authorized users. The downloading the file requires single sign-on. 
+Download the papers+classification JSON file ([dataset_combined_all_2018-2021.json](https://stsci.app.box.com/file/1380606268376)) from the Box folder. This file is accessed only by the authorized users. The downloading the file requires single sign-on. 
 Save the file outside the bibcat folder on your local computer and you will set up the path to the file as a variable called `path_json` in `bibcat_config.py`.
 
 
