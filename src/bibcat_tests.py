@@ -35,6 +35,7 @@ test_which_modes = ["none", "skim", "trim", "anon", "skim_trim_anon"]
 
 ##Mission terms
 #Keyword objects
+kobj_hla = params.keyword_obj_HLA
 kobj_hubble = params.keyword_obj_HST
 kobj_kepler = params.keyword_obj_Kepler
 kobj_k2 = params.keyword_obj_K2
@@ -1327,12 +1328,21 @@ class TestKeyword(unittest.TestCase):
             "that HcST data":{"kobj":kobj_hubble, "bool":False},
             "that A.H.S.T.M. data":{"kobj":kobj_hubble, "bool":False},
             "that A.H.S.T.M data":{"kobj":kobj_hubble, "bool":False},
+            "that AHSTM data":{"kobj":kobj_hubble, "bool":False},
             "that LHST data":{"kobj":kobj_hubble, "bool":False},
             "that HS.xT data":{"kobj":kobj_hubble, "bool":False},
             "that K23 data":{"kobj":kobj_k2, "bool":False},
             "that AK2 data":{"kobj":kobj_k2, "bool":False},
             "that K2 data":{"kobj":kobj_k2, "bool":True},
-            "that K 2 star":{"kobj":kobj_k2, "bool":False}
+            "that K 2 star":{"kobj":kobj_k2, "bool":False},
+            "archive observations":{"kobj":kobj_hla, "bool":False},
+            "hubble and archive observations":{"kobj":kobj_hla, "bool":False},
+            "Hubble and Archive observations":{"kobj":kobj_hla, "bool":False},
+            "they took Hubble images":{"kobj":kobj_hla, "bool":False},
+            "they took HST images":{"kobj":kobj_hla, "bool":False},
+            "the hubble legacy archive":{"kobj":kobj_hla, "bool":True},
+            "the hla uncapitalized":{"kobj":kobj_hla, "bool":True},
+            "the Hubble Archive is different":{"kobj":kobj_hla, "bool":False}
             }
             #
 
