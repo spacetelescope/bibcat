@@ -2078,19 +2078,18 @@ class Grammar(_Base):
         #
 
         #Process ambig. phrase data, if not given
-        if (do_check_truematch) and (dict_ambigs is None):
+        if ((do_check_truematch) and (dict_ambigs is None)):
             #Print some notes
             if do_verbose:
                 print("Processing database of ambiguous phrases...")
             #
             dict_ambigs = self._process_database_ambig()
-        #Otherwise, store empty placeholders
+        #Otherwise, do nothing new
         else:
             #Print some notes
             if do_verbose:
                 print("No ambiguous phrase processing requested.")
             #
-            dict_ambigs = None
         #
 
         #Extract keyword paragraph from the text
