@@ -6901,8 +6901,8 @@ class Performance(_Base):
                 list_str = [("Internal ID: {0}\nBibcode: {1}\nMission: {2}\n"
                             +"Actual Classification: {3}\n"
                             +"Measured Classification: {4}\n"
-                            +"Modified Modif:\n''\n{5}\n''\n-\n"
-                            +"Unmodified Modif:\n''\n{6}\n''\n-\n")
+                            +"Modif:\n''\n{5}\n''\n-\n"
+                            +"Base Paragraph:\n''\n{6}\n''\n-\n")
                             .format(curr_misclassifs[key]["id"],
                                     curr_misclassifs[key]["bibcode"],
                                     curr_misclassifs[key]["mission"],
@@ -6912,7 +6912,7 @@ class Performance(_Base):
                                     curr_misclassifs[key]["modif_none"])
                             for key in curr_misclassifs]
                 #
-                str_misclassif = "\n---\n".join(list_str) #Combined string
+                str_misclassif = "\n-----\n".join(list_str) #Combined string
 
                 #Save the full string of misclassifications
                 tmp_filename="{0}_{1}.txt".format(fileroot_misclassif,curr_name)
