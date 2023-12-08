@@ -3917,7 +3917,7 @@ class Classifier_ML(_Classifier):
 
     ##Method: classify_text
     ##Purpose: Classify a single block of text
-    def classify_text(self, text, threshold, keyword_obj=None, do_verbose=False, forest=None):
+    def classify_text(self, text, threshold, do_check_truematch=None, keyword_obj=None, do_verbose=False, forest=None):
         """
         Method: classify_text
         Purpose: Classify given text using stored machine learning (ML) model.
@@ -6111,10 +6111,12 @@ class Operator(_Base):
                     print("Error was noted. Returning error as verdict.\n-")
                     dict_verdicts["modif"] = ("<PROCESSING ERROR:\n{0}>"
                                                 .format(repr(err)))
+                    dict_verdicts["modif_none"] = None
                     return dict_verdicts
             #
             #Fetch the generated output
             modif = output["modif"]
+            modif_none = output["modif_none"]
             forest = output["forest"]
             #
             #Print some notes
@@ -6127,6 +6129,7 @@ class Operator(_Base):
             if do_verbose:
                 print("Modif given. No text processing will be done.")
             #
+            modif_none = None
             pass
         #
 
@@ -6164,6 +6167,7 @@ class Operator(_Base):
 
         #Return the verdict with modif included
         dict_verdicts["modif"] = modif
+        dict_verdicts["modif_none"] = modif_none
         return dict_verdicts
     #
 
@@ -6319,6 +6323,7 @@ class Operator(_Base):
         grammar.run_modifications(which_modes=use_these_modes)
         output = grammar.get_modifs(do_include_forest=True)
         modif = output["modifs"][mode]
+        modif_none = output["modifs"]["none"] #Include unmodified vers. as well
         forest = output["_forest"]
         #
         #Print some notes
@@ -6327,7 +6332,7 @@ class Operator(_Base):
         #
 
         #Return the modif and internal processing output
-        return {"modif":modif, "forest":forest}
+        return {"modif":modif, "modif_none":modif_none, "forest":forest}
     #
 
     ##Method: train_model_ML
@@ -6896,13 +6901,15 @@ class Performance(_Base):
                 list_str = [("Internal ID: {0}\nBibcode: {1}\nMission: {2}\n"
                             +"Actual Classification: {3}\n"
                             +"Measured Classification: {4}\n"
-                            +"Modif: ''{5}''")
+                            +"Modified Modif:\n''\n{5}\n''\n-\n"
+                            +"Unmodified Modif:\n''\n{6}\n''\n-\n")
                             .format(curr_misclassifs[key]["id"],
                                     curr_misclassifs[key]["bibcode"],
                                     curr_misclassifs[key]["mission"],
                                     curr_misclassifs[key]["act_classif"],
                                     curr_misclassifs[key]["meas_classif"],
-                                    curr_misclassifs[key]["modif"])
+                                    curr_misclassifs[key]["modif"],
+                                    curr_misclassifs[key]["modif_none"])
                             for key in curr_misclassifs]
                 #
                 str_misclassif = "\n---\n".join(list_str) #Combined string
@@ -7053,11 +7060,12 @@ class Performance(_Base):
                 #If misclassification, take note
                 if (curr_actval != curr_measval):
                     curr_info = {"act_classif":curr_actval,
-                                "meas_classif":curr_measval,
-                                "bibcode":curr_actdict["bibcode"],
-                                "mission":lookup,
-                                "id":curr_actdict["id"],
-                                "modif":curr_measdict[lookup]["modif"]}
+                            "meas_classif":curr_measval,
+                            "bibcode":curr_actdict["bibcode"],
+                            "mission":lookup,
+                            "id":curr_actdict["id"],
+                            "modif":curr_measdict[lookup]["modif"],
+                            "modif_none":curr_measdict[lookup]["modif_none"]}
                     #
                     dict_misclassifs[str(i_misclassif)] = curr_info
                     #Increment count of misclassifications
