@@ -614,7 +614,12 @@ class _Base():
 
             #Throw error if no match found
             if (len(set_matches) == 0):
-                raise ValueError(("Err: Unrecognized ambig. phrase:\n{0}"
+                #Raise a unique for-user error (using NotImplementedError)
+                #Allows this exception to be uniquely caught elsewhere in code
+                #Use-case isn't exactly what NotImplemented means, but that's ok
+                #RuntimeError could also work but seems more for general use
+                raise NotImplementedError(
+                                    ("Err: Unrecognized ambig. phrase:\n{0}"
                                     +"\nTaken from this text snippet:\n{1}")
                                 .format(curr_chunk, text))
             #
@@ -5193,7 +5198,7 @@ class Classifier_Rules(_Classifier):
 
     ##Method: classify_text
     ##Purpose: Classify full text based on its statements (rule approach)
-    def classify_text(self, keyword_obj, threshold, do_check_truematch=True, which_mode=None, forest=None, text=None, buffer=0, do_verbose=None):
+    def classify_text(self, keyword_obj, threshold, do_check_truematch, which_mode=None, forest=None, text=None, buffer=0, do_verbose=None):
         #Fetch global variables
         if do_verbose is None:
             do_verbose = self._get_info("do_verbose")
@@ -6136,20 +6141,18 @@ class Operator(_Base):
         #Classify the text using stored classifier with raised error
         elif do_raise_innererror: #If True, allow raising of inner errors
             dict_verdicts = classifier.classify_text(text=modif,
-                                            forest=forest,
-                                            keyword_obj=keyobj,
-                                            do_verbose=do_verbose, #_deep,
-                                            threshold=threshold)
+                                    do_check_truematch=do_check_truematch,
+                                    forest=forest, keyword_obj=keyobj,
+                                    do_verbose=do_verbose, threshold=threshold)
         #
         #Otherwise, run classification while ignoring inner errors
         else:
             #Try running classification
             try:
                 dict_verdicts = classifier.classify_text(text=modif,
-                                            forest=forest,
-                                            keyword_obj=keyobj,
-                                            do_verbose=do_verbose, #_deep,
-                                            threshold=threshold)
+                                    do_check_truematch=do_check_truematch,
+                                    forest=forest, keyword_obj=keyobj,
+                                    do_verbose=do_verbose, threshold=threshold)
             #
             #Catch certain exceptions and force-print some notes
             except Exception as err:
@@ -6329,7 +6332,7 @@ class Operator(_Base):
 
     ##Method: train_model_ML
     ##Purpose: Process text into modifs and then train ML model on the modifs
-    def train_model_ML(self, dir_model, name_model, do_reuse_run, dict_texts, mapper, seed_TVT=10, seed_ML=8, buffer=0, fraction_TVT=[0.8, 0.1, 0.1], mode_TVT="uniform", do_shuffle=True, print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def train_model_ML(self, dir_model, name_model, do_reuse_run, dict_texts, mapper, do_check_truematch, seed_TVT=10, seed_ML=8, buffer=0, fraction_TVT=[0.8, 0.1, 0.1], mode_TVT="uniform", do_shuffle=True, print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: train_model_ML
         Purpose:
@@ -6340,6 +6343,8 @@ class Operator(_Base):
             - Number of +/- sentences around a sentence containing a target mission to include in the paragraph.
           - do_reuse_run [bool]:
             - Whether or not to reuse outputs (e.g., existing training, validation directories) from any existing previous run with the same model name.
+          - do_check_truematch [bool]:
+            - Whether or not to check that mission phrases found in text are known true vs. false matches. (E.g., 'Edwin Hubble' as false match for the Hubble Space Telescope).
           - do_shuffle [bool]:
             - Whether or not to shuffle texts when generating training, validation, and testing directories.
           - do_verbose [bool (default=False)]:
@@ -6411,13 +6416,30 @@ class Operator(_Base):
             #Process each text within the database into a modif
             dict_modifs = {} #Container for modifs and text classification info
             i_track = 0
+            i_skipped = 0
             num_data = len(dataset)
             for curr_key in dataset:
                 old_dict = dataset[curr_key]
                 #Extract modif for current text
-                curr_res = self.process(text=old_dict["text"],
-                                    do_check_truematch=False, buffer=buffer,
-                                    lookup=old_dict["mission"],
+                if do_check_truematch: #Catch and print unknown ambig. phrases
+                    try:
+                        curr_res = self.process(text=old_dict["text"],
+                                    do_check_truematch=do_check_truematch,
+                                    buffer=buffer, lookup=old_dict["mission"],
+                                    keyword_obj=None,do_verbose=do_verbose_deep,
+                                    do_verbose_deep=do_verbose_deep
+                                    )
+                    except NotImplementedError as err:
+                        print("-\nThe following err. was encountered"
+                                +" in train_model_ML:")
+                        print(repr(err))
+                        print("Error was noted. Skipping this paper.\n-")
+                        i_skipped += 1
+                        continue
+                else: #Otherwise, run without ambig. phrase check
+                    curr_res = self.process(text=old_dict["text"],
+                                    do_check_truematch=do_check_truematch,
+                                    buffer=buffer, lookup=old_dict["mission"],
                                     keyword_obj=None,do_verbose=do_verbose_deep,
                                     do_verbose_deep=do_verbose_deep
                                     )
@@ -6444,6 +6466,9 @@ class Operator(_Base):
             if do_verbose:
                 print("{0} texts have been processed into modifs."
                         .format(i_track))
+                if do_check_truematch:
+                    print("{0} texts skipped due to unknown ambig. phrases."
+                            .format(i_skipped))
                 print("Storing the data in train+validate+test directories...")
             #
 
