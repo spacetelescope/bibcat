@@ -30,8 +30,7 @@ keyword_obj_HLA = bibcat.Keyword(
             keywords=["Hubble Legacy Archive"],
             acronyms=["HLA"])
 #
-#all_kobjs = [keyword_obj_HST, keyword_obj_JWST, keyword_obj_TESS, keyword_obj_Kepler, keyword_obj_PanSTARRS, keyword_obj_GALEX, keyword_obj_K2, keyword_obj_HLA]
-all_kobjs = [keyword_obj_HST, keyword_obj_HLA]
+all_kobjs = [keyword_obj_HST, keyword_obj_JWST, keyword_obj_TESS, keyword_obj_Kepler, keyword_obj_PanSTARRS, keyword_obj_GALEX, keyword_obj_K2, keyword_obj_HLA]
 #
 
 ##Classification parameters

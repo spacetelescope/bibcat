@@ -1555,6 +1555,11 @@ class Keyword(_Base):
             check_acronyms = False
         #
 
+        print("~")
+        print(exps_k)
+        print(exp_a)
+        print("~\n")
+
         #Print some notes
         if do_verbose:
             print("Keywords: {0}\nKeyword regex:\n{1}".format(keywords, exps_k))

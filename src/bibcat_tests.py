@@ -42,7 +42,7 @@ kobj_k2 = params.keyword_obj_K2
 #
 #Keyword-object lookups
 list_lookup_kobj = [kobj_hubble, kobj_kepler, kobj_k2]
-dict_lookup_kobj = {"Hubble":kobj_hubble, "Kepler":kobj_kepler, "K2":kobj_k2}
+dict_lookup_kobj = {"Hubble":kobj_hubble, "Kepler":kobj_kepler, "K2":kobj_k2, "HLA":kobj_hla}
 #
 
 ##Placeholders
@@ -55,8 +55,8 @@ placeholder_website = config.placeholder_website
 
 ##Classifier setup
 mapper = params.map_papertypes
-all_kobjs = params.all_kobjs
-allowed_classifications = params.allowed_classifications
+all_kobjs = [params.keyword_obj_HST, params.keyword_obj_JWST, params.keyword_obj_TESS, params.keyword_obj_Kepler, params.keyword_obj_PanSTARRS, params.keyword_obj_GALEX, params.keyword_obj_K2, params.keyword_obj_HLA]
+allowed_classifications = ["SCIENCE", "DATA_INFLUENCED", "MENTION", "SUPERMENTION"]
 #
 #-------------------------------------------------------------------------------
 
@@ -1918,7 +1918,7 @@ class TestGrammar(unittest.TestCase):
                 #Prepare and run test for bibcat class instance
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
                                         do_check_truematch=True,
-                                        do_verbose=True)
+                                        do_verbose=False)
                 testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:
@@ -1944,6 +1944,57 @@ class TestGrammar(unittest.TestCase):
                         #
                         self.assertEqual(test_res, curr_answer)
                     #
+                #
+            #
+        #
+    #
+#"""
+
+#class: TestOperator
+#Purpose: Testing the Operator class
+class TestOperator(unittest.TestCase):
+    #For tests of fetching keyword object using lookup item:
+    if True:
+        #Test fetching keyword object for objects with overlapping terms
+        def test__fetch_keyword_object__overlap(self):
+            #Prepare text and answers for test
+            tmp_kobj_list = [kobj_hubble, kobj_hla]
+            dict_acts = {"Hubble Legacy Archive":"HLA",
+                "Hubble":"Hubble",
+                "HST":"Hubble",
+                "HLA":"HLA",
+                "Hubble Archive":"Hubble",
+                "Hubble Legacy":"Hubble"
+            }
+            #
+
+            #Prepare and run test for bibcat class instance
+            testbase = bibcat.Operator(classifier=None, mode=None,
+                                keyword_objs=tmp_kobj_list, do_verbose=False,
+                                name="operator", load_check_truematch=False,
+                                do_verbose_deep=False)
+            #Determine and check answers
+            for key1 in dict_acts:
+                #Otherwise, check generated modif
+                curr_lookup = key1
+                test_res = testbase._fetch_keyword_object(lookup=curr_lookup,
+                                do_verbose=True, do_raise_emptyerror=True)
+                curr_answer = dict_lookup_kobj[dict_acts[key1]]
+                #
+
+                #Check answer
+                try:
+                    self.assertEqual(test_res, curr_answer)
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print(("Text: {2}\n\nTest answer: {0}\n"
+                            +"\nAct. answer: {1}\n")
+                            .format(test_res, curr_answer, key1))
+                    print("---")
+                    print("")
+                    #
+                    self.assertEqual(test_res, curr_answer)
                 #
             #
         #
