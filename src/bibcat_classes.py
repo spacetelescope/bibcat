@@ -1425,7 +1425,7 @@ class Keyword(_Base):
     """
     ##Method: __init__
     ##Purpose: Initialize this class instance
-    def __init__(self, keywords, acronyms=None, do_verbose=False):
+    def __init__(self, keywords, acronyms=None, banned_overlap=[], do_verbose=False):
         """
         Method: __init__
         WARNING! This method is *not* meant to be used directly by users.
@@ -1434,6 +1434,7 @@ class Keyword(_Base):
         #Initialize storage
         self._storage = {}
         self._store_info(do_verbose, "do_verbose")
+        self._store_info(banned_overlap, "banned_overlap")
 
         #Cleanse keywords of extra whitespace, punctuation, etc.
         keywords_clean = sorted([self._cleanse_text(text=phrase,
@@ -1442,6 +1443,14 @@ class Keyword(_Base):
                             key=(lambda w:len(w)))[::-1] #Sort by desc. length
         #Store keywords
         self._store_info(keywords_clean, key="keywords")
+
+        #Cleanse banned overlap of extra whitespace, punctuation, etc.
+        banned_overlap_lowercase = [self._cleanse_text(text=phrase.lower(),
+                                                    do_streamline_etal=True)
+                                    for phrase in banned_overlap]
+        #Store keywords
+        self._store_info(banned_overlap_lowercase,
+                        key="banned_overlap_lowercase")
 
         #Also cleanse+store acronyms, if given
         if (acronyms is not None):
@@ -1496,6 +1505,8 @@ class Keyword(_Base):
                     + "Name: {0}\n".format(self.get_name())
                     + "Keywords: {0}\n".format(self._get_info("keywords"))
                     + "Acronyms: {0}\n".format(self._get_info("acronyms"))
+                    + "Banned Overlap: {0}\n"
+                                    .format(self._get_info("banned_overlap"))
                     )
 
         ##Return the completed string for printing
@@ -1529,7 +1540,9 @@ class Keyword(_Base):
         """
         #Fetch global variables
         exps_k = self._get_info("exps_keywords")
+        keywords = self._get_info("keywords")
         exp_a = self._get_info("exp_acronyms")
+        banned_overlap_lowercase = self._get_info("banned_overlap_lowercase")
         do_verbose = self._get_info("do_verbose")
         allowed_modes = [None, "keyword", "acronym"]
         #
@@ -1542,8 +1555,10 @@ class Keyword(_Base):
 
         #Check if this text contains keywords
         if ((mode is None) or (mode.lower() == "keyword")):
-            check_keywords = any([bool(re.search(item, text,
-                            flags=re.IGNORECASE)) for item in exps_k])
+            check_keywords = any([bool(re.search(item1, text,
+                        flags=re.IGNORECASE)) for item1 in exps_k
+                        if (not any([(ban1 in text.lower())
+                                    for ban1 in banned_overlap_lowercase]))])
         else:
             check_keywords = False
         #
@@ -1554,11 +1569,6 @@ class Keyword(_Base):
         else:
             check_acronyms = False
         #
-
-        print("~")
-        print(exps_k)
-        print(exp_a)
-        print("~\n")
 
         #Print some notes
         if do_verbose:

@@ -67,6 +67,7 @@ allowed_classifications = ["SCIENCE", "DATA_INFLUENCED", "MENTION", "SUPERMENTIO
 #-------------------------------------------------------------------------------
 ###Test Classes
 #
+
 #class: TestData
 #Purpose: Testing datasets
 class TestData(unittest.TestCase):
@@ -1960,6 +1961,7 @@ class TestOperator(unittest.TestCase):
             #Prepare text and answers for test
             tmp_kobj_list = [kobj_hubble, kobj_hla]
             dict_acts = {"Hubble Legacy Archive":"HLA",
+                "Hubble Legacy Archive results":"HLA",
                 "Hubble":"Hubble",
                 "HST":"Hubble",
                 "HLA":"HLA",
@@ -1978,7 +1980,7 @@ class TestOperator(unittest.TestCase):
                 #Otherwise, check generated modif
                 curr_lookup = key1
                 test_res = testbase._fetch_keyword_object(lookup=curr_lookup,
-                                do_verbose=True, do_raise_emptyerror=True)
+                                do_verbose=False, do_raise_emptyerror=True)
                 curr_answer = dict_lookup_kobj[dict_acts[key1]]
                 #
 
