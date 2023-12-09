@@ -12,8 +12,8 @@ from nltk.corpus import wordnet
 
 ##Set global user paths
 #path_json = "path/to/dataset_combined_all.json" # set the path to the location of the JSON file you downloaded from Box
-#path_json ="/Users/jyoon/asb/bibliography_automation/bibcat_datasets/dataset_combined_all.json"
-path_json = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/BibTracking/scratchwork/dataset_combined_all.json")
+path_json ="/Users/jyoon/asb/bibliography_automation/bibcat_datasets/dataset_combined_all.json"
+#path_json = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/BibTracking/scratchwork/dataset_combined_all.json")
 name_model = "my_test_run" #Name of model run to save or load
 #
 
