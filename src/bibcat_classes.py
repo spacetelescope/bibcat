@@ -6409,6 +6409,7 @@ class Operator(_Base):
             or os.path.exists(os.path.join(dir_model,folders_TVT["validate"])))
         #If TVT directories already exist, either print note or raise error
         if is_exist:
+            str_err = None #Placeholder
             #Print some notes
             if do_verbose:
                 print("Previous training/validation directories already exist.")
@@ -6437,6 +6438,7 @@ class Operator(_Base):
             dict_modifs = {} #Container for modifs and text classification info
             i_track = 0
             i_skipped = 0
+            str_err = ""
             num_data = len(dataset)
             for curr_key in dataset:
                 old_dict = dataset[curr_key]
@@ -6450,11 +6452,19 @@ class Operator(_Base):
                                     do_verbose_deep=do_verbose_deep
                                     )
                     except NotImplementedError as err:
-                        print("-\nThe following err. was encountered"
-                                +" in train_model_ML:")
-                        print(repr(err))
-                        print("Error was noted. Skipping this paper.\n-")
-                        i_skipped += 1
+                        curr_str = (("\n-\n"
+                                    +"Printing Error:\nID: {0}\nBibcode: {1}\n"
+                                    +"Mission: {2}\nMasked class: {3}\n")
+                                    .format(old_dict["id"], old_dict["bibcode"],
+                                            old_dict["mission"], masked_class))
+                        curr_str += ("The following err. was encountered"
+                                    +" in train_model_ML:\n")
+                        curr_str += repr(err)
+                        curr_str += "\nError was noted. Skipping this paper.\n-"
+                        print(curr_str) #Print current error
+                        #
+                        str_err += curr_str #Tack this error onto full string
+                        i_skipped += 1 #Increment count of skipped papers
                         continue
                 else: #Otherwise, run without ambig. phrase check
                     curr_res = self.process(text=old_dict["text"],
@@ -6546,12 +6556,12 @@ class Operator(_Base):
             #
         #
 
-        #Exit the method
+        #Exit the method with error string
         #Print some notes
         if do_verbose:
-            print("Run of train_model_ML() complete!\n")
+            print("Run of train_model_ML() complete!\nError string returned.")
         #
-        return
+        return str_err
     #
 #
 

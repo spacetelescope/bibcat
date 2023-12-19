@@ -11,10 +11,8 @@ from nltk.corpus import wordnet
 #
 
 ##Set global user paths
-#path_json = "path/to/dataset_combined_all.json" # set the path to the location of the JSON file you downloaded from Box
-path_json ="/Users/jyoon/asb/bibliography_automation/bibcat_datasets/dataset_combined_all.json"
-#path_json = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/BibTracking/scratchwork/dataset_combined_all.json")
-name_model = "my_test_run" #Name of model run to save or load
+path_json = "path/to/dataset_combined_all.json" # set the path to the location of the JSON file you downloaded from Box
+name_model = "my_test_run_0" #Name of model run to save or load
 #
 
 ##Set global fixed paths
@@ -50,7 +48,7 @@ tfoutput_prefix = "tfoutput_"
 folders_TVT = {"train":"dir_train", "validate":"dir_validate", "test":"dir_test"}
 
 #Below are for bibcat_tests.py testing purposes only
-filepath_input = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/BibTracking/Datasets")
+filepath_input = "/path/to/the/dataset"
 path_papertrack = os.path.join(filepath_input, "papertrack_export_2023-11-06.json")
 path_papertext = os.path.join(filepath_input, "ST_Request2021_use.json")
 #
