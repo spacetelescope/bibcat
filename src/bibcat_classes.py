@@ -17,11 +17,10 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 #
 #Internal presets/constants
-import bibcat_constants as preset
 import bibcat_config as config
 #
 import spacy
-nlp = spacy.load(preset.spacy_language_model)
+nlp = spacy.load(config.spacy_language_model)
 import nltk
 from nltk.corpus import wordnet
 #
@@ -273,10 +272,10 @@ class _Base():
             vmin = 0 #None
             #Ignore nonmatch verdict to avoid spikes in color scaling if present
             tmpmatr = matr.copy()
-            if (preset.verdict_rejection.upper() in x_labels):
-                tmpmatr[:,x_labels.index(preset.verdict_rejection.upper())] = -1
-            if (preset.verdict_rejection.upper() in y_labels):
-                tmpmatr[y_labels.index(preset.verdict_rejection.upper()),:] = -1
+            if (config.verdict_rejection.lower() in x_labels):
+                tmpmatr[:,x_labels.index(config.verdict_rejection.upper())] = -1
+            if (config.verdict_rejection.lower() in y_labels):
+                tmpmatr[y_labels.index(config.verdict_rejection.upper()),:] = -1
             vmax = tmpmatr.max() #None
         #
 
@@ -382,8 +381,8 @@ class _Base():
 
         #Check for first-person pronouns, if requested
         if include_Ipronouns:
-            list_pos_pronoun = preset.pos_pronoun
-            nlp_lookup_person = preset.nlp_lookup_person
+            list_pos_pronoun = config.pos_pronoun
+            nlp_lookup_person = config.nlp_lookup_person
             check_pronounI = any([((item.pos_ in list_pos_pronoun) #Pronoun
                                 and ("1" in item.morph.get(nlp_lookup_person)))
                                 for item in version_NLP]) #Check if 1st-person
@@ -394,9 +393,9 @@ class _Base():
 
         #Check for special terms, if requested
         if include_terms:
-            list_pos_pronoun = preset.pos_pronoun
-            nlp_lookup_person = preset.nlp_lookup_person
-            special_synsets_fig = preset.special_synsets_fig
+            list_pos_pronoun = config.pos_pronoun
+            nlp_lookup_person = config.nlp_lookup_person
+            special_synsets_fig = config.special_synsets_fig
             #
             #For 'they' pronouns
             check_terms_they = any([((item.pos_ in list_pos_pronoun) #Pronoun
@@ -418,7 +417,7 @@ class _Base():
 
         #Check for etal terms, if requested
         if include_etal:
-            exp = preset.exp_etal_cleansed #Reg.ex. to find cleansed et al
+            exp = config.exp_etal_cleansed #Reg.ex. to find cleansed et al
             check_etal = bool(re.search(exp, text, flags=re.IGNORECASE))
             dict_results["is_etal"] = check_etal
         else: #Otherwise, remove term contribution
@@ -467,7 +466,7 @@ class _Base():
 
         #Replace numerics and citation numerics with placeholders
         text_orig = text
-        placeholder_number = preset.placeholder_number
+        placeholder_number = config.placeholder_number
         text = re.sub(r"\(?\b[0-9]+\b\)?", placeholder_number, text_orig)
 
         #Print some notes
@@ -615,8 +614,14 @@ class _Base():
 
             #Throw error if no match found
             if (len(set_matches) == 0):
-                raise ValueError("Err: Unrecognized ambig. phrase:\n{0}"
-                                .format(curr_chunk))
+                #Raise a unique for-user error (using NotImplementedError)
+                #Allows this exception to be uniquely caught elsewhere in code
+                #Use-case isn't exactly what NotImplemented means, but that's ok
+                #RuntimeError could also work but seems more for general use
+                raise NotImplementedError(
+                                    ("Err: Unrecognized ambig. phrase:\n{0}"
+                                    +"\nTaken from this text snippet:\n{1}")
+                                .format(curr_chunk, text))
             #
 
             #Determine and extract best match (=match with shortest substring)
@@ -661,11 +666,11 @@ class _Base():
          - Replace paper citations (e.g. 'et al.') with uniform placeholder.
         """
         #Extract global punctuation expressions
-        set_apostrophe = preset.set_apostrophe
-        set_punctuation = preset.set_punctuation
-        exp_punctuation = preset.exp_punctuation
-        set_openbrackets = preset.set_openbrackets
-        set_closebrackets = preset.set_closebrackets
+        set_apostrophe = config.set_apostrophe
+        set_punctuation = config.set_punctuation
+        exp_punctuation = config.exp_punctuation
+        set_openbrackets = config.set_openbrackets
+        set_closebrackets = config.set_closebrackets
 
         #Remove any starting punctuation
         text = re.sub(((r"^("+"|".join(exp_punctuation)+r")")),
@@ -731,7 +736,7 @@ class _Base():
             #
             #Replace not-bracketed citations or remove bracketed citations
             text = re.sub(exp_cites_yesbrackets, "", text)
-            text = re.sub(exp_cites_nobrackets, preset.placeholder_author, text)
+            text = re.sub(exp_cites_nobrackets, config.placeholder_author, text)
             #
             #Replace singular et al. (e.g. SingleAuthor et al.) wordage as well
             text = re.sub(r" et al\b\.?", "etal", text)
@@ -814,7 +819,7 @@ class _Base():
             #Store a representative synset and skip ahead if word is a numeral
             if bool(re.search(("^(ID)?[0-9]+"), curr_word.text,
                                 flags=re.IGNORECASE)):
-                tmp_rep = preset.string_numeral_ambig
+                tmp_rep = config.string_numeral_ambig
                 core_synsets.append([tmp_rep])
                 #Print some notes
                 if do_verbose:
@@ -863,7 +868,7 @@ class _Base():
         #
 
         #Extract unique roots of sets of synsets
-        exp_synset = preset.exp_synset
+        exp_synset = config.exp_synset
         core_roots = [np.unique([item2.split(".")[0]
                                 if bool(re.search(exp_synset, item2))
                                 else item2
@@ -896,6 +901,11 @@ class _Base():
         Purpose:
          - Determine if original part-of-speech (p.o.s.) for given word (if conjoined) matches given p.o.s.
         """
+        #Return False if pos is aux (which may not be conjoined)
+        if (pos in config.pos_aux):
+            return False
+        #
+
         #Check if this word is conjoined
         is_conjoined = self._is_pos_word(word=word, pos="CONJOINED")
         if (not is_conjoined): #Terminate early if not conjoined
@@ -944,17 +954,17 @@ class _Base():
         ##Check if given word is of given part-of-speech
         #Identify roots
         if pos in ["ROOT"]:
-            return (word_dep in preset.dep_root)
+            return (word_dep in config.dep_root)
         #
         #Identify verbs
         elif pos in ["VERB"]:
-            check_posaux = (word_pos in preset.pos_aux)
+            check_posaux = (word_pos in config.pos_aux)
             check_root = self._is_pos_word(word=word, pos="ROOT")
-            check_tag = (word_tag in preset.tag_verb_any)
-            check_pos = (word_pos in preset.pos_verb)
-            check_dep = (word_dep in preset.dep_verb)
-            tag_approved = (preset.tag_verb_present + preset.tag_verb_past
-                            + preset.tag_verb_future)
+            check_tag = (word_tag in config.tag_verb_any)
+            check_pos = (word_pos in config.pos_verb)
+            check_dep = (word_dep in config.dep_verb)
+            tag_approved = (config.tag_verb_present + config.tag_verb_past
+                            + config.tag_verb_future)
             check_approved = (word_tag in tag_approved)
             return ((((check_dep or check_root) and check_pos and check_tag)
                     or (check_root and check_posaux)) and check_approved)
@@ -970,9 +980,9 @@ class _Base():
                                                     do_flag_hidden=True)
             #
             #Check p.o.s. components
-            check_tag = (word_tag in preset.tag_useless)
-            check_dep = (word_dep in preset.dep_useless)
-            check_pos = (word_pos in preset.pos_useless)
+            check_tag = (word_tag in config.tag_useless)
+            check_dep = (word_dep in config.dep_useless)
+            check_pos = (word_pos in config.pos_useless)
             check_use = self._check_importance(word_text,
                                         version_NLP=word,
                                     keyword_objs=keyword_objs)["is_any"] #Useful
@@ -998,24 +1008,24 @@ class _Base():
             #
             #Determine if conjoined to subject, if applicable
             is_conjsubj = self._is_pos_conjoined(word, pos=pos)
-            check_dep = (word_dep in preset.dep_subject)
+            check_dep = (word_dep in config.dep_subject)
             return (((check_dep or is_conjsubj)
                         or ((check_noun or check_adj) and is_leftofverb))
                     and (not check_obj))
         #
         #Identify prepositions
         elif pos in ["PREPOSITION"]:
-            check_dep = (word_dep in preset.dep_preposition)
-            check_pos = (word_pos in preset.pos_preposition)
-            check_tag = (word_tag in preset.tag_preposition)
-            check_prepaux = ((word_dep in preset.dep_aux)
-                            and (word_pos in preset.pos_aux)
+            check_dep = (word_dep in config.dep_preposition)
+            check_pos = (word_pos in config.pos_preposition)
+            check_tag = (word_tag in config.tag_preposition)
+            check_prepaux = ((word_dep in config.dep_aux)
+                            and (word_pos in config.pos_aux)
                             and (check_tag)) #For e.g. mishandled 'to'
             return ((check_dep and check_pos and check_tag) or (check_prepaux))
         #
         #Identify base objects (so either direct or prep. objects)
         elif pos in ["BASE_OBJECT"]:
-            check_dep = (word_dep in preset.dep_object)
+            check_dep = (word_dep in config.dep_object)
             check_noun = self._is_pos_word(word=word, pos="NOUN")
             return (check_noun and check_dep)
         #
@@ -1084,8 +1094,8 @@ class _Base():
         #
         #Identify markers
         elif pos in ["MARKER"]:
-            check_dep = (word_dep in preset.dep_marker)
-            check_tag = (word_tag in preset.tag_marker)
+            check_dep = (word_dep in config.dep_marker)
+            check_tag = (word_tag in config.tag_marker)
             check_marker = (check_dep or check_tag)
             #Check if subject marker after non-root verb
             is_notroot = (len(word_ancestors) > 0)
@@ -1101,30 +1111,30 @@ class _Base():
         #
         #Identify improper X-words (for improper sentences)
         elif pos in ["X"]:
-            check_dep = (word_dep in preset.dep_xpos)
-            check_pos = (word_pos in preset.pos_xpos)
+            check_dep = (word_dep in config.dep_xpos)
+            check_pos = (word_pos in config.pos_xpos)
             return (check_dep or check_pos)
         #
         #Identify conjoined words
         elif pos in ["CONJOINED"]:
-            check_dep = (word_dep in preset.dep_conjoined)
+            check_dep = (word_dep in config.dep_conjoined)
             return (check_dep)
         #
         #Identify determinants
         elif pos in ["DETERMINANT"]:
-            check_pos = (word_pos in preset.pos_determinant)
-            check_tag = (word_tag in preset.tag_determinant)
+            check_pos = (word_pos in config.pos_determinant)
+            check_tag = (word_tag in config.tag_determinant)
             return (check_pos and check_tag)
         #
         #Identify aux
         elif pos in ["AUX"]:
-            check_dep = (word_dep in preset.dep_aux)
-            check_pos = (word_pos in preset.pos_aux)
-            check_prep = (word_tag in preset.tag_preposition)
-            check_num = (word_tag in preset.tag_number)
+            check_dep = (word_dep in config.dep_aux)
+            check_pos = (word_pos in config.pos_aux)
+            check_prep = (word_tag in config.tag_preposition)
+            check_num = (word_tag in config.tag_number)
             #
-            tags_approved = (preset.tag_verb_past + preset.tag_verb_present
-                            + preset.tag_verb_future + preset.tag_verb_purpose)
+            tags_approved = (config.tag_verb_past + config.tag_verb_present
+                            + config.tag_verb_future + config.tag_verb_purpose)
             check_approved = (word_tag in tags_approved)
             #
             return ((check_dep and check_pos and check_approved)
@@ -1132,60 +1142,60 @@ class _Base():
         #
         #Identify nouns
         elif pos in ["NOUN"]:
-            check_pos = (word_pos in preset.pos_noun)
+            check_pos = (word_pos in config.pos_noun)
             return (check_pos)
         #
         #Identify pronouns
         elif pos in ["PRONOUN"]:
-            check_tag = (word_tag in preset.tag_pronoun)
-            check_pos = (word_pos in preset.pos_pronoun)
+            check_tag = (word_tag in config.tag_pronoun)
+            check_pos = (word_pos in config.pos_pronoun)
             return (check_tag or check_pos)
         #
         #Identify adjectives
         elif pos in ["ADJECTIVE"]:
-            check_adjverb = ((word_dep in preset.dep_adjective)
-                                and (word_pos in preset.pos_verb)
-                                and (word_tag in preset.tag_verb_any))
-            check_pos = (word_pos in preset.pos_adjective)
-            check_tag = (word_tag in preset.tag_adjective)
+            check_adjverb = ((word_dep in config.dep_adjective)
+                                and (word_pos in config.pos_verb)
+                                and (word_tag in config.tag_verb_any))
+            check_pos = (word_pos in config.pos_adjective)
+            check_tag = (word_tag in config.tag_adjective)
             return (check_tag or check_pos or check_adjverb)
         #
         #Identify  conjunctions
         elif pos in ["CONJUNCTION"]:
-            check_pos = (word_pos in preset.pos_conjunction)
-            check_tag = (word_tag in preset.tag_conjunction)
+            check_pos = (word_pos in config.pos_conjunction)
+            check_tag = (word_tag in config.tag_conjunction)
             return (check_pos and check_tag)
         #
         #Identify passive verbs and aux
         elif pos in ["PASSIVE"]:
-            check_dep = (word_dep in preset.dep_verb_passive)
+            check_dep = (word_dep in config.dep_verb_passive)
             return check_dep
         #
         #Identify negative words
         elif pos in ["NEGATIVE"]:
-            check_dep = (word_dep in preset.dep_negative)
+            check_dep = (word_dep in config.dep_negative)
             return check_dep
         #
         #Identify punctuation
         elif pos in ["PUNCTUATION"]:
-            check_punct = (word_dep in preset.dep_punctuation)
+            check_punct = (word_dep in config.dep_punctuation)
             check_letter = bool(re.search(".*[a-z|0-9].*", word_text,
                                             flags=re.IGNORECASE))
             return (check_punct and (not check_letter))
         #
         #Identify punctuation
         elif pos in ["BRACKET"]:
-            check_brackets = (word_tag in (preset.tag_brackets))
+            check_brackets = (word_tag in (config.tag_brackets))
             return (check_brackets)
         #
         #Identify possessive markers
         elif pos in ["POSSESSIVE"]:
-            check_possessive = (word_tag in preset.tag_possessive)
+            check_possessive = (word_tag in config.tag_possessive)
             return (check_possessive)
         #
         #Identify numbers
         elif pos in ["NUMBER"]:
-            check_number = (word_pos in preset.pos_number)
+            check_number = (word_pos in config.pos_number)
             return (check_number)
         #
         #Otherwise, raise error if given pos is not recognized
@@ -1221,16 +1231,16 @@ class _Base():
         """
         #Load the ambig. phrase data
         lookup_ambigs = [str(item).lower() for item in
-                    np.genfromtxt(preset.filepath_keywords_ambig,
+                    np.genfromtxt(config.KW_AMBIG,
                                 comments="#", dtype=str)]
-        data_ambigs = np.genfromtxt(preset.filepath_phrases_ambig,
+        data_ambigs = np.genfromtxt(config.PHR_AMBIG,
                                 comments="#", dtype=str, delimiter="\t"
                                 )
         if (len(data_ambigs.shape) == 1): #If single row, reshape to 2D
             data_ambigs = data_ambigs.reshape(1, data_ambigs.shape[0])
         num_ambigs = data_ambigs.shape[0]
         #
-        str_anymatch_ambig = preset.string_anymatch_ambig.lower()
+        str_anymatch_ambig = config.string_anymatch_ambig.lower()
         #
         ind_keyword = 0
         ind_phrase = 1
@@ -1343,13 +1353,13 @@ class _Base():
          - Replace some common science abbreviations that confuse external NLP package sentence parsing.
         """
         #Extract global variables
-        dict_exp_abbrev = preset.dict_exp_abbrev
+        dict_exp_abbrev = config.dict_exp_abbrev
 
         #Remove any initial excessive whitespace
         text = self._cleanse_text(text=text, do_streamline_etal=True)
 
         #Replace annoying websites with placeholder
-        text = re.sub(preset.exp_website, preset.placeholder_website, text)
+        text = re.sub(config.exp_website, config.placeholder_website, text)
 
         #Replace annoying <> inserts (e.g. html)
         text = re.sub(r"<[A-Z|a-z|/]+>", "", text)
@@ -1362,18 +1372,18 @@ class _Base():
         #Replace annoying object numerical name notations
         #E.g.: HD 123456, 2MASS123-456
         text = re.sub(r"([A-Z]+) ?[0-9][0-9]+[A-Z|a-z]*((\+|-)[0-9][0-9]+)*",
-                        r"\g<1>"+preset.placeholder_number, text)
+                        r"\g<1>"+config.placeholder_number, text)
         #E.g.: Kepler-123ab
         text = re.sub(r"([A-Z][a-z]+)( |-)?[0-9][0-9]+([A-Z|a-z])*",
-                        r"\g<1> "+preset.placeholder_number, text)
+                        r"\g<1> "+config.placeholder_number, text)
 
         #Remove most obnoxious numeric ranges
         text = re.sub(r"~?[0-9]+([0-9]|\.)* ?- ?[0-9]+([0-9]|\.)*[A-Z|a-z]*\b",
-                        "{0}".format(preset.placeholder_numeric), text)
+                        "{0}".format(config.placeholder_numeric), text)
 
         #Remove spaces between capital+numeric names
         text = re.sub(r"([A-Z]+) ([0-9]+)([0-9]|[a-z])+",
-                        r"\1\2\3".format(preset.placeholder_numeric), text)
+                        r"\1\2\3".format(config.placeholder_numeric), text)
 
         #Remove any new excessive whitespace and punctuation spaces
         text = self._cleanse_text(text=text, do_streamline_etal=True)
@@ -1415,7 +1425,7 @@ class Keyword(_Base):
     """
     ##Method: __init__
     ##Purpose: Initialize this class instance
-    def __init__(self, keywords, acronyms=None, do_verbose=False):
+    def __init__(self, keywords, acronyms=None, banned_overlap=[], do_verbose=False):
         """
         Method: __init__
         WARNING! This method is *not* meant to be used directly by users.
@@ -1424,6 +1434,7 @@ class Keyword(_Base):
         #Initialize storage
         self._storage = {}
         self._store_info(do_verbose, "do_verbose")
+        self._store_info(banned_overlap, "banned_overlap")
 
         #Cleanse keywords of extra whitespace, punctuation, etc.
         keywords_clean = sorted([self._cleanse_text(text=phrase,
@@ -1433,9 +1444,17 @@ class Keyword(_Base):
         #Store keywords
         self._store_info(keywords_clean, key="keywords")
 
+        #Cleanse banned overlap of extra whitespace, punctuation, etc.
+        banned_overlap_lowercase = [self._cleanse_text(text=phrase.lower(),
+                                                    do_streamline_etal=True)
+                                    for phrase in banned_overlap]
+        #Store keywords
+        self._store_info(banned_overlap_lowercase,
+                        key="banned_overlap_lowercase")
+
         #Also cleanse+store acronyms, if given
         if (acronyms is not None):
-            acronyms_mid = [re.sub(preset.exp_nopunct, "", item,
+            acronyms_mid = [re.sub(config.exp_nopunct, "", item,
                                 flags=re.IGNORECASE) for item in acronyms]
             #Remove all whitespace
             acronyms_mid = [re.sub(" ", "", item) for item in acronyms_mid]
@@ -1486,6 +1505,8 @@ class Keyword(_Base):
                     + "Name: {0}\n".format(self.get_name())
                     + "Keywords: {0}\n".format(self._get_info("keywords"))
                     + "Acronyms: {0}\n".format(self._get_info("acronyms"))
+                    + "Banned Overlap: {0}\n"
+                                    .format(self._get_info("banned_overlap"))
                     )
 
         ##Return the completed string for printing
@@ -1519,7 +1540,9 @@ class Keyword(_Base):
         """
         #Fetch global variables
         exps_k = self._get_info("exps_keywords")
+        keywords = self._get_info("keywords")
         exp_a = self._get_info("exp_acronyms")
+        banned_overlap_lowercase = self._get_info("banned_overlap_lowercase")
         do_verbose = self._get_info("do_verbose")
         allowed_modes = [None, "keyword", "acronym"]
         #
@@ -1532,8 +1555,10 @@ class Keyword(_Base):
 
         #Check if this text contains keywords
         if ((mode is None) or (mode.lower() == "keyword")):
-            check_keywords = any([bool(re.search(item, text,
-                            flags=re.IGNORECASE)) for item in exps_k])
+            check_keywords = any([bool(re.search(item1, text,
+                        flags=re.IGNORECASE)) for item1 in exps_k
+                        if (not any([(ban1 in text.lower())
+                                    for ban1 in banned_overlap_lowercase]))])
         else:
             check_keywords = False
         #
@@ -1980,15 +2005,15 @@ class Paper(_Base):
         #Split by sentences starting with brackets
         text_flat = [item for phrase in text_lines
                             for item in
-                            re.split(preset.exp_splitbracketstarts, phrase)]
+                            re.split(config.exp_splitbracketstarts, phrase)]
         #Split by sentences ending with brackets
         text_flat = [item for phrase in text_flat
                             for item in
-                            re.split(preset.exp_splitbracketends, phrase)]
+                            re.split(config.exp_splitbracketends, phrase)]
         #Then split by assumed sentence structure
         text_flat = [item for phrase in text_flat
                             for item in
-                            re.split(preset.exp_splittext, phrase)]
+                            re.split(config.exp_splittext, phrase)]
         #Return the split text
         return text_flat
     #
@@ -2007,7 +2032,7 @@ class Paper(_Base):
 
         #Build regular expression for all acronyms
         list_exp = [(r"\b"
-                    +(r"[a-z]+\b"+preset.exp_acronym_midwords).join(letterset)
+                    +(r"[a-z]+\b"+config.exp_acronym_midwords).join(letterset)
                     +r"[a-z]+\b")
                     for letterset in acronyms]
         combined_exp = (r"(?:"+(r")|(?:".join(list_exp))+r")")
@@ -2073,19 +2098,18 @@ class Grammar(_Base):
         #
 
         #Process ambig. phrase data, if not given
-        if (do_check_truematch) and (dict_ambigs is None):
+        if ((do_check_truematch) and (dict_ambigs is None)):
             #Print some notes
             if do_verbose:
                 print("Processing database of ambiguous phrases...")
             #
             dict_ambigs = self._process_database_ambig()
-        #Otherwise, store empty placeholders
+        #Otherwise, do nothing new
         else:
             #Print some notes
             if do_verbose:
                 print("No ambiguous phrase processing requested.")
             #
-            dict_ambigs = None
         #
 
         #Extract keyword paragraph from the text
@@ -2160,7 +2184,7 @@ class Grammar(_Base):
         do_verbose = self._get_info("do_verbose")
         lookup_kobj = self._get_info("keyword_obj").get_name()
         if (which_modes is None):
-            which_modes = preset.list_preset_modes
+            which_modes = ["none"]
         paragraphs = self._get_info("paper").get_paragraphs()[lookup_kobj]
         #Print some notes
         if do_verbose:
@@ -2309,11 +2333,11 @@ class Grammar(_Base):
         word_dep = word.dep_
         #
         #Part-of-speech (pos) tag markers for tense of aux word
-        tags_past = preset.tag_verb_past
-        tags_present = preset.tag_verb_present
-        tags_future = preset.tag_verb_future
-        tags_purpose = preset.tag_verb_purpose
-        deps_passive = preset.dep_verb_passive
+        tags_past = config.tag_verb_past
+        tags_present = config.tag_verb_present
+        tags_future = config.tag_verb_future
+        tags_purpose = config.tag_verb_purpose
+        deps_passive = config.dep_verb_passive
         #Print some notes
         if do_verbose:
             print("\n> Running _add_aux!")
@@ -2399,11 +2423,11 @@ class Grammar(_Base):
                     "i_postverbs":[], "i_branchwords_all":[], "verbtype":[]}
 
         #Determine tense, etc. as types of this verb
-        if tag_verb in preset.tag_verb_present:
+        if tag_verb in config.tag_verb_present:
             dict_verb["verbtype"].append("PRESENT")
-        elif tag_verb in preset.tag_verb_past:
+        elif tag_verb in config.tag_verb_past:
             dict_verb["verbtype"].append("PAST")
-        elif tag_verb in preset.tag_verb_future:
+        elif tag_verb in config.tag_verb_future:
             dict_verb["verbtype"].append("FUTURE")
         else:
             raise ValueError(("Err: Tag unrecognized for verb {0}: {1}\n{2}"
@@ -2431,9 +2455,9 @@ class Grammar(_Base):
         NLP_wordchunk = self._get_wordchunk(node.i, i_sentence=i_sentence,
                                     i_cluster=i_cluster, do_text=False) #NLP
         i_wordchunk = np.array([word.i for word in NLP_wordchunk]) #Just ids
-        all_pos_mains = preset.special_pos_main
-        trail_pos_main = preset.trail_pos_main
-        ignore_pos_main = preset.ignore_pos_main
+        all_pos_mains = config.special_pos_main
+        trail_pos_main = config.trail_pos_main
+        ignore_pos_main = config.ignore_pos_main
         #
         #Print some notes
         if do_verbose:
@@ -2799,7 +2823,7 @@ class Grammar(_Base):
             if do_verbose:
                 print("> Applying anon modifications...")
             #
-            placeholder_anon = preset.placeholder_anon
+            placeholder_anon = config.placeholder_anon
             #Update latest text with these updates
             text_updated = keyword_obj.replace_keyword(text=text_updated,
                                                 placeholder=placeholder_anon)
@@ -3126,15 +3150,17 @@ class _Classifier(_Base):
 
     ##Method: generate_directory_TVT
     ##Purpose: Split a given dictionary of classified texts into directories containing training, validation, and testing datasets
-    def generate_directory_TVT(self, dir_model, fraction_TVT, mode_TVT="uniform", filename_json=None, dict_texts=None, do_shuffle=True, seed=10, do_verbose=None):
+    def generate_directory_TVT(self, dir_model, fraction_TVT, dict_texts, mode_TVT="uniform", do_shuffle=True, seed=10, do_verbose=None):
         """
         Method: generate_directory_TVT
         Purpose: !!!
         """
         ##Load global variables
-        name_folderTVT = [preset.folders_TVT["train"],
-                        preset.folders_TVT["validate"],
-                        preset.folders_TVT["test"]]
+        dataset = dict_texts
+        filepath_dictinfo = config.path_TVTinfo
+        name_folderTVT = [config.folders_TVT["train"],
+                        config.folders_TVT["validate"],
+                        config.folders_TVT["test"]]
         #
         num_TVT = len(name_folderTVT)
         if (num_TVT != len(fraction_TVT)):
@@ -3155,96 +3181,209 @@ class _Classifier(_Base):
                 print("Random seed set to: {0}".format(seed))
         #
 
-        ##Load in data based on file format
-        #For data from .json file
-        if (filename_json is not None):
-            with openfile(filename_json, 'r') as openfile:
-                dataset = json.load(openfile)
-        #
-        #For data from dictionary
-        elif (dict_texts is not None):
-            dataset = dict_texts
-        #
-        #Otherwise, throw error
-        else:
-            raise ValueError("Err: Please pass in either a .json file or a "
-                            +"dictionary of pre-classified texts.")
+        ##Load all unique paper identifiers (the bibcodes) from across texts
+        unique_bibcodes = np.unique(
+                            [dataset[key]["bibcode"] for key in dataset
+                            ]).tolist()
+        #Print some notes
+        if do_verbose:
+            print("\nDataset contains {0} papers with {1} unique bibcodes.\n"
+                    .format(len(dataset), len(unique_bibcodes)))
         #
 
-        ##Determine distribution of classes across dataset
-        extracted_classes = [dataset[key]["class"] for key in dataset]
-        counter_classes = collections.Counter(extracted_classes)
-        name_classes = counter_classes.keys()
+        ##Load all unique classifs across all texts
+        count_classes = collections.Counter([dataset[key]["class"]
+                                            for key in dataset])
+        unique_classes = count_classes.keys()
         #Print some notes
         if do_verbose:
             print("\nClass breakdown of given dataset:\n{0}\n"
-                    .format(counter_classes))
+                    .format(count_classes))
         #
 
-        ##Split indices of classes into training, validation, and testing (TVT)
+        ##Invert dataset so that classifs are stored under bibcode keys
+        dict_bibcode_classifs = {key:[] for key in unique_bibcodes}
+        dict_bibcode_textids = {key:[] for key in unique_bibcodes}
+        for curr_key in dataset:
+            curr_id = curr_key
+            curr_classif = dataset[curr_key]["class"]
+            curr_bibcode = dataset[curr_key]["bibcode"]
+            #Store id for this bibcode
+            dict_bibcode_textids[curr_bibcode].append(curr_key)
+            #Store this classif for this bibcode, if not already stored
+            if (curr_classif not in dict_bibcode_classifs[curr_bibcode]):
+                dict_bibcode_classifs[curr_bibcode].append(curr_classif) #Store
+            #
+        #
+        #Record the number of processed text ids for later
+        num_textids = sum([len(dict_bibcode_textids[key])
+                            for key in unique_bibcodes])
+        #
+        #Print some notes
+        if do_verbose:
+            print("\nGiven dataset inverted. Bibcode count: {0}"
+                    .format(len(dict_bibcode_classifs)))
+        #
+
+        ##Label bibcodes with representative classif
+        #Separate bibcodes based on number of unique associated classifs
+        all_bibcodes_oneclassif = {key1:[key2 for key2 in unique_bibcodes
+                                    if (dict_bibcode_classifs[key2] == [key1])]
+                                    for key1 in unique_classes}
+        all_bibcodes_multiclassif = [key for key in unique_bibcodes
+                                    if (len(dict_bibcode_classifs[key]) > 1)]
+        #
+        #Print some notes
+        if do_verbose:
+            print(("\nNumber of processed text ids: {2}"
+                    +"\nNumber of bibcodes with single unique classif: {0}"
+                    +"\nNumber of bibcodes with multiple classifs: {1}"
+                    +"\nNumber of bibcodes with multiple text ids: {3}")
+                    .format(sum([len(all_bibcodes_oneclassif[key])
+                                        for key in unique_classes]),
+                            len(all_bibcodes_multiclassif),
+                            num_textids,
+                            len([key for key in dict_bibcode_textids
+                                    if (len(dict_bibcode_textids[key]) > 1)])
+            ))
+        #
+        #Throw an error if separated bibcode count does not equal original count
+        tmp_check = (sum([len(all_bibcodes_oneclassif[key])
+                            for key in unique_classes])
+                        + len(all_bibcodes_multiclassif))
+        if (tmp_check != len(unique_bibcodes)):
+            raise ValueError("Err: Invalid separation of bibcodes occurred.\n"
+                            +"{0} + {1} != {2}"
+                            .format(len([all_bibcodes_oneclassif[key]
+                                            for key in unique_classes]),
+                                    len(all_bibcodes_multiclassif),
+                                    len(unique_bibcodes)))
+        #
+        #Shuffle the list of multi-classif bibcodes, if requested
+        if do_shuffle:
+            np.random.shuffle(all_bibcodes_multiclassif)
+        #
+        #Partition multi-classif bibcodes into representative classif lists
+        all_bibcodes_partitioned_lists = all_bibcodes_oneclassif.copy()
+        all_bibcodes_partitioned_counts = {
+                                    key:len(all_bibcodes_partitioned_lists[key])
+                                    for key in unique_classes
+                                    } #Starting count of bibcodes per repr.clf.
+        #Iterate through multi-classif bibcodes
+        for curr_bibcode in all_bibcodes_multiclassif:
+            curr_classifs = dict_bibcode_classifs[curr_bibcode]
+            #Determine which classif has least number of bibcodes so far
+            curr_counts = [all_bibcodes_partitioned_counts[key]
+                            for key in curr_classifs] #Current bibcode counts
+            #Store this bibcode under representative classif with min. count
+            ind_min = np.argmin(curr_counts) #Index of classif with min. count
+            min_classif = curr_classifs[ind_min]
+            all_bibcodes_partitioned_lists[min_classif
+                                            ].append(curr_bibcode) #Append bibc.
+            #Update count of this representative classif
+            all_bibcodes_partitioned_counts[min_classif] += 1
+        #
+        #Throw an error if any bibcodes are missing/duplicated in partition
+        tmp_check = sum(all_bibcodes_partitioned_counts.values())
+        if (tmp_check != len(unique_bibcodes)):
+            raise ValueError("Err: Bibcode count does not match original"
+                            +" bibcodes.\n{0}\nvs. {1}"
+                            .format(tmp_check, len(unique_bibcodes)))
+        tmp_check = [item for key in all_bibcodes_partitioned_lists
+                    for item in all_bibcodes_partitioned_lists[key]]#Part. bibc.
+        if (sorted(tmp_check) != sorted(unique_bibcodes)):
+            raise ValueError("Err: Bibcode partitioning does not match original"
+                            +" bibcodes.\n{0}\nvs. {1}"
+                            .format(tmp_check, unique_bibcodes))
+        #
+        #Print some notes
+        if do_verbose:
+            print("\nBibcode partitioning of representative classifs.:\n{0}\n"
+                    .format(all_bibcodes_partitioned_counts))
+        #
+
+        ##Split bibcode counts into TVT sets: training, validation, testing =TVT
+        valid_modes = ["uniform", "available"]
         fraction_TVT = np.asarray(fraction_TVT) / sum(fraction_TVT) #Normalize
         #For mode where training sets should be uniform in size
         if (mode_TVT.lower() == "uniform"):
-            min_count = min(counter_classes.values())
+            min_count = min(all_bibcodes_partitioned_counts.values())
             dict_split = {key:(np.round((fraction_TVT * min_count))).astype(int)
-                        for key in name_classes} #Partition per class per TVT
-            #Update split to send remaining files into testing datasets
-            for curr_key in name_classes:
-                curr_max = counter_classes[curr_key]
+                        for key in unique_classes}#Partition per classif per TVT
+            #Update split to send remaining bibcodes into testing datasets
+            for curr_key in unique_classes:
+                curr_max = all_bibcodes_partitioned_counts[curr_key]
                 curr_used = (dict_split[curr_key][0] + dict_split[curr_key][1])
                 dict_split[curr_key][2] = (curr_max - curr_used)
         #
         #For mode where training sets should use fraction of data available
         elif (mode_TVT.lower() == "available"):
-            max_count = max(counter_classes.values())
+            max_count = max(all_bibcodes_partitioned_counts.values())
             dict_split = {key:(np.round((fraction_TVT
-                                        * counter_classes[key]))).astype(int)
-                        for key in name_classes} #Partition per class per TVT
+                                * all_bibcodes_partitioned_counts[key]))
+                                ).astype(int)
+                        for key in unique_classes} #Partition per class per TVT
         #
         #Otherwise, throw error if mode not recognized
         else:
             raise ValueError(("Err: The given mode for generating the TVT"
                             +" directory {0} is invalid. Valid modes are: {1}")
-                            .format(mode_TVT,
-                                    ["uniform", "available"]))
+                            .format(mode_TVT, valid_modes))
         #
         #Print some notes
         if do_verbose:
             print("Fractions given for TVT split: {0}\nMode requested: {1}"
                     .format(fraction_TVT, mode_TVT))
-            print("TVT partition per class:")
-            for curr_key in name_classes:
+            print("Target TVT partition for bibcodes:")
+            for curr_key in unique_classes:
                 print("{0}: {1}".format(curr_key, dict_split[curr_key]))
         #
-
-        ##Verify splits add up to original file count
-        for curr_key in name_classes:
-            if (counter_classes[curr_key] != sum(dict_split[curr_key])):
+        #Verify splits add up to original file count
+        for curr_key in unique_classes:
+            if (all_bibcodes_partitioned_counts[curr_key]
+                                                != sum(dict_split[curr_key])):
                 raise ValueError("Err: Split did not use all data available!")
         #
 
         ##Prepare indices for extracting TVT sets per class
-        dict_inds = {key:[None for ii in range(0, num_TVT)]
-                    for key in name_classes}
-        for curr_key in name_classes:
-            #Fetch available indices
-            curr_inds = np.arange(0, counter_classes[curr_key], 1)
+        dict_bibcodes_perTVT = {key:[None for ii in range(0, num_TVT)]
+                                for key in unique_classes}
+        for curr_key in unique_classes:
+            #Fetch bibcodes represented by this class
+            curr_list = np.asarray(all_bibcodes_partitioned_lists[curr_key])
+            #
+            #Fetch available indices to select these bibcodes
+            curr_inds = np.arange(0,all_bibcodes_partitioned_counts[curr_key],1)
             #Shuffle, if requested
             if do_shuffle:
                 np.random.shuffle(curr_inds)
             #
-            #Split out the indices
+            #Split out the bibcodes
             i_start = 0 #Accumulated place within overarching index array
             for ii in range(0, num_TVT): #Iterate through TVT
                 i_end = (i_start + dict_split[curr_key][ii]) #Ending point
-                dict_inds[curr_key][ii] = curr_inds[i_start:i_end]
+                dict_bibcodes_perTVT[curr_key][ii] = curr_list[
+                                                    curr_inds[i_start:i_end]]
                 i_start = i_end #Update latest starting place in array
             #
         #
+        #Throw an error if any bibcodes not accounted for
+        tmp_check = [item2 for key in dict_bibcodes_perTVT
+                    for item1 in dict_bibcodes_perTVT[key]
+                    for item2 in item1] #All bibcodes used
+        if (not np.array_equal(np.sort(tmp_check), np.sort(unique_bibcodes))):
+            raise ValueError("Err: Split bibcodes do not match up with"
+                            +" original bibcodes:\n\n{0}\nvs.\n{1}"
+                        .format(np.sort(tmp_check), np.sort(unique_bibcodes)))
+        #
         #Print some notes
         if do_verbose:
-            print("\nIndices split per class, per TVT. Shuffling={0}."
+            print("\nIndices split per bibcode, per TVT. Shuffling={0}."
                     .format(do_shuffle))
+            print("Number of indices per class, per TVT:")
+            for curr_key in unique_classes:
+                print("{0}: {1}".format(curr_key,
+                        [len(item) for item in dict_bibcodes_perTVT[curr_key]]))
         #
 
         ##Build new directories to hold TVT (or throw error if exists)
@@ -3264,7 +3403,7 @@ class _Classifier(_Base):
         for curr_folder in name_folderTVT:
             os.mkdir(os.path.join(dir_model, curr_folder))
             #Iterate through classes and create subfolder per class
-            for curr_key in name_classes:
+            for curr_key in unique_classes:
                 os.mkdir(os.path.join(dir_model, curr_folder, curr_key))
         #
         #Print some notes
@@ -3275,56 +3414,119 @@ class _Classifier(_Base):
 
         ##Save texts to .txt files within class directories
         dict_info = {}
+        saved_filenames = [None]*num_textids
+        used_bibcodes = [None]*len(unique_bibcodes)
+        used_textids = [None]*num_textids
+        all_texts_partitioned_counts = {key1:{key2:0 for key2 in unique_classes}
+                                        for key1 in name_folderTVT
+                                        } #Count of texts per TVT, per classif
         #Iterate through classes
-        for curr_key in name_classes:
-            #Fetch all texts within this class
-            curr_texts = [dataset[key] for key in dataset
-                            if (dataset[key]["class"] == curr_key)]
+        i_track = 0
+        i_bibcode = 0
+        curr_key = None
+        for repr_key in unique_classes:
             #Save each text to assigned TVT
-            for ii in range(0, num_TVT): #Iterate through TVT
-                curr_filebase = os.path.join(dir_model, name_folderTVT[ii],
-                                            curr_key) #TVT path
-                #Iterate through texts assigned to this TVT
-                for jj in dict_inds[curr_key][ii]:
-                    curr_filename = "{0}_{1}_{2}".format("text", curr_key, jj)
-                    if (curr_texts[jj]["id"] is not None): #Add id, if given
-                        curr_filename += "_{0}".format(curr_texts[jj]["id"])
+            for ind_TVT in range(0, num_TVT): #Iterate through TVT
+                #Iterate through bibcodes assigned to this TVT
+                for curr_bibcode in dict_bibcodes_perTVT[repr_key][ind_TVT]:
+                    #Throw error if used bibcode
+                    if (curr_bibcode in used_bibcodes):
+                        raise ValueError("Err: Used bibcode {0} in {1}:TVT={2}"
+                                        .format(curr_bibcode, repr_key,ind_TVT))
                     #
-                    if (curr_filename in dict_info): #Throw error if not unique
-                        raise ValueError("Err: Non-unique filename: {0}"
-                                        .format(curr_filename))
+                    #Record assigned TVT and representative classif for bibcode
+                    dict_info[curr_bibcode] = {"repr_class":repr_key,
+                                        "folder_TVT":name_folderTVT[ind_TVT],
+                                        "storage":{}}
                     #
-                    #Store information for this text in overarching dictionary
-                    curr_info = {"id":curr_texts[jj]["id"],
-                                "modif":curr_texts[jj]["text"],
-                                "mission":curr_texts[jj]["mission"],
-                                "class":curr_texts[jj]["class"],
-                                "forest":curr_texts[jj]["forest"]}
-                    dict_info[curr_filename] = curr_info
-                    #
-                    #Write this text to new file
-                    self._write_text(text=curr_texts[jj]["text"],
-                                    filepath=os.path.join(curr_filebase,
+                    #Iterate through texts associated with this bibcode
+                    for curr_textid in dict_bibcode_textids[curr_bibcode]:
+                        curr_data = dataset[curr_textid] #Data for this text
+                        act_key = curr_data["class"] #Actual class of text id
+                        curr_filename = "{0}_{1}_{2}".format("text", act_key,
+                                                            curr_textid)
+                        #
+                        if (curr_data["id"] is not None): #Add id
+                            curr_filename += "_{0}".format(curr_data["id"])
+                        #
+                        #Throw error if used text id
+                        if (curr_textid in used_textids):
+                            raise ValueError("Err: Used text id: {0}"
+                                            .format(curr_textid))
+                        #
+                        #Throw error if not unique filename
+                        if (curr_filename in saved_filenames):
+                            raise ValueError("Err: Non-unique filename: {0}"
+                                            .format(curr_filename))
+                        #
+                        #Write this text to new file
+                        curr_filebase = os.path.join(dir_model,
+                                            name_folderTVT[ind_TVT],
+                                            act_key)#TVT path; use actual class!
+                        self._write_text(text=curr_data["text"],
+                                        filepath=os.path.join(curr_filebase,
                                                         (curr_filename+".txt")))
+                        #
+                        #Store record of this storage in info dictionary
+                        dict_info[curr_bibcode]["storage"][curr_textid
+                                ] = {"filename":curr_filename, "class":act_key,
+                                    "mission":dataset[curr_textid]["mission"]}
+                        #
+                        #Increment count of texts in this classif. and TVT dir.
+                        all_texts_partitioned_counts[name_folderTVT[ind_TVT]][
+                                                    act_key] += 1
+                        used_textids[i_track] = curr_textid #Check off text id
+                        saved_filenames[i_track] = curr_filename #Check off file
+                        i_track += 1 #Increment place in list of filenames
+                    #
+                #
+                #Store and increment count of used bibcodes
+                used_bibcodes[i_bibcode] = curr_bibcode
+                i_bibcode += 1
                 #
             #
         #
+        #Throw an error if any bibcodes not accounted for in partitioning
+        tmp_check = len(dict_info)
+        if (tmp_check != len(unique_bibcodes)):
+            raise ValueError("Err: Count of bibcodes does not match original"
+                            +" bibcode count.\n{0} vs. {1}"
+                            .format(tmp_check, len(unique_bibcodes)))
+        #
+        #Throw an error if any text ids not accounted for in partitioning
+        tmp_check = sum([sum(all_texts_partitioned_counts[key].values())
+                        for key in all_texts_partitioned_counts])
+        if (tmp_check != num_textids):
+            raise ValueError("Err: Count of text ids does not match original"
+                            +" text id count.\n{0}\nvs. {1}\n{2}"
+                            .format(tmp_check, num_textids,
+                                    all_texts_partitioned_counts))
+        #
+        #Throw an error if not enough filenames saved
+        if (None in saved_filenames):
+            tmp_check = len([item for item in saved_filenames
+                            if (item is not None)])
+            raise ValueError("Err: Only subset of filenames saved: {0} vs {1}."
+                            .format(tmp_check, num_textids))
+        #
         #Print some notes
         if do_verbose:
-            print("Files saved to new TVT directories.")
+            print("\nFiles saved to new TVT directories.")
+            print("Final partition of texts across classes and TVT dirs.:\n{0}"
+                    .format(all_texts_partitioned_counts))
         #
 
-        ##Save the dictionary of text information to its own file
-        tmp_filesave = os.path.join(dir_model, "dict_textinfo.npy")
-        np.save(tmp_filesave, dict_info)
+        ##Save the dictionary of TVT bibcode partitioning to its own file
+        #tmp_filesave = filepath_dictinfo
+        np.save(filepath_dictinfo, dict_info)
         #Print some notes
         if do_verbose:
-            print("Dictionary of background text information saved at: {0}."
-                    .format(tmp_filesave))
+            print("Dictionary of TVT bibcode partitioning info saved at: {0}."
+                    .format(filepath_dictinfo))
         #
 
         ##Verify that count of saved .txt files adds up to original data count
-        for curr_key in name_classes:
+        for curr_key in unique_classes:
             #Count items in this class across TVT directories
             curr_count = sum([len([item2 for item2 in
                         os.listdir(os.path.join(dir_model, item1, curr_key))
@@ -3332,9 +3534,9 @@ class _Classifier(_Base):
                         for item1 in name_folderTVT])
             #
             #Verify count
-            if (curr_count != counter_classes[curr_key]):
+            if (curr_count != count_classes[curr_key]):
                 raise ValueError("Err: Unequal class count in {0}!\n{1} vs {2}"
-                        .format(curr_key, curr_count,counter_classes[curr_key]))
+                        .format(curr_key, curr_count, count_classes[curr_key]))
             #
         #
 
@@ -3354,10 +3556,11 @@ class _Classifier(_Base):
         Purpose: Process text into modifs using Grammar class.
         """
         #Generate and store instance of Grammar class for this text
+        use_these_modes = list(set([mode, "none"]))
         grammar = Grammar(text, keyword_obj=keyword_obj,
-                                    do_check_truematch=do_check_truematch,
-                                    do_verbose=do_verbose, buffer=buffer)
-        grammar.run_modifications()
+                            do_check_truematch=do_check_truematch,
+                            do_verbose=do_verbose, buffer=buffer)
+        grammar.run_modifications(which_modes=use_these_modes)
         self._store_info(grammar, "grammar")
         #
         #Fetch modifs and grammar information
@@ -3392,7 +3595,7 @@ class Classifier_ML(_Classifier):
     """
     ##Method: __init__
     ##Purpose: Initialize this class instance
-    def __init__(self, class_names=None, filepath_model=None, fileloc_ML=None, do_verbose=False):
+    def __init__(self, filepath_model=None, fileloc_ML=None, do_verbose=False):
         """
         Method: __init__
         WARNING! This method is *not* meant to be used directly by users.
@@ -3485,11 +3688,11 @@ class Classifier_ML(_Classifier):
             - 'loss': loss from model training.
         """
         #Load global variables
-        dir_train = os.path.join(dir_model, preset.folders_TVT["train"])
-        dir_validation = os.path.join(dir_model, preset.folders_TVT["validate"])
-        dir_test = os.path.join(dir_model, preset.folders_TVT["test"])
+        dir_train = os.path.join(dir_model, config.folders_TVT["train"])
+        dir_validation = os.path.join(dir_model, config.folders_TVT["validate"])
+        dir_test = os.path.join(dir_model, config.folders_TVT["test"])
         #
-        savename_ML = (preset.tfoutput_prefix + name_model)
+        savename_ML = (config.tfoutput_prefix + name_model)
         savename_model = (name_model + ".npy")
         #
         if (do_verbose is None):
@@ -3559,12 +3762,12 @@ class Classifier_ML(_Classifier):
             print("Loading ML model components...")
         #
         #Load the preprocessor
-        ml_handle_preprocessor =preset.dict_ml_model_preprocessors[ml_model_key]
+        ml_handle_preprocessor =config.dict_ml_model_preprocessors[ml_model_key]
         ml_preprocessor = tfhub.KerasLayer(ml_handle_preprocessor)
         if do_verbose:
             print("Loaded ML preprocessor: {0}".format(ml_handle_preprocessor))
         #
-        ml_handle_encoder = preset.dict_ml_model_encoders[ml_model_key]
+        ml_handle_encoder = config.dict_ml_model_encoders[ml_model_key]
         ml_encoder = tfhub.KerasLayer(ml_handle_encoder, trainable=True)
         if do_verbose:
             print("Loaded ML encoder: {0}".format(ml_handle_encoder))
@@ -3729,7 +3932,7 @@ class Classifier_ML(_Classifier):
 
     ##Method: classify_text
     ##Purpose: Classify a single block of text
-    def classify_text(self, text, threshold, keyword_obj=None, do_verbose=False, forest=None):
+    def classify_text(self, text, threshold, do_check_truematch=None, keyword_obj=None, do_verbose=False, forest=None):
         """
         Method: classify_text
         Purpose: Classify given text using stored machine learning (ML) model.
@@ -3778,7 +3981,7 @@ class Classifier_ML(_Classifier):
 
         #Return low-uncertainty verdict if below given threshold
         if ((threshold is not None) and (probs[max_ind] < threshold)):
-            dict_results = preset.dictverdict_lowprob.copy()
+            dict_results = config.dictverdict_lowprob.copy()
             dict_results["uncertainty"] = dict_uncertainty
         #
         #Otherwise, generate dictionary of results
@@ -3819,14 +4022,10 @@ class Classifier_Rules(_Classifier):
         ##Initialize storage
         self._storage = {}
         #Store global variables
-        #self._store_info(threshold, "threshold")
-        #self._store_info(do_treetrim, "do_treetrim")
-        #self._store_info(do_filler, "do_filler")
-        #self._store_info(do_anoncites, "do_anoncites")
         self._store_info(do_verbose, "do_verbose")
         self._store_info(do_verbose_deep, "do_verbose_deep")
         if (which_classifs is None):
-            which_classifs = preset.list_default_verdicts_decisiontree
+            which_classifs = config.list_default_verdicts_decisiontree
         self._store_info(which_classifs, "class_names")
 
         ##Assemble the fixed decision tree
@@ -3839,8 +4038,6 @@ class Classifier_Rules(_Classifier):
             print("Internal decision tree has been assembled.")
             print("NOTE: Decision tree probabilities:\n{0}\n"
                     .format(decision_tree))
-            #print("NOTE: {0} rules within the internal decision tree.\n"
-            #        .format(len(decision_tree)))
         #
 
         ##Nothing to see here
@@ -3853,7 +4050,7 @@ class Classifier_Rules(_Classifier):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         which_classifs = self._get_info("class_names")
-        keys_main = preset.nest_keys_main
+        keys_main = config.nest_keys_main
         keys_matter = [item for item in keys_main if (item.endswith("matter"))]
         bool_keyword = "is_keyword"
         prefix = "prob_"
@@ -3902,8 +4099,6 @@ class Classifier_Rules(_Classifier):
                 #Otherwise, check inclusive and excluded ('!') matching values
                 elif isinstance(curr_branch[key_param], list):
                     #Check for included matching values
-                    #if not all([(item in curr_branch[key_param])
-                    #            for item in dict_nest[key_param]]):
                     if ((not all([(item in dict_nest[key_param])
                                 for item in curr_branch[key_param]
                                 if (not item.startswith("!"))]))
@@ -3916,8 +4111,6 @@ class Classifier_Rules(_Classifier):
                 #Otherwise, check if any of allowed values contained
                 elif isinstance(curr_branch[key_param], set):
                     #Check for any of matching values
-                    #if not any([(item in curr_branch[key_param])
-                    #            for item in dict_nest[key_param]]):
                     if not any([(item in dict_nest[key_param])
                                 for item in curr_branch[key_param]]):
                         is_match = False
@@ -3965,10 +4158,10 @@ class Classifier_Rules(_Classifier):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         which_classifs = self._get_info("class_names")
-        dict_possible_values = preset.dict_tree_possible_values
-        #dict_valid_combos = preset.dict_tree_valid_value_combinations
-        keys_matter = preset.nest_keys_matter
-        key_verbtype = preset.nest_key_verbtype
+        dict_possible_values = config.dict_tree_possible_values
+        #dict_valid_combos = config.dict_tree_valid_value_combinations
+        keys_matter = config.nest_keys_matter
+        key_verbtype = config.nest_key_verbtype
         all_params = list(dict_possible_values.keys())
         prefix = "prob_"
         #
@@ -4814,21 +5007,6 @@ class Classifier_Rules(_Classifier):
             decision_tree[itrack] = new_ex
             #
 
-            ##For flipped subj. and obj. matter example
-            """
-            #Extract all parameters and their values
-            new_ex = {key:curr_ex[key] for key in all_params
-                    if (key not in keys_matter)}
-            #Flip the subject and object terms
-            new_ex["subjectmatter"] = curr_ex["objectmatter"]
-            new_ex["objectmatter"] = curr_ex["subjectmatter"]
-            #Normalize and store probabilities for target classifs
-            new_ex.update(curr_probs)
-            #Store this example
-            itrack += 1
-            decision_tree[itrack] = new_ex
-            #"""
-
             ##For passive example
             #For general (not is_any, not set) case
             if ((curr_ex[key_verbtype] == "is_any")):
@@ -4838,24 +5016,6 @@ class Classifier_Rules(_Classifier):
             elif isinstance(curr_ex[key_verbtype], set):
                 #Iterate through set entries
                 for curr_val in curr_ex[key_verbtype]:
-                    #Passive with original subj-obj
-                    #Extract all parameters and their values
-                    """
-                    new_ex = {key:curr_ex[key] for key in all_params
-                            if (key not in (keys_matter+[key_verbtype]))}
-                    #Add in passive term for verbtypes
-                    tmp_vals = [curr_val, "PASSIVE"]
-                    new_ex[key_verbtype] = tmp_vals
-                    #Flip the subject and object terms
-                    new_ex["subjectmatter"] = curr_ex["subjectmatter"]
-                    new_ex["objectmatter"] = curr_ex["objectmatter"]
-                    #Normalize and store probabilities for target classifs
-                    new_ex.update(curr_probs)
-                    #Store this example
-                    itrack += 1
-                    decision_tree[itrack] = new_ex
-                    #"""
-                    #
                     #Passive with flipped subj-obj
                     #Extract all parameters and their values
                     new_ex = {key:curr_ex[key] for key in all_params
@@ -4900,13 +5060,11 @@ class Classifier_Rules(_Classifier):
         verb = struct_words[i_verb]["word"]
         verb_dep = struct_words[i_verb]["_dep"]
         verb_pos = struct_words[i_verb]["_pos"]
-        #verb_NLP = struct_words[i_verb]["word"]
-        #verb = verb_NLP.text
         do_verbose = self._get_info("do_verbose")
-        list_category_names = preset.list_category_names
-        list_category_synsets = preset.list_category_synsets
-        list_category_threses = preset.list_category_threses
-        max_hyp = preset.max_num_hypernyms
+        list_category_names = config.list_category_names
+        list_category_synsets = config.list_category_synsets
+        list_category_threses = config.list_category_threses
+        max_hyp = config.max_num_hypernyms
         #root_hypernyms = wordnet.synsets(verb, pos=wordnet.VERB)
         if max_hyp is None:
             root_hypernyms = wordnet.synsets(verb, pos=wordnet.VERB)
@@ -4926,16 +5084,16 @@ class Classifier_Rules(_Classifier):
             if do_verbose:
                 print("Verb {0} is a root noun. Marking as such.")
             #
-            return preset.category_nonverb_root
+            return config.category_nonverb_root
         #
 
         ##Handle specialty verbs
         #For 'be' verbs
-        if any([(roothyp in preset.synsets_verbs_be)
+        if any([(roothyp in config.synsets_verbs_be)
                     for roothyp in root_hypernyms]):
             return "be"
         #For 'has' verbs
-        elif any([(roothyp in preset.synsets_verbs_has)
+        elif any([(roothyp in config.synsets_verbs_has)
                     for roothyp in root_hypernyms]):
             return "has"
         #
@@ -4960,8 +5118,6 @@ class Classifier_Rules(_Classifier):
 
         ##Throw an error if no categories fit this verb well
         if not any(pass_bools):
-            #raise ValueError("Err: No categories fit verb: {0}, {1}"
-            #                    .format(verb, score_fins))
             if do_verbose:
                 print("No categories fit verb: {0}, {1}\n"
                                 .format(verb, score_fins))
@@ -4969,7 +5125,7 @@ class Classifier_Rules(_Classifier):
         #
 
         ##Throw an error if this verb gives very similar top scores
-        thres = preset.thres_category_fracdiff
+        thres = config.thres_category_fracdiff
         metric_close_raw = (np.abs(np.diff(np.sort(score_fins)[::-1]))
                             /max(score_fins))
         metric_close = metric_close_raw[0]
@@ -4991,8 +5147,6 @@ class Classifier_Rules(_Classifier):
                 print("Selecting most extreme verb: {0}\n".format(tmp_extreme))
             #Return the selected most-extreme score
             return tmp_extreme
-            #raise ValueError("Err: Top scores too close: {0}: {1}\n{2}\n{3}."
-            #    .format(verb, root_hypernyms, score_fins,list_category_names))
 
         ##Return the determined topical category with the best score
         best_category = list_category_names[np.argmax(score_fins)]
@@ -5043,7 +5197,6 @@ class Classifier_Rules(_Classifier):
                     curr_comps.append(tmp_stuff["components"])
             #
             #Combine the scores
-            #dict_scores[ii] = self._combine_unlinked_scores(curr_scores)
             if (len(curr_scores) > 0):
                 dict_scores.append(self._combine_unlinked_scores(curr_scores))
                 list_comps.append(curr_comps)
@@ -5060,13 +5213,11 @@ class Classifier_Rules(_Classifier):
 
     ##Method: classify_text
     ##Purpose: Classify full text based on its statements (rule approach)
-    def classify_text(self, keyword_obj, threshold, do_check_truematch=True, which_mode=None, forest=None, text=None, buffer=0, do_verbose=None):
+    def classify_text(self, keyword_obj, threshold, do_check_truematch, which_mode=None, forest=None, text=None, buffer=0, do_verbose=None):
         #Fetch global variables
         if do_verbose is None:
             do_verbose = self._get_info("do_verbose")
         do_verbose_deep = self._get_info("do_verbose_deep")
-        #do_filler = self._get_info("do_filler")
-        #do_anoncites = self._get_info("do_anoncites")
         #Store/Override latest keyword object and None return of classif.
         self._store_info(keyword_obj, "keyword_obj")
 
@@ -5087,10 +5238,6 @@ class Classifier_Rules(_Classifier):
             print("Verdicts complete.")
             print("Verdict dictionary:\n{0}".format(dict_results))
             print("---")
-
-        #Classify total text based on its verdicts across all statements
-        #dict_verdicts = self._compile_verdicts(dict_results,
-        #                                        do_verbose=do_verbose)
 
         #Return final verdicts
         return dict_results #dict_verdicts
@@ -5159,7 +5306,7 @@ class Classifier_Rules(_Classifier):
         ##Return empty verdict if empty scores
         #For completely empty scores
         if len(dict_scores_indiv) == 0:
-            tmp_res = preset.dictverdict_error.copy()
+            tmp_res = config.dictverdict_error.copy()
             #Print some notes
             if do_verbose:
                 print("\n-Empty scores; verdict: {0}".format(tmp_res))
@@ -5198,9 +5345,6 @@ class Classifier_Rules(_Classifier):
                 #Increment count of sentences with max-valued verdict
                 if tmp_compare:
                     dict_results[curr_key]["count_max"] += 1
-                #
-                #Increment count of statements in general
-                #dict_results[curr_key]["count_tot"] += 1
                 #
                 #Increment unnorm. score count
                 dict_results[curr_key]["score_tot_unnorm"] += tmp_unnorm
@@ -5268,7 +5412,7 @@ class Classifier_Rules(_Classifier):
             #
             #Return verdict only if above given threshold probability
             if (threshold is not None) and (max_score < threshold):
-                tmp_res = preset.dictverdict_lowprob.copy()
+                tmp_res = config.dictverdict_lowprob.copy()
                 tmp_res["scores_indiv"] = dict_scores_indiv
                 tmp_res["uncertainty"] = dict_uncertainties
                 tmp_res["components"] = components
@@ -5281,7 +5425,7 @@ class Classifier_Rules(_Classifier):
             #
             #Return low-prob verdict if multiple equal top probabilities
             elif (list_scores_comb.count(max_score) > 1):
-                tmp_res = preset.dictverdict_lowprob.copy()
+                tmp_res = config.dictverdict_lowprob.copy()
                 tmp_res["scores_indiv"] = dict_scores_indiv
                 tmp_res["uncertainty"] = dict_uncertainties
                 tmp_res["components"] = components
@@ -5319,7 +5463,7 @@ class Classifier_Rules(_Classifier):
             print("Loading all possible branch parameters...")
         #
         #Load all possible values
-        all_possible_values = preset.dict_tree_possible_values
+        all_possible_values = config.dict_tree_possible_values
         solo_values = [None]
         all_subjmatters = [item for item in all_possible_values["subjectmatter"]
                             if (item is not None)]
@@ -5438,13 +5582,14 @@ class Classifier_Rules(_Classifier):
             print("\n> Running _make_nest_forest.")
         #
         ##Initialize holder for nests
-        num_trees = len(forest["none"])
+        repr_key = "none" #list(forest.keys())[0] #"none"
+        num_trees = len(forest[repr_key])
         list_nests = [None]*num_trees
         list_nest_main = [None]*num_trees
         #Iterate through trees (sentences)
         for ii in range(0, num_trees):
-            curr_struct_verbs = forest["none"][ii]["struct_verbs_updated"]
-            curr_struct_words = forest["none"][ii]["struct_words_updated"]
+            curr_struct_verbs = forest[repr_key][ii]["struct_verbs_updated"]
+            curr_struct_words = forest[repr_key][ii]["struct_words_updated"]
             num_branches = len(curr_struct_verbs)
             curr_i_verbs = list(curr_struct_verbs.keys())
             curr_i_words = list(curr_struct_words.keys())
@@ -5500,9 +5645,9 @@ class Classifier_Rules(_Classifier):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         branch_verb = struct_verbs[i_verb]
-        lookup_pos = preset.conv_pos_fromtreetonest
-        ignore_pos = preset.nest_unimportant_pos
-        target_bools = preset.nest_important_treebools
+        lookup_pos = config.conv_pos_fromtreetonest
+        ignore_pos = config.nest_unimportant_pos
+        target_bools = config.nest_important_treebools
         #Print some notes
         if do_verbose:
             print("\n> Running _make_nest_verbclause.")
@@ -5521,12 +5666,10 @@ class Classifier_Rules(_Classifier):
         #
 
         #Iterate through words directly attached to this verb
-        #wordchunk_ids = [item.i for item in struct_words[i_verb]["wordchunk"]]
         tmp_list = list(set((branch_verb["i_branchwords_all"])))
-                            #+ struct_words[i_verb]["i_wordchunk"].tolist()))
-                            #+ wordchunk_ids))
-                        #) #Following words + words in wordchunk; cover all bases
-        tmp_list = [item for item in tmp_list if ((item != i_verb) and (struct_words[item]["pos_main"] != "VERB"))]
+        tmp_list = [item for item in tmp_list
+                    if ((item != i_verb)
+                        and (struct_words[item]["pos_main"] != "VERB"))]
         for ii in tmp_list:
             #Skip word if not stored (i.e., trimmed word for trimming scheme)
             if ii not in struct_words:
@@ -5573,10 +5716,6 @@ class Classifier_Rules(_Classifier):
                 print("Sentence: {0}".format(tmp_sent))
                 tmp_chunk = struct_words[i_verb]["wordchunk"]
                 print("Wordchunk: {0}".format(tmp_chunk))
-                #for aa in range(0, len(tmp_chunk)):
-                #    print("{0}: {1}: {2}, {3}, {4}"
-                #            .format(aa, tmp_chunk[aa], tmp_chunk[aa].dep_,
-                #                    tmp_chunk[aa].pos_, tmp_chunk[aa].tag_))
                 print("Chosen main pos.: {0}".format(curr_pos_raw))
                 #
                 curr_pos = lookup_pos[curr_pos_raw]
@@ -5612,7 +5751,6 @@ class Classifier_Rules(_Classifier):
             #
             #Store current verb class if not stored previously
             dict_nest["link_verbtypes"].append(struct_verbs[vv]["verbtype"])
-            #link_verbclass = self._categorize_verb(struct_verbs[vv]["verb"].text)
             link_verbclass = self._categorize_verb(
                                             i_verb=struct_verbs[vv]["i_verb"],
                                             struct_words=struct_words)
@@ -5681,13 +5819,13 @@ class Classifier_Rules(_Classifier):
     def _unlink_nest(self, nest):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
-        keys_main = preset.nest_keys_main
+        keys_main = config.nest_keys_main
         keys_matter = [item for item in keys_main if (item.endswith("matter"))]
         keys_nonmatter = [item for item in keys_main
                             if (not item.endswith("matter"))]
         key_matter_obj = "objectmatter"
-        prefix_link = preset.nest_prefix_link
-        terms_superior = preset.nest_important_treebools_superior
+        prefix_link = config.nest_prefix_link
+        terms_superior = config.nest_important_treebools_superior
         keys_linked_main = [(prefix_link+key) for key in keys_main]
         keys_linked_matter = [(prefix_link+key) for key in keys_matter]
         num_links = len(nest[keys_linked_matter[0]])
@@ -5771,15 +5909,7 @@ class Classifier_Rules(_Classifier):
                                         and not (is_proandkey)):
                             for key in keys_nonmatter:
                                 comp_main[key] = nest[(prefix_link+key)][ii]
-                #Copy over any precedent terms
-                #for term in curr_matters:
-                #    if (term not in main_matters) and (term in terms_superior):
-                #        comp_main[key_matter_obj].append(term)
-                #        main_matters.append(term)
-                #        #Override main terms with non-matter terms, if 'I'-term
-                #        if (bool_pronounI in curr_matters):
-                #            for key in keys_nonmatter:
-                #                comp_main[key] = nest[(prefix_link+key)][ii]
+                #
 
                 #Print some notes
                 if do_verbose:
@@ -5973,12 +6103,35 @@ class Operator(_Base):
         if (modif is None):
             if do_verbose:
                 print("\nPreprocessing and extracting modifs from the text...")
-            output = self.process(text=text,
+            #
+            if do_raise_innererror: #Allow stop from any exceptions encountered
+                output = self.process(text=text,
                                 do_check_truematch=do_check_truematch,
                                 buffer=buffer, lookup=lookup,keyword_obj=keyobj,
                                 do_verbose=do_verbose,
                                 do_verbose_deep=do_verbose_deep)
+            else: #Otherwise, print any exceptions and keep moving forward
+                try:
+                    output = self.process(text=text,
+                                do_check_truematch=do_check_truematch,
+                                buffer=buffer, lookup=lookup,keyword_obj=keyobj,
+                                do_verbose=do_verbose,
+                                do_verbose_deep=do_verbose_deep)
+                #
+                #Catch any exceptions and force-print some notes
+                except Exception as err:
+                    dict_verdicts = config.dictverdict_error.copy()
+                    print("-\nThe following err. was encountered in operate:")
+                    print(repr(err))
+                    print("Error was noted. Returning error as verdict.\n-")
+                    dict_verdicts["modif"] = ("<PROCESSING ERROR:\n{0}>"
+                                                .format(repr(err)))
+                    dict_verdicts["modif_none"] = None
+                    return dict_verdicts
+            #
+            #Fetch the generated output
             modif = output["modif"]
+            modif_none = output["modif_none"]
             forest = output["forest"]
             #
             #Print some notes
@@ -5991,6 +6144,7 @@ class Operator(_Base):
             if do_verbose:
                 print("Modif given. No text processing will be done.")
             #
+            modif_none = None
             pass
         #
 
@@ -6000,40 +6154,35 @@ class Operator(_Base):
                 print("No text found matching keyword object.")
                 print("Returning rejection verdict.")
             #
-            dict_verdicts = preset.dictverdict_rejection.copy()
+            dict_verdicts = config.dictverdict_rejection.copy()
         #
         #Classify the text using stored classifier with raised error
         elif do_raise_innererror: #If True, allow raising of inner errors
             dict_verdicts = classifier.classify_text(text=modif,
-                                            forest=forest,
-                                            keyword_obj=keyobj,
-                                            do_verbose=do_verbose, #_deep,
-                                            threshold=threshold)
+                                    do_check_truematch=do_check_truematch,
+                                    forest=forest, keyword_obj=keyobj,
+                                    do_verbose=do_verbose, threshold=threshold)
         #
         #Otherwise, run classification while ignoring inner errors
         else:
             #Try running classification
             try:
                 dict_verdicts = classifier.classify_text(text=modif,
-                                            forest=forest,
-                                            keyword_obj=keyobj,
-                                            do_verbose=do_verbose, #_deep,
-                                            threshold=threshold)
+                                    do_check_truematch=do_check_truematch,
+                                    forest=forest, keyword_obj=keyobj,
+                                    do_verbose=do_verbose, threshold=threshold)
             #
             #Catch certain exceptions and force-print some notes
-            except (ValueError, KeyError, IndexError) as err:
-                if True:
-                    print("-")
-                    print("The following err. was encountered in operate:")
-                    print(err)
-                    print("Error was noted. Continuing.")
-                    print("-")
-                #
-                dict_verdicts = preset.dictverdict_error.copy()
+            except Exception as err:
+                dict_verdicts = config.dictverdict_error.copy()
+                print("-\nThe following err. was encountered in operate:")
+                print(repr(err))
+                print("Error was noted. Continuing.\n-")
         #
 
         #Return the verdict with modif included
         dict_verdicts["modif"] = modif
+        dict_verdicts["modif_none"] = modif_none
         return dict_verdicts
     #
 
@@ -6181,13 +6330,15 @@ class Operator(_Base):
         #Process text into modifs using Grammar class
         if do_verbose:
             print("\nRunning Grammar on the text...")
+        use_these_modes = list(set([mode, "none"]))
         grammar = Grammar(text=text, keyword_obj=keyword_obj,
                             do_check_truematch=do_check_truematch,
                             dict_ambigs=dict_ambigs,
                             do_verbose=do_verbose_deep, buffer=buffer)
-        grammar.run_modifications()
+        grammar.run_modifications(which_modes=use_these_modes)
         output = grammar.get_modifs(do_include_forest=True)
         modif = output["modifs"][mode]
+        modif_none = output["modifs"]["none"] #Include unmodified vers. as well
         forest = output["_forest"]
         #
         #Print some notes
@@ -6196,12 +6347,12 @@ class Operator(_Base):
         #
 
         #Return the modif and internal processing output
-        return {"modif":modif, "forest":forest}
+        return {"modif":modif, "modif_none":modif_none, "forest":forest}
     #
 
     ##Method: train_model_ML
     ##Purpose: Process text into modifs and then train ML model on the modifs
-    def train_model_ML(self, dir_model, name_model, do_reuse_run, seed_TVT=10, seed_ML=8, filename_json=None, dict_texts=None, buffer=0, fraction_TVT=[0.8, 0.1, 0.1], mode_TVT="uniform", do_shuffle=True, print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def train_model_ML(self, dir_model, name_model, do_reuse_run, dict_texts, mapper, do_check_truematch, seed_TVT=10, seed_ML=8, buffer=0, fraction_TVT=[0.8, 0.1, 0.1], mode_TVT="uniform", do_shuffle=True, print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: train_model_ML
         Purpose:
@@ -6212,6 +6363,8 @@ class Operator(_Base):
             - Number of +/- sentences around a sentence containing a target mission to include in the paragraph.
           - do_reuse_run [bool]:
             - Whether or not to reuse outputs (e.g., existing training, validation directories) from any existing previous run with the same model name.
+          - do_check_truematch [bool]:
+            - Whether or not to check that mission phrases found in text are known true vs. false matches. (E.g., 'Edwin Hubble' as false match for the Hubble Space Telescope).
           - do_shuffle [bool]:
             - Whether or not to shuffle texts when generating training, validation, and testing directories.
           - do_verbose [bool (default=False)]:
@@ -6232,9 +6385,10 @@ class Operator(_Base):
         if (do_verbose_deep is None):
             do_verbose_deep = self._get_info("do_verbose_deep")
         #
+        dataset = dict_texts
         classifier = self._get_info("classifier")
-        folders_TVT = preset.folders_TVT
-        savename_ML = (preset.tfoutput_prefix + name_model)
+        folders_TVT = config.folders_TVT
+        savename_ML = (config.tfoutput_prefix + name_model)
         savename_model = (name_model + ".npy")
         #
         #Print some notes
@@ -6255,6 +6409,7 @@ class Operator(_Base):
             or os.path.exists(os.path.join(dir_model,folders_TVT["validate"])))
         #If TVT directories already exist, either print note or raise error
         if is_exist:
+            str_err = None #Placeholder
             #Print some notes
             if do_verbose:
                 print("Previous training/validation directories already exist.")
@@ -6276,48 +6431,56 @@ class Operator(_Base):
         else:
             #Print some notes
             if do_verbose:
-                print("Loading data from given .json file or dict. of texts...")
-            #
-            #Load in data based on file format
-            #For data from .json file
-            if (filename_json is not None):
-                with openfile(filename_json, 'r') as openfile:
-                    dataset = json.load(openfile)
-            #
-            #For data from dictionary
-            elif (dict_texts is not None):
-                dataset = dict_texts
-            #
-            #Otherwise, throw error
-            else:
-                raise ValueError("Err: Please pass in either a .json file to"
-                                +" filename_json or a dictionary of"
-                                +" pre-classified texts to dict_texts.")
-            #
-            #Print some notes
-            if do_verbose:
-                print("Text data has been loaded.")
                 print("Processing text data into modifs...")
             #
 
             #Process each text within the database into a modif
             dict_modifs = {} #Container for modifs and text classification info
             i_track = 0
+            i_skipped = 0
+            str_err = ""
             num_data = len(dataset)
             for curr_key in dataset:
                 old_dict = dataset[curr_key]
                 #Extract modif for current text
-                curr_res = self.process(text=old_dict["text"],
-                                    do_check_truematch=False, buffer=buffer,
-                                    lookup=old_dict["mission"],
+                if do_check_truematch: #Catch and print unknown ambig. phrases
+                    try:
+                        curr_res = self.process(text=old_dict["text"],
+                                    do_check_truematch=do_check_truematch,
+                                    buffer=buffer, lookup=old_dict["mission"],
+                                    keyword_obj=None,do_verbose=do_verbose_deep,
+                                    do_verbose_deep=do_verbose_deep
+                                    )
+                    except NotImplementedError as err:
+                        curr_str = (("\n-\n"
+                                    +"Printing Error:\nID: {0}\nBibcode: {1}\n"
+                                    +"Mission: {2}\nMasked class: {3}\n")
+                                    .format(old_dict["id"], old_dict["bibcode"],
+                                            old_dict["mission"], masked_class))
+                        curr_str += ("The following err. was encountered"
+                                    +" in train_model_ML:\n")
+                        curr_str += repr(err)
+                        curr_str += "\nError was noted. Skipping this paper.\n-"
+                        print(curr_str) #Print current error
+                        #
+                        str_err += curr_str #Tack this error onto full string
+                        i_skipped += 1 #Increment count of skipped papers
+                        continue
+                else: #Otherwise, run without ambig. phrase check
+                    curr_res = self.process(text=old_dict["text"],
+                                    do_check_truematch=do_check_truematch,
+                                    buffer=buffer, lookup=old_dict["mission"],
                                     keyword_obj=None,do_verbose=do_verbose_deep,
                                     do_verbose_deep=do_verbose_deep
                                     )
                 #
                 #Store the modif and previous classification information
-                new_dict = {"text":curr_res["modif"],"class":old_dict["class"],
+                masked_class = mapper[old_dict["class"].lower()]
+                new_dict = {"text":curr_res["modif"],
+                            "class":masked_class, #Mask class
                             "id":old_dict["id"], "mission":old_dict["mission"],
-                            "forest":curr_res["forest"]}
+                            "forest":curr_res["forest"],
+                            "bibcode":old_dict["bibcode"]}
                 dict_modifs[curr_key] = new_dict
                 #
                 #Increment count of modifs generated
@@ -6331,16 +6494,19 @@ class Operator(_Base):
             #
             #Print some notes
             if do_verbose:
-                print("Text data has been processed into modifs.")
+                print("{0} texts have been processed into modifs."
+                        .format(i_track))
+                if do_check_truematch:
+                    print("{0} texts skipped due to unknown ambig. phrases."
+                            .format(i_skipped))
                 print("Storing the data in train+validate+test directories...")
             #
 
             #Store the modifs in new TVT directories
             classifier.generate_directory_TVT(dir_model=dir_model,
                             fraction_TVT=fraction_TVT, mode_TVT=mode_TVT,
-                            filename_json=None, dict_texts=dict_modifs,
-                            do_shuffle=do_shuffle, seed=seed_TVT,
-                            do_verbose=do_verbose)
+                            dict_texts=dict_modifs, do_shuffle=do_shuffle,
+                            seed=seed_TVT, do_verbose=do_verbose)
             #Print some notes
             if do_verbose:
                 print("Train+validate+test directories created in {0}."
@@ -6390,12 +6556,12 @@ class Operator(_Base):
             #
         #
 
-        #Exit the method
+        #Exit the method with error string
         #Print some notes
         if do_verbose:
-            print("Run of train_model_ML() complete!\n")
+            print("Run of train_model_ML() complete!\nError string returned.")
         #
-        return
+        return str_err
     #
 #
 
@@ -6505,7 +6671,7 @@ class Performance(_Base):
 
     ##Method: evaluate_performance_uncertainty
     ##Purpose: Evaluate the performance of the internal classifier on a test set of data as a function of uncertainty
-    def evaluate_performance_uncertainty(self, operators, dicts_texts, mappers, threshold_arrays, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filename_plot="performance_grid_uncertainty.png", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), fontsize=16, ticksize=14, tickwidth=3, tickheight=5, colors=["tomato", "dodgerblue", "purple", "dimgray", "silver", "darkgoldenrod"], alphas=([0.75]*10), linestyles=["-", "-", "-", "--", "--", "--"], linewidths=([3]*10), markers=(["o"]*10), alpha_match=0.5, color_match="black", linestyle_match="-", linewidth_match=8, marker_match="*", print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def evaluate_performance_uncertainty(self, operators, dicts_texts, mappers, threshold_arrays, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filename_plot="performance_grid_uncertainty.png", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), fontsize=16, ticksize=14, tickwidth=3, tickheight=5, colors=["tomato", "dodgerblue", "purple", "dimgray", "silver", "darkgoldenrod", "darkgreen", "green", "cyan"], alphas=([0.75]*10), linestyles=["-", "-", "-", "--", "--", "--", ":", ":", ":"], linewidths=([3]*10), markers=(["o"]*10), alpha_match=0.5, color_match="black", linestyle_match="-", linewidth_match=8, marker_match="*", print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: evaluate_performance_uncertainty
         Purpose:
@@ -6663,9 +6829,6 @@ class Performance(_Base):
         #
 
         ##Use each operator to classify the set of texts and measure performance
-        #lists_measclassifs = [None]*num_ops
-        #list_counters = [None]*num_ops
-        #list_misclassifs = [None]*num_ops
         dict_evaluations = {item._get_info("name"):None for item in operators}
         for ii in range(0, num_ops):
             curr_op = operators[ii] #Current operator
@@ -6702,7 +6865,7 @@ class Performance(_Base):
                                 do_check_truematch=do_verify_truematch,
                                 do_raise_innererror=do_raise_innererror,
                                 print_freq=print_freq,
-                                do_verbose=do_verbose_deep,
+                                do_verbose=do_verbose,
                                 do_verbose_deep=do_verbose_deep)
             #
             #Print some notes
@@ -6745,9 +6908,6 @@ class Performance(_Base):
             #
 
             #Store the current results
-            #lists_measclassifs[ii] = curr_results #Measured classifications
-            #list_counters[ii] = curr_counter #Performance counter
-            #list_misclassifs[ii] = curr_misclassifs #Misclassified ids and info
             dict_evaluations[curr_name] = {"counters":curr_counter,
                                         "misclassifs":curr_misclassifs,
                                         "actual_results":curr_actdicts,
@@ -6766,16 +6926,18 @@ class Performance(_Base):
                 list_str = [("Internal ID: {0}\nBibcode: {1}\nMission: {2}\n"
                             +"Actual Classification: {3}\n"
                             +"Measured Classification: {4}\n"
-                            +"Modif: ''{5}''")
+                            +"Modif:\n''\n{5}\n''\n-\n"
+                            +"Base Paragraph:\n''\n{6}\n''\n-\n")
                             .format(curr_misclassifs[key]["id"],
                                     curr_misclassifs[key]["bibcode"],
                                     curr_misclassifs[key]["mission"],
                                     curr_misclassifs[key]["act_classif"],
                                     curr_misclassifs[key]["meas_classif"],
-                                    curr_misclassifs[key]["modif"])
+                                    curr_misclassifs[key]["modif"],
+                                    curr_misclassifs[key]["modif_none"])
                             for key in curr_misclassifs]
                 #
-                str_misclassif = "\n---\n".join(list_str) #Combined string
+                str_misclassif = "\n-----\n".join(list_str) #Combined string
 
                 #Save the full string of misclassifications
                 tmp_filename="{0}_{1}.txt".format(fileroot_misclassif,curr_name)
@@ -6791,10 +6953,6 @@ class Performance(_Base):
             if do_verbose:
                 print("All work complete for Operator #{0}.".format(ii))
             #
-        #
-        #Collect the results
-        #dict_evaluation={"counters":list_counters,"classifs":lists_measclassifs,
-        #                "}
         #
         #Print some notes
         if do_verbose:
@@ -6851,14 +7009,17 @@ class Performance(_Base):
 
         #Initialize container for counters and misclassifications
         if (mapper is not None): #Use mask classifications, if given
-            act_classnames = list(mapper.keys())
-            meas_classnames_raw = list(mapper.keys())
+            act_classnames_raw = list(set(
+                                    [item for item in list(mapper.values())]))
+            meas_classnames_raw = list(set(
+                                    [item for item in list(mapper.values())]))
         else: #Otherwise, use internal classifications
-            act_classnames = meas_classifs
+            act_classnames_raw = meas_classifs
             meas_classnames_raw = meas_classifs
         #
         #Extend measured allowed class names to include low-uncertainty, etc.
-        meas_classnames = (meas_classnames_raw + preset.list_other_verdicts)
+        act_classnames = (act_classnames_raw + [config.verdict_rejection])
+        meas_classnames = (meas_classnames_raw + config.list_other_verdicts)
         #
         #Streamline the class names
         act_classnames = [item.lower().replace("_","")
@@ -6886,15 +7047,14 @@ class Performance(_Base):
             #
             #Iterate through missions that were considered
             for curr_key in curr_measdict:
-                #lookup = operator._fetch_keyword_object(lookup=curr_key
-                #                                        )._get_info("name")
                 lookup = curr_key
                 #
 
                 #Extract actual classif
                 curr_actval = curr_actdict["missions"][lookup]["class"]
-                if (mapper is not None): #Map to masked value if so requested
-                    curr_actval = mapper[curr_actval]
+                if ((mapper is not None) and (curr_actval.lower() in mapper)):
+                    #Map to masked value if so requested
+                    curr_actval = mapper[curr_actval.lower()]
                 #
 
                 #Extract measured classif, or remeasure if threshold given
@@ -6903,14 +7063,15 @@ class Performance(_Base):
                 if ((threshold is not None)
                                 and (curr_measval.lower().replace("_","")
                                         in act_classnames)):
-                    tmp_pass =curr_measdict[lookup]["uncertainty"][curr_measval]
-                    if (tmp_pass < threshold):
-                        curr_measval = preset.dictverdict_lowprob.copy(
+                    tmp_pass =curr_measdict[lookup]["uncertainty"]
+                    if (tmp_pass is not None):
+                        if (tmp_pass[curr_measval] < threshold):
+                            curr_measval = config.dictverdict_lowprob.copy(
                                                                     )["verdict"]
                 #
                 #Map to new masking value, if mapper given
-                if (mapper is not None):
-                    curr_measval = mapper[curr_measval]
+                if ((mapper is not None) and (curr_measval.lower() in mapper)):
+                    curr_measval = mapper[curr_measval.lower()]
                 #
 
                 #Streamline the class names
@@ -6924,11 +7085,12 @@ class Performance(_Base):
                 #If misclassification, take note
                 if (curr_actval != curr_measval):
                     curr_info = {"act_classif":curr_actval,
-                                "meas_classif":curr_measval,
-                                "bibcode":curr_actdict["bibcode"],
-                                "mission":lookup,
-                                "id":curr_actdict["id"],
-                                "modif":curr_measdict[lookup]["modif"]}
+                            "meas_classif":curr_measval,
+                            "bibcode":curr_actdict["bibcode"],
+                            "mission":lookup,
+                            "id":curr_actdict["id"],
+                            "modif":curr_measdict[lookup]["modif"],
+                            "modif_none":curr_measdict[lookup]["modif_none"]}
                     #
                     dict_misclassifs[str(i_misclassif)] = curr_info
                     #Increment count of misclassifications

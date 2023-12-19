@@ -9,64 +9,54 @@
 import unittest
 import re
 import os
+import json
 import numpy as np
+import bibcat_classes as bibcat
+import bibcat_config as config
+import bibcat_parameters as params
 import spacy
-nlp = spacy.load("en_core_web_sm")
+nlp = spacy.load(config.spacy_language_model)
 import nltk
 from nltk.corpus import wordnet
-import bibcat_classes as bibcat
-import bibcat_constants as preset
 #
 #-------------------------------------------------------------------------------
 ###Set global test variables
-##File paths and locations
-filepath_base_global = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/BibTracking")
-filepath_models_global = os.path.join(filepath_base_global, "models")
-filepath_model = os.path.join(filepath_models_global, "dict_model_ML_map_3exact_set8a_skim_exact_minimum_TVTseed10_metrics.npy")
-fileloc_ML = os.path.join(filepath_models_global, "dict_model_ML_map_3exact_set8a_skim_exact_minimum_TVTseed10")
+#Fetch filepaths for model and data
+name_model = config.name_model
+filepath_json = config.path_json
+filepath_papertrack = config.path_papertrack
+filepath_papertext = config.path_papertext
+filepath_dictinfo = config.path_TVTinfo
+#
+
+##Grammar
+test_which_modes = ["none", "skim", "trim", "anon", "skim_trim_anon"]
 #
 
 ##Mission terms
 #Keyword objects
-kobj_hubble = bibcat.Keyword(keywords=["Hubble", "Hubble Telescope", "Hubble Space Telescope"], acronyms=["hst", "ht"])
-kobj_kepler = bibcat.Keyword(keywords=["Kepler"], acronyms=None)
-kobj_k2 = bibcat.Keyword(keywords=["K2"], acronyms=None)
+kobj_hla = params.keyword_obj_HLA
+kobj_hubble = params.keyword_obj_HST
+kobj_kepler = params.keyword_obj_Kepler
+kobj_k2 = params.keyword_obj_K2
 #
 #Keyword-object lookups
 list_lookup_kobj = [kobj_hubble, kobj_kepler, kobj_k2]
-dict_lookup_kobj = {"Hubble":kobj_hubble, "Kepler":kobj_kepler, "K2":kobj_k2}
+dict_lookup_kobj = {"Hubble":kobj_hubble, "Kepler":kobj_kepler, "K2":kobj_k2, "HLA":kobj_hla}
 #
 
 ##Placeholders
-placeholder_anon = preset.placeholder_anon
-placeholder_author = preset.placeholder_author
-placeholder_number = preset.placeholder_number
-placeholder_numeric = preset.placeholder_numeric
-placeholder_website = preset.placeholder_website
+placeholder_anon = config.placeholder_anon
+placeholder_author = config.placeholder_author
+placeholder_number = config.placeholder_number
+placeholder_numeric = config.placeholder_numeric
+placeholder_website = config.placeholder_website
 #
 
 ##Classifier setup
-#Thresholds
-threshold_rules = 0.75 #None #0.40 #None
-threshold_ML = 0.75 #None
-#
-#Class references
-map_papertypes = {"SCIENCE":"SCIENCE", "MENTION":"MENTION", "SUPERMENTION":"MENTION", "DATA_INFLUENCED":"DATA_INFLUENCED", "UNRESOLVED_GREY":None, "ENGINEERING":None, "INSTRUMENT":None}
-surface_mapper = {"SCIENCE":"ACCEPTED", "MENTION":"ACCEPTED",
-                        "SUPERMENTION":"ACCEPTED", "DATA_INFLUENCED":"ACCEPTED",
-                        preset.verdict_error:"ACCEPTED",
-                        preset.verdict_lowprob:"ACCEPTED",
-                        preset.verdict_rejection:"REJECTED"}
-allowed_classifs = [key for key in map_papertypes if (map_papertypes[key] is not None)]
-converted_classifs = np.unique([map_papertypes[key] for key in allowed_classifs]).tolist()
-#
-
-##Classifiers
-#ML classifier
-classifier_ML_forpipeline = bibcat.Classifier_ML(filepath_model=filepath_model, fileloc_ML=fileloc_ML, class_names=converted_classifs)
-#
-#Rule-based classifier
-classifier_rules_forpipeline = bibcat.Classifier_Rules()
+mapper = params.map_papertypes
+all_kobjs = [params.keyword_obj_HST, params.keyword_obj_JWST, params.keyword_obj_TESS, params.keyword_obj_Kepler, params.keyword_obj_PanSTARRS, params.keyword_obj_GALEX, params.keyword_obj_K2, params.keyword_obj_HLA]
+allowed_classifications = ["SCIENCE", "DATA_INFLUENCED", "MENTION", "SUPERMENTION"]
 #
 #-------------------------------------------------------------------------------
 
@@ -77,6 +67,199 @@ classifier_rules_forpipeline = bibcat.Classifier_Rules()
 #-------------------------------------------------------------------------------
 ###Test Classes
 #
+
+#class: TestData
+#Purpose: Testing datasets
+class TestData(unittest.TestCase):
+    #For tests of .json dataset file combined from papertrack and papertext:
+    if True:
+        #Test that combined .json file components are correct
+        def test__combined_dataset(self):
+            print("Running test__combined_dataset.")
+            #Load each of the datasets
+            #For the combined dataset
+            with open(filepath_json, 'r') as openfile:
+                data_combined = json.load(openfile)
+            #
+            #For the original text data
+            with open(filepath_papertext, 'r') as openfile:
+                data_text = json.load(openfile)
+            #
+            #For the original classification data
+            with open(filepath_papertrack, 'r') as openfile:
+                data_classif = json.load(openfile)
+            #
+
+            #Build list of bibcodes for the original data sources
+            list_bibcodes_text = [item["bibcode"] for item in data_text]
+            list_bibcodes_classif = [item["bibcode"] for item in data_classif]
+
+            #Check each combined data entry against original data sources
+            for ii in range(0, len(data_combined)):
+                #Skip if no text stored for this entry
+                if ("body" not in data_combined[ii]):
+                    print("test__combined_dataset: No text for index {0}."
+                            .format(ii))
+                    continue
+
+                #Extract bibcode
+                curr_bibcode = data_combined[ii]["bibcode"] #Curr. bibcode
+
+                #Fetch indices of entries in original data sources
+                ind_text = list_bibcodes_text.index(curr_bibcode)
+                try:
+                    ind_classif = list_bibcodes_classif.index(curr_bibcode)
+                except ValueError:
+                    print("test__combined_dataset: {0} not classified bibcode."
+                            .format(curr_bibcode))
+                    continue
+                #
+
+                #Verify that combined data entry values match back to originals
+                #Check abstract, if exists
+                try:
+                    if ("abstract" in data_combined[ii]):
+                        self.assertEqual(data_combined[ii]["abstract"],
+                                        data_text[ind_text]["abstract"])
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print("Diff. abstract in bibcode {0}:\n\n{1}...\nvs\n{2}..."
+                        .format(curr_bibcode,
+                                data_combined[ii]["abstract"][0:500],
+                                data_text[ind_text]["abtract"][0:500]))
+                    print("---")
+                    print("")
+                    #
+                    raise AssertionError()
+                #
+                #Check text
+                try:
+                    self.assertEqual(data_combined[ii]["body"],
+                                    data_text[ind_text]["body"])
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print("Different text in bibcode {0}:\n\n{1}...\nvs\n{2}..."
+                        .format(curr_bibcode,
+                                data_combined[ii]["body"][0:500],
+                                data_text[ind_text]["body"][0:500]))
+                    print("---")
+                    print("")
+                    #
+                    raise AssertionError()
+                #
+                #Check bibcodes (redundant test but that's ok)
+                try:
+                    self.assertEqual(curr_bibcode,
+                                    data_text[ind_text]["bibcode"])
+                    self.assertEqual(curr_bibcode,
+                                    data_classif[ind_classif]["bibcode"])
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print(("Different bibcodes:\nCombined: {0}"
+                            +"\nText: {1}\nClassif: {2}")
+                        .format(curr_bibcode,
+                                data_text[ind_text]["bibcode"],
+                                data_classif[ind_classif]["bibcode"]))
+                    print("---")
+                    print("")
+                    #
+                    raise AssertionError()
+                #
+                #Check missions and classes
+                try:
+                    self.assertEqual(
+                            len(data_combined[ii]["class_missions"]),
+                            len(data_classif[ind_classif]["class_missions"])
+                            ) #Ensure equal number of classes
+                    for curr_mission in data_combined[ii]["class_missions"]:
+                        tmp_list = [item["mission"] for item in
+                                    data_classif[ind_classif]["class_missions"]]
+                        tmp_ind = tmp_list.index(curr_mission)
+                        self.assertEqual(data_combined[ii][
+                                "class_missions"][curr_mission]["papertype"],
+                            data_classif[ind_classif][
+                                "class_missions"][tmp_ind]["paper_type"])
+                except (IndexError, AssertionError) as err:
+                    print("")
+                    print(">")
+                    print(("Different missions and classes:\nCombined: {0}"
+                            +"\nClassif: {1}")
+                        .format(data_combined[ii]["class_missions"],
+                                data_classif[ind_classif]["class_missions"]))
+                    print("---")
+                    print("")
+                    #
+                    raise AssertionError()
+                #
+            #
+            print("Run of test__combined_dataset complete.")
+        #
+        #Test that files of TVT directory (if exist) are correctly stored
+        def test__TVT_directory(self):
+            print("Running test__TVT_directory.")
+            #Load the datasets
+            #Check if TVT information exists
+            if (not os.path.isfile(filepath_dictinfo)):
+                raise AssertionError("TVT directory does not exist yet at: {0}"
+                                    .format(filepath_dictinfo))
+            #
+            #If exists, carry on with this test
+            dict_info = np.load(filepath_dictinfo, allow_pickle=True).item()
+            #Dataset of text and classification information
+            with open(filepath_json, 'r') as openfile:
+                dataset = json.load(openfile)
+            #
+            list_bibcodes_dataset = [item["bibcode"] for item in dataset]
+
+            #Ensure each entry in TVT storage has correct mission and class
+            for curr_key in dict_info:
+                ind_dataset = list_bibcodes_dataset.index(curr_key)
+                #Fetch only allowed missions and classifs. from dataset
+                curr_actuals = {key:dataset[ind_dataset]["class_missions"][key]
+                            for key in dataset[ind_dataset]["class_missions"]
+                            if ((any([item.is_keyword(key)
+                                    for item in all_kobjs]))
+                                and (dataset[ind_dataset]["class_missions"][key
+                                                                ]["papertype"]
+                                    in allowed_classifications))}
+                #Check each entry
+                try:
+                    ind_dataset = list_bibcodes_dataset.index(curr_key)
+                    #Ensure same number of missions for this bibcode
+                    self.assertEqual(
+                                len(curr_actuals),
+                                len(dict_info[curr_key]["storage"]))
+                    #
+                    for curr_textid in dict_info[curr_key]["storage"]:
+                        curr_mission = dict_info[curr_key][
+                                            "storage"][curr_textid]["mission"]
+                        curr_class = dict_info[curr_key][
+                                            "storage"][curr_textid]["class"]
+                        #Check each mission and class
+                        self.assertEqual(curr_class,
+                            mapper[curr_actuals[curr_mission
+                                                ]["papertype"].lower()])
+                    #
+                #
+                except (KeyError, AssertionError) as err:
+                    print("")
+                    print(">")
+                    print("Different mission breakdown for {2}:\n{0}\nvs\n{1}"
+                        .format(dict_info[curr_key], curr_actuals, curr_key))
+                    print("---")
+                    print("")
+                    #
+                    raise AssertionError()
+                #
+            #
+            print("Run of test__TVT_directory complete.")
+        #
+    #
+#"""
+
 #class: TestBase
 #Purpose: Testing the Base class
 class TestBase(unittest.TestCase):
@@ -1146,12 +1329,21 @@ class TestKeyword(unittest.TestCase):
             "that HcST data":{"kobj":kobj_hubble, "bool":False},
             "that A.H.S.T.M. data":{"kobj":kobj_hubble, "bool":False},
             "that A.H.S.T.M data":{"kobj":kobj_hubble, "bool":False},
+            "that AHSTM data":{"kobj":kobj_hubble, "bool":False},
             "that LHST data":{"kobj":kobj_hubble, "bool":False},
             "that HS.xT data":{"kobj":kobj_hubble, "bool":False},
             "that K23 data":{"kobj":kobj_k2, "bool":False},
             "that AK2 data":{"kobj":kobj_k2, "bool":False},
             "that K2 data":{"kobj":kobj_k2, "bool":True},
-            "that K 2 star":{"kobj":kobj_k2, "bool":False}
+            "that K 2 star":{"kobj":kobj_k2, "bool":False},
+            "archive observations":{"kobj":kobj_hla, "bool":False},
+            "hubble and archive observations":{"kobj":kobj_hla, "bool":False},
+            "Hubble and Archive observations":{"kobj":kobj_hla, "bool":False},
+            "they took Hubble images":{"kobj":kobj_hla, "bool":False},
+            "they took HST images":{"kobj":kobj_hla, "bool":False},
+            "the hubble legacy archive":{"kobj":kobj_hla, "bool":True},
+            "the hla uncapitalized":{"kobj":kobj_hla, "bool":True},
+            "the Hubble Archive is different":{"kobj":kobj_hla, "bool":False}
             }
             #
 
@@ -1240,7 +1432,7 @@ class TestPaper(unittest.TestCase):
     if True:
         #Test processing and extraction of paragraphs of target terms
         def test_processandget_paragraphs__variety(self):
-            placeholder = preset.string_anymatch_ambig
+            placeholder = config.string_anymatch_ambig
             #Prepare text and answers for test
             text1 = "Despite the low S/N of the data, we still detect the stars. Figure 1 plots the Hubble Space Telescope (HST) observations. The HST stars are especially bright. We analyze them in the next section. A filler sentence. Here is another filler sentence (with parentheses). Some more filler content. We summarize our Hubble results next."
             meanings1 = {"Hubble":["Hubble Space Telescope"], "Kepler":None, "K2":None}
@@ -1477,7 +1669,7 @@ class TestGrammar(unittest.TestCase):
                 #Prepare and run test for bibcat class instance
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
                                         do_check_truematch=True)
-                testbase.run_modifications(which_modes=None)
+                testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:
                     #Skip over non-mode keys
@@ -1527,7 +1719,7 @@ class TestGrammar(unittest.TestCase):
                 #Prepare and run test for bibcat class instance
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
                                         do_check_truematch=True)
-                testbase.run_modifications(which_modes=None)
+                testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:
                     #Skip over non-mode keys
@@ -1577,7 +1769,7 @@ class TestGrammar(unittest.TestCase):
                 #Prepare and run test for bibcat class instance
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
                                         do_check_truematch=True)
-                testbase.run_modifications(which_modes=None)
+                testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:
                     #Skip over non-mode keys
@@ -1627,7 +1819,7 @@ class TestGrammar(unittest.TestCase):
                 #Prepare and run test for bibcat class instance
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
                                         do_check_truematch=True)
-                testbase.run_modifications(which_modes=None)
+                testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:
                     #Skip over non-mode keys
@@ -1677,7 +1869,7 @@ class TestGrammar(unittest.TestCase):
                 #Prepare and run test for bibcat class instance
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
                                         do_check_truematch=True)
-                testbase.run_modifications(which_modes=None)
+                testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:
                     #Skip over non-mode keys
@@ -1726,8 +1918,9 @@ class TestGrammar(unittest.TestCase):
 
                 #Prepare and run test for bibcat class instance
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
-                                        do_check_truematch=True)
-                testbase.run_modifications(which_modes=None)
+                                        do_check_truematch=True,
+                                        do_verbose=False)
+                testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:
                     #Skip over non-mode keys
@@ -1757,14 +1950,61 @@ class TestGrammar(unittest.TestCase):
         #
     #
 #"""
+
+#class: TestOperator
+#Purpose: Testing the Operator class
+class TestOperator(unittest.TestCase):
+    #For tests of fetching keyword object using lookup item:
+    if True:
+        #Test fetching keyword object for objects with overlapping terms
+        def test__fetch_keyword_object__overlap(self):
+            #Prepare text and answers for test
+            tmp_kobj_list = [kobj_hubble, kobj_hla]
+            dict_acts = {"Hubble Legacy Archive":"HLA",
+                "Hubble Legacy Archive results":"HLA",
+                "Hubble":"Hubble",
+                "HST":"Hubble",
+                "HLA":"HLA",
+                "Hubble Archive":"Hubble",
+                "Hubble Legacy":"Hubble"
+            }
+            #
+
+            #Prepare and run test for bibcat class instance
+            testbase = bibcat.Operator(classifier=None, mode=None,
+                                keyword_objs=tmp_kobj_list, do_verbose=False,
+                                name="operator", load_check_truematch=False,
+                                do_verbose_deep=False)
+            #Determine and check answers
+            for key1 in dict_acts:
+                #Otherwise, check generated modif
+                curr_lookup = key1
+                test_res = testbase._fetch_keyword_object(lookup=curr_lookup,
+                                do_verbose=False, do_raise_emptyerror=True)
+                curr_answer = dict_lookup_kobj[dict_acts[key1]]
+                #
+
+                #Check answer
+                try:
+                    self.assertEqual(test_res, curr_answer)
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print(("Text: {2}\n\nTest answer: {0}\n"
+                            +"\nAct. answer: {1}\n")
+                            .format(test_res, curr_answer, key1))
+                    print("---")
+                    print("")
+                    #
+                    self.assertEqual(test_res, curr_answer)
+                #
+            #
+        #
+    #
+#"""
 #-------------------------------------------------------------------------------
 
-"""
-Notes:
-- Next test: In this work, we have discussed any and all previous observations from HST and compared them to trends measured from previously published archival Spitzer data available in the literature. In their study, they presented new observations from HST and compared them to trends measured from the plethora of archival HST data available in the literature.
-- Fix conjunction issue, finally
-- Readable removal of unecessary preposition clauses? Maybe not since does not guarantee readability
-"""
+
 
 
 
