@@ -1040,7 +1040,8 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array([testbase._is_pos_word(word=item,
                                             keyword_objs=list_lookup_kobj,
-                                            pos=test_pos) for item in curr_NLP])
+                                            pos=test_pos, do_verbose=False) 
+                                            for item in curr_NLP])
                     test_res = [item.text for item in
                                 np.asarray(curr_NLP)[test_bools]]
                     self.assertEqual(test_res, answer)

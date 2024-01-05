@@ -978,8 +978,21 @@ class _Base():
             tag_approved = (config.tag_verb_present + config.tag_verb_past
                             + config.tag_verb_future)
             check_approved = (word_tag in tag_approved)
-            check_all =((((check_dep or check_root) and check_pos and check_tag)
-                    or (check_root and check_posaux)) and check_approved)
+            #
+            #For ambiguous adjectival modifier sentences
+            #(E.g. "Hubble calibrated data")
+            check_nounroot = ((len(word_ancestors) > 0)
+                            and self._is_pos_word(word=word.head, pos="ROOT")
+                            and self._is_pos_word(word=word.head, pos="NOUN"))
+            check_amod = (word_dep in config.dep_adjective)
+            check_valid_amod = (check_nounroot and check_amod)
+            #
+            check_all =((
+                    (
+                        ((check_dep or check_root) and check_pos and check_tag)
+                        or (check_root and check_posaux))
+                    or (check_valid_amod))
+                and check_approved)
         #
         #Identify useless words
         elif pos in ["USELESS"]:
