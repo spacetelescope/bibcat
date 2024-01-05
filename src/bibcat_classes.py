@@ -939,7 +939,7 @@ class _Base():
 
     ##Method: _is_pos_word()
     ##Purpose: Return boolean for if given word (NLP type word) is of given part of speech
-    def _is_pos_word(self, word, pos, keyword_objs=None):
+    def _is_pos_word(self, word, pos, keyword_objs=None, do_verbose=False):
         """
         Method: _is_pos_word
         WARNING! This method is *not* meant to be used directly by users.
@@ -954,11 +954,19 @@ class _Base():
         word_text = word.text #Text version of word
         word_ancestors = list(word.ancestors)#All previous nodes leading to word
         #
+        #Print some notes
+        if do_verbose:
+            print("Running _is_pos_word for: {0}".format(word))
+            print("dep_: {0}\npos_: {1}\ntag_: {2}"
+                    .format(word_dep, word_pos, word_tag))
+            print("Node head: {0}\nSentence: {1}"
+                    .format(word.head, word.sent))
+        #
 
         ##Check if given word is of given part-of-speech
         #Identify roots
         if pos in ["ROOT"]:
-            return (word_dep in config.dep_root)
+            check_all = (word_dep in config.dep_root)
         #
         #Identify verbs
         elif pos in ["VERB"]:
@@ -970,7 +978,7 @@ class _Base():
             tag_approved = (config.tag_verb_present + config.tag_verb_past
                             + config.tag_verb_future)
             check_approved = (word_tag in tag_approved)
-            return ((((check_dep or check_root) and check_pos and check_tag)
+            check_all =((((check_dep or check_root) and check_pos and check_tag)
                     or (check_root and check_posaux)) and check_approved)
         #
         #Identify useless words
@@ -993,7 +1001,7 @@ class _Base():
             check_root = self._is_pos_word(word=word, pos="ROOT")
             check_neg = self._is_pos_word(word=word, pos="NEGATIVE")
             check_subj = self._is_pos_word(word=word, pos="SUBJECT")
-            return ((check_tag and check_dep and check_pos)
+            check_all = ((check_tag and check_dep and check_pos)
                 and (not (check_use or check_neg or check_subj or check_root)))
         #
         #Identify subjects
@@ -1013,7 +1021,7 @@ class _Base():
             #Determine if conjoined to subject, if applicable
             is_conjsubj = self._is_pos_conjoined(word, pos=pos)
             check_dep = (word_dep in config.dep_subject)
-            return (((check_dep or is_conjsubj)
+            check_all = (((check_dep or is_conjsubj)
                         or ((check_noun or check_adj) and is_leftofverb))
                     and (not check_obj))
         #
@@ -1025,13 +1033,14 @@ class _Base():
             check_prepaux = ((word_dep in config.dep_aux)
                             and (word_pos in config.pos_aux)
                             and (check_tag)) #For e.g. mishandled 'to'
-            return ((check_dep and check_pos and check_tag) or (check_prepaux))
+            check_all = ((check_dep and check_pos and check_tag)
+                        or (check_prepaux))
         #
         #Identify base objects (so either direct or prep. objects)
         elif pos in ["BASE_OBJECT"]:
             check_dep = (word_dep in config.dep_object)
             check_noun = self._is_pos_word(word=word, pos="NOUN")
-            return (check_noun and check_dep)
+            check_all = (check_noun and check_dep)
         #
         #Identify direct objects
         elif pos in ["DIRECT_OBJECT"]:
@@ -1050,7 +1059,7 @@ class _Base():
                     check_afterverb = True
                     break
             #
-            return (((not check_afterprep) and (check_afterverb)
+            check_all = (((not check_afterprep) and (check_afterverb)
                         and (check_baseobj))
                     or is_conjdirobj)
         #
@@ -1073,7 +1082,7 @@ class _Base():
                     check_objprep = False
                     break
             #
-            return (is_conjprepobj or (check_baseobj and check_objprep))
+            check_all = (is_conjprepobj or (check_baseobj and check_objprep))
         #
         #Identify prepositional subjects
         elif pos in ["PREPOSITION_SUBJECT"]:
@@ -1094,7 +1103,7 @@ class _Base():
                     check_subjprep = False
                     break
             #
-            return (is_conjprepsubj or (check_obj and check_subjprep))
+            check_all = (is_conjprepsubj or (check_obj and check_subjprep))
         #
         #Identify markers
         elif pos in ["MARKER"]:
@@ -1111,24 +1120,27 @@ class _Base():
                 check_det = self._is_pos_word(word=word, pos="DETERMINANT")
                 check_subjmark = (check_det and check_subj)
             #
-            return ((check_marker or check_subjmark) and (not is_afterroot))
+            check_all = ((check_marker or check_subjmark)
+                        and (not is_afterroot))
         #
         #Identify improper X-words (for improper sentences)
         elif pos in ["X"]:
             check_dep = (word_dep in config.dep_xpos)
             check_pos = (word_pos in config.pos_xpos)
-            return (check_dep or check_pos)
+            check_all = (check_dep or check_pos)
         #
         #Identify conjoined words
         elif pos in ["CONJOINED"]:
-            check_dep = (word_dep in config.dep_conjoined)
-            return (check_dep)
+            check_conj = (word_dep in config.dep_conjoined)
+            check_appos = (word_dep in config.dep_appos)
+            check_det = (word_tag in config.tag_determinant)
+            check_all = ((check_conj or check_appos) and (not check_det))
         #
         #Identify determinants
         elif pos in ["DETERMINANT"]:
             check_pos = (word_pos in config.pos_determinant)
             check_tag = (word_tag in config.tag_determinant)
-            return (check_pos and check_tag)
+            check_all = (check_pos and check_tag)
         #
         #Identify aux
         elif pos in ["AUX"]:
@@ -1141,20 +1153,20 @@ class _Base():
                             + config.tag_verb_future + config.tag_verb_purpose)
             check_approved = (word_tag in tags_approved)
             #
-            return ((check_dep and check_pos and check_approved)
+            check_all = ((check_dep and check_pos and check_approved)
                     and (not (check_prep or check_num)))
         #
         #Identify nouns
         elif pos in ["NOUN"]:
             check_pos = (word_pos in config.pos_noun)
-            check_appos = (word_dep in config.dep_appos)
-            return (check_pos and (not check_appos))
+            check_det = (word_tag in config.tag_determinant)
+            check_all = (check_pos and (not check_det))
         #
         #Identify pronouns
         elif pos in ["PRONOUN"]:
             check_tag = (word_tag in config.tag_pronoun)
             check_pos = (word_pos in config.pos_pronoun)
-            return (check_tag or check_pos)
+            check_all = (check_tag or check_pos)
         #
         #Identify adjectives
         elif pos in ["ADJECTIVE"]:
@@ -1163,51 +1175,57 @@ class _Base():
                                 and (word_tag in config.tag_verb_any))
             check_pos = (word_pos in config.pos_adjective)
             check_tag = (word_tag in config.tag_adjective)
-            return (check_tag or check_pos or check_adjverb)
+            check_all = (check_tag or check_pos or check_adjverb)
         #
         #Identify  conjunctions
         elif pos in ["CONJUNCTION"]:
             check_pos = (word_pos in config.pos_conjunction)
             check_tag = (word_tag in config.tag_conjunction)
-            return (check_pos and check_tag)
+            check_all = (check_pos and check_tag)
         #
         #Identify passive verbs and aux
         elif pos in ["PASSIVE"]:
             check_dep = (word_dep in config.dep_verb_passive)
-            return check_dep
+            check_all = check_dep
         #
         #Identify negative words
         elif pos in ["NEGATIVE"]:
             check_dep = (word_dep in config.dep_negative)
-            return check_dep
+            check_all = check_dep
         #
         #Identify punctuation
         elif pos in ["PUNCTUATION"]:
             check_punct = (word_dep in config.dep_punctuation)
             check_letter = bool(re.search(".*[a-z|0-9].*", word_text,
                                             flags=re.IGNORECASE))
-            return (check_punct and (not check_letter))
+            check_all = (check_punct and (not check_letter))
         #
         #Identify punctuation
         elif pos in ["BRACKET"]:
             check_brackets = (word_tag in (config.tag_brackets))
-            return (check_brackets)
+            check_all = (check_brackets)
         #
         #Identify possessive markers
         elif pos in ["POSSESSIVE"]:
             check_possessive = (word_tag in config.tag_possessive)
-            return (check_possessive)
+            check_all = (check_possessive)
         #
         #Identify numbers
         elif pos in ["NUMBER"]:
             check_number = (word_pos in config.pos_number)
-            return (check_number)
+            check_all = (check_number)
         #
         #Otherwise, raise error if given pos is not recognized
         else:
             raise ValueError("Err: {0} is not a recognized part of speech."
                             .format(pos))
         #
+
+        #Print some notes
+        if do_verbose:
+            print("Is pos={0}? {1}\n-".format(pos, check_all))
+        #Return the final verdict
+        return check_all
     #
 
     ##Method: _load_text
