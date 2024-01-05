@@ -1040,7 +1040,7 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array([testbase._is_pos_word(word=item,
                                             keyword_objs=list_lookup_kobj,
-                                            pos=test_pos, do_verbose=False) 
+                                            pos=test_pos, do_verbose=False)
                                             for item in curr_NLP])
                     test_res = [item.text for item in
                                 np.asarray(curr_NLP)[test_bools]]
@@ -1753,12 +1753,12 @@ class TestGrammar(unittest.TestCase):
         def test__modifs__importantclause_mission(self):
             #Prepare text and answers for test
             dict_acts = {
-            "While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the HST observations, we are unable to even tentatively detect those same targets in the snapshots taken with the Other Telescope.":
+            "While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the HST observations, we are unable to even tentatively detect those same targets in the snapshots taken with the Cool Telescope.":
                 {"kobj":kobj_hubble,
-                "none":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the HST observations, we are unable to even tentatively detect those same targets in the snapshots taken with the Other Telescope.",
-                "skim":"While we are able to detect (above 5sigma) the three stars within the mosaic created by the HST observations, we are unable to detect those targets in the snapshots taken with the Other Telescope.",
+                "none":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the HST observations, we are unable to even tentatively detect those same targets in the snapshots taken with the Cool Telescope.",
+                "skim":"While we are able to detect (above 5sigma) the three stars within the mosaic created by the HST observations, we are unable to detect those targets in the snapshots taken with the Cool Telescope.",
                 "trim":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the HST observations, we are unable to even tentatively detect those same targets in the snapshots.",
-                "anon":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the {0} observations, we are unable to even tentatively detect those same targets in the snapshots taken with the Other Telescope.".format(placeholder_anon),
+                "anon":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the {0} observations, we are unable to even tentatively detect those same targets in the snapshots taken with the Cool Telescope.".format(placeholder_anon),
                 "skim_trim_anon":"While we are able to detect (above 5sigma) the three stars within the mosaic created by the {0} observations, we are unable to detect those targets in the snapshots.".format(placeholder_anon)
                 }
             }
@@ -1803,12 +1803,12 @@ class TestGrammar(unittest.TestCase):
         def test__modifs__importantclause_1stperson(self):
             #Prepare text and answers for test
             dict_acts = {
-            "While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Other Telescope observations, we are unable to even tentatively detect those same targets in the snapshots taken with the HST.":
+            "While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, we are unable to even tentatively detect those same targets in the snapshots taken with the HST.":
                 {"kobj":kobj_hubble,
-                "none":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Other Telescope observations, we are unable to even tentatively detect those same targets in the snapshots taken with the HST.",
-                "skim":"While we are able to detect (above 5sigma) the three stars within the mosaic created by the Other Telescope observations, we are unable to detect those targets in the snapshots taken with the HST.",
+                "none":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, we are unable to even tentatively detect those same targets in the snapshots taken with the HST.",
+                "skim":"While we are able to detect (above 5sigma) the three stars within the mosaic created by the Cool Telescope observations, we are unable to detect those targets in the snapshots taken with the HST.",
                 "trim":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic, we are unable to even tentatively detect those same targets in the snapshots taken with the HST.",
-                "anon":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Other Telescope observations, we are unable to even tentatively detect those same targets in the snapshots taken with the {0}.".format(placeholder_anon),
+                "anon":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, we are unable to even tentatively detect those same targets in the snapshots taken with the {0}.".format(placeholder_anon),
                 "skim_trim_anon":"While we are able to detect (above 5sigma) the three stars within the mosaic, we are unable to detect those targets in the snapshots taken with the {0}.".format(placeholder_anon)
                 }
             }
@@ -1820,7 +1820,8 @@ class TestGrammar(unittest.TestCase):
 
                 #Prepare and run test for bibcat class instance
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
-                                        do_check_truematch=True)
+                                        do_check_truematch=True,
+                                        do_verbose=True)
                 testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:
@@ -1853,12 +1854,12 @@ class TestGrammar(unittest.TestCase):
         def test__modifs__unimportantclause(self):
             #Prepare text and answers for test
             dict_acts = {
-            "While that study was able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Other Telescope observations, this study was unable to even tentatively detect those same targets in the snapshots taken with the HST.":
+            "While that study was able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, this study was unable to even tentatively detect those same targets in the snapshots taken with the HST.":
                 {"kobj":kobj_hubble,
-                "none":"While that study was able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Other Telescope observations, this study was unable to even tentatively detect those same targets in the snapshots taken with the HST.",
-                "skim":"While that study was able to detect (above 5sigma) the three stars within the mosaic created by the Other Telescope observations, this study was unable to detect those targets in the snapshots taken with the HST.",
+                "none":"While that study was able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, this study was unable to even tentatively detect those same targets in the snapshots taken with the HST.",
+                "skim":"While that study was able to detect (above 5sigma) the three stars within the mosaic created by the Cool Telescope observations, this study was unable to detect those targets in the snapshots taken with the HST.",
                 "trim":"this study was unable to even tentatively detect those same targets in the snapshots taken with the HST.",
-                "anon":"While that study was able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Other Telescope observations, this study was unable to even tentatively detect those same targets in the snapshots taken with the {0}.".format(placeholder_anon),
+                "anon":"While that study was able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, this study was unable to even tentatively detect those same targets in the snapshots taken with the {0}.".format(placeholder_anon),
                 "skim_trim_anon":"this study was unable to detect those targets in the snapshots taken with the {0}.".format(placeholder_anon)
                 }
             }
