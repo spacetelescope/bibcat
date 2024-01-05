@@ -120,6 +120,8 @@ tag_verb_any = tag_verb_past + tag_verb_present + tag_verb_future
 dep_subject = ["nsubj", "nsubjpass", "expl"]
 #Objects
 dep_object = ["dobj", "pobj", "attr", "appos"]
+#Appositional Modifiers
+dep_appos = ["appos"]
 #Prepositions
 dep_preposition = ["prep", "agent", "dative"]
 pos_preposition = ["ADP"]

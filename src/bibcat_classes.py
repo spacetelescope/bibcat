@@ -243,8 +243,12 @@ class _Base():
 
                 #Print some notes
                 if do_verbose:
-                    print("Latest makeshift wordchunks: {0}"
-                            .format(list_wordchunks))
+                    print("All wordchunks so far: {0}\nNewest wordchunk: {1}"
+                            .format(list_wordchunks, list_wordchunks[-1]))
+                    print("pos_ values: {0}\ndep_ values: {1}\ntag_ values: {2}"
+                            .format([item.pos_ for item in list_wordchunks[-1]],
+                                [item.dep_ for item in list_wordchunks[-1]],
+                                [item.tag_ for item in list_wordchunks[-1]]))
                 #
             #
         #
@@ -1143,7 +1147,8 @@ class _Base():
         #Identify nouns
         elif pos in ["NOUN"]:
             check_pos = (word_pos in config.pos_noun)
-            return (check_pos)
+            check_appos = (word_dep in config.dep_appos)
+            return (check_pos and (not check_appos))
         #
         #Identify pronouns
         elif pos in ["PRONOUN"]:

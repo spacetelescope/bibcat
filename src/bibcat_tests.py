@@ -67,7 +67,7 @@ allowed_classifications = ["SCIENCE", "DATA_INFLUENCED", "MENTION", "SUPERMENTIO
 #-------------------------------------------------------------------------------
 ###Test Classes
 #
-
+#"""
 #class: TestData
 #Purpose: Testing datasets
 class TestData(unittest.TestCase):
@@ -1257,7 +1257,7 @@ class TestBase(unittest.TestCase):
         #
     #
 #"""
-
+#"""
 #class: TestKeyword
 #Purpose: Testing the Keyword class
 class TestKeyword(unittest.TestCase):
@@ -1424,7 +1424,7 @@ class TestKeyword(unittest.TestCase):
         #
     #
 #"""
-
+#"""
 #class: TestPaper
 #Purpose: Testing the Paper class
 class TestPaper(unittest.TestCase):
@@ -1641,7 +1641,7 @@ class TestPaper(unittest.TestCase):
         #
     #
 #"""
-
+#"""
 #class: TestGrammar
 #Purpose: Testing the Grammar class
 class TestGrammar(unittest.TestCase):
@@ -1950,7 +1950,7 @@ class TestGrammar(unittest.TestCase):
         #
     #
 #"""
-
+#"""
 #class: TestOperator
 #Purpose: Testing the Operator class
 class TestOperator(unittest.TestCase):
