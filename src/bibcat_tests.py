@@ -1013,6 +1013,7 @@ class TestBase(unittest.TestCase):
             test_pos = "VERB"
             #Prepare text and answers for test
             dict_tests = {
+                    "They were frolicking and will soon be at the party.":["frolicking", "be"],
                     "Hubble calibrated data.":["calibrated"],
                     "She went to the clean store.":["went"],
                     "Hubble has observed many stars.":["observed"],
@@ -1720,7 +1721,8 @@ class TestGrammar(unittest.TestCase):
 
                 #Prepare and run test for bibcat class instance
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
-                                        do_check_truematch=True)
+                                        do_check_truematch=True,
+                                        do_verbose=False)
                 testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:
@@ -1821,7 +1823,7 @@ class TestGrammar(unittest.TestCase):
                 #Prepare and run test for bibcat class instance
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
                                         do_check_truematch=True,
-                                        do_verbose=True)
+                                        do_verbose=False)
                 testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:

@@ -971,7 +971,12 @@ class _Base():
         #Identify verbs
         elif pos in ["VERB"]:
             check_posaux = (word_pos in config.pos_aux)
+            check_isrightword = (len(list(word.rights)) > 0)
+            #NOTE: 'isrightword' check, since aux-verb would have right word(s)
+            #(E.g., 'The star is observable')
+            #
             check_root = self._is_pos_word(word=word, pos="ROOT")
+            check_conj = self._is_pos_conjoined(word=word, pos=pos)
             check_tag = (word_tag in config.tag_verb_any)
             check_pos = (word_pos in config.pos_verb)
             check_dep = (word_dep in config.dep_verb)
@@ -989,8 +994,10 @@ class _Base():
             #
             check_all =((
                     (
-                        ((check_dep or check_root) and check_pos and check_tag)
-                        or (check_root and check_posaux))
+                        ((check_dep or check_root or check_conj)
+                            and check_pos and check_tag)
+                        or (check_root and check_posaux)
+                        or (check_isrightword and check_posaux))
                     or (check_valid_amod))
                 and check_approved)
         #
