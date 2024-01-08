@@ -961,6 +961,8 @@ class _Base():
                     .format(word_dep, word_pos, word_tag))
             print("Node head: {0}\nSentence: {1}"
                     .format(word.head, word.sent))
+            print("Node lefts: {0}\nNode rights: {1}"
+                    .format(list(word.lefts), list(word.rights)))
         #
 
         ##Check if given word is of given part-of-speech
@@ -971,12 +973,13 @@ class _Base():
         #Identify verbs
         elif pos in ["VERB"]:
             check_posaux = (word_pos in config.pos_aux)
-            check_isrightword = (len(list(word.rights)) > 0)
+            #check_isrightword = (len(list(word.rights)) > 0)
             #NOTE: 'isrightword' check, since aux-verb would have right word(s)
             #(E.g., 'The star is observable')
             #
             check_root = self._is_pos_word(word=word, pos="ROOT")
             check_conj = self._is_pos_conjoined(word=word, pos=pos)
+            check_ccomp = (word_dep in config.dep_ccomp)
             check_tag = (word_tag in config.tag_verb_any)
             check_pos = (word_pos in config.pos_verb)
             check_dep = (word_dep in config.dep_verb)
@@ -990,14 +993,17 @@ class _Base():
                             and self._is_pos_word(word=word.head, pos="ROOT")
                             and self._is_pos_word(word=word.head, pos="NOUN"))
             check_amod = (word_dep in config.dep_adjective)
-            check_valid_amod = (check_nounroot and check_amod)
+            check_islefts = (len(list(word.lefts)) > 0)
+            check_valid_amod = (check_nounroot and check_amod
+                                and check_islefts)
             #
             check_all =((
                     (
-                        ((check_dep or check_root or check_conj)
-                            and check_pos and check_tag)
-                        or (check_root and check_posaux)
-                        or (check_isrightword and check_posaux))
+                        ((check_dep or check_root or check_conj or check_ccomp)
+                            #and check_pos and check_tag)
+                            and check_tag)
+                        or (check_root and check_posaux))
+                        #or (check_isrightword and check_posaux))
                     or (check_valid_amod))
                 and check_approved)
         #
@@ -1034,14 +1040,19 @@ class _Base():
             is_leftofverb = False
             if (len(word_ancestors) > 0):
                 tmp_verb = self._is_pos_word(word=word_ancestors[0], pos="VERB")
-                tmp_root = self._is_pos_word(word=word_ancestors[0], pos="ROOT")
-                if (tmp_verb or tmp_root):
+                #tmp_root = self._is_pos_word(word=word_ancestors[0], pos="ROOT")
+                #if (tmp_verb or tmp_root):
+                if tmp_verb:
                     is_leftofverb = (word in word_ancestors[0].lefts)
             #
             #Determine if conjoined to subject, if applicable
             is_conjsubj = self._is_pos_conjoined(word, pos=pos)
+            is_root = self._is_pos_word(word=word, pos="ROOT")
             check_dep = (word_dep in config.dep_subject)
-            check_all = (((check_dep or is_conjsubj)
+            check_all = ((
+                        (check_dep and is_leftofverb)
+                        or (is_conjsubj)
+                        or (check_noun and is_root)
                         or ((check_noun or check_adj) and is_leftofverb))
                     and (not check_obj))
         #
@@ -2523,10 +2534,25 @@ class Grammar(_Base):
                 #Throw error if pos already identified; should just be 1 valid
                 if (pos_main is not None):
                 #            and ("ROOT" not in [pos_main, check_pos])):
-                    raise ValueError(("Err: Multi pos for {2}!: {0}, {1}\n{3}"
-                                    +"\ndep={4}, pos={5}, tag={6}")
+                    #Take the dominant p.o.s. for allowed cases
+                    #This catches weird overlap cases due to ambig. English
+                    tmp_list = [check_pos, pos_main]
+                    #Aux > verb
+                    #if (("VERB" in tmp_list) and ("AUX" in tmp_list)):
+                    #    pos_main = "AUX"
+                    #Subject > verb
+                    #elif (("VERB" in tmp_list) and ("SUBJECT" in tmp_list)):
+                    #        pos_main = "SUBJECT"
+                    #else:
+                        #Otherwise, throw an error
+                    raise ValueError(
+                                    ("Err: Multi pos for {2}!: {0}, {1}\n{3}"
+                                    +"\ndep={4}, pos={5}, tag={6}\nhead={7}"
+                                    +"\nLefts={8}\nRights={9}")
                                     .format(pos_main, check_pos, node,
-                                    node.sent, node.dep_, node.pos_, node.tag_))
+                                    node.sent, node.dep_, node.pos_, node.tag_,
+                                    node.head, list(node.lefts),
+                                    list(node.rights)))
                 #
                 #Otherwise, store this pos
                 pos_main = check_pos

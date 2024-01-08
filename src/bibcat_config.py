@@ -49,7 +49,8 @@ tfoutput_prefix = "tfoutput_"
 folders_TVT = {"train":"dir_train", "validate":"dir_validate", "test":"dir_test"}
 
 #Below are for bibcat_tests.py testing purposes only
-filepath_input = "/Users/jamila.pegues/Documents/STScI_Fellowship/Functional/Library/BibTracking/datasets" #"/path/to/the/dataset"
+filepath_input = "/path/to/the/dataset"
+filepath_input = "/Users/jamila.pegues/Documents/STScI_Fellowship/Functional/Library/BibTracking/datasets"
 path_papertrack = os.path.join(filepath_input, "papertrack_export_2023-11-06.json")
 path_papertext = os.path.join(filepath_input, "ST_Request2021_use.json")
 #
@@ -123,6 +124,8 @@ dep_subject = ["nsubj", "nsubjpass", "expl"]
 dep_object = ["dobj", "pobj", "attr"] #, "appos"]
 #Appositional Modifiers
 dep_appos = ["appos"]
+#Clausal Complements
+dep_ccomp = ["ccomp"]
 #Prepositions
 dep_preposition = ["prep", "agent", "dative"]
 pos_preposition = ["ADP"]

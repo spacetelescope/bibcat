@@ -269,6 +269,7 @@ class TestBase(unittest.TestCase):
         def test__assemble_keyword_wordchunks__variety(self):
             #Prepare text and answers for test
             dict_acts_noverbs = {
+            "The Hubble calibrated data was used.":["Hubble calibrated data"],
             "The Hubble database is quite expansive.":["Hubble database"],
             "Consider reading the paper Hubble (2000).":["paper Hubble"],
             "The scientists used the HST PSF.":["HST PSF"],
@@ -615,6 +616,8 @@ class TestBase(unittest.TestCase):
             test_pos = "AUX" #Current p.o.s. to be tested
             #Prepare text and answers for test
             dict_tests = {
+                    "I think that is a good idea.":[],
+                    "Also shown are new curves.":["are"],
                     "They were frolicking and will soon be at the party.":["were", "will"],
                     "Hubble has observed many stars.":["has"],
                     "There are only so many entries in the database.":[],
@@ -641,7 +644,8 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array([testbase._is_pos_word(word=item,
                                             keyword_objs=list_lookup_kobj,
-                                            pos=test_pos) for item in curr_NLP])
+                                            pos=test_pos)
+                                            for item in curr_NLP])
                     test_res = [item.text for item in
                                 np.asarray(curr_NLP)[test_bools]]
                     self.assertEqual(test_res, answer)
@@ -686,7 +690,8 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array([testbase._is_pos_word(word=item,
                                             keyword_objs=list_lookup_kobj,
-                                            pos=test_pos) for item in curr_NLP])
+                                            pos=test_pos, do_verbose=False)
+                                            for item in curr_NLP])
                     test_res = [item.text for item in
                                 np.asarray(curr_NLP)[test_bools]]
                     self.assertEqual(test_res, answer)
@@ -916,6 +921,11 @@ class TestBase(unittest.TestCase):
             test_pos = "SUBJECT" #Current p.o.s. to be tested
             #Prepare text and answers for test
             dict_tests = {
+                    "The Hubble calibrated data was used.":["data"],
+                    "Hubble calibrated the data.":["Hubble"],
+                    "Calibrated data was used.":["data"],
+                    "Calibrated data.":["data"],
+                    "Fixed units.":["units"],
                     "She went to the clean store.":["She"],
                     "Hubble has observed many stars.":["Hubble"],
                     "There are only so many entries in the database.":["There"],
@@ -1013,8 +1023,14 @@ class TestBase(unittest.TestCase):
             test_pos = "VERB"
             #Prepare text and answers for test
             dict_tests = {
+                    "I think that is a good idea.":["think", "is"],
+                    "Also shown are new curves.":["shown"],
                     "They were frolicking and will soon be at the party.":["frolicking", "be"],
-                    "Hubble calibrated data.":["calibrated"],
+                    "The Hubble calibrated data was used.":["used"],
+                    "Hubble calibrated the data.":["calibrated"],
+                    "Calibrated data was used.":["used"],
+                    "Calibrated data.":[],
+                    "Fixed units.":[],
                     "She went to the clean store.":["went"],
                     "Hubble has observed many stars.":["observed"],
                     "There are only so many entries in the database.":["are"],
