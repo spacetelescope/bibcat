@@ -27,6 +27,7 @@ filepath_json = config.path_json
 filepath_papertrack = config.path_papertrack
 filepath_papertext = config.path_papertext
 filepath_dictinfo = config.path_TVTinfo
+filepath_modiferrors = config.path_modiferrors
 #
 
 ##Grammar
@@ -208,6 +209,7 @@ class TestData(unittest.TestCase):
             #
             #If exists, carry on with this test
             dict_info = np.load(filepath_dictinfo, allow_pickle=True).item()
+            dict_errors = np.load(filepath_modiferrors,allow_pickle=True).item()
             #Dataset of text and classification information
             with open(filepath_json, 'r') as openfile:
                 dataset = json.load(openfile)
@@ -225,19 +227,23 @@ class TestData(unittest.TestCase):
                                 and (dataset[ind_dataset]["class_missions"][key
                                                                 ]["papertype"]
                                     in allowed_classifications))}
+                #
+                #Fetch results of test and combine with any errors for bibcode
+                curr_test = dict_info[curr_key]["storage"].copy()
+                if (curr_key in dict_errors):
+                    curr_test.update(dict_errors[curr_key])
+                #
                 #Check each entry
                 try:
                     ind_dataset = list_bibcodes_dataset.index(curr_key)
                     #Ensure same number of missions for this bibcode
                     self.assertEqual(
                                 len(curr_actuals),
-                                len(dict_info[curr_key]["storage"]))
+                                len(curr_test))
                     #
-                    for curr_textid in dict_info[curr_key]["storage"]:
-                        curr_mission = dict_info[curr_key][
-                                            "storage"][curr_textid]["mission"]
-                        curr_class = dict_info[curr_key][
-                                            "storage"][curr_textid]["class"]
+                    for curr_textid in curr_test:
+                        curr_mission = curr_test[curr_textid]["mission"]
+                        curr_class = curr_test[curr_textid]["class"]
                         #Check each mission and class
                         self.assertEqual(curr_class,
                             mapper[curr_actuals[curr_mission
@@ -247,8 +253,11 @@ class TestData(unittest.TestCase):
                 except (KeyError, AssertionError) as err:
                     print("")
                     print(">")
-                    print("Different mission breakdown for {2}:\n{0}\nvs\n{1}"
-                        .format(dict_info[curr_key], curr_actuals, curr_key))
+                    print(("Diff mission info for {0}:\n{1}\n-\n"
+                            +"{2}\nand {3}\n-\nvs\n{4}\n---\n")
+                        .format(curr_key, curr_test,
+                                dict_info[curr_key], dict_errors[curr_key],
+                                curr_actuals))
                     print("---")
                     print("")
                     #

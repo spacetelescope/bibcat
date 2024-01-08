@@ -13,7 +13,7 @@ from nltk.corpus import wordnet
 ##Set global user paths
 path_json = "path/to/dataset_combined_all.json" # set the path to the location of the JSON file you downloaded from Box
 path_json = "/Users/jamila.pegues/Documents/STScI_Fellowship/Functional/Library/BibTracking/datasets/dataset_combined_all.json" # set the path to the location of the JSON file you downloaded from Box
-name_model = "my_test_run_0" #Name of model run to save or load
+name_model = "my_test_run_1" #Name of model run to save or load
 #
 
 ##Set global fixed paths
@@ -44,6 +44,7 @@ PHR_AMBIG = os.path.join(PATH_CONFIG, "phrases_ambig.txt")
 
 ##Set global input and output paths
 dir_allmodels = PATH_MODELS #Path to directory for saving or loading a model
+path_modiferrors = os.path.join(dir_allmodels, name_model, "dict_modiferrors.npy")
 path_TVTinfo = os.path.join(dir_allmodels, name_model, "dict_TVTinfo.npy")
 tfoutput_prefix = "tfoutput_"
 folders_TVT = {"train":"dir_train", "validate":"dir_validate", "test":"dir_test"}

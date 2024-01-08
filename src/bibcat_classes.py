@@ -6459,6 +6459,7 @@ class Operator(_Base):
         folders_TVT = config.folders_TVT
         savename_ML = (config.tfoutput_prefix + name_model)
         savename_model = (name_model + ".npy")
+        filepath_dicterrors = config.path_modiferrors
         #
         #Print some notes
         if do_verbose:
@@ -6504,6 +6505,7 @@ class Operator(_Base):
             #
 
             #Process each text within the database into a modif
+            dict_errors = {} #Container for modifs with caught processing errors
             dict_modifs = {} #Container for modifs and text classification info
             i_track = 0
             i_skipped = 0
@@ -6511,6 +6513,8 @@ class Operator(_Base):
             num_data = len(dataset)
             for curr_key in dataset:
                 old_dict = dataset[curr_key]
+                masked_class = mapper[old_dict["class"].lower()]
+                #
                 #Extract modif for current text
                 if do_check_truematch: #Catch and print unknown ambig. phrases
                     try:
@@ -6532,9 +6536,19 @@ class Operator(_Base):
                         curr_str += "\nError was noted. Skipping this paper.\n-"
                         print(curr_str) #Print current error
                         #
+                        #Store this error-modif
+                        err_dict = {"text":curr_str,
+                            "class":masked_class, #Mask class
+                            "id":old_dict["id"], "mission":old_dict["mission"],
+                            "forest":None, "bibcode":old_dict["bibcode"]}
+                        if (old_dict["bibcode"] not in dict_errors):
+                            dict_errors[old_dict["bibcode"]] = {}
+                        dict_errors[old_dict["bibcode"]][curr_key] = err_dict
+                        #
                         str_err += curr_str #Tack this error onto full string
                         i_skipped += 1 #Increment count of skipped papers
                         continue
+                #
                 else: #Otherwise, run without ambig. phrase check
                     curr_res = self.process(text=old_dict["text"],
                                     do_check_truematch=do_check_truematch,
@@ -6544,7 +6558,6 @@ class Operator(_Base):
                                     )
                 #
                 #Store the modif and previous classification information
-                masked_class = mapper[old_dict["class"].lower()]
                 new_dict = {"text":curr_res["modif"],
                             "class":masked_class, #Mask class
                             "id":old_dict["id"], "mission":old_dict["mission"],
@@ -6576,6 +6589,8 @@ class Operator(_Base):
                             fraction_TVT=fraction_TVT, mode_TVT=mode_TVT,
                             dict_texts=dict_modifs, do_shuffle=do_shuffle,
                             seed=seed_TVT, do_verbose=do_verbose)
+            #Save the modifs with caught processing errors
+            np.save(filepath_dicterrors, dict_errors)
             #Print some notes
             if do_verbose:
                 print("Train+validate+test directories created in {0}."
