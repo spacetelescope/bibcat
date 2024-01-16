@@ -243,8 +243,12 @@ class _Base():
 
                 #Print some notes
                 if do_verbose:
-                    print("Latest makeshift wordchunks: {0}"
-                            .format(list_wordchunks))
+                    print("All wordchunks so far: {0}\nNewest wordchunk: {1}"
+                            .format(list_wordchunks, list_wordchunks[-1]))
+                    print("pos_ values: {0}\ndep_ values: {1}\ntag_ values: {2}"
+                            .format([item.pos_ for item in list_wordchunks[-1]],
+                                [item.dep_ for item in list_wordchunks[-1]],
+                                [item.tag_ for item in list_wordchunks[-1]]))
                 #
             #
         #
@@ -935,7 +939,7 @@ class _Base():
 
     ##Method: _is_pos_word()
     ##Purpose: Return boolean for if given word (NLP type word) is of given part of speech
-    def _is_pos_word(self, word, pos, keyword_objs=None):
+    def _is_pos_word(self, word, pos, keyword_objs=None, do_verbose=False):
         """
         Method: _is_pos_word
         WARNING! This method is *not* meant to be used directly by users.
@@ -950,24 +954,58 @@ class _Base():
         word_text = word.text #Text version of word
         word_ancestors = list(word.ancestors)#All previous nodes leading to word
         #
+        #Print some notes
+        if do_verbose:
+            print("Running _is_pos_word for: {0}".format(word))
+            print("dep_: {0}\npos_: {1}\ntag_: {2}"
+                    .format(word_dep, word_pos, word_tag))
+            print("Node head: {0}\nSentence: {1}"
+                    .format(word.head, word.sent))
+            print("Node lefts: {0}\nNode rights: {1}"
+                    .format(list(word.lefts), list(word.rights)))
+        #
 
         ##Check if given word is of given part-of-speech
         #Identify roots
         if pos in ["ROOT"]:
-            return (word_dep in config.dep_root)
+            check_all = (word_dep in config.dep_root)
         #
         #Identify verbs
         elif pos in ["VERB"]:
             check_posaux = (word_pos in config.pos_aux)
+            #check_isrightword = (len(list(word.rights)) > 0)
+            #NOTE: 'isrightword' check, since aux-verb would have right word(s)
+            #(E.g., 'The star is observable')
+            #
             check_root = self._is_pos_word(word=word, pos="ROOT")
+            check_conj = self._is_pos_conjoined(word=word, pos=pos)
+            check_ccomp = (word_dep in config.dep_ccomp)
             check_tag = (word_tag in config.tag_verb_any)
             check_pos = (word_pos in config.pos_verb)
             check_dep = (word_dep in config.dep_verb)
             tag_approved = (config.tag_verb_present + config.tag_verb_past
                             + config.tag_verb_future)
             check_approved = (word_tag in tag_approved)
-            return ((((check_dep or check_root) and check_pos and check_tag)
-                    or (check_root and check_posaux)) and check_approved)
+            #
+            #For ambiguous adjectival modifier sentences
+            #(E.g. "Hubble calibrated data")
+            check_nounroot = ((len(word_ancestors) > 0)
+                            and self._is_pos_word(word=word.head, pos="ROOT")
+                            and self._is_pos_word(word=word.head, pos="NOUN"))
+            check_amod = (word_dep in config.dep_adjective)
+            check_islefts = (len(list(word.lefts)) > 0)
+            check_valid_amod = (check_nounroot and check_amod
+                                and check_islefts)
+            #
+            check_all =((
+                    (
+                        ((check_dep or check_root or check_conj or check_ccomp)
+                            #and check_pos and check_tag)
+                            and check_tag)
+                        or (check_root and check_posaux))
+                        #or (check_isrightword and check_posaux))
+                    or (check_valid_amod))
+                and check_approved)
         #
         #Identify useless words
         elif pos in ["USELESS"]:
@@ -989,7 +1027,7 @@ class _Base():
             check_root = self._is_pos_word(word=word, pos="ROOT")
             check_neg = self._is_pos_word(word=word, pos="NEGATIVE")
             check_subj = self._is_pos_word(word=word, pos="SUBJECT")
-            return ((check_tag and check_dep and check_pos)
+            check_all = ((check_tag and check_dep and check_pos)
                 and (not (check_use or check_neg or check_subj or check_root)))
         #
         #Identify subjects
@@ -1002,14 +1040,19 @@ class _Base():
             is_leftofverb = False
             if (len(word_ancestors) > 0):
                 tmp_verb = self._is_pos_word(word=word_ancestors[0], pos="VERB")
-                tmp_root = self._is_pos_word(word=word_ancestors[0], pos="ROOT")
-                if (tmp_verb or tmp_root):
+                #tmp_root = self._is_pos_word(word=word_ancestors[0], pos="ROOT")
+                #if (tmp_verb or tmp_root):
+                if tmp_verb:
                     is_leftofverb = (word in word_ancestors[0].lefts)
             #
             #Determine if conjoined to subject, if applicable
             is_conjsubj = self._is_pos_conjoined(word, pos=pos)
+            is_root = self._is_pos_word(word=word, pos="ROOT")
             check_dep = (word_dep in config.dep_subject)
-            return (((check_dep or is_conjsubj)
+            check_all = ((
+                        (check_dep and is_leftofverb)
+                        or (is_conjsubj)
+                        or (check_noun and is_root)
                         or ((check_noun or check_adj) and is_leftofverb))
                     and (not check_obj))
         #
@@ -1021,13 +1064,14 @@ class _Base():
             check_prepaux = ((word_dep in config.dep_aux)
                             and (word_pos in config.pos_aux)
                             and (check_tag)) #For e.g. mishandled 'to'
-            return ((check_dep and check_pos and check_tag) or (check_prepaux))
+            check_all = ((check_dep and check_pos and check_tag)
+                        or (check_prepaux))
         #
         #Identify base objects (so either direct or prep. objects)
         elif pos in ["BASE_OBJECT"]:
             check_dep = (word_dep in config.dep_object)
             check_noun = self._is_pos_word(word=word, pos="NOUN")
-            return (check_noun and check_dep)
+            check_all = (check_noun and check_dep)
         #
         #Identify direct objects
         elif pos in ["DIRECT_OBJECT"]:
@@ -1046,7 +1090,7 @@ class _Base():
                     check_afterverb = True
                     break
             #
-            return (((not check_afterprep) and (check_afterverb)
+            check_all = (((not check_afterprep) and (check_afterverb)
                         and (check_baseobj))
                     or is_conjdirobj)
         #
@@ -1069,7 +1113,7 @@ class _Base():
                     check_objprep = False
                     break
             #
-            return (is_conjprepobj or (check_baseobj and check_objprep))
+            check_all = (is_conjprepobj or (check_baseobj and check_objprep))
         #
         #Identify prepositional subjects
         elif pos in ["PREPOSITION_SUBJECT"]:
@@ -1090,7 +1134,7 @@ class _Base():
                     check_subjprep = False
                     break
             #
-            return (is_conjprepsubj or (check_obj and check_subjprep))
+            check_all = (is_conjprepsubj or (check_obj and check_subjprep))
         #
         #Identify markers
         elif pos in ["MARKER"]:
@@ -1107,24 +1151,27 @@ class _Base():
                 check_det = self._is_pos_word(word=word, pos="DETERMINANT")
                 check_subjmark = (check_det and check_subj)
             #
-            return ((check_marker or check_subjmark) and (not is_afterroot))
+            check_all = ((check_marker or check_subjmark)
+                        and (not is_afterroot))
         #
         #Identify improper X-words (for improper sentences)
         elif pos in ["X"]:
             check_dep = (word_dep in config.dep_xpos)
             check_pos = (word_pos in config.pos_xpos)
-            return (check_dep or check_pos)
+            check_all = (check_dep or check_pos)
         #
         #Identify conjoined words
         elif pos in ["CONJOINED"]:
-            check_dep = (word_dep in config.dep_conjoined)
-            return (check_dep)
+            check_conj = (word_dep in config.dep_conjoined)
+            check_appos = (word_dep in config.dep_appos)
+            check_det = (word_tag in config.tag_determinant)
+            check_all = ((check_conj or check_appos) and (not check_det))
         #
         #Identify determinants
         elif pos in ["DETERMINANT"]:
             check_pos = (word_pos in config.pos_determinant)
             check_tag = (word_tag in config.tag_determinant)
-            return (check_pos and check_tag)
+            check_all = (check_pos and check_tag)
         #
         #Identify aux
         elif pos in ["AUX"]:
@@ -1137,19 +1184,20 @@ class _Base():
                             + config.tag_verb_future + config.tag_verb_purpose)
             check_approved = (word_tag in tags_approved)
             #
-            return ((check_dep and check_pos and check_approved)
+            check_all = ((check_dep and check_pos and check_approved)
                     and (not (check_prep or check_num)))
         #
         #Identify nouns
         elif pos in ["NOUN"]:
             check_pos = (word_pos in config.pos_noun)
-            return (check_pos)
+            check_det = (word_tag in config.tag_determinant)
+            check_all = (check_pos and (not check_det))
         #
         #Identify pronouns
         elif pos in ["PRONOUN"]:
             check_tag = (word_tag in config.tag_pronoun)
             check_pos = (word_pos in config.pos_pronoun)
-            return (check_tag or check_pos)
+            check_all = (check_tag or check_pos)
         #
         #Identify adjectives
         elif pos in ["ADJECTIVE"]:
@@ -1158,51 +1206,57 @@ class _Base():
                                 and (word_tag in config.tag_verb_any))
             check_pos = (word_pos in config.pos_adjective)
             check_tag = (word_tag in config.tag_adjective)
-            return (check_tag or check_pos or check_adjverb)
+            check_all = (check_tag or check_pos or check_adjverb)
         #
         #Identify  conjunctions
         elif pos in ["CONJUNCTION"]:
             check_pos = (word_pos in config.pos_conjunction)
             check_tag = (word_tag in config.tag_conjunction)
-            return (check_pos and check_tag)
+            check_all = (check_pos and check_tag)
         #
         #Identify passive verbs and aux
         elif pos in ["PASSIVE"]:
             check_dep = (word_dep in config.dep_verb_passive)
-            return check_dep
+            check_all = check_dep
         #
         #Identify negative words
         elif pos in ["NEGATIVE"]:
             check_dep = (word_dep in config.dep_negative)
-            return check_dep
+            check_all = check_dep
         #
         #Identify punctuation
         elif pos in ["PUNCTUATION"]:
             check_punct = (word_dep in config.dep_punctuation)
             check_letter = bool(re.search(".*[a-z|0-9].*", word_text,
                                             flags=re.IGNORECASE))
-            return (check_punct and (not check_letter))
+            check_all = (check_punct and (not check_letter))
         #
         #Identify punctuation
         elif pos in ["BRACKET"]:
             check_brackets = (word_tag in (config.tag_brackets))
-            return (check_brackets)
+            check_all = (check_brackets)
         #
         #Identify possessive markers
         elif pos in ["POSSESSIVE"]:
             check_possessive = (word_tag in config.tag_possessive)
-            return (check_possessive)
+            check_all = (check_possessive)
         #
         #Identify numbers
         elif pos in ["NUMBER"]:
             check_number = (word_pos in config.pos_number)
-            return (check_number)
+            check_all = (check_number)
         #
         #Otherwise, raise error if given pos is not recognized
         else:
             raise ValueError("Err: {0} is not a recognized part of speech."
                             .format(pos))
         #
+
+        #Print some notes
+        if do_verbose:
+            print("Is pos={0}? {1}\n-".format(pos, check_all))
+        #Return the final verdict
+        return check_all
     #
 
     ##Method: _load_text
@@ -2480,10 +2534,25 @@ class Grammar(_Base):
                 #Throw error if pos already identified; should just be 1 valid
                 if (pos_main is not None):
                 #            and ("ROOT" not in [pos_main, check_pos])):
-                    raise ValueError(("Err: Multi pos for {2}!: {0}, {1}\n{3}"
-                                    +"\ndep={4}, pos={5}, tag={6}")
+                    #Take the dominant p.o.s. for allowed cases
+                    #This catches weird overlap cases due to ambig. English
+                    tmp_list = [check_pos, pos_main]
+                    #Aux > verb
+                    #if (("VERB" in tmp_list) and ("AUX" in tmp_list)):
+                    #    pos_main = "AUX"
+                    #Subject > verb
+                    #elif (("VERB" in tmp_list) and ("SUBJECT" in tmp_list)):
+                    #        pos_main = "SUBJECT"
+                    #else:
+                        #Otherwise, throw an error
+                    raise ValueError(
+                                    ("Err: Multi pos for {2}!: {0}, {1}\n{3}"
+                                    +"\ndep={4}, pos={5}, tag={6}\nhead={7}"
+                                    +"\nLefts={8}\nRights={9}")
                                     .format(pos_main, check_pos, node,
-                                    node.sent, node.dep_, node.pos_, node.tag_))
+                                    node.sent, node.dep_, node.pos_, node.tag_,
+                                    node.head, list(node.lefts),
+                                    list(node.rights)))
                 #
                 #Otherwise, store this pos
                 pos_main = check_pos
@@ -6390,6 +6459,7 @@ class Operator(_Base):
         folders_TVT = config.folders_TVT
         savename_ML = (config.tfoutput_prefix + name_model)
         savename_model = (name_model + ".npy")
+        filepath_dicterrors = config.path_modiferrors
         #
         #Print some notes
         if do_verbose:
@@ -6435,6 +6505,7 @@ class Operator(_Base):
             #
 
             #Process each text within the database into a modif
+            dict_errors = {} #Container for modifs with caught processing errors
             dict_modifs = {} #Container for modifs and text classification info
             i_track = 0
             i_skipped = 0
@@ -6442,6 +6513,8 @@ class Operator(_Base):
             num_data = len(dataset)
             for curr_key in dataset:
                 old_dict = dataset[curr_key]
+                masked_class = mapper[old_dict["class"].lower()]
+                #
                 #Extract modif for current text
                 if do_check_truematch: #Catch and print unknown ambig. phrases
                     try:
@@ -6463,9 +6536,19 @@ class Operator(_Base):
                         curr_str += "\nError was noted. Skipping this paper.\n-"
                         print(curr_str) #Print current error
                         #
+                        #Store this error-modif
+                        err_dict = {"text":curr_str,
+                            "class":masked_class, #Mask class
+                            "id":old_dict["id"], "mission":old_dict["mission"],
+                            "forest":None, "bibcode":old_dict["bibcode"]}
+                        if (old_dict["bibcode"] not in dict_errors):
+                            dict_errors[old_dict["bibcode"]] = {}
+                        dict_errors[old_dict["bibcode"]][curr_key] = err_dict
+                        #
                         str_err += curr_str #Tack this error onto full string
                         i_skipped += 1 #Increment count of skipped papers
                         continue
+                #
                 else: #Otherwise, run without ambig. phrase check
                     curr_res = self.process(text=old_dict["text"],
                                     do_check_truematch=do_check_truematch,
@@ -6475,7 +6558,6 @@ class Operator(_Base):
                                     )
                 #
                 #Store the modif and previous classification information
-                masked_class = mapper[old_dict["class"].lower()]
                 new_dict = {"text":curr_res["modif"],
                             "class":masked_class, #Mask class
                             "id":old_dict["id"], "mission":old_dict["mission"],
@@ -6507,6 +6589,8 @@ class Operator(_Base):
                             fraction_TVT=fraction_TVT, mode_TVT=mode_TVT,
                             dict_texts=dict_modifs, do_shuffle=do_shuffle,
                             seed=seed_TVT, do_verbose=do_verbose)
+            #Save the modifs with caught processing errors
+            np.save(filepath_dicterrors, dict_errors)
             #Print some notes
             if do_verbose:
                 print("Train+validate+test directories created in {0}."

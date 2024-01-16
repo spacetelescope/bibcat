@@ -27,6 +27,7 @@ filepath_json = config.path_json
 filepath_papertrack = config.path_papertrack
 filepath_papertext = config.path_papertext
 filepath_dictinfo = config.path_TVTinfo
+filepath_modiferrors = config.path_modiferrors
 #
 
 ##Grammar
@@ -67,7 +68,7 @@ allowed_classifications = ["SCIENCE", "DATA_INFLUENCED", "MENTION", "SUPERMENTIO
 #-------------------------------------------------------------------------------
 ###Test Classes
 #
-
+#"""
 #class: TestData
 #Purpose: Testing datasets
 class TestData(unittest.TestCase):
@@ -208,6 +209,7 @@ class TestData(unittest.TestCase):
             #
             #If exists, carry on with this test
             dict_info = np.load(filepath_dictinfo, allow_pickle=True).item()
+            dict_errors = np.load(filepath_modiferrors,allow_pickle=True).item()
             #Dataset of text and classification information
             with open(filepath_json, 'r') as openfile:
                 dataset = json.load(openfile)
@@ -225,19 +227,23 @@ class TestData(unittest.TestCase):
                                 and (dataset[ind_dataset]["class_missions"][key
                                                                 ]["papertype"]
                                     in allowed_classifications))}
+                #
+                #Fetch results of test and combine with any errors for bibcode
+                curr_test = dict_info[curr_key]["storage"].copy()
+                if (curr_key in dict_errors):
+                    curr_test.update(dict_errors[curr_key])
+                #
                 #Check each entry
                 try:
                     ind_dataset = list_bibcodes_dataset.index(curr_key)
                     #Ensure same number of missions for this bibcode
                     self.assertEqual(
                                 len(curr_actuals),
-                                len(dict_info[curr_key]["storage"]))
+                                len(curr_test))
                     #
-                    for curr_textid in dict_info[curr_key]["storage"]:
-                        curr_mission = dict_info[curr_key][
-                                            "storage"][curr_textid]["mission"]
-                        curr_class = dict_info[curr_key][
-                                            "storage"][curr_textid]["class"]
+                    for curr_textid in curr_test:
+                        curr_mission = curr_test[curr_textid]["mission"]
+                        curr_class = curr_test[curr_textid]["class"]
                         #Check each mission and class
                         self.assertEqual(curr_class,
                             mapper[curr_actuals[curr_mission
@@ -247,8 +253,11 @@ class TestData(unittest.TestCase):
                 except (KeyError, AssertionError) as err:
                     print("")
                     print(">")
-                    print("Different mission breakdown for {2}:\n{0}\nvs\n{1}"
-                        .format(dict_info[curr_key], curr_actuals, curr_key))
+                    print(("Diff mission info for {0}:\n{1}\n-\n"
+                            +"{2}\nand {3}\n-\nvs\n{4}\n---\n")
+                        .format(curr_key, curr_test,
+                                dict_info[curr_key], dict_errors[curr_key],
+                                curr_actuals))
                     print("---")
                     print("")
                     #
@@ -269,6 +278,7 @@ class TestBase(unittest.TestCase):
         def test__assemble_keyword_wordchunks__variety(self):
             #Prepare text and answers for test
             dict_acts_noverbs = {
+            "The Hubble calibrated data was used.":["Hubble calibrated data"],
             "The Hubble database is quite expansive.":["Hubble database"],
             "Consider reading the paper Hubble (2000).":["paper Hubble"],
             "The scientists used the HST PSF.":["HST PSF"],
@@ -615,6 +625,8 @@ class TestBase(unittest.TestCase):
             test_pos = "AUX" #Current p.o.s. to be tested
             #Prepare text and answers for test
             dict_tests = {
+                    "I think that is a good idea.":[],
+                    "Also shown are new curves.":["are"],
                     "They were frolicking and will soon be at the party.":["were", "will"],
                     "Hubble has observed many stars.":["has"],
                     "There are only so many entries in the database.":[],
@@ -641,7 +653,8 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array([testbase._is_pos_word(word=item,
                                             keyword_objs=list_lookup_kobj,
-                                            pos=test_pos) for item in curr_NLP])
+                                            pos=test_pos)
+                                            for item in curr_NLP])
                     test_res = [item.text for item in
                                 np.asarray(curr_NLP)[test_bools]]
                     self.assertEqual(test_res, answer)
@@ -686,7 +699,8 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array([testbase._is_pos_word(word=item,
                                             keyword_objs=list_lookup_kobj,
-                                            pos=test_pos) for item in curr_NLP])
+                                            pos=test_pos, do_verbose=False)
+                                            for item in curr_NLP])
                     test_res = [item.text for item in
                                 np.asarray(curr_NLP)[test_bools]]
                     self.assertEqual(test_res, answer)
@@ -916,6 +930,11 @@ class TestBase(unittest.TestCase):
             test_pos = "SUBJECT" #Current p.o.s. to be tested
             #Prepare text and answers for test
             dict_tests = {
+                    "The Hubble calibrated data was used.":["data"],
+                    "Hubble calibrated the data.":["Hubble"],
+                    "Calibrated data was used.":["data"],
+                    "Calibrated data.":["data"],
+                    "Fixed units.":["units"],
                     "She went to the clean store.":["She"],
                     "Hubble has observed many stars.":["Hubble"],
                     "There are only so many entries in the database.":["There"],
@@ -941,7 +960,8 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array([testbase._is_pos_word(word=item,
                                             keyword_objs=list_lookup_kobj,
-                                            pos=test_pos) for item in curr_NLP])
+                                            pos=test_pos, do_verbose=False)
+                                            for item in curr_NLP])
                     test_res = [item.text for item in
                                 np.asarray(curr_NLP)[test_bools]]
                     self.assertEqual(test_res, answer)
@@ -1012,7 +1032,14 @@ class TestBase(unittest.TestCase):
             test_pos = "VERB"
             #Prepare text and answers for test
             dict_tests = {
-                    "Hubble calibrated data.":["calibrated"],
+                    "I think that is a good idea.":["think", "is"],
+                    "Also shown are new curves.":["shown"],
+                    "They were frolicking and will soon be at the party.":["frolicking", "be"],
+                    "The Hubble calibrated data was used.":["used"],
+                    "Hubble calibrated the data.":["calibrated"],
+                    "Calibrated data was used.":["used"],
+                    "Calibrated data.":[],
+                    "Fixed units.":[],
                     "She went to the clean store.":["went"],
                     "Hubble has observed many stars.":["observed"],
                     "There are only so many entries in the database.":["are"],
@@ -1039,7 +1066,8 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array([testbase._is_pos_word(word=item,
                                             keyword_objs=list_lookup_kobj,
-                                            pos=test_pos) for item in curr_NLP])
+                                            pos=test_pos, do_verbose=False)
+                                            for item in curr_NLP])
                     test_res = [item.text for item in
                                 np.asarray(curr_NLP)[test_bools]]
                     self.assertEqual(test_res, answer)
@@ -1257,7 +1285,7 @@ class TestBase(unittest.TestCase):
         #
     #
 #"""
-
+#"""
 #class: TestKeyword
 #Purpose: Testing the Keyword class
 class TestKeyword(unittest.TestCase):
@@ -1424,7 +1452,7 @@ class TestKeyword(unittest.TestCase):
         #
     #
 #"""
-
+#"""
 #class: TestPaper
 #Purpose: Testing the Paper class
 class TestPaper(unittest.TestCase):
@@ -1641,7 +1669,7 @@ class TestPaper(unittest.TestCase):
         #
     #
 #"""
-
+#"""
 #class: TestGrammar
 #Purpose: Testing the Grammar class
 class TestGrammar(unittest.TestCase):
@@ -1718,7 +1746,8 @@ class TestGrammar(unittest.TestCase):
 
                 #Prepare and run test for bibcat class instance
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
-                                        do_check_truematch=True)
+                                        do_check_truematch=True,
+                                        do_verbose=False)
                 testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:
@@ -1751,12 +1780,12 @@ class TestGrammar(unittest.TestCase):
         def test__modifs__importantclause_mission(self):
             #Prepare text and answers for test
             dict_acts = {
-            "While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the HST observations, we are unable to even tentatively detect those same targets in the snapshots taken with the Other Telescope.":
+            "While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the HST observations, we are unable to even tentatively detect those same targets in the snapshots taken with the Cool Telescope.":
                 {"kobj":kobj_hubble,
-                "none":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the HST observations, we are unable to even tentatively detect those same targets in the snapshots taken with the Other Telescope.",
-                "skim":"While we are able to detect (above 5sigma) the three stars within the mosaic created by the HST observations, we are unable to detect those targets in the snapshots taken with the Other Telescope.",
+                "none":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the HST observations, we are unable to even tentatively detect those same targets in the snapshots taken with the Cool Telescope.",
+                "skim":"While we are able to detect (above 5sigma) the three stars within the mosaic created by the HST observations, we are unable to detect those targets in the snapshots taken with the Cool Telescope.",
                 "trim":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the HST observations, we are unable to even tentatively detect those same targets in the snapshots.",
-                "anon":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the {0} observations, we are unable to even tentatively detect those same targets in the snapshots taken with the Other Telescope.".format(placeholder_anon),
+                "anon":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the {0} observations, we are unable to even tentatively detect those same targets in the snapshots taken with the Cool Telescope.".format(placeholder_anon),
                 "skim_trim_anon":"While we are able to detect (above 5sigma) the three stars within the mosaic created by the {0} observations, we are unable to detect those targets in the snapshots.".format(placeholder_anon)
                 }
             }
@@ -1801,12 +1830,12 @@ class TestGrammar(unittest.TestCase):
         def test__modifs__importantclause_1stperson(self):
             #Prepare text and answers for test
             dict_acts = {
-            "While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Other Telescope observations, we are unable to even tentatively detect those same targets in the snapshots taken with the HST.":
+            "While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, we are unable to even tentatively detect those same targets in the snapshots taken with the HST.":
                 {"kobj":kobj_hubble,
-                "none":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Other Telescope observations, we are unable to even tentatively detect those same targets in the snapshots taken with the HST.",
-                "skim":"While we are able to detect (above 5sigma) the three stars within the mosaic created by the Other Telescope observations, we are unable to detect those targets in the snapshots taken with the HST.",
+                "none":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, we are unable to even tentatively detect those same targets in the snapshots taken with the HST.",
+                "skim":"While we are able to detect (above 5sigma) the three stars within the mosaic created by the Cool Telescope observations, we are unable to detect those targets in the snapshots taken with the HST.",
                 "trim":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic, we are unable to even tentatively detect those same targets in the snapshots taken with the HST.",
-                "anon":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Other Telescope observations, we are unable to even tentatively detect those same targets in the snapshots taken with the {0}.".format(placeholder_anon),
+                "anon":"While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, we are unable to even tentatively detect those same targets in the snapshots taken with the {0}.".format(placeholder_anon),
                 "skim_trim_anon":"While we are able to detect (above 5sigma) the three stars within the mosaic, we are unable to detect those targets in the snapshots taken with the {0}.".format(placeholder_anon)
                 }
             }
@@ -1818,7 +1847,8 @@ class TestGrammar(unittest.TestCase):
 
                 #Prepare and run test for bibcat class instance
                 testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
-                                        do_check_truematch=True)
+                                        do_check_truematch=True,
+                                        do_verbose=False)
                 testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
                 for key1 in dict_acts[phrase]:
@@ -1851,12 +1881,12 @@ class TestGrammar(unittest.TestCase):
         def test__modifs__unimportantclause(self):
             #Prepare text and answers for test
             dict_acts = {
-            "While that study was able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Other Telescope observations, this study was unable to even tentatively detect those same targets in the snapshots taken with the HST.":
+            "While that study was able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, this study was unable to even tentatively detect those same targets in the snapshots taken with the HST.":
                 {"kobj":kobj_hubble,
-                "none":"While that study was able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Other Telescope observations, this study was unable to even tentatively detect those same targets in the snapshots taken with the HST.",
-                "skim":"While that study was able to detect (above 5sigma) the three stars within the mosaic created by the Other Telescope observations, this study was unable to detect those targets in the snapshots taken with the HST.",
+                "none":"While that study was able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, this study was unable to even tentatively detect those same targets in the snapshots taken with the HST.",
+                "skim":"While that study was able to detect (above 5sigma) the three stars within the mosaic created by the Cool Telescope observations, this study was unable to detect those targets in the snapshots taken with the HST.",
                 "trim":"this study was unable to even tentatively detect those same targets in the snapshots taken with the HST.",
-                "anon":"While that study was able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Other Telescope observations, this study was unable to even tentatively detect those same targets in the snapshots taken with the {0}.".format(placeholder_anon),
+                "anon":"While that study was able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, this study was unable to even tentatively detect those same targets in the snapshots taken with the {0}.".format(placeholder_anon),
                 "skim_trim_anon":"this study was unable to detect those targets in the snapshots taken with the {0}.".format(placeholder_anon)
                 }
             }
@@ -1950,7 +1980,7 @@ class TestGrammar(unittest.TestCase):
         #
     #
 #"""
-
+#"""
 #class: TestOperator
 #Purpose: Testing the Operator class
 class TestOperator(unittest.TestCase):
