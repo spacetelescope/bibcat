@@ -10,8 +10,8 @@ import nltk
 from nltk.corpus import wordnet
 #
 
-##Set global user paths
-path_json = "path/to/dataset_combined_all.json" # set the path to the location of the JSON file you downloaded from Box
+##Set global user paths, which should be set outside the bibcat repo folder.
+path_json = "path/to/dataset_combined_all_2018-2021.json" # set the path to the location of the JSON file you downloaded from Box
 name_model = "my_test_run_1" #Name of model run to save or load
 #
 
@@ -50,8 +50,10 @@ folders_TVT = {"train":"dir_train", "validate":"dir_validate", "test":"dir_test"
 
 #Below are for bibcat_tests.py testing purposes only
 filepath_input = "/path/to/the/dataset"
+# papertrack data that Sarah W. created
 path_papertrack = os.path.join(filepath_input, "papertrack_export_2023-11-06.json")
-path_papertext = os.path.join(filepath_input, "ST_Request2021_use.json")
+# fulltext data from the ADS team
+path_papertext = os.path.join(filepath_input, "ST_Request2018_2021.json")
 #
 
 ##Set text processing and regular expression variables

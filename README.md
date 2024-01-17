@@ -20,9 +20,27 @@ Change `env_name` below with whatever you want to name the environment.
 
 
 ### Input JSON file
-Download the papers+classification JSON file ([dataset_combined_all_2018-2021.json](https://stsci.app.box.com/file/1380606268376)) from the Box folder. This file is accessed only by the authorized users. The downloading the file requires single sign-on. 
-Save the file outside the bibcat folder on your local computer and you will set up the path to the file as a variable called `path_json` in `bibcat_config.py`.
+Download several data files for training models or create combined fulltext dataset files using the ADS full text files and the papertrack file. These files are accessed only by authorized users. Downloading the files requires a single sign-on.
+Save the files outside the bibcat folder on your local computer, and you will set up the paths to the files. See more details in Set data file paths below.
 
+- The combined papers+classification JSON file ([dataset_combined_all_2018-2021.json](https://stsci.app.box.com/file/1380606268376))
+- The papertrack export JSON file ([papertrack_export_2023-11-06.json])(https://stsci.box.com/s/zadlr8dixw8706o9k9smlxdk99yohw4d))
+- ADS fulltext data file ([ST_Request2018-2021.json])(https://stsci.box.com/s/cl3yg5mxqcz484w0iptwbl9b43h4tk1g)
+
+Note that other JSON files (extracted from 2018-2023) include paper track data and full texts later than 2021. If you like to test them for your work, feel free to do so.
+
+### Set data file paths
+In `bibcat_config.py`, you will need to set several paths as follow.
+
+#### The combined data set used for training models.
+Set the combined data file path outside the `bibcat` folder, which should not be git-committed to the repo.
+- `path_json = path/to/dataset_combined_all_2018-2021.json`
+
+#### `bibcat_tests.py` testing purposes only
+Set the input file path outside the `bibcat` folder, which should not be git-committed to the repo.
+- `filepath_input = "/path/to/the/dataset"`
+- `path_papertrack = os.path.join(filepath_input, "papertrack_export_2023-11-06.json")`
+- `path_papertext = os.path.join(filepath_input, "ST_Request2018-2021.json")`
 
 ## Quick start
 
