@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bibcat"
-description = "Bibcat classifies astronomical journal papers into multiple paper categories. The primary categories are "science", "mention", and "ignore"."
+description = "Bibcat classifies astronomical journal papers into multiple paper categories."
 readme = "README.rst"
 requires-python = ">=3.10"
 license = { file = "licenses/LICENSE.rst", content-type = "text/plain" }
