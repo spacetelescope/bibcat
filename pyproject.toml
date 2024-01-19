@@ -15,7 +15,9 @@ requires-python = ">=3.10"
 license = { file = "licenses/LICENSE.rst", content-type = "text/plain" }
 
 authors = [
-  { name = "Jamila Pegues, Jinmi Yoon, Brian Cherinka", email = "jamila.pegues@stsci.edu, jyoon@stsci.edu, bcherinka@stsci.edu" },
+  { name = "Jamila Pegues", email = "jamila.pegues@stsci.edu" },
+  { name = "Jinmi Yoon", email = "jyoon@stsci.edu"},
+  { name = "Brian Cherinka", email = "bcherinka@stsci.edu"},
 ]
 
 dependencies = [
