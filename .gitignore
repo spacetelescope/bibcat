@@ -1,5 +1,5 @@
 # bibcat output files
-src/models
+bibcat/models
 
 # Compiled files
 *.py[cod]
