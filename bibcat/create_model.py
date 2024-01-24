@@ -1,5 +1,5 @@
 """
-This code creates a new training ML model.
+This module creates a new training ML model.
 """
 
 import os

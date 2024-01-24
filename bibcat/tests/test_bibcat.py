@@ -2,7 +2,7 @@
 ###PURPOSE: Container for all tests run for the bibcat package.
 ###DATA CREATED: 2022-02-28
 ###DEVELOPERS: (Jamila Pegues, Others)
-#python -m unittest bibcat_tests.py
+#python -m unittest test_bibcat.py
 
 
 ###Import necessary modules

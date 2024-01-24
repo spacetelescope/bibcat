@@ -1,8 +1,6 @@
-###FILE: bibcat_config.py
-###PURPOSE: Container for all user inputs for the bibcat package.
-###DATA CREATED: 2023-08-17
-###DEVELOPERS: (Jamila Pegues, Others)
-
+"""
+This module contains necessary configuration setups.
+"""
 
 ##Import external packages
 import os
@@ -10,12 +8,12 @@ from nltk.corpus import wordnet
 #
 
 ##Set global user paths, which should be set outside the bibcat repo folder.
-path_json = "/Users/jyoon/Documents/asb/bibliography_automation/bibcat_datasets/dataset_combined_all_2018-2023.json" # set the path to the location of the JSON file you downloaded from Box
+path_json = "/path/to/datasets/dataset_combined_all_2018-2023.json" # set the path to the location of the JSON file you downloaded from Box
 name_model = "my_test_run_1" #Name of model run to save or load
 #
 
 # Set paths for bibcat_tests.py testing purposes only
-filepath_input = "/Users/jyoon/Documents/asb/bibliography_automation/bibcat_datasets/"
+filepath_input = "path/to/datasets/"
 # papertrack data that Sarah W. created
 path_papertrack = os.path.join(filepath_input, "papertrack_export_2023-11-06.json")
 # fulltext data from the ADS team

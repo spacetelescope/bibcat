@@ -521,6 +521,7 @@ class _Base():
                                                     do_verbose=do_verbose,
                                                     do_include_verbs=False)
         #Throw error if no wordchunks identified
+        tmp_sents = list(nlp(str(text)).sents)
         if (len(list_wordchunks) == 0):
             errstr = ("No final wordchunks!: {0}\n{1}\nText: '{2}'"
                     .format(list_wordchunks, list_wordchunks_raw, text)
@@ -3624,7 +3625,7 @@ class _Classifier(_Base):
         Purpose: Process text into modifs using Grammar class.
         """
         #Generate and store instance of Grammar class for this text
-        use_these_modes = list(set([mode, "none"]))
+        use_these_modes = list(set([which_mode, "none"]))
         grammar = Grammar(text, keyword_obj=keyword_obj,
                             do_check_truematch=do_check_truematch,
                             do_verbose=do_verbose, buffer=buffer)
