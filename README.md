@@ -35,8 +35,7 @@ In `tests/test_bibcat.py`
 
 
 
-License
--------
+## License
 
 This project is Copyright (c) Jamila Pegues, Jinmi Yoon, Brian Cherinka and licensed under
 the terms of the BSD 3-Clause license. This package is based upon
