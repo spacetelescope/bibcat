@@ -12,6 +12,7 @@ Refactoring bibcat has started.
 
 ### Changed
 - Updated the main README file
+- updated formatting and styling
 
 ### Added 
 - Started with open astronomy cookiecutter template for bibcat 

@@ -1,7 +1,18 @@
 # Bibcat
------------------------------------------------------------------------------
-
 Bibcat classifies astronomical journal papers into multiple paper categories. The primary categories are "science", "mention", "data-influenced", and "ignore".
+
+## Development Workflow
+There are two main branches for bibcat work: 
+
+- The **dev** branch contains ongoing development work and all new work should be done in branches that are merged against **dev**.
+
+- The **main** branch contains the latest stable release of `bibcat`. 
+
+## Installation
+The `bibcat` directory contains the python package itself, installable via pip.
+```shell
+pip install -e .
+```
 ## Setup
 ### Input JSON file
 Download several data files (the ADS full text file and the papertrack file) to create models for training or combined fulltext dataset files for the input text. These files can be accessed only by authorized users. Downloading the files requires a single sign-on.
