@@ -43,8 +43,7 @@ the [Openastronomy packaging guide](https://github.com/OpenAstronomy/packaging-g
 which is licensed under the BSD 3-clause licence. See the licenses folder for
 more information.
 
-Contributing
-------------
+## Contributing
 
 We love contributions! bibcat is open source,
 built on open source, and we'd love to have you hang out in our community.
