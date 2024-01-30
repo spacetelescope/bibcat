@@ -1,0 +1,15 @@
+name: bibcat
+channels:
+  - conda-forge
+  - anaconda
+  - nodefaults
+dependencies:
+  - python=3.10
+  - jupyter
+  - nltk
+  - pip
+  - pip:
+    - spacy
+    - tensorflow
+    - tensorflow-hub
+    - tf-models-official

@@ -1,4 +1,4 @@
-###FILE: bibcat_classes.py
+###FILE: classes.py
 ###PURPOSE: Container for all classes used for the BibCat package.
 ###DATE CREATED: 2022-01-24
 ###DEVELOPERS: (Jamila Pegues, Others)

@@ -8,16 +8,16 @@ from nltk.corpus import wordnet
 #
 
 ##Set global user paths, which should be set outside the bibcat repo folder.
-path_json = "/path/to/datasets/dataset_combined_all_2018-2023.json" # set the path to the location of the JSON file you downloaded from Box
+PATH_INPUT = "/path/to/datasets/dataset_combined_all_2018-2023.json" # set the path to the location of the JSON file you downloaded from Box
 name_model = "my_test_run_1" #Name of model run to save or load
 #
 
 # Set paths for bibcat_tests.py testing purposes only
-filepath_input = "path/to/datasets/"
+filepath_dataset = "path/to/datasets/"
 # papertrack data that Sarah W. created
-path_papertrack = os.path.join(filepath_input, "papertrack_export_2023-11-06.json")
+path_papertrack = os.path.join(filepath_dataset, "papertrack_export_2023-11-06.json")
 # fulltext data from the ADS team
-path_papertext = os.path.join(filepath_input, "ST_Request2018_2023.json")
+path_papertext = os.path.join(filepath_dataset, "ST_Request2018_2023.json")
 #
 
 
@@ -29,7 +29,7 @@ print(f"Root directory ={SRC_ROOT}, parent directory={_parent}")
 PATH_MODELS = os.path.join(SRC_ROOT, "models")
 PATH_CONFIG = os.path.join(SRC_ROOT, "config")
 PATH_DOCS = os.path.join(_parent, "docs")
-PATH_OUTPUT = os.path.join(_parent,"output")
+PATH_OUTPUT = os.path.join(_parent, "output")
 
 if not os.path.isdir(PATH_MODELS):
     os.makedirs(PATH_MODELS)
@@ -48,7 +48,7 @@ PHR_AMBIG = os.path.join(PATH_CONFIG, "phrases_ambig.txt")
 #
 
 ##Set global input and output paths
-dir_allmodels = PATH_MODELS #Path to directory for saving or loading a model
+dir_allmodels = PATH_MODELS  #Path to directory for saving or loading a model
 path_modiferrors = os.path.join(dir_allmodels, name_model, "dict_modiferrors.npy")
 path_TVTinfo = os.path.join(dir_allmodels, name_model, "dict_TVTinfo.npy")
 tfoutput_prefix = "tfoutput_"
