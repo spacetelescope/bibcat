@@ -2,12 +2,10 @@
 
 ## [Unreleased]
 
+Refactoring bibcat has started.
 - Refactoring classes.py, parameters.py, and config.py 
 - Refactoring create_model.py and classify_papers.py
 - Adding tutorial notebooks back
-
-## [0.1.0] - 2024-01-29
-Refactoring bibcat has started.
 
 ### Removed
 - Deleted all previous codes and files for a fresh start
@@ -26,3 +24,7 @@ Refactoring bibcat has started.
     - create_model.py :  this script can be run to create a new training model
     - classify_papers.py : this script will fetch input papers, classify them into the designated paper categories, and produce performance evaluation materials such as confusion matrix and plots
 - Created CHANGELOG.md
+
+## [0.1.0] - 2024-01-29
+
+Initial tag to preserve code before refactor
