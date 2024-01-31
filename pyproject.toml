@@ -1,0 +1,103 @@
+[build-system]
+requires = [
+  "setuptools>=61.2",
+  "setuptools_scm[toml]>=6.2",
+  "wheel",
+
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bibcat"
+description = "Bibcat classifies astronomical journal papers into multiple paper categories."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "licenses/LICENSE.rst", content-type = "text/plain" }
+
+authors = [
+  { name = "Jamila Pegues", email = "jamila.pegues@stsci.edu" },
+  { name = "Jinmi Yoon", email = "jyoon@stsci.edu"},
+  { name = "Brian Cherinka", email = "bcherinka@stsci.edu"},
+]
+
+dependencies = [
+  "spacy >= 3.6.0 ",
+  "nltk >= 3.7 ",
+  "tensorflow >=2.13.0",
+  "tf-models-official >= 2.7.0",   
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-doctestplus",
+]
+docs = [
+    "sphinx",
+    "sphinx-automodapi",
+    "tomli; python_version <\"3.11\"",
+]
+
+
+
+
+[project.urls]
+repository = "https://github.com/spacetelescope/bibcat"
+
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.packages.find]
+
+[tool.setuptools_scm]
+
+write_to = "bibcat/version.py"
+
+
+
+[tool.pytest.ini_options]
+testpaths = [
+  "bibcat",
+  "docs",
+]
+doctest_plus = "enabled"
+text_file_format = "rst"
+addopts = "--doctest-rst"
+
+[tool.coverage.run]
+omit = [
+ "bibcat/__init*",
+ "bibcat/conftest.py",
+ "bibcat/*setup_package*",
+ "bibcat/tests/*",
+ "bibcat/*/tests/*",
+ "bibcat/extern/*",
+ "bibcat/version*",
+ "*/bibcat/__init*",
+ "*/bibcat/conftest.py",
+ "*/bibcat/*setup_package*",
+ "*/bibcat/tests/*",
+ "*/bibcat/*/tests/*",
+ "*/bibcat/extern/*",
+ "*/bibcat/version*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  # Have to re-enable the standard pragma
+  "pragma: no cover",
+  # Don't complain about packages we have installed
+  "except ImportError",
+  # Don't complain if tests don't hit assertions
+  "raise AssertionError",
+  "raise NotImplementedError",
+  # Don't complain about script hooks
+  "def main(.*):",
+  # Ignore branches that don't pertain to this version of Python
+  "pragma: py{ignore_python_version}",
+  # Don't complain about IPython completion helper
+  "def _ipython_key_completions_", 
+]

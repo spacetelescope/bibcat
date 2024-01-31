@@ -2,28 +2,26 @@
 ###PURPOSE: Container for all tests run for the bibcat package.
 ###DATA CREATED: 2022-02-28
 ###DEVELOPERS: (Jamila Pegues, Others)
-#python -m unittest bibcat_tests.py
+#python -m unittest test_bibcat.py
 
 
 ###Import necessary modules
 import unittest
-import re
 import os
 import json
 import numpy as np
-import bibcat_classes as bibcat
-import bibcat_config as config
-import bibcat_parameters as params
+import bibcat.classes as bibcat
+import bibcat.config as config
+import bibcat.parameters as params
 import spacy
 nlp = spacy.load(config.spacy_language_model)
-import nltk
 from nltk.corpus import wordnet
 #
 #-------------------------------------------------------------------------------
 ###Set global test variables
 #Fetch filepaths for model and data
 name_model = config.name_model
-filepath_json = config.path_json
+filepath_input = config.PATH_INPUT
 filepath_papertrack = config.path_papertrack
 filepath_papertext = config.path_papertext
 filepath_dictinfo = config.path_TVTinfo
@@ -79,7 +77,7 @@ class TestData(unittest.TestCase):
             print("Running test__combined_dataset.")
             #Load each of the datasets
             #For the combined dataset
-            with open(filepath_json, 'r') as openfile:
+            with open(filepath_input, 'r') as openfile:
                 data_combined = json.load(openfile)
             #
             #For the original text data
@@ -211,7 +209,7 @@ class TestData(unittest.TestCase):
             dict_info = np.load(filepath_dictinfo, allow_pickle=True).item()
             dict_errors = np.load(filepath_modiferrors,allow_pickle=True).item()
             #Dataset of text and classification information
-            with open(filepath_json, 'r') as openfile:
+            with open(filepath_input, 'r') as openfile:
                 dataset = json.load(openfile)
             #
             list_bibcodes_dataset = [item["bibcode"] for item in dataset]
