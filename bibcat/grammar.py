@@ -1,0 +1,1166 @@
+import numpy as np
+import spacy
+
+import bibcat.config as config
+from bibcat.base import _Base
+from bibcat.paper import Paper
+
+nlp = spacy.load(config.spacy_language_model)
+
+
+class Grammar(_Base):
+    """
+    Class: Grammar
+    Purpose:
+        - Load in text.
+        - Extract 'paragraph' from text using Paper class and Keyword instance.
+        - Convert paragraph into grammar tree structure.
+        - Use grammar tree structure to simplify, streamline, and/or anonymize paragraph as directed by user.
+    Initialization Arguments:
+        - buffer [int (default=0)]:
+          - Number of +/- sentences around a sentence containing a target mission to include in the paragraph.
+        - dict_ambigs [None or dict (default=None)]:
+          - If None, will load and process external database of ambiguous mission phrases. If given, will use what is given.
+        - do_check_truematch [bool]:
+          - Whether or not to check that mission phrases found in text are known true vs. false matches. (E.g., 'Edwin Hubble' as false match for the Hubble Space Telescope).
+        - keyword_obj [Keyword instance]:
+          - Target mission; terms will be used to search the text.
+        - text [str]:
+          - Text to process for target terms.
+        - do_verbose [bool (default=False)]:
+          - Whether or not to print surface-level log information and tests.
+    """
+
+    #
+
+    ##Method: __init__
+    ##Purpose: Initialize this class instance
+    def __init__(
+        self, text, keyword_obj, do_check_truematch, buffer=0, do_verbose=False, do_verbose_deep=False, dict_ambigs=None
+    ):
+        """
+        Method: __init__
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Initialize instance of Grammar class.
+        """
+        # Initialize storage for this class instance
+        self._storage = {}
+        # Store inputs for this instance
+        self._store_info(text, key="text_original")
+        self._store_info(keyword_obj, key="keyword_obj")
+        self._store_info(buffer, key="buffer")
+        self._store_info(do_verbose, key="do_verbose")
+        self._store_info(do_verbose_deep, key="do_verbose_deep")
+        # Print some notes
+        if do_verbose:
+            print("Initializing instance of Grammar class.")
+        #
+
+        # Process ambig. phrase data, if not given
+        if (do_check_truematch) and (dict_ambigs is None):
+            # Print some notes
+            if do_verbose:
+                print("Processing database of ambiguous phrases...")
+            #
+            dict_ambigs = self._process_database_ambig()
+        # Otherwise, do nothing new
+        else:
+            # Print some notes
+            if do_verbose:
+                print("No ambiguous phrase processing requested.")
+            #
+        #
+
+        # Extract keyword paragraph from the text
+        if do_verbose:
+            print("Processing text using the Paper class...")
+        #
+        paper = Paper(
+            text,
+            keyword_objs=[keyword_obj],
+            dict_ambigs=dict_ambigs,
+            do_check_truematch=do_check_truematch,
+            do_verbose=do_verbose,
+            do_verbose_deep=do_verbose_deep,
+        )
+        paper.process_paragraphs(buffer=buffer)
+        self._store_info(paper, "paper")
+
+        # Close the method
+        if do_verbose:
+            print("Text process and Paper instance stored.")
+            print("Initialization of this Grammar class instance complete.")
+        return
+
+    #
+
+    ##Method: get_modifs
+    ##Purpose: Return modifs (modified paragraphs), modified to specified modes
+    def get_modifs(self, which_modes=None, do_include_forest=False):
+        """
+        Method: get_modifs
+        Purpose: Fetch the modified paragraphs ('modifs') previously assembled and stored within this instance.
+        Arguments:
+          - "which_modes" [list of str, or None (default=None)]: List of modes for which modifs will be extracted. If None, then all previously assembled and stored modifs will be returned.
+        Returns:
+          - dict:
+            - keys = Names of the modes.
+            - values = The modif (the modified paragraph) for each mode.
+        """
+        # Extract global variables
+        forest = self._get_info("forest")
+        dict_modifs_orig = self._get_info("modifs")
+        do_verbose = self._get_info("do_verbose")
+        # Extract all computed modes, if none specified
+        if which_modes is None:
+            which_modes = [key for key in forest]
+        #
+        # Print some notes
+        if do_verbose:
+            print("\n> Running get_modifs() for modes: {0}".format(which_modes))
+        #
+
+        # Extract and return requested modifs
+        dict_modifs = {key: dict_modifs_orig[key] for key in which_modes}
+        #
+        # Tack on grammar information if requested
+        if do_include_forest:
+            dict_results = {"modifs": dict_modifs, "_forest": forest}
+        else:
+            dict_results = dict_modifs
+        #
+        # Print some notes
+        if do_verbose:
+            print("Fetched modifs: {0}".format(dict_modifs))
+        #
+        return dict_results
+
+    #
+
+    ##Method: run_modifications
+    ##Purpose: Run submethods to convert paragraphs into custom grammar trees
+    def run_modifications(self, which_modes=None):
+        """
+        Method: run_modifications
+        Purpose: Parse paragraphs and process them into grammar structures using various modification schemes.
+        Arguments: None
+        Returns: None (internal storage updated)
+        """
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        lookup_kobj = self._get_info("keyword_obj").get_name()
+        if which_modes is None:
+            which_modes = ["none"]
+        paragraphs = self._get_info("paper").get_paragraphs()[lookup_kobj]
+        # Print some notes
+        if do_verbose:
+            print("\n> Running run_modifications():")
+        #
+
+        ##Process the raw text into NLP-text using external NLP packages
+        clusters_NLP = self._run_NLP(text=paragraphs)
+        num_clusters = len(clusters_NLP)  # Num. clusters of sentences
+        # Print some notes
+        if do_verbose:
+            print("{0} NLP-processed clusters. Clusters:\n{1}".format(num_clusters, clusters_NLP))
+        #
+
+        ##Store containers and information
+        # Initialize storage for the grammar tree
+        ids_wordchunks = [None for ii in range(0, num_clusters)]
+        forest = {mode: {ii: None for ii in range(0, num_clusters)} for mode in which_modes}
+        dict_modifs = {mode: None for mode in which_modes}
+        #
+        # Store the info in this instance
+        self._store_info(clusters_NLP, "clusters_NLP")
+        self._store_info(num_clusters, "num_clusters")
+        self._store_info(forest, "forest")
+        self._store_info(dict_modifs, "modifs")
+        self._store_info(ids_wordchunks, "_ids_wordchunks")
+        # Print some notes
+        if do_verbose:
+            print("Internal storage for class instance initialized.\nClusters:")
+            for ii in range(0, num_clusters):
+                print("> {0}: '{1}'".format(ii, clusters_NLP[ii]))
+            print("")
+        #
+
+        ##Build grammar structures for NLP-sentences in each cluster
+        # Iterate through clusters
+        for ii in range(0, num_clusters):  # Iterate through NLP-sentences
+            # Prepare variables and storage for current cluster
+            curr_cluster = clusters_NLP[ii]
+            num_sentences = len(curr_cluster)
+            num_words = sum([len(item) for item in curr_cluster])
+            # Print some notes
+            if do_verbose:
+                print("\n---------------\n")
+                print("Building structure for cluster {2} ({1} words):\n{0}\n".format(curr_cluster, num_words, ii))
+            #
+
+            # Identify word chunks for this NLP-cluster
+            ids_wordchunks[ii] = self._set_wordchunks(cluster_NLP=curr_cluster)
+            # Print some notes
+            if do_verbose:
+                print("Word-chunks identified as:\n{0}\n".format(ids_wordchunks[ii]))
+                print("Building grammar structure next...")
+            #
+
+            # Examine and store info for each word within this cluster
+            curr_struct_verbs = {}
+            curr_struct_words = {}
+            curr_is_checked = np.zeros(num_words).astype(bool)  # Checked words
+            # Iterate through sentences within this cluster
+            for jj in range(0, num_sentences):
+                curr_sentence = curr_cluster[jj]
+                # Print some notes
+                if do_verbose:
+                    print("Working on sentence #{1} of cluster #{0}:\n{2}".format(ii, jj, curr_sentence))
+                #
+                # Recursively navigate NLP-tree from the root
+                self._recurse_NLP_categorization(
+                    node=curr_sentence.root,
+                    storage_verbs=curr_struct_verbs,
+                    storage_words=curr_struct_words,
+                    i_cluster=ii,
+                    i_sentence=jj,
+                    i_verb=curr_sentence.root.i,
+                    chain_i_verbs=[],
+                    is_checked=curr_is_checked,
+                    verb_side=None,
+                    i_headoftrail=None,
+                )
+                #
+                # Print some notes
+                if do_verbose:
+                    print("Grammar structure for current sentence complete!")
+                    print("Sentence {0}: '{1}'".format(jj, curr_sentence))
+                    print("Verb-struct.:\n{0}\n\n".format(curr_struct_verbs))
+                    print("Word-struct.:")
+                    for key1 in curr_struct_words:
+                        print(
+                            "- {0}={1}: {2}".format(
+                                curr_struct_words[key1]["index"],  # .i,
+                                curr_struct_words[key1]["word"],
+                                curr_struct_words[key1],
+                            )
+                        )
+            #
+
+            # Print some notes
+            if do_verbose:
+                print("\n---\nGrammar structure for this cluster complete!")
+                print("Verb-struct.:\n{0}\n".format(curr_struct_verbs))
+                print("Modifying structure based on given modes ({0})...".format(which_modes))
+            #
+
+            # Generate diff. versions of grammar structure (orig, trim, anon...)
+            for curr_mode in which_modes:
+                forest[curr_mode][ii] = self._modify_structure(
+                    mode=curr_mode, struct_verbs=curr_struct_verbs, struct_words=curr_struct_words
+                )
+            #
+        #
+
+        # Generate final modif across all clusters for each mode
+        for curr_mode in which_modes:
+            curr_modif = "\n".join([forest[curr_mode][ii]["text_updated"] for ii in range(0, num_clusters)])
+            dict_modifs[curr_mode] = curr_modif
+        #
+
+        # Close the method
+        if do_verbose:
+            print("Modification of grammar structure complete.\n")
+            for curr_mode in which_modes:
+                print("Mod. structure for mode {0}:\n---\n".format(curr_mode))
+                for ii in range(0, num_clusters):
+                    print("\nCluster #{0}, mode {1}:".format(ii, curr_mode))
+                    print("Updated text: {0}".format(forest[curr_mode][ii]["text_updated"]))
+                    print("---")
+            #
+            print("\n---------------\n")
+        #
+        return
+
+    #
+
+    ##Method: _add_aux
+    ##Purpose: Add aux to grammar structure
+    def _add_aux(self, word, storage_verbs):
+        """
+        Method: _add_aux
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Characterize and store an aux word within grammar structure.
+        """
+        # Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        type_verbs = storage_verbs["verbtype"]
+        tenses_main = ["PAST", "PRESENT", "FUTURE"]
+        word_tag = word.tag_
+        word_dep = word.dep_
+        #
+        # Part-of-speech (pos) tag markers for tense of aux word
+        tags_past = config.tag_verb_past
+        tags_present = config.tag_verb_present
+        tags_future = config.tag_verb_future
+        tags_purpose = config.tag_verb_purpose
+        deps_passive = config.dep_verb_passive
+        # Print some notes
+        if do_verbose:
+            print("\n> Running _add_aux!")
+            print("Word: {0}\nInitial verb types: {1}".format(word, type_verbs))
+        #
+
+        # Determine if passive tense and store if applicable
+        if (word_dep in deps_passive) and ("PASSIVE" not in type_verbs):
+            type_verbs.append("PASSIVE")
+        #
+
+        # Determine main tense of this aux word
+        if word_tag in tags_past:  # For past tense
+            tense = "PAST"
+        elif word_tag in tags_present:  # For present tense
+            tense = "PRESENT"
+        elif word_tag in tags_future:  # For future tense
+            tense = "FUTURE"
+        elif word_tag in tags_purpose:  # For purpose tense
+            tense = "PURPOSE"
+        else:  # Raise error if tense not recognized
+            raise ValueError(
+                ("Err: Tense {1} of word {0} unrecognized!\n{2}" + "\ndep={3}, pos={4}, tag={5}").format(
+                    word, word_tag, word.sent, word.dep_, word.pos_, word.tag_
+                )
+            )
+        #
+
+        # Store main tense of aux if no tenses so far
+        is_updated = False
+        if not any([(item in tenses_main) for item in type_verbs]):
+            type_verbs.append(tense)  # Store aux tense
+            is_updated = True  # Mark verb types as updated
+        #
+
+        # Store purpose tense of aux if given
+        if not is_updated:
+            if (tense == "PURPOSE") and (tense not in type_verbs):
+                type_verbs.append(tense)  # Store aux tense
+                is_updated = True  # Mark verb types as updated
+        #
+
+        # Update verb tenses if aux tense supercedes previous values
+        if not is_updated:
+            # For past aux: supercedes present
+            if (tense == "PAST") and ("PRESENT" in type_verbs):
+                type_verbs.remove("PRESENT")
+                type_verbs.append("PAST")
+                is_updated = True  # Mark verb types as updated
+            #
+            # For future aux: supercedes past, present
+            elif (tense == "FUTURE") and ("PRESENT" in type_verbs):
+                type_verbs.remove("PRESENT")
+                type_verbs.append("FUTURE")
+                is_updated = True  # Mark verb types as updated
+            elif (tense == "FUTURE") and ("PAST" in type_verbs):
+                type_verbs.remove("PAST")
+                type_verbs.append("FUTURE")
+                is_updated = True  # Mark verb types as updated
+            #
+        #
+
+        # Exit the method
+        if do_verbose:
+            print("\n> Run of _add_aux complete.")
+            print("Aux: {0}\nLatest verb types: {1}\n".format(word, type_verbs))
+        #
+        return
+
+    #
+
+    ##Method: _add_verb
+    ##Purpose: Add verb to grammar structure
+    def _add_verb(self, word):
+        """
+        Method: __init__
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Characterize and store a verb within grammar structure.
+        """
+        # Extract global variables
+        tag_verb = word.tag_
+
+        # Initialize dictionary to hold characteristics of this verb
+        dict_verb = {
+            "i_verb": word.i,
+            "verb": word.text,
+            "is_important": False,
+            "i_postverbs": [],
+            "i_branchwords_all": [],
+            "verbtype": [],
+        }
+
+        # Determine tense, etc. as types of this verb
+        if tag_verb in config.tag_verb_present:
+            dict_verb["verbtype"].append("PRESENT")
+        elif tag_verb in config.tag_verb_past:
+            dict_verb["verbtype"].append("PAST")
+        elif tag_verb in config.tag_verb_future:
+            dict_verb["verbtype"].append("FUTURE")
+        else:
+            raise ValueError(
+                ("Err: Tag unrecognized for verb {0}: {1}\n{2}" + "\ndep={3}, pos={4}, tag={5}").format(
+                    word, tag_verb, word.sent, word.dep_, word.pos_, word.tag_
+                )
+            )
+        #
+
+        # Return initialized verb dictionary
+        return dict_verb
+
+    #
+
+    ##Method: _add_word
+    ##Purpose: Add general word to grammar structure
+    def _add_word(self, node, i_verb, i_cluster, i_sentence, storage_verbs, storage_words, i_headoftrail):
+        """
+        Method: _add_word
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Characterize and store a word within grammar structure.
+        """
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        text_wordchunk = self._get_wordchunk(node.i, i_sentence=i_sentence, i_cluster=i_cluster, do_text=True)  # Text
+        NLP_wordchunk = self._get_wordchunk(node.i, i_sentence=i_sentence, i_cluster=i_cluster, do_text=False)  # NLP
+        i_wordchunk = np.array([word.i for word in NLP_wordchunk])  # Just ids
+        all_pos_mains = config.special_pos_main
+        trail_pos_main = config.trail_pos_main
+        ignore_pos_main = config.ignore_pos_main
+        #
+        # Print some notes
+        if do_verbose:
+            print("\n> Running _add_word for node: {0}. Wordchunk: {1}.".format(node, text_wordchunk))
+        #
+
+        ##Characterize some traits of entire phrase
+        # Characterize importance
+        res_importance = self._check_importance(text_wordchunk, version_NLP=NLP_wordchunk)
+        #
+        # Determine part-of-speech (pos) of main (current) word in wordchunk
+        pos_main = None
+        for check_pos in all_pos_mains:
+            # Keep this pos if valid
+            is_pos = self._is_pos_word(word=node, pos=check_pos)  # Check this pos
+            is_conj = self._is_pos_conjoined(word=node, pos=check_pos)  # Conjoined
+            if is_pos or is_conj:
+                # Throw error if pos already identified; should just be 1 valid
+                if pos_main is not None:
+                    #            and ("ROOT" not in [pos_main, check_pos])):
+                    # Take the dominant p.o.s. for allowed cases
+                    # This catches weird overlap cases due to ambig. English
+                    tmp_list = [check_pos, pos_main]
+                    # Aux > verb
+                    # if (("VERB" in tmp_list) and ("AUX" in tmp_list)):
+                    #    pos_main = "AUX"
+                    # Subject > verb
+                    # elif (("VERB" in tmp_list) and ("SUBJECT" in tmp_list)):
+                    #        pos_main = "SUBJECT"
+                    # else:
+                    # Otherwise, throw an error
+                    raise ValueError(
+                        (
+                            "Err: Multi pos for {2}!: {0}, {1}\n{3}"
+                            + "\ndep={4}, pos={5}, tag={6}\nhead={7}"
+                            + "\nLefts={8}\nRights={9}"
+                        ).format(
+                            pos_main,
+                            check_pos,
+                            node,
+                            node.sent,
+                            node.dep_,
+                            node.pos_,
+                            node.tag_,
+                            node.head,
+                            list(node.lefts),
+                            list(node.rights),
+                        )
+                    )
+                #
+                # Otherwise, store this pos
+                pos_main = check_pos
+        #
+        # Throw error if no pos found and not marked to ignore
+        if (pos_main is None) and (not any([(self._is_pos_word(word=node, pos=item)) for item in ignore_pos_main])):
+            if do_verbose:
+                print(
+                    (
+                        "No p.o.s. recognized for word: {0} (so likely useless)."
+                        + "\ndep={1}, pos={2}, tag={3}\nSentence: {4}"
+                    ).format(node, node.dep_, node.pos_, node.tag_, node.sent)
+                )
+        #
+        # Print some notes
+        if do_verbose:
+            print("Word {0} has pos={1}, importance={2}:.".format(node, pos_main, res_importance))
+        #
+
+        ##Generate dictionary of characteristics for each word in chunk
+        num_words = len(NLP_wordchunk)
+        list_dict_words = [None] * num_words
+        # Iterate through words
+        for ww in range(0, num_words):
+            word = NLP_wordchunk[ww]  # Current word in wordchunk
+            dict_word = {"i_clausechain": None, "i_clausetrail": None}  # Initialize dictionary to hold word information
+            list_dict_words[ww] = dict_word  # Store ahead of time
+            #
+
+            ##Characterize the general word
+            # For word itself
+            dict_word["word"] = word.text
+            dict_word["index"] = word.i
+            dict_word["_dep"] = word.dep_
+            dict_word["_pos"] = word.pos_
+            dict_word["_tag"] = word.tag_
+            dict_word["wordchunk"] = np.array([item.text for item in NLP_wordchunk])
+            dict_word["sentence"] = word.sent.text
+            #
+            # For importance
+            # If important, mark as important
+            if res_importance["is_any"]:
+                dict_word["is_important"] = True
+                dict_word["dict_importance"] = res_importance
+                # Mark current verb as important as well
+                storage_verbs["is_important"] = True
+                if i_verb in storage_words:  # If exists already
+                    storage_words[i_verb]["is_important"] = True
+            else:
+                dict_word["is_important"] = False
+                dict_word["dict_importance"] = None
+            #
+            # For uselessness
+            if self._is_pos_word(word, pos="USELESS"):
+                dict_word["is_useless"] = True
+            else:
+                dict_word["is_useless"] = False
+            #
+            # Apply main part-of-speech (p.o.s.) to each word in wordchunk
+            dict_word["pos_main"] = pos_main
+            #
+            # Additional aux characterization, if applicable
+            if pos_main in ["AUX"]:
+                self._add_aux(word, storage_verbs=storage_verbs)
+            #
+        #
+        # Print some notes
+        if do_verbose:
+            print("Characterized wordchunk '{1}' for word '{0}', with pos={2}.".format(node, NLP_wordchunk, pos_main))
+        #
+
+        ##Update or append to the latest word trail
+        # NOTE: This trail is for clauses...
+        #      ...so that unimportant inner clauses can be trimmed later
+        # Print some notes
+        if do_verbose:
+            print("Storing word chunk in an id-post-trail, if necessary...")
+        #
+        new_trail = None
+        new_headoftrail = i_headoftrail
+        i_main = [list_dict_words[ww]["index"] for ww in range(0, num_words)].index(
+            node.i
+        )  # Wordchunk index for main node
+        #
+        # If this word chunk necessitates a new trail
+        if pos_main in trail_pos_main:
+            # Print some notes
+            if do_verbose:
+                print("Starting new trail from word: {0}".format(node))
+            #
+            # Initialize and fill new trail
+            new_trail = [i_wordchunk[ww] for ww in range(0, num_words)]
+            #
+            # Store this trail in storage for the main word of this chunk
+            list_dict_words[i_main]["i_clausetrail"] = new_trail
+            #
+            # Tack the main word onto the end of the previous trail, if necessary
+            if i_headoftrail is not None:
+                storage_words[i_headoftrail]["i_clausetrail"].append(node.i)
+                #
+                # Copy instance of chain of clauses
+                pre_chain = storage_words[i_headoftrail]["i_clausechain"]
+                pre_chain.append(node.i)
+                list_dict_words[i_main]["i_clausechain"] = pre_chain
+            #
+            # Otherwise, start tracking new chain
+            else:
+                list_dict_words[i_main]["i_clausechain"] = [node.i]
+            #
+            # Update the previous head of trail, regardless
+            new_headoftrail = node.i
+        #
+        # Otherwise, tack entire chunk onto previous trail if exists
+        elif i_headoftrail is not None:
+            # Print some notes
+            if do_verbose:
+                print("No new trail for word: {0}. Appending to previous trail.".format(node))
+            #
+            for ww in range(0, num_words):
+                storage_words[i_headoftrail]["i_clausetrail"].append(i_wordchunk[ww])
+        #
+        # Otherwise, do nothing new
+        else:
+            # Print some notes
+            if do_verbose:
+                print("No new trail from word: {0}. Nothing new done.".format(node))
+            #
+        #
+
+        # Print some notes, if updates occurred
+        if any([(item is not None) for item in [new_trail, i_headoftrail]]):
+            if do_verbose:
+                print("Updated or appended this word chunk to a post-trail.")
+                print("Current main id, word: {0}, {1}".format(node.i, node))
+                print("Latest trail chain: {0}".format(list_dict_words[i_main]["i_clausechain"]))
+                print("New trail: {0}".format(new_trail))
+                print("Head of previous trail: {0}".format(i_headoftrail))
+                if i_headoftrail is not None:
+                    print("Updated previous trail: {0}".format(storage_words[i_headoftrail]["i_clausetrail"]))
+                else:
+                    print("No previous trail.")
+        #
+
+        ##Return word dictionaries
+        if do_verbose:
+            print("Run of _add_word complete.")
+            print("Dictionaries per word:")
+            for ww in range(0, num_words):
+                print("{0}: {1}".format(NLP_wordchunk[ww], list_dict_words[ww]))
+                print("-")
+            print("\nLatest verb dictionary: {0}\n".format(storage_verbs))
+        #
+        return {"dict_words": list_dict_words, "i_headoftrail": new_headoftrail}
+
+    #
+
+    ##Method: _get_wordchunk()
+    ##Purpose: Retrieve word chunk assigned the given id (index)
+    def _get_wordchunk(self, index, i_sentence, i_cluster, do_text):
+        """
+        Method: _get_wordchunk
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Fetch the word chunk assigned to word at given index.
+        """
+        # Extract global variables
+        cluster_NLP = self._get_info("clusters_NLP")[i_cluster]
+        sentence_NLP = cluster_NLP[i_sentence]
+        id_wordchunks = self._get_info("_ids_wordchunks")[i_cluster][i_sentence]
+        if i_sentence > 0:
+            index_shifted = index - sum([len(cluster_NLP[ii]) for ii in range(0, (i_sentence - 1 + 1))])
+        else:
+            index_shifted = index
+        #
+
+        # Return singular word at this index if no word chunk found
+        if id_wordchunks[index_shifted] is None:
+            phrase = [sentence_NLP[index_shifted]]
+        # Otherwise, join all words within this word chunk
+        else:
+            inds = id_wordchunks == id_wordchunks[index_shifted]
+            phrase = np.asarray(sentence_NLP)[inds]
+        #
+
+        # Return NLP-word phrase or joined text, as requested
+        if do_text:  # Return joined text
+            return " ".join([item.text for item in phrase]).replace(" - ", "-")
+        else:  # Return NLP-word form
+            return phrase
+        #
+
+    #
+
+    ##Method: _modify_structure
+    ##Purpose: Modify given grammar structure, following specifications of the given mode
+    def _modify_structure(self, struct_verbs, struct_words, mode):
+        """
+        Method: _modify_structure
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Modify given grammar structure using the specifications of the given mode.
+        """
+        # Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        keyword_obj = self._get_info("keyword_obj")
+        buffer = self._get_info("buffer")
+        allowed_modifications = ["none", "skim", "trim", "anon"]  # Implemented
+        #
+
+        # Initialize storage for modified versions of grammar structure
+        num_words = len(struct_words)
+        arr_is_keep = np.ones(num_words).astype(bool)
+        arr_text_keep = np.array(
+            [
+                struct_words[ii]["word"]  # .text
+                for ii in range(0, num_words)
+            ]
+        )
+        text_updated = " ".join(arr_text_keep)  # Starting text
+        #
+        # Print some notes
+        if do_verbose:
+            print("\n> Running _modify_structure!")
+            print("Number of words: {1}\nRequested mode: {0}".format(mode, num_words))
+        #
+
+        # Fetch the modifications assigned to this mode
+        list_mods = mode.lower().split("_")
+        # Throw error if any modifications not recognized
+        if any([(item not in allowed_modifications) for item in list_mods]):
+            raise ValueError(
+                (
+                    "Err: Looks like {0} is not a recognized mode."
+                    + " It was split into these modifications:\n{2}\n"
+                    + " Allowed modes consist of the following,"
+                    + " joined by '_' signs:\n{1}"
+                ).format(mode, allowed_modifications, list_mods)
+            )
+        #
+
+        # Set booleans for which modifications to apply
+        do_skim = "skim" in list_mods
+        do_trim = "trim" in list_mods
+        do_anon = "anon" in list_mods
+
+        # Throw error if a trimming mode was requested with a non-zero buffer
+        if do_trim and buffer > 0:
+            raise ValueError(
+                (
+                    "Err: Mode {0} with 'trim' modification given"
+                    + " with a non-zero buffer ({1}). This is not allowed"
+                    + " because buffered sentences would likely be trimmed."
+                    + " Please rerun with a different mode or buffer of 0."
+                ).format(mode, buffer)
+            )
+        #
+
+        # Print some notes
+        if do_verbose:
+            print("Allowed modifications: {0}".format(allowed_modifications))
+            print("Assigned modifications: {0}".format(list_mods))
+        #
+
+        # Apply modifications
+        # For skim: Remove useless words (like adjectives)
+        if do_skim:
+            # Print some notes
+            if do_verbose:
+                print("> Applying skim modifications...")
+            #
+            # Iterate through words
+            for ii in range(0, num_words):
+                # Remove useless words (e.g., adjectives)
+                if struct_words[ii]["is_useless"]:
+                    arr_is_keep[ii] = False
+                    arr_text_keep[ii] = ""
+            #
+            # Update latest text with these updates
+            text_updated = " ".join(arr_text_keep)
+            #
+            # Print some notes
+            if do_verbose:
+                print("skim modifications complete.\nUpdated text:\n{0}\n".format(text_updated))
+            #
+        #
+        # For trim: Remove clauses without any important information/subclauses
+        if do_trim:
+            # Print some notes
+            if do_verbose:
+                print("> Applying trim modifications...")
+                print("Iterating through clause chains...")
+            #
+            # Extract all clause chains
+            list_chains = []
+            for ii in range(0, num_words):
+                curr_set = struct_words[ii]["i_clausechain"]  # Current chain
+                # Keep chain if not empty and if not already stored
+                if (curr_set is not None) and (curr_set not in list_chains):
+                    list_chains.append(curr_set)
+            #
+            # Iterate through chains
+            for curr_chain_raw in list_chains:
+                # Reverse chain order
+                curr_chain = curr_chain_raw[::-1]
+                #
+                # Iterate through heads of clauses in this chain
+                for curr_iclause in curr_chain:
+                    curr_trail = np.asarray(struct_words[curr_iclause]["i_clausetrail"])
+                    # Mark as unimportant if no important terms within
+                    if not any([(struct_words[jj]["is_important"]) for jj in curr_trail]):
+                        arr_is_keep[curr_trail] = False
+                        arr_text_keep[curr_trail] = ""
+                    #
+                    # Print some notes
+                    if do_verbose:
+                        print(
+                            "Considered clause {0} for this text.\nWords: {1}".format(
+                                curr_trail, [struct_words[jj]["word"] for jj in curr_trail]
+                            )
+                        )
+                        print("Latest is_keep values for these words:\n{0}".format(arr_is_keep[curr_trail]))
+                    #
+                #
+            #
+            # Update latest text with these updates
+            text_updated = " ".join(arr_text_keep)
+            #
+            # Print some notes
+            if do_verbose:
+                print("trim modifications complete.\nUpdated text:\n{0}\n".format(text_updated))
+            #
+        #
+        # For anon: Replace mission-specific terms with anonymous placeholder
+        if do_anon:
+            # Print some notes
+            if do_verbose:
+                print("> Applying anon modifications...")
+            #
+            placeholder_anon = config.placeholder_anon
+            # Update latest text with these updates
+            text_updated = keyword_obj.replace_keyword(text=text_updated, placeholder=placeholder_anon)
+            #
+            # Print some notes
+            if do_verbose:
+                print("anon modifications complete.\nUpdated text:\n{0}\n".format(text_updated))
+            #
+        #
+
+        # Cleanse the text to finalize it
+        text_updated = self._streamline_phrase(text=text_updated)
+        #
+
+        # Build grammar structures using only kept words
+        struct_verbs_updated = {
+            key: struct_verbs[key] for key in struct_verbs if (arr_is_keep[key])
+        }  # Copy kept verb storage
+        struct_words_updated = {
+            key: struct_words[key] for key in struct_words if (arr_is_keep[key])
+        }  # Copy kept word storage
+        #
+
+        # Return dictionary containing the updated grammar structures
+        if do_verbose:
+            print("Run of _modify_structure() complete.")
+            print(
+                ("Mode: {0}\nUpdated word structure: {1}\n" + "Updated verb structure: {2}\nUpdated text: {3}").format(
+                    mode, struct_words_updated, struct_verbs_updated, text_updated
+                )
+            )
+        #
+        return {
+            "mode": mode,
+            "struct_verbs_updated": struct_verbs_updated,
+            "struct_words_updated": struct_words_updated,
+            "text_updated": text_updated,
+            "arr_is_keep": arr_is_keep,
+        }
+
+    #
+
+    ##Method: _recurse_NLP_categorization
+    ##Purpose: Recursively explore each word of NLP-sentence and categorize
+    def _recurse_NLP_categorization(
+        self,
+        node,
+        storage_verbs,
+        storage_words,
+        is_checked,
+        i_cluster,
+        i_sentence,
+        i_verb,
+        chain_i_verbs,
+        verb_side,
+        i_headoftrail,
+    ):
+        """
+        Method: _recurse_NLP_categorization
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Recursively examine and store information for each word within an NLP-sentence.
+        """
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        wordchunk = self._get_wordchunk(index=node.i, i_cluster=i_cluster, i_sentence=i_sentence, do_text=False)
+        # Print some notes
+        if do_verbose:
+            print(("-" * 60) + "\nCURRENT NODE ({1}): {0}".format(node, node.i))
+            print("node.dep_ = {0}, node.pos_ = {1}, node tag = {2}".format(node.dep_, node.pos_, node.tag_))
+            if len(list(node.ancestors)) != 0:
+                print("Root: {0}".format(list(node.ancestors)[0]))
+            print("Wordchunk: '{0}'".format(wordchunk))
+            print("Lefts: {0}, Rights: {1}".format(list(node.lefts), list(node.rights)))
+            print("Verb chain: {0}".format(chain_i_verbs))
+            print("Check status of node: {0}".format(is_checked[node.i]))
+        #
+
+        ##Skip ahead if this word has already been checked
+        if is_checked[node.i]:
+            # Print some notes
+            if do_verbose:
+                print("This node has already been checked.  Skipping...")
+            #
+            # Go ahead and recurse through successors of this node
+            # For left nodes
+            for left_node in node.lefts:
+                self._recurse_NLP_categorization(
+                    node=left_node,
+                    storage_verbs=storage_verbs,
+                    verb_side=verb_side,
+                    storage_words=storage_words,
+                    is_checked=is_checked,
+                    i_cluster=i_cluster,
+                    i_sentence=i_sentence,
+                    i_verb=i_verb,
+                    chain_i_verbs=chain_i_verbs.copy(),
+                    i_headoftrail=i_headoftrail,
+                )
+            #
+            # For right nodes
+            for right_node in node.rights:
+                self._recurse_NLP_categorization(
+                    node=right_node,
+                    storage_verbs=storage_verbs,
+                    verb_side=verb_side,
+                    storage_words=storage_words,
+                    is_checked=is_checked,
+                    i_cluster=i_cluster,
+                    i_sentence=i_sentence,
+                    i_verb=i_verb,
+                    chain_i_verbs=chain_i_verbs.copy(),
+                    i_headoftrail=i_headoftrail,
+                )
+            #
+            # Exit the method early
+            return
+        #
+
+        ##Store characteristics of this word
+        # For verbs vs. non-verbs
+        is_verb = self._is_pos_word(node, pos="VERB")
+        is_root = self._is_pos_word(node, pos="ROOT")
+        #
+        # If verb or root, create new storage for this verb and its info
+        if is_verb:
+            storage_verbs[node.i] = self._add_verb(node)  # Verb storage
+            # Iterate through previous verb chains
+            for vv in chain_i_verbs:  # Note that root will have empty chain
+                # Tack on current verb
+                storage_verbs[vv]["i_postverbs"].append(node.i)
+            #
+            chain_i_verbs.append(node.i)  # Tack current verb onto verb chain
+            i_verb = node.i  # Update index of most recent verb
+            verb_side = None  # Reset tracking of side of verb
+        #
+        # Handle special case of incomplete sentences (e.g., root is noun)
+        elif is_root:
+            storage_verbs[node.i] = {
+                "i_verb": node.i,
+                "verb": node.text,
+                "is_important": False,
+                "i_postverbs": [],
+                "i_branchwords_all": [],
+                "verbtype": [],
+            }
+            # Iterate through previous verb chains
+            for vv in chain_i_verbs:  # Note that root will have empty chain
+                # Tack on current verb
+                storage_verbs[vv]["i_postverbs"].append(node.i)
+            #
+            chain_i_verbs.append(node.i)  # Tack current verb onto verb chain
+            i_verb = node.i  # Update index of most recent verb
+            verb_side = None  # Reset tracking of side of verb
+        #
+        # Otherwise, store this word underneath latest verb
+        else:
+            storage_verbs[i_verb]["i_branchwords_all"].append(node.i)
+        #
+        # For general words
+        dict_res = self._add_word(
+            node,
+            storage_verbs=storage_verbs[i_verb],
+            storage_words=storage_words,
+            i_verb=i_verb,
+            i_cluster=i_cluster,
+            i_sentence=i_sentence,
+            i_headoftrail=i_headoftrail,
+        )
+        list_maxed_dict_words = dict_res["dict_words"]
+        i_headoftrail = dict_res["i_headoftrail"]
+        # Set same maximum storage to all words in wordchunk
+        for ww in range(0, len(wordchunk)):
+            storage_words[wordchunk[ww].i] = list_maxed_dict_words[ww]
+            is_checked[wordchunk[ww].i] = True
+        #
+
+        ##Check off this node and recurse through successors of this node
+        # For left nodes
+        for left_node in node.lefts:
+            if verb_side is None:
+                self._recurse_NLP_categorization(
+                    node=left_node,
+                    storage_verbs=storage_verbs,
+                    storage_words=storage_words,
+                    i_cluster=i_cluster,
+                    i_sentence=i_sentence,
+                    i_verb=i_verb,
+                    verb_side="left",
+                    chain_i_verbs=chain_i_verbs.copy(),
+                    is_checked=is_checked,
+                    i_headoftrail=i_headoftrail,
+                )
+            else:
+                self._recurse_NLP_categorization(
+                    node=left_node,
+                    storage_verbs=storage_verbs,
+                    storage_words=storage_words,
+                    i_cluster=i_cluster,
+                    i_sentence=i_sentence,
+                    i_verb=i_verb,
+                    verb_side=verb_side,
+                    chain_i_verbs=chain_i_verbs.copy(),
+                    is_checked=is_checked,
+                    i_headoftrail=i_headoftrail,
+                )
+        #
+        # For right nodes
+        for right_node in node.rights:
+            if verb_side is None:
+                self._recurse_NLP_categorization(
+                    node=right_node,
+                    storage_verbs=storage_verbs,
+                    storage_words=storage_words,
+                    i_cluster=i_cluster,
+                    i_sentence=i_sentence,
+                    i_verb=i_verb,
+                    verb_side="right",
+                    chain_i_verbs=chain_i_verbs.copy(),
+                    is_checked=is_checked,
+                    i_headoftrail=i_headoftrail,
+                )
+            else:
+                self._recurse_NLP_categorization(
+                    node=right_node,
+                    storage_verbs=storage_verbs,
+                    storage_words=storage_words,
+                    i_cluster=i_cluster,
+                    i_sentence=i_sentence,
+                    i_verb=i_verb,
+                    verb_side=verb_side,
+                    chain_i_verbs=chain_i_verbs.copy(),
+                    is_checked=is_checked,
+                    i_headoftrail=i_headoftrail,
+                )
+        #
+
+        ##Exit the method
+        return
+
+    #
+
+    ##Method: _run_NLP()
+    ##Purpose: Run natural language processing (NLP) on text using external package
+    def _run_NLP(self, text):
+        """
+        Method: _run_NLP
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Run external natural language processing NLP package on given text.
+        """
+        # Convert text (or clusters of sentences) into clusters of NLP objects
+        # For block of text
+        if isinstance(text, str):
+            # Run external natural language processing (NLP) package
+            clusters_NLP = [list(nlp(text).sents)]
+        # For list of texts
+        else:
+            # Run NLP package for each sentence-cluster in paragraph
+            clusters_NLP = [list(nlp(cluster).sents) for cluster in text]
+        #
+
+        # Return NLP clusters
+        return clusters_NLP
+
+    #
+
+    ##Method: _set_wordchunks()
+    ##Purpose: Group nouns into chunks as applicable (e.g., proper nouns)
+    def _set_wordchunks(self, cluster_NLP):
+        """
+        Method: _set_wordchunks
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Assign words to noun chunks, as applicable.
+        """
+        # Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        num_sentences = len(cluster_NLP)
+
+        # Initialize container to hold chunk ids for each word in sentence
+        ids_wordchunks = [None] * num_sentences
+        entries_wordchunks = [None] * num_sentences  # For checks of words
+
+        # Print some notes
+        if do_verbose:
+            print("\n> Running _set_wordchunks()!")
+            print("Assigning word chunks for the following cluster: {0}".format(cluster_NLP))
+        #
+
+        # Set individual id for root words; avoids weird nounroot wordchunk issue
+        itrack = 0  # Index for tracking incremental increase in ids over cluster
+        rshift = 0  # Accumulated index across all words in previous sentences
+        for ii in range(0, num_sentences):
+            # Extract current sentence
+            curr_sentence = cluster_NLP[ii]
+            nlp_nounchunks = curr_sentence.noun_chunks
+            # Initialize container for current sentence ids
+            curr_ids = np.array([None] * len(curr_sentence))
+            curr_entries = [None] * len(curr_sentence)
+            #
+            ids_wordchunks[ii] = curr_ids
+            entries_wordchunks[ii] = curr_entries
+            #
+            # Store root index separately to avoid weird noun-root issues
+            curr_ids[curr_sentence.root.i - rshift] = itrack
+            itrack += 1
+            #
+
+            # Iterate through noun chunks identified by external NLP package
+            for nounchunk in nlp_nounchunks:
+                # Iterate through words in this chunk
+                for word in nounchunk:
+                    curr_loc = word.i - rshift  # Word index, shifted to sentence
+                    # Skip words that are deemed useless
+                    is_useless = self._is_pos_word(word, pos="USELESS")
+                    if is_useless:
+                        if do_verbose:
+                            print("Skipping {0} because it seems useless....".format(word))
+                        continue
+                    #
+                    # Otherwise, assign chunk id to word, if not already done so
+                    if curr_ids[curr_loc] is None:
+                        curr_ids[curr_loc] = itrack
+                        curr_entries[curr_loc] = word
+                    #
+                #
+                # Increment id after each word chunk
+                itrack += 1
+            #
+
+            # Update accumulated index across sentences completed so far
+            rshift += len(curr_sentence)
+        #
+
+        # Print some notes about the established word chunks, if so desired
+        if do_verbose:
+            print("Run of _set_wordchunks() complete.")
+            print("Cluster: {0}".format(cluster_NLP))
+            print(
+                "Original NLP-generated word chunks for this cluster: {0}".format(
+                    [list(item.noun_chunks) for item in cluster_NLP]
+                )
+            )
+            print("Final array of chunk ids: {0}".format(ids_wordchunks))
+        #
+
+        # Return the established ids
+        return ids_wordchunks
