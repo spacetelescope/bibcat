@@ -6687,7 +6687,7 @@ class Performance(_Base):
 
     ##Method: evaluate_performance_basic
     ##Purpose: Evaluate the basic performance of the internal classifier on a test set of data
-    def evaluate_performance_basic(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filename_plot="performance_confmatr_basic.png", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def evaluate_performance_basic(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_reuse_run, do_save_evaluation=False, do_save_misclassif=False, filename_plot="performance_confmatr_basic.png", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: evaluate_performance_basic
         Purpose:
@@ -6718,6 +6718,7 @@ class Performance(_Base):
         dict_evaluations = self._generate_evaluation(operators=operators,
                         dicts_texts=dicts_texts, mappers=mappers,
                         buffers=buffers, is_text_processed=is_text_processed,
+                        do_reuse_run=do_reuse_run,
                         do_verify_truematch=do_verify_truematch,
                         do_raise_innererror=do_raise_innererror,
                         do_save_evaluation=do_save_evaluation,
@@ -6760,7 +6761,7 @@ class Performance(_Base):
 
     ##Method: evaluate_performance_uncertainty
     ##Purpose: Evaluate the performance of the internal classifier on a test set of data as a function of uncertainty
-    def evaluate_performance_uncertainty(self, operators, dicts_texts, mappers, threshold_arrays, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_save_evaluation=False, do_save_misclassif=False, filename_plot="performance_grid_uncertainty.png", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), fontsize=16, ticksize=14, tickwidth=3, tickheight=5, colors=["tomato", "dodgerblue", "purple", "dimgray", "silver", "darkgoldenrod", "darkgreen", "green", "cyan"], alphas=([0.75]*10), linestyles=["-", "-", "-", "--", "--", "--", ":", ":", ":"], linewidths=([3]*10), markers=(["o"]*10), alpha_match=0.5, color_match="black", linestyle_match="-", linewidth_match=8, marker_match="*", print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def evaluate_performance_uncertainty(self, operators, dicts_texts, mappers, threshold_arrays, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_reuse_run, do_save_evaluation=False, do_save_misclassif=False, filename_plot="performance_grid_uncertainty.png", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), fontsize=16, ticksize=14, tickwidth=3, tickheight=5, colors=["tomato", "dodgerblue", "purple", "dimgray", "silver", "darkgoldenrod", "darkgreen", "green", "cyan"], alphas=([0.75]*10), linestyles=["-", "-", "-", "--", "--", "--", ":", ":", ":"], linewidths=([3]*10), markers=(["o"]*10), alpha_match=0.5, color_match="black", linestyle_match="-", linewidth_match=8, marker_match="*", print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: evaluate_performance_uncertainty
         Purpose:
@@ -6792,6 +6793,7 @@ class Performance(_Base):
         dict_evaluations = self._generate_evaluation(operators=operators,
                         dicts_texts=dicts_texts, mappers=mappers,
                         buffers=buffers, is_text_processed=is_text_processed,
+                        do_reuse_run=do_reuse_run,
                         do_verify_truematch=do_verify_truematch,
                         do_raise_innererror=do_raise_innererror,
                         do_save_evaluation=do_save_evaluation,
@@ -6883,7 +6885,7 @@ class Performance(_Base):
 
     ##Method: _generate_evaluation
     ##Purpose: Generate performance evaluation of full classification pipeline (text to rejection/verdict)
-    def _generate_evaluation(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, do_raise_innererror, array_thresholds=None, do_save_evaluation=False, do_save_misclassif=False, filepath_output=None, fileroot_evaluation=None, fileroot_misclassif=None, print_freq=25, do_verbose=False, do_verbose_deep=False):
+    def _generate_evaluation(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, do_raise_innererror, do_reuse_run, array_thresholds=None, do_save_evaluation=False, do_save_misclassif=False, filepath_output=None, fileroot_evaluation=None, fileroot_misclassif=None, print_freq=25, do_verbose=False, do_verbose_deep=False):
         """
         Method: _generate_evaluation
         Purpose:
@@ -6905,6 +6907,11 @@ class Performance(_Base):
             do_verbose_deep = self._get_info("do_verbose_deep")
         #
         num_ops = len(operators)
+        if (do_save_evaluation or do_reuse_run):
+            save_filepath = os.path.join(filepath_output,
+                                        (fileroot_evaluation+".npy"))
+        #
+
         #Throw error if operators do not have unique names
         if (len(set([item._get_info("name") for item in operators])) !=num_ops):
             raise ValueError("Err: Please give each operator a unique name."
@@ -6916,6 +6923,18 @@ class Performance(_Base):
             print("\n> Running _generate_evaluation()!")
             print("Iterating through Operators to classify each set of text...")
         #
+
+        ##Load any pre-existing evaluation, if so requested
+        if do_reuse_run:
+            #Print some notes
+            if do_verbose:
+                print("Previous evaluation exists at {0}\nLoading that eval..."
+                        .format(save_filepath))
+            #
+            dict_evaluations = np.load(save_filepath).item()
+            return dict_evaluations
+        #
+        print(woo)
 
         ##Use each operator to classify the set of texts and measure performance
         dict_evaluations = {item._get_info("name"):None for item in operators}
@@ -7050,13 +7069,14 @@ class Performance(_Base):
 
         ##Save the evaluation components, if so requested
         if do_save_evaluation:
-            tmp_filepath = os.path.join(filepath_output,
-                                        (fileroot_evaluation+".npy"))
-            np.save(tmp_filepath, dict_evaluations)
+            #tmp_filepath = os.path.join(filepath_output,
+            #                            (fileroot_evaluation+".npy"))
+            #np.save(tmp_filepath, dict_evaluations)
+            np.save(save_filepath, dict_evaluations)
             #
             #Print some notes
             if do_verbose:
-                print("\nEvaluation saved at: {0}".format(tmp_filepath))
+                print("\nEvaluation saved at: {0}".format(save_filepath))
         #
 
         ##Return the evaluation components
