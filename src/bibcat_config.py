@@ -11,8 +11,9 @@ from nltk.corpus import wordnet
 #
 
 ##Set global user paths
-path_json = "path/to/dataset_combined_all.json" # set the path to the location of the JSON file you downloaded from Box
-name_model = "my_test_run_1" #Name of model run to save or load
+#path_json = "path/to/dataset_combined_all.json" # set the path to the location of the JSON file you downloaded from Box
+path_json = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/Bibtracking/datasets/dataset_combined_all.json") # set the path to the location of the JSON file you downloaded from Box
+name_model = "run_full_none_uniform" #Name of model run to save or load
 #
 
 ##Set global fixed paths
@@ -49,9 +50,9 @@ tfoutput_prefix = "tfoutput_"
 folders_TVT = {"train":"dir_train", "validate":"dir_validate", "test":"dir_test"}
 
 #Below are for bibcat_tests.py testing purposes only
-filepath_input = "/path/to/the/dataset"
+filepath_input = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/Bibtracking/datasets") #"/path/to/the/dataset"
 path_papertrack = os.path.join(filepath_input, "papertrack_export_2023-11-06.json")
-path_papertext = os.path.join(filepath_input, "ST_Request2021_use.json")
+path_papertext = os.path.join(filepath_input, "ST_Request_2018_to_2023_use.json")
 #
 
 ##Set text processing and regular expression variables
@@ -188,9 +189,10 @@ ML_type_optimizer = "lamb" #"adamw"
 ML_name_optimizer = "LAMB" #"AdamWeightDecay"
 ML_frac_dropout = 0.2
 ML_frac_steps_warmup = 0.1
-ML_num_epochs = 5
+ML_num_epochs = 20 #50 #15 #10 #5
 ML_init_lr = 3E-5
 #
+"""
 dict_ml_model_encoders = {
     'bert_en_uncased_L-12_H-768_A-12':
         'https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/3',
@@ -326,6 +328,14 @@ dict_ml_model_preprocessors = {
         'https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3',
     'talking-heads_base':
         'https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3',
+}
+#"""
+#
+dict_ml_model_encoders = {
+"small_bert/bert_en_uncased_L-4_H-512_A-8":"https://kaggle.com/models/tensorflow/bert/frameworks/TensorFlow2/variations/bert-en-uncased-l-4-h-512-a-8/versions/1"
+}
+dict_ml_model_preprocessors = {
+"small_bert/bert_en_uncased_L-4_H-512_A-8":"https://kaggle.com/models/tensorflow/bert/frameworks/TensorFlow2/variations/en-uncased-preprocess/versions/3"
 }
 #
 

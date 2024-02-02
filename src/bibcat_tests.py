@@ -529,6 +529,7 @@ class TestBase(unittest.TestCase):
                     "Hubble et al. 2000":{"lookup":"Hubble", "bool":False},
                     "Hubbleetal 2000":{"lookup":"Hubble", "bool":False},
                     "Hubble and more data.":{"lookup":"Hubble", "bool":True},
+                    "Hubble Space Telescope Wide Field Planetary Camera narrow-band image":{"lookup":"Hubble", "bool":True},
                     "Kepler fields.":{"lookup":"Kepler", "bool":True},
                     "Kepler velocities.":{"lookup":"Kepler", "bool":False},
                     "Kepler velocity fields.":{"lookup":"Kepler", "bool":False},

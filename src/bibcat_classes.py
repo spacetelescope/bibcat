@@ -1329,8 +1329,13 @@ class _Base():
             curr_roots = self._extract_core_from_phrase(phrase_NLP=curr_NLP,
                                 do_verbose=do_verbose, do_skip_useless=False,
                                 keyword_objs=keyword_objs)["roots"]
+            #This regex version can be very slow... replaced with version below
+            #curr_exp = (r"("
+            #            + r")( .*)* (".join([(r"(\b"+r"\b|\b".join(item)+r"\b)")
+            #                            for item in curr_roots])
+            #            + r")") #Convert to reg. exp. for substring search later
             curr_exp = (r"("
-                        + r")( .*)* (".join([(r"(\b"+r"\b|\b".join(item)+r"\b)")
+                        + r") (\w+ )*(".join([(r"\b("+r"|".join(item)+r")\b")
                                         for item in curr_roots])
                         + r")") #Convert to reg. exp. for substring search later
             #
