@@ -6050,6 +6050,12 @@ class Operator(_Base):
         WARNING! This method is *not* meant to be used directly by users.
         Purpose: Initializes instance of Operator class.
         """
+        #Throw an error if an unallowed character in name
+        if ("|" in name):
+            raise ValueError("Please do not use the reserved character '|'"
+                            +" in the name for your Operator.")
+        #
+
         #Initialize storage
         self._storage = {}
         self._store_info(classifier, "classifier")
@@ -6700,9 +6706,86 @@ class Performance(_Base):
         return
     #
 
+    ##Method: _combine_performance_across_evaluations
+    ##Purpose: Combine measured evaluations per operator across those operators so as to investigate performance across combined operators
+    def _combine_performance_across_evaluations(self, evaluations, titles, do_verbose=None):
+        """
+        Method: _combine_performance_across_evaluations
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Combines evaluations, measured per operator, across those operators, so as to investigate the performance across combined operators.
+
+        """
+        #Fetch global variables
+        if (do_verbose is None):
+            do_verbose = self._get_info("do_verbose")
+        if (do_verbose_deep is None):
+            do_verbose_deep = self._get_info("do_verbose_deep")
+        #
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _combine_performance_across_evaluations()!")
+            print("Combining evaluations across these operators: {0}"
+                    .format(titles))
+        #
+
+        #Fetch and cross-check actual and measured classifs
+        act_classnames = evaluations[title[0]]["act_classnames"]
+        meas_classnames = evaluations[title[0]]["meas_classnames"]
+        #
+        #Throw error if any differing classif names
+        check_act = [evaluations[key]["act_classnames"] for key in titles]
+        check_meas = [evaluations[key]["meas_classnames"] for key in titles]
+        if any([(item != act_classnames) for item in check_act]):
+            raise ValueError("Err: Different actual classifs:\n{0} vs. {1}"
+                            .format(act_classnames, check_act))
+        if any([(item != meas_classnames) for item in check_meas]):
+            raise ValueError("Err: Different measured classifs:\n{0} vs. {1}"
+                            .format(meas_classnames, check_meas))
+        #
+
+        #Fetch all possible two-part combinations of operators
+        list_pairs = list(iterer.combinations(sorted(titles), 2))
+
+        #Initialize container for all combined evaluations
+        dict_combined = {"{0}|{1}".format(item[0], item[1]):None
+                        for item in list_pairs}
+
+        #Iterate through operator combinations
+        for curr_pair in list_pairs:
+            #Initialize container for current combined evaluations
+            curr_dict = {key1:{key2:{key3:0 for key3 in meas_classnames}
+                                for key2 in curr_pair}
+                        for key1 in act_classnames}
+            #
+            #Verify same actual results across operators
+            if (evaluations[curr_pair[0]]["actual_results"]
+                        != evaluations[curr_pair[1]]["actual_results"]):
+                raise ValueError("Err: Different actual results for operators.")
+            #
+            #Iterate through results
+            act_results = evaluations[curr_pair[0]]["actual_results"]
+            meas_results_0 = evaluations[curr_pair[0]]["measured_results"]
+            meas_results_1 = evaluations[curr_pair[1]]["measured_results"]
+            for ii in range(0, len(act_results)):
+                #Store measured results per operator
+                curr_dict[act_results[ii]][curr_pair[0]][meas_results_0] += 1
+                curr_dict[act_results[ii]][curr_pair[1]][meas_results_1] += 1
+            #
+            #Store combined evaluations for current pair
+            curr_key = "{0}|{1}".format(curr_pair[0], curr_pair[1])
+            dict_combined[curr_key] = curr_dict
+        #
+
+        #Return the combined evaluations
+        if do_verbose:
+            print("Run of _combine_performance_across_evaluations() complete!")
+        #
+        return dict_combined
+    #
+
     ##Method: evaluate_performance_basic
     ##Purpose: Evaluate the basic performance of the internal classifier on a test set of data
-    def evaluate_performance_basic(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_reuse_run, do_save_evaluation=False, do_save_misclassif=False, filename_plot="performance_confmatr_basic.png", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def evaluate_performance_basic(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_reuse_run, do_save_evaluation=False, do_save_misclassif=False, filename_root="performance_confmatr_basic", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: evaluate_performance_basic
         Purpose:
@@ -6729,7 +6812,7 @@ class Performance(_Base):
             print("Generating evaluation for the given operators...")
         #
 
-        #Evaluate classifier within each operator
+        ##Evaluate classifier within each operator
         dict_evaluations = self._generate_evaluation(operators=operators,
                         dicts_texts=dicts_texts, mappers=mappers,
                         buffers=buffers, is_text_processed=is_text_processed,
@@ -6750,27 +6833,69 @@ class Performance(_Base):
             print("Plotting confusion matrices...")
         #
 
-        #Plot grids of confusion matrices for classifier performance
+        ##Plot grids of confusion matrices for classifier performance
         titles = [item._get_info("name") for item in operators]
         list_evaluations = [dict_evaluations[item] for item in titles]
         #
         #For performance calculated across all possible classifications
+        tmp_filename = "{0}_classifier_all.png".format(filename_root)
         self.plot_performance_confusion_matrix(
                         list_evaluations=list_evaluations,
                         list_mappers=mappers, list_titles=titles,
                         filepath_plot=filepath_output,
-                        filename_plot=filename_plot, figcolor=figcolor,
+                        filename_plot=tmp_filename, figcolor=figcolor,
                         figsize=figsize, fontsize=fontsize, hspace=hspace,
                         cmap_abs=cmap_abs, cmap_norm=cmap_norm)
         #
-        #Print some notes
+        #For performance calculated across target classifications
+        target_classifs = [item.lower()
+                            for item in config.allowed_classifications]
+        tmp_filename = "{0}_classifier_targets.png".format(filename_root)
+        self.plot_performance_confusion_matrix(
+                        list_evaluations=list_evaluations,
+                        list_mappers=mappers, list_titles=titles,
+                        filepath_plot=filepath_output,
+                        target_classifs=target_classifs,
+                        filename_plot=tmp_filename, figcolor=figcolor,
+                        figsize=figsize, fontsize=fontsize, hspace=hspace,
+                        cmap_abs=cmap_abs, cmap_norm=cmap_norm)
+        #
+
+        ##Plot grids of confusion matrices for combined operator performance
+        dict_combined = self._combine_performance_across_evaluations(
+                                evaluations=dict_evaluations, titles=titles,
+                                do_verbose=do_verbose)
+        list_evaluations = [dict_combined[key] for key in dict_combined]
+        titles = list(dict_combined.keys())
+        #
+        #For performance calculated across all possible classifications
+        tmp_filename = "{0}_operator_all.png".format(filename_root)
+        self.plot_performance_confusion_matrix(
+                        list_evaluations=list_evaluations,
+                        list_mappers=mappers, list_titles=titles,
+                        filepath_plot=filepath_output,
+                        filename_plot=tmp_filename, figcolor=figcolor,
+                        figsize=figsize, fontsize=fontsize, hspace=hspace,
+                        cmap_abs=cmap_abs, cmap_norm=cmap_norm)
+        #
+        #For performance calculated across target classifications
+        target_classifs = [item.lower()
+                            for item in config.allowed_classifications]
+        tmp_filename = "{0}_operator_targets.png".format(filename_root)
+        self.plot_performance_confusion_matrix(
+                        list_evaluations=list_evaluations,
+                        list_mappers=mappers, list_titles=titles,
+                        filepath_plot=filepath_output,
+                        target_classifs=target_classifs,
+                        filename_plot=tmp_filename, figcolor=figcolor,
+                        figsize=figsize, fontsize=fontsize, hspace=hspace,
+                        cmap_abs=cmap_abs, cmap_norm=cmap_norm)
+        #
+
+        ##Exit the method
         if do_verbose:
             print("Confusion matrices have been plotted at:\n{0}"
                     .format(filepath_output))
-        #
-
-        #Exit the method
-        if do_verbose:
             print("\nRun of evaluate_performance_basic() complete!")
         #
         return
@@ -6778,7 +6903,7 @@ class Performance(_Base):
 
     ##Method: evaluate_performance_uncertainty
     ##Purpose: Evaluate the performance of the internal classifier on a test set of data as a function of uncertainty
-    def evaluate_performance_uncertainty(self, operators, dicts_texts, mappers, threshold_arrays, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_reuse_run, do_save_evaluation=False, do_save_misclassif=False, filename_plot="performance_grid_uncertainty.png", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), fontsize=16, ticksize=14, tickwidth=3, tickheight=5, colors=["tomato", "dodgerblue", "purple", "dimgray", "silver", "darkgoldenrod", "darkgreen", "green", "cyan"], alphas=([0.75]*10), linestyles=["-", "-", "-", "--", "--", "--", ":", ":", ":"], linewidths=([3]*10), markers=(["o"]*10), alpha_match=0.5, color_match="black", linestyle_match="-", linewidth_match=8, marker_match="*", print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def evaluate_performance_uncertainty(self, operators, dicts_texts, mappers, threshold_arrays, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_reuse_run, do_save_evaluation=False, do_save_misclassif=False, filename_root="performance_grid_uncertainty", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), fontsize=16, ticksize=14, tickwidth=3, tickheight=5, colors=["tomato", "dodgerblue", "purple", "dimgray", "silver", "darkgoldenrod", "darkgreen", "green", "cyan"], alphas=([0.75]*10), linestyles=["-", "-", "-", "--", "--", "--", ":", ":", ":"], linewidths=([3]*10), markers=(["o"]*10), alpha_match=0.5, color_match="black", linestyle_match="-", linewidth_match=8, marker_match="*", print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: evaluate_performance_uncertainty
         Purpose:
@@ -6884,7 +7009,7 @@ class Performance(_Base):
         #Save and close the figure
         fig.suptitle("Performance vs. Uncertainty", fontsize=fontsize)
         plt.tight_layout()
-        plt.savefig(os.path.join(filepath_output, filename_plot))
+        plt.savefig(os.path.join(filepath_output, (filename_root+".png")))
         plt.close()
         #
         #Print some notes
