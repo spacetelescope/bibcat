@@ -262,7 +262,7 @@ class _Base():
 
     ##Method: _ax_confusion_matrix()
     ##Purpose: Plot rectangular confusion matrix for given data and labels
-    def _ax_confusion_matrix(self, matr, ax, x_labels, y_labels, x_title, y_title, cbar_title, ax_title, is_norm, cmap=plt.cm.BuPu, fontsize=16, ticksize=16, valsize=14, y_rotation=30, x_rotation=30):
+    def _ax_confusion_matrix(self, matr, ax, x_labels, y_labels, x_title, y_title, cbar_title, ax_title, is_norm, minmax_labels=None, cmap=plt.cm.BuPu, fontsize=16, ticksize=16, valsize=14, y_rotation=30, x_rotation=30):
         """
         Method: _ax_confusion_matrix
         WARNING! This method is *not* meant to be used directly by users.
@@ -272,15 +272,30 @@ class _Base():
         if is_norm:
             vmin = 0
             vmax = 1
-        else:
+        elif (minmax_labels is not None):
             vmin = 0 #None
-            #Ignore nonmatch verdict to avoid spikes in color scaling if present
+            #Ignore non-target verdicts to avoid color spikes scaling if present
             tmpmatr = matr.copy()
-            if (config.verdict_rejection.lower() in x_labels):
-                tmpmatr[:,x_labels.index(config.verdict_rejection.upper())] = -1
-            if (config.verdict_rejection.lower() in y_labels):
-                tmpmatr[y_labels.index(config.verdict_rejection.upper()),:] = -1
+            #if (config.verdict_rejection.lower() in x_labels):
+            #    tmpmatr[:,x_labels.index(config.verdict_rejection.upper())] = -1
+            #if (config.verdict_rejection.lower() in y_labels):
+            #    tmpmatr[y_labels.index(config.verdict_rejection.upper()),:] = -1
+            #Remove max scaling for non-target classifs along y-axis
+            for yy in range(0, len(minmax_labels)):
+                #Remove non-target classifications from max consideration
+                if (y_labels[yy] not in minmax_labels):
+                    tmpmatr[yy,:] = -1
+            #Remove max scaling for non-target classifs along x-axis
+            for xx in range(0, len(minmax_labels)):
+                #Remove non-target classifications from max consideration
+                if (x_labels[xx] not in minmax_labels):
+                    tmpmatr[:,xx] = -1
+            #
             vmax = tmpmatr.max() #None
+        #
+        else:
+            vmin = 0
+            vmax = matr.max()
         #
 
         #Plot the confusion matrix and colorbar
@@ -6735,9 +6750,11 @@ class Performance(_Base):
             print("Plotting confusion matrices...")
         #
 
-        #Plot grid of confusion matrices for classifier performance
+        #Plot grids of confusion matrices for classifier performance
         titles = [item._get_info("name") for item in operators]
         list_evaluations = [dict_evaluations[item] for item in titles]
+        #
+        #For performance calculated across all possible classifications
         self.plot_performance_confusion_matrix(
                         list_evaluations=list_evaluations,
                         list_mappers=mappers, list_titles=titles,
@@ -6925,16 +6942,15 @@ class Performance(_Base):
         #
 
         ##Load any pre-existing evaluation, if so requested
-        if do_reuse_run:
+        if (do_reuse_run and (os.path.exists(save_filepath))):
             #Print some notes
             if do_verbose:
                 print("Previous evaluation exists at {0}\nLoading that eval..."
                         .format(save_filepath))
             #
-            dict_evaluations = np.load(save_filepath).item()
+            dict_evaluations = np.load(save_filepath, allow_pickle=True).item()
             return dict_evaluations
         #
-        print(woo)
 
         ##Use each operator to classify the set of texts and measure performance
         dict_evaluations = {item._get_info("name"):None for item in operators}

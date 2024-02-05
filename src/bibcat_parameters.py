@@ -41,7 +41,6 @@ keyword_obj_HLA = bibcat.Keyword(
 all_kobjs = [keyword_obj_HST, keyword_obj_JWST, keyword_obj_TESS, keyword_obj_Kepler, keyword_obj_PanSTARRS, keyword_obj_GALEX, keyword_obj_K2, keyword_obj_HLA]
 #
 
-##Classification parameters
-allowed_classifications = ["SCIENCE", "DATA_INFLUENCED", "MENTION", "SUPERMENTION"]
+##Classification mapping parameters
 map_papertypes = {"science":"science", "mention":"mention", "supermention":"mention", "data_influenced":"data_influenced", "unresolved_grey":"other", "unresolved_gray":"other", "engineering":"other", "instrument":"other"}
 #
