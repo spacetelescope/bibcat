@@ -6783,7 +6783,7 @@ class Performance(_Base):
 
     ##Method: evaluate_performance_basic
     ##Purpose: Evaluate the basic performance of the internal classifier on a test set of data
-    def evaluate_performance_basic(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_reuse_run, do_save_evaluation=False, do_save_misclassif=False, filename_root="performance_confmatr_basic", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def evaluate_performance_basic(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_reuse_run, target_classifs=None, do_save_evaluation=False, do_save_misclassif=False, filename_root="performance_confmatr_basic", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: evaluate_performance_basic
         Purpose:
@@ -6901,7 +6901,7 @@ class Performance(_Base):
 
     ##Method: evaluate_performance_uncertainty
     ##Purpose: Evaluate the performance of the internal classifier on a test set of data as a function of uncertainty
-    def evaluate_performance_uncertainty(self, operators, dicts_texts, mappers, threshold_arrays, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_reuse_run, do_save_evaluation=False, do_save_misclassif=False, filename_root="performance_grid_uncertainty", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), fontsize=16, ticksize=14, tickwidth=3, tickheight=5, colors=["tomato", "dodgerblue", "purple", "dimgray", "silver", "darkgoldenrod", "darkgreen", "green", "cyan"], alphas=([0.75]*10), linestyles=["-", "-", "-", "--", "--", "--", ":", ":", ":"], linewidths=([3]*10), markers=(["o"]*10), alpha_match=0.5, color_match="black", linestyle_match="-", linewidth_match=8, marker_match="*", print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def evaluate_performance_uncertainty(self, operators, dicts_texts, mappers, threshold_arrays, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_reuse_run, target_classifs=None, do_save_evaluation=False, do_save_misclassif=False, filename_root="performance_grid_uncertainty", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), fontsize=16, ticksize=14, tickwidth=3, tickheight=5, colors=["tomato", "dodgerblue", "purple", "dimgray", "silver", "darkgoldenrod", "darkgreen", "green", "cyan"], alphas=([0.75]*10), linestyles=["-", "-", "-", "--", "--", "--", ":", ":", ":"], linewidths=([3]*10), markers=(["o"]*10), alpha_match=0.5, color_match="black", linestyle_match="-", linewidth_match=8, marker_match="*", print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: evaluate_performance_uncertainty
         Purpose:
@@ -6952,9 +6952,11 @@ class Performance(_Base):
             print("Plotting performance as a function of uncertainty level...")
         #
 
-        ##Plot grid of classifier performance as function of uncertainty
+        ##Plot grids of classifier performance as function of uncertainty
         titles = [item._get_info("name") for item in operators]
         list_evaluations = [dict_evaluations[item] for item in titles]
+
+        #For performance across all possible classifiers
         #Prepare base figure
         fig = plt.figure(figsize=figsize)
         fig.set_facecolor(figcolor)
@@ -7005,11 +7007,80 @@ class Performance(_Base):
             #
         #
         #Save and close the figure
-        fig.suptitle("Performance vs. Uncertainty", fontsize=fontsize)
+        tmp_filename = "{0}_all.png".format(filename_root)
+        fig.suptitle("Performance vs. Uncertainty\nAll Classifs.",
+                    fontsize=fontsize)
         plt.tight_layout()
-        plt.savefig(os.path.join(filepath_output, (filename_root+".png")))
+        plt.savefig(os.path.join(filepath_output, tmp_filename))
         plt.close()
         #
+
+        #For performance across just target classifiers
+        if (target_classifs is not None):
+            #Prepare base figure
+            fig = plt.figure(figsize=figsize)
+            fig.set_facecolor(figcolor)
+            nrow = num_ops
+            ncol = len(target_classifs)
+            #
+            #Iterate through operators (one row per operator)
+            for ii in range(0, num_ops):
+                curr_xs = threshold_arrays[ii]
+                curr_eval = list_evaluations[ii]
+                curr_counters = curr_eval["counters"]
+                curr_actlabels = [item for item in
+                                sorted(curr_eval["act_classnames"])
+                                if (item in target_classifs)]
+                curr_measlabels = [item for item in
+                                sorted(curr_eval["meas_classnames"])
+                                if (item in target_classifs)]
+                #Iterate through current actual classifs
+                for jj in range(0, len(curr_actlabels)):
+                    curr_act = curr_actlabels[jj]
+                    #Prepare subplot
+                    ax0 = fig.add_subplot(nrow, ncol, ((ii*ncol)+jj+1))
+                    #Iterate through measured classifs
+                    for kk in range(0, len(curr_measlabels)):
+                        curr_meas = curr_measlabels[kk]
+                        curr_ys = [curr_counters[zz][curr_act][curr_meas]
+                                    for zz in range(0, len(curr_xs))
+                                    ] #Current count of act. vs. meas. classifs
+                        #Plot results as function of uncertainty
+                        ax0.plot(curr_xs, curr_ys, alpha=alphas[kk],
+                                color=colors[kk], linewidth=linewidths[kk],
+                                linestyle=linestyles[kk], marker=markers[kk],
+                                label=curr_meas)
+                        #Highlight correct answers
+                        if (curr_act == curr_meas):
+                            ax0.plot(curr_xs, curr_ys, alpha=alpha_match,
+                                color=colors[kk], linewidth=linewidth_match,
+                                linestyle=linestyle_match, marker=marker_match)
+                    #
+                    #Label the subplot
+                    ax0.set_xlabel("Uncertainty Threshold", fontsize=fontsize)
+                    ax0.set_ylabel("Count of Classifications",fontsize=fontsize)
+                    ax0.set_title("{0}: {1} Texts".format(titles[ii], curr_act),
+                                    fontsize=fontsize)
+                    ax0.tick_params(width=tickwidth, size=tickheight,
+                                    labelsize=ticksize, direction="in")
+                    #
+                    #Add legend, if last subplot in row
+                    if (jj == (len(curr_actlabels)-1)):
+                        ax0.legend(loc="best", frameon=False,
+                                    prop={"size":fontsize})
+                #
+            #
+            #Save and close the figure
+            tmp_filename = "{0}_targets.png".format(filename_root)
+            fig.suptitle(
+                    "Performance vs. Uncertainty\nTarget Classifs Only: {0}"
+                    .format(target_classifs),
+                    fontsize=fontsize)
+            plt.tight_layout()
+            plt.savefig(os.path.join(filepath_output, tmp_filename))
+            plt.close()
+        #
+
         #Print some notes
         if do_verbose:
             print("Results have been plotted at:\n{0}"
