@@ -262,7 +262,7 @@ class _Base():
 
     ##Method: _ax_confusion_matrix()
     ##Purpose: Plot rectangular confusion matrix for given data and labels
-    def _ax_confusion_matrix(self, matr, ax, x_labels, y_labels, x_title, y_title, cbar_title, ax_title, is_norm, minmax_labels=None, cmap=plt.cm.BuPu, fontsize=16, ticksize=16, valsize=14, y_rotation=30, x_rotation=30):
+    def _ax_confusion_matrix(self, matr, ax, x_labels, y_labels, x_title, y_title, cbar_title, ax_title, is_norm, minmax_inds=None, cmap=plt.cm.BuPu, fontsize=16, ticksize=16, valsize=14, y_rotation=30, x_rotation=30):
         """
         Method: _ax_confusion_matrix
         WARNING! This method is *not* meant to be used directly by users.
@@ -272,7 +272,7 @@ class _Base():
         if is_norm:
             vmin = 0
             vmax = 1
-        elif (minmax_labels is not None):
+        elif (minmax_inds is not None):
             vmin = 0 #None
             #Ignore non-target verdicts to avoid color spikes scaling if present
             tmpmatr = matr.copy()
@@ -281,15 +281,13 @@ class _Base():
             #if (config.verdict_rejection.lower() in y_labels):
             #    tmpmatr[y_labels.index(config.verdict_rejection.upper()),:] = -1
             #Remove max scaling for non-target classifs along y-axis
-            for yy in range(0, len(minmax_labels)):
+            for yind in minmax_inds["y"]:
                 #Remove non-target classifications from max consideration
-                if (y_labels[yy] not in minmax_labels):
-                    tmpmatr[yy,:] = -1
+                tmpmatr[yind,:] = -1
             #Remove max scaling for non-target classifs along x-axis
-            for xx in range(0, len(minmax_labels)):
+            for xind in minmax_inds["x"]:
                 #Remove non-target classifications from max consideration
-                if (x_labels[xx] not in minmax_labels):
-                    tmpmatr[:,xx] = -1
+                tmpmatr[:,xind] = -1
             #
             vmax = tmpmatr.max() #None
         #
@@ -7376,7 +7374,7 @@ class Performance(_Base):
 
     ##Method: plot_performance_confusion_matrix
     ##Purpose: Plot confusion matrix for given performance counters
-    def plot_performance_confusion_matrix(self, list_evaluations, list_mappers, list_titles, filepath_plot, filename_plot, figsize=(20, 6), figcolor="white", fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, do_verbose=None, do_verbose_deep=None):
+    def plot_performance_confusion_matrix(self, list_evaluations, list_titles, filepath_plot, filename_plot, target_classifs=None, minmax_exclude_classifs=None, figsize=(20, 6), figcolor="white", fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, do_verbose=None, do_verbose_deep=None):
         """
         Method: plot_performance_confusion_matrix
         Purpose:
@@ -7405,17 +7403,40 @@ class Performance(_Base):
 
         ##Prepare the base figure
         fig = plt.figure(figsize=figsize)
+        plt.title(plot_title)
         fig.set_facecolor(figcolor)
         nrow = 2
         ncol = num_evals
 
         ##Plot confusion matrix for each evaluation
         for ii in range(0, num_evals):
-            #Use current mapper to determine actual vs measured classifs
-            act_classifs = list_evaluations[ii]["act_classnames"]
-            meas_classifs = list_evaluations[ii]["meas_classnames"]
+            #Fetch actual vs measured classifs
+            if (target_classifs is not None): #Show only specific classifs
+                act_classifs = sorted(target_classifs)
+                meas_classifs = sorted(target_classifs)
+            else: #Show all allowed classifs
+                act_classifs = sorted(list_evaluations[ii]["act_classnames"])
+                meas_classifs = sorted(list_evaluations[ii]["meas_classnames"])
+            #
             num_act = len(act_classifs)
             num_meas = len(meas_classifs)
+
+            #Set indices of classifs to exclude from conf. matrix color scaling
+            if (minmax_exclude_classifs is not None):
+                excl_classifs=[item.lower() for item in minmax_exclude_classifs]
+                minmax_inds = {"x":[], "y":[]}
+                #For actual classifs to exclude from color scaling
+                for jj in range(0, num_act):
+                    if (act_classifs[jj].lower() in excl_classifs):
+                        minmax_inds["y"].append(jj)
+                #For measured classifs to exclude from color scaling
+                for jj in range(0, num_meas):
+                    if (meas_classifs[jj].lower() in excl_classifs):
+                        minmax_inds["x"].append(jj)
+            #
+            else:
+                minmax_inds = None
+            #
 
             #Initialize container for current confusion matrix
             confmatr_abs = np.zeros(shape=(num_act, num_meas)) #Unnormalized
@@ -7425,15 +7446,24 @@ class Performance(_Base):
             curr_counts = list_evaluations[ii]["counters"]
 
             #Accumulate the confusion matrices
+            act_classifs_ylabel = [None]*num_act #For y-axis labels
             for yy in range(0, num_act): #Iterate through actual classifs
-                curr_total = curr_counts[act_classifs[yy]]["_total"] #Total act.
+                #Fetch counts of target subset and of all possible classifs
+                row_total = np.sum([curr_counts[act_classifs[yy]][key]
+                                    for key in act_classifs])
+                clf_total = curr_counts[act_classifs[yy]]["_total"]#Classif cnt.
+                #Write row vs total counts into label for this row
+                act_classifs_ylabel[yy] = ("{0}\nRow={1}, Tot.={2}"
+                                .format(act_classifs[yy], row_total, clf_total))
+                #Iterate through measured classifs
                 for xx in range(0, num_meas): #Iterate through measured classifs
                     #For the unnormalized confusion matrix
                     curr_val = curr_counts[act_classifs[yy]][meas_classifs[xx]]
                     confmatr_abs[yy,xx] += curr_val
                     #
                     #For the normalized confusion matrix
-                    confmatr_norm[yy,xx] = (confmatr_abs[yy,xx] / curr_total)
+                    #confmatr_norm[yy,xx] = (confmatr_abs[yy,xx] / curr_total)
+                    confmatr_norm[yy,xx] = (confmatr_abs[yy,xx] / row_total)
                 #
             #
 
@@ -7441,18 +7471,18 @@ class Performance(_Base):
             #For the unnormalized matrix
             ax = fig.add_subplot(nrow, ncol, (ii+1))
             self._ax_confusion_matrix(matr=confmatr_abs, ax=ax,
-                x_labels=meas_classifs, y_labels=act_classifs,
+                x_labels=meas_classifs, y_labels=act_classifs_ylabel,
                 y_title="Actual", x_title="Classification",
-                cbar_title="Absolute Count",
+                cbar_title="Absolute Count", minmax_inds=minmax_inds,
                 ax_title="{0}".format(list_titles[ii]), cmap=cmap_abs,
                 fontsize=fontsize, is_norm=False)
             #
             #For the normalized matrix
             ax = fig.add_subplot(nrow, ncol, (ii+ncol+1))
             self._ax_confusion_matrix(matr=confmatr_norm, ax=ax,
-                x_labels=meas_classifs, y_labels=act_classifs,
+                x_labels=meas_classifs, y_labels=act_classifs_ylabel,
                 y_title="Actual", x_title="Classification",
-                cbar_title="Normalized Count",
+                cbar_title="Normalized Count", minmax_inds=minmax_inds,
                 ax_title="{0}".format(list_titles[ii]), cmap=cmap_norm,
                 fontsize=fontsize, is_norm=True)
             #
