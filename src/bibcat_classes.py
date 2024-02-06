@@ -6829,7 +6829,7 @@ class Performance(_Base):
 
     ##Method: evaluate_performance_basic
     ##Purpose: Evaluate the basic performance of the internal classifier on a test set of data
-    def evaluate_performance_basic(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_reuse_run, target_classifs=None, do_save_evaluation=False, do_save_misclassif=False, minmax_exclude_classifs=None, filename_root="performance_confmatr_basic", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), figsize_comb=(80,40), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def evaluate_performance_basic(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_reuse_run, target_classifs=None, do_save_evaluation=False, do_save_misclassif=False, minmax_exclude_classifs=None, filename_root="performance_confmatr_basic", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), figsize_comb=(60,30), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: evaluate_performance_basic
         Purpose:
@@ -6889,7 +6889,8 @@ class Performance(_Base):
                         minmax_exclude_classifs=minmax_exclude_classifs,
                         filename_plot=tmp_filename, figcolor=figcolor,
                         figsize=figsize, fontsize=fontsize, hspace=hspace,
-                        cmap_abs=cmap_abs, cmap_norm=cmap_norm)
+                        cmap_abs=cmap_abs, cmap_norm=cmap_norm,
+                        which_norm="row")
         #
         #For performance calculated across target classifications
         if (target_classifs is not None):
@@ -6902,7 +6903,8 @@ class Performance(_Base):
                         minmax_exclude_classifs=minmax_exclude_classifs,
                         filename_plot=tmp_filename, figcolor=figcolor,
                         figsize=figsize, fontsize=fontsize, hspace=hspace,
-                        cmap_abs=cmap_abs, cmap_norm=cmap_norm)
+                        cmap_abs=cmap_abs, cmap_norm=cmap_norm,
+                        which_norm="row")
         #
 
         ##Plot grids of confusion matrices for combined operator performance
@@ -6912,18 +6914,23 @@ class Performance(_Base):
         for curr_comb in dict_combined:
             list_evaluations = [dict_combined[curr_comb][key]
                                 for key in dict_combined[curr_comb]]
-            titles_comb = list(dict_combined[curr_comb].keys())
+            titles_comb = [key for key in dict_combined[curr_comb]]
+            #
+            y_title = curr_comb.split("|")[0]
+            x_title = curr_comb.split("|")[1]
             #
             #For performance calculated across all possible classifications
             tmp_filename = ("{0}_operator_all_{1}.png"
                             .format(filename_root, curr_comb.replace("|","vs")))
             self.plot_performance_confusion_matrix(
                         list_evaluations=list_evaluations,
+                        y_title=y_title, x_title=x_title,
                         filepath_plot=filepath_output, list_titles=titles_comb,
                         minmax_exclude_classifs=minmax_exclude_classifs,
                         filename_plot=tmp_filename, figcolor=figcolor,
                         figsize=figsize_comb, fontsize=fontsize, hspace=hspace,
-                        cmap_abs=cmap_abs, cmap_norm=cmap_norm)
+                        cmap_abs=cmap_abs, cmap_norm=cmap_norm,
+                        which_norm="all")
             #
             #For performance calculated across target classifications
             if (target_classifs is not None):
@@ -6937,13 +6944,15 @@ class Performance(_Base):
                                         for item in target_classifs]
                 self.plot_performance_confusion_matrix(
                         list_evaluations=list_evaluations,
+                        y_title=y_title, x_title=x_title,
                         filepath_plot=filepath_output, list_titles=titles_comb,
                         target_act_classifs=target_act_classifs_comb,
                         target_meas_classifs=target_meas_classifs_comb,
                         minmax_exclude_classifs=minmax_exclude_classifs,
                         filename_plot=tmp_filename, figcolor=figcolor,
                         figsize=figsize_comb, fontsize=fontsize, hspace=hspace,
-                        cmap_abs=cmap_abs, cmap_norm=cmap_norm)
+                        cmap_abs=cmap_abs, cmap_norm=cmap_norm,
+                        which_norm="all")
         #
 
         ##Exit the method
@@ -7024,6 +7033,14 @@ class Performance(_Base):
             curr_xs = threshold_arrays[ii]
             curr_eval = list_evaluations[ii]
             curr_counters = curr_eval["counters"]
+            print(curr_xs)
+            print(len(curr_xs))
+            print(len(curr_counters))
+            print(curr_counters[0].keys())
+            print(curr_counters[0]["science"].keys())
+            print(curr_counters[0]["mention"]["science"])
+            #print(curr_counters)
+            print(woo)
             curr_actlabels = sorted(curr_eval["act_classnames"])
             curr_measlabels = sorted(curr_eval["meas_classnames"])
             #Iterate through current actual classifs
@@ -7047,6 +7064,8 @@ class Performance(_Base):
                         ax0.plot(curr_xs, curr_ys, alpha=alpha_match,
                                 color=colors[kk], linewidth=linewidth_match,
                                 linestyle=linestyle_match, marker=marker_match)
+                        ax0.plot(curr_xs, curr_ys, alpha=0.5,
+                                color="black", linewidth=2, linestyle="-")
                 #
                 #Label the subplot
                 ax0.set_xlabel("Uncertainty Threshold", fontsize=fontsize)
@@ -7111,6 +7130,8 @@ class Performance(_Base):
                             ax0.plot(curr_xs, curr_ys, alpha=alpha_match,
                                 color=colors[kk], linewidth=linewidth_match,
                                 linestyle=linestyle_match, marker=marker_match)
+                            ax0.plot(curr_xs, curr_ys, alpha=0.5,
+                                color="black", linewidth=2, linestyle="-")
                     #
                     #Label the subplot
                     ax0.set_xlabel("Uncertainty Threshold", fontsize=fontsize)
@@ -7501,7 +7522,7 @@ class Performance(_Base):
 
     ##Method: plot_performance_confusion_matrix
     ##Purpose: Plot confusion matrix for given performance counters
-    def plot_performance_confusion_matrix(self, list_evaluations, list_titles, filepath_plot, filename_plot, target_act_classifs=None, target_meas_classifs=None, minmax_exclude_classifs=None, figsize=(20, 6), figcolor="white", fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, do_verbose=None, do_verbose_deep=None):
+    def plot_performance_confusion_matrix(self, list_evaluations, list_titles, filepath_plot, filename_plot, which_norm, target_act_classifs=None, target_meas_classifs=None, minmax_exclude_classifs=None, y_title="Actual", x_title="Classification", figsize=(20, 6), figcolor="white", fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, do_verbose=None, do_verbose_deep=None):
         """
         Method: plot_performance_confusion_matrix
         Purpose:
@@ -7536,15 +7557,18 @@ class Performance(_Base):
 
         ##Plot confusion matrix for each evaluation
         for ii in range(0, num_evals):
-            #Fetch actual vs measured classifs
+            #Fetch actual classifs
             if (target_act_classifs is not None): #Show only specific classifs
-                act_classifs=sorted([item.lower()
+                act_classifs = sorted([item.lower()
                                     for item in target_act_classifs])
-                meas_classifs=sorted([item.lower()
-                                    for item in target_meas_classifs])
             else: #Show all allowed classifs
                 act_classifs = sorted([item.lower() for item in
                                     list_evaluations[ii]["act_classnames"]])
+            #Fetch measured classifs
+            if (target_meas_classifs is not None): #Show only specific classifs
+                meas_classifs = sorted([item.lower()
+                                    for item in target_meas_classifs])
+            else: #Show all allowed classifs
                 meas_classifs = sorted([item.lower() for item in
                                     list_evaluations[ii]["meas_classnames"]])
             #
@@ -7569,13 +7593,22 @@ class Performance(_Base):
             #
 
             #Initialize container for current confusion matrix
-            confmatr_abs = np.zeros(shape=(num_act, num_meas)) #Unnormalized
+            confmatr_abs = np.ones(shape=(num_act, num_meas))*np.nan #Unnorm.
             confmatr_norm = np.ones(shape=(num_act, num_meas))*np.nan#Normalized
 
             #Fetch counters from current evaluation
             curr_counts = list_evaluations[ii]["counters"]
 
             #Accumulate the confusion matrices
+            for yy in range(0, num_act): #Iterate through actual classifs
+                #Iterate through measured classifs
+                for xx in range(0, num_meas):
+                    #For the unnormalized confusion matrix
+                    curr_val = curr_counts[act_classifs[yy]][meas_classifs[xx]]
+                    confmatr_abs[yy,xx] = curr_val
+                #
+            #
+            #For the normalized confusion matrix
             act_classifs_ylabel = [None]*num_act #For y-axis labels
             for yy in range(0, num_act): #Iterate through actual classifs
                 #Fetch counts of target subset and of all possible classifs
@@ -7586,14 +7619,15 @@ class Performance(_Base):
                 act_classifs_ylabel[yy] = ("{0}\nRow={1}, Tot.={2}"
                                 .format(act_classifs[yy], row_total, clf_total))
                 #Iterate through measured classifs
-                for xx in range(0, num_meas): #Iterate through measured classifs
-                    #For the unnormalized confusion matrix
-                    curr_val = curr_counts[act_classifs[yy]][meas_classifs[xx]]
-                    confmatr_abs[yy,xx] += curr_val
-                    #
-                    #For the normalized confusion matrix
-                    #confmatr_norm[yy,xx] = (confmatr_abs[yy,xx] / curr_total)
-                    confmatr_norm[yy,xx] = (confmatr_abs[yy,xx] / row_total)
+                for xx in range(0, num_meas):
+                    if (which_norm == "row"):
+                        confmatr_norm[yy,xx] = (confmatr_abs[yy,xx] / row_total)
+                    elif (which_norm == "all"):
+                        confmatr_norm[yy,xx] = (confmatr_abs[yy,xx]
+                                                / confmatr_abs.sum())
+                    else:
+                        raise ValueError("Err: Unrecognized norm. scheme: {0}"
+                                        .format(which_norm))
                 #
             #
 
@@ -7602,7 +7636,7 @@ class Performance(_Base):
             ax = fig.add_subplot(nrow, ncol, (ii+1))
             self._ax_confusion_matrix(matr=confmatr_abs, ax=ax,
                 x_labels=meas_classifs, y_labels=act_classifs_ylabel,
-                y_title="Actual", x_title="Classification",
+                y_title=y_title, x_title=x_title,
                 cbar_title="Absolute Count", minmax_inds=minmax_inds,
                 ax_title="{0}".format(list_titles[ii]), cmap=cmap_abs,
                 fontsize=fontsize, is_norm=False)
@@ -7611,8 +7645,8 @@ class Performance(_Base):
             ax = fig.add_subplot(nrow, ncol, (ii+ncol+1))
             self._ax_confusion_matrix(matr=confmatr_norm, ax=ax,
                 x_labels=meas_classifs, y_labels=act_classifs_ylabel,
-                y_title="Actual", x_title="Classification",
-                cbar_title="Normalized Count", minmax_inds=minmax_inds,
+                y_title=y_title, x_title=x_title,
+                cbar_title="Normalized Fraction", minmax_inds=minmax_inds,
                 ax_title="{0}".format(list_titles[ii]), cmap=cmap_norm,
                 fontsize=fontsize, is_norm=True)
             #
