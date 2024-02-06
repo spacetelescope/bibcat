@@ -12,9 +12,8 @@ much of the 'noise' inherent to the rest of the text.
 
 import re
 
-from core.base import _Base
-
 from bibcat import config
+from bibcat.core.base import _Base
 
 
 class Keyword(_Base):

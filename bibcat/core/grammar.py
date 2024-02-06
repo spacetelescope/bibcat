@@ -17,10 +17,10 @@ There are different modes for modifying a given paragraph (thus producing differ
 
 import numpy as np
 import spacy
-from core.base import _Base
-from core.paper import Paper
 
 import bibcat.config as config
+from bibcat.core.base import _Base
+from bibcat.core.paper import Paper
 
 nlp = spacy.load(config.spacy_language_model)
 

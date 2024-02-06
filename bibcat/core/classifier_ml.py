@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 import tensorflow_hub as tfhub
-from core.classfier import _Classifier
 from official.nlp import optimization as tf_opt
 
 import bibcat.config as config
+from bibcat.core.classfier import _Classifier
 
 
 class Classifier_ML(_Classifier):

@@ -5,7 +5,7 @@ This module contains keyword parameters for bibcat such as MAST mission names.
 
 """
 
-from core import keyword
+from bibcat.core import keyword
 
 # Mission parameters
 keyword_obj_HST = keyword.Keyword(

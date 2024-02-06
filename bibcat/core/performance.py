@@ -12,7 +12,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-from core.base import _Base
+from bibat.core.base import _Base
 
 import bibcat.config as config
 

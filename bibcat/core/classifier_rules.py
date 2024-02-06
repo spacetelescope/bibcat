@@ -5,10 +5,10 @@
 import itertools as iterer
 
 import numpy as np
-from core.classfier import _Classifier
 from nltk.corpus import wordnet
 
 import bibcat.config as config
+from bibcat.core.classfier import _Classifier
 
 
 class Classifier_Rules(_Classifier):

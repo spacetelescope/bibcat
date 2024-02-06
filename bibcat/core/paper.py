@@ -12,9 +12,9 @@ the rest of the text.
 import re
 
 import numpy as np
-from core.base import _Base
 
 import bibcat.config as config
+from bibcat.core.base import _Base
 
 
 class Paper(_Base):

@@ -16,10 +16,10 @@ import collections
 import os
 
 import numpy as np
-from core.base import _Base
-from core.grammar import Grammar
 
 import bibcat.config as config
+from bibcat.core.base import _Base
+from bibcat.core.grammar import Grammar
 
 
 class _Classifier(_Base):
