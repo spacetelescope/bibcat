@@ -6706,7 +6706,7 @@ class Performance(_Base):
 
     ##Method: _combine_performance_across_evaluations
     ##Purpose: Combine measured evaluations per operator across those operators so as to investigate performance across combined operators
-    def _combine_performance_across_evaluations(self, evaluations, titles, do_verbose=None):
+    def _combine_performance_across_evaluations(self, evaluations, titles, mappers, do_verbose=None):
         """
         Method: _combine_performance_across_evaluations
         WARNING! This method is *not* meant to be used directly by users.
@@ -6716,8 +6716,6 @@ class Performance(_Base):
         #Fetch global variables
         if (do_verbose is None):
             do_verbose = self._get_info("do_verbose")
-        if (do_verbose_deep is None):
-            do_verbose_deep = self._get_info("do_verbose_deep")
         #
         #Print some notes
         if do_verbose:
@@ -6727,8 +6725,8 @@ class Performance(_Base):
         #
 
         #Fetch and cross-check actual and measured classifs
-        act_classnames = evaluations[title[0]]["act_classnames"]
-        meas_classnames = evaluations[title[0]]["meas_classnames"]
+        act_classnames = evaluations[titles[0]]["act_classnames"]
+        meas_classnames = evaluations[titles[0]]["meas_classnames"]
         #
         #Throw error if any differing classif names
         check_act = [evaluations[key]["act_classnames"] for key in titles]
@@ -6743,35 +6741,83 @@ class Performance(_Base):
 
         #Fetch all possible two-part combinations of operators
         list_pairs = list(iterer.combinations(sorted(titles), 2))
+        #Print some notes
+        if do_verbose:
+            print("All possible operator combinations: {0}".format(list_pairs))
+        #
 
         #Initialize container for all combined evaluations
-        dict_combined = {"{0}|{1}".format(item[0], item[1]):None
-                        for item in list_pairs}
+        dict_combined = {}
 
         #Iterate through operator combinations
         for curr_pair in list_pairs:
+            curr_combname = "{0}|{1}".format(curr_pair[0], curr_pair[1]).lower()
+            #Print some notes
+            if do_verbose:
+                print("Considering combination: {0}".format(curr_pair))
+
             #Initialize container for current combined evaluations
-            curr_dict = {key1:{key2:{key3:0 for key3 in meas_classnames}
-                                for key2 in curr_pair}
-                        for key1 in act_classnames}
+            meas_opnames_0 =["{0}_{1}".format(curr_pair[0].lower(),item.lower())
+                                for item in meas_classnames]
+            meas_opnames_1 =["{0}_{1}".format(curr_pair[1].lower(),item.lower())
+                                for item in meas_classnames]
+            curr_dict = {"{0}_{1}".format(curr_combname, key):
+                            {"counters":
+                            {item0:{item1:0
+                                    for item1 in meas_opnames_1}
+                            for item0 in meas_opnames_0}
+                            }
+                        for key in act_classnames}
             #
+            #Include _total counter to maintain general evaluation format
+            for curr_key1 in curr_dict:
+                for curr_key2 in curr_dict[curr_key1]["counters"]:
+                    curr_dict[curr_key1]["counters"][curr_key2]["_total"] = 0
+            #
+
             #Verify same actual results across operators
             if (evaluations[curr_pair[0]]["actual_results"]
                         != evaluations[curr_pair[1]]["actual_results"]):
                 raise ValueError("Err: Different actual results for operators.")
             #
+
             #Iterate through results
             act_results = evaluations[curr_pair[0]]["actual_results"]
             meas_results_0 = evaluations[curr_pair[0]]["measured_results"]
             meas_results_1 = evaluations[curr_pair[1]]["measured_results"]
             for ii in range(0, len(act_results)):
-                #Store measured results per operator
-                curr_dict[act_results[ii]][curr_pair[0]][meas_results_0] += 1
-                curr_dict[act_results[ii]][curr_pair[1]][meas_results_1] += 1
+                #Iterate through missions
+                for curr_mission in act_results[ii]["missions"]:
+                    #Fetch current actual results
+                    curr_act_raw = act_results[ii]["missions"][
+                                                curr_mission]["class"].lower()
+                    if (curr_act_raw in mappers[0]):
+                        curr_act = mappers[0][curr_act_raw]
+                    else:
+                        curr_act = curr_act_raw
+                    curr_act = curr_act.lower().replace("_","")
+                    #
+                    #Fetch current measured results
+                    curr_meas_0 = (meas_results_0[ii][curr_mission]["verdict"]
+                                    .lower().replace("_",""))
+                    curr_meas_1 = (meas_results_1[ii][curr_mission]["verdict"]
+                                    .lower().replace("_",""))
+                    #
+                    #Update counters with latest results
+                    curr_actkey = "{0}_{1}".format(curr_combname, curr_act)
+                    curr_key0="{0}_{1}".format(curr_pair[0].lower(),curr_meas_0)
+                    curr_key1="{0}_{1}".format(curr_pair[1].lower(),curr_meas_1)
+                    curr_dict[curr_actkey]["counters"][curr_key0][curr_key1] +=1
+                    curr_dict[curr_actkey]["counters"][curr_key0]["_total"] += 1
+                #
+            #
+            #Store welded operator-class names
+            for curr_actkey in curr_dict:
+                curr_dict[curr_actkey]["act_classnames"] = meas_opnames_0
+                curr_dict[curr_actkey]["meas_classnames"] = meas_opnames_1
             #
             #Store combined evaluations for current pair
-            curr_key = "{0}|{1}".format(curr_pair[0], curr_pair[1])
-            dict_combined[curr_key] = curr_dict
+            dict_combined[curr_combname] = curr_dict
         #
 
         #Return the combined evaluations
@@ -6783,7 +6829,7 @@ class Performance(_Base):
 
     ##Method: evaluate_performance_basic
     ##Purpose: Evaluate the basic performance of the internal classifier on a test set of data
-    def evaluate_performance_basic(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_reuse_run, target_classifs=None, do_save_evaluation=False, do_save_misclassif=False, filename_root="performance_confmatr_basic", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def evaluate_performance_basic(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_reuse_run, target_classifs=None, do_save_evaluation=False, do_save_misclassif=False, minmax_exclude_classifs=None, filename_root="performance_confmatr_basic", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), figsize_comb=(80,40), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: evaluate_performance_basic
         Purpose:
@@ -6838,22 +6884,22 @@ class Performance(_Base):
         #For performance calculated across all possible classifications
         tmp_filename = "{0}_classifier_all.png".format(filename_root)
         self.plot_performance_confusion_matrix(
-                        list_evaluations=list_evaluations,
-                        list_mappers=mappers, list_titles=titles,
+                        list_evaluations=list_evaluations, list_titles=titles,
                         filepath_plot=filepath_output,
+                        minmax_exclude_classifs=minmax_exclude_classifs,
                         filename_plot=tmp_filename, figcolor=figcolor,
                         figsize=figsize, fontsize=fontsize, hspace=hspace,
                         cmap_abs=cmap_abs, cmap_norm=cmap_norm)
         #
         #For performance calculated across target classifications
-        target_classifs = [item.lower()
-                            for item in config.allowed_classifications]
-        tmp_filename = "{0}_classifier_targets.png".format(filename_root)
-        self.plot_performance_confusion_matrix(
-                        list_evaluations=list_evaluations,
-                        list_mappers=mappers, list_titles=titles,
+        if (target_classifs is not None):
+            tmp_filename = "{0}_classifier_targets.png".format(filename_root)
+            self.plot_performance_confusion_matrix(
+                        list_evaluations=list_evaluations, list_titles=titles,
                         filepath_plot=filepath_output,
-                        target_classifs=target_classifs,
+                        target_act_classifs=target_classifs,
+                        target_meas_classifs=target_classifs,
+                        minmax_exclude_classifs=minmax_exclude_classifs,
                         filename_plot=tmp_filename, figcolor=figcolor,
                         figsize=figsize, fontsize=fontsize, hspace=hspace,
                         cmap_abs=cmap_abs, cmap_norm=cmap_norm)
@@ -6862,31 +6908,41 @@ class Performance(_Base):
         ##Plot grids of confusion matrices for combined operator performance
         dict_combined = self._combine_performance_across_evaluations(
                                 evaluations=dict_evaluations, titles=titles,
-                                do_verbose=do_verbose)
-        list_evaluations = [dict_combined[key] for key in dict_combined]
-        titles = list(dict_combined.keys())
-        #
-        #For performance calculated across all possible classifications
-        tmp_filename = "{0}_operator_all.png".format(filename_root)
-        self.plot_performance_confusion_matrix(
+                                mappers=mappers, do_verbose=do_verbose)
+        for curr_comb in dict_combined:
+            list_evaluations = [dict_combined[curr_comb][key]
+                                for key in dict_combined[curr_comb]]
+            titles_comb = list(dict_combined[curr_comb].keys())
+            #
+            #For performance calculated across all possible classifications
+            tmp_filename = ("{0}_operator_all_{1}.png"
+                            .format(filename_root, curr_comb.replace("|","vs")))
+            self.plot_performance_confusion_matrix(
                         list_evaluations=list_evaluations,
-                        list_mappers=mappers, list_titles=titles,
-                        filepath_plot=filepath_output,
+                        filepath_plot=filepath_output, list_titles=titles_comb,
+                        minmax_exclude_classifs=minmax_exclude_classifs,
                         filename_plot=tmp_filename, figcolor=figcolor,
-                        figsize=figsize, fontsize=fontsize, hspace=hspace,
+                        figsize=figsize_comb, fontsize=fontsize, hspace=hspace,
                         cmap_abs=cmap_abs, cmap_norm=cmap_norm)
-        #
-        #For performance calculated across target classifications
-        target_classifs = [item.lower()
-                            for item in config.allowed_classifications]
-        tmp_filename = "{0}_operator_targets.png".format(filename_root)
-        self.plot_performance_confusion_matrix(
+            #
+            #For performance calculated across target classifications
+            if (target_classifs is not None):
+                tmp_filename = ("{0}_operator_targets_{1}.png"
+                            .format(filename_root, curr_comb.replace("|","vs")))
+                target_act_classifs_comb = [
+                                "{0}_{1}".format(curr_comb.split("|")[0], item)
+                                        for item in target_classifs]
+                target_meas_classifs_comb = [
+                                "{0}_{1}".format(curr_comb.split("|")[1], item)
+                                        for item in target_classifs]
+                self.plot_performance_confusion_matrix(
                         list_evaluations=list_evaluations,
-                        list_mappers=mappers, list_titles=titles,
-                        filepath_plot=filepath_output,
-                        target_classifs=target_classifs,
+                        filepath_plot=filepath_output, list_titles=titles_comb,
+                        target_act_classifs=target_act_classifs_comb,
+                        target_meas_classifs=target_meas_classifs_comb,
+                        minmax_exclude_classifs=minmax_exclude_classifs,
                         filename_plot=tmp_filename, figcolor=figcolor,
-                        figsize=figsize, fontsize=fontsize, hspace=hspace,
+                        figsize=figsize_comb, fontsize=fontsize, hspace=hspace,
                         cmap_abs=cmap_abs, cmap_norm=cmap_norm)
         #
 
@@ -7445,7 +7501,7 @@ class Performance(_Base):
 
     ##Method: plot_performance_confusion_matrix
     ##Purpose: Plot confusion matrix for given performance counters
-    def plot_performance_confusion_matrix(self, list_evaluations, list_titles, filepath_plot, filename_plot, target_classifs=None, minmax_exclude_classifs=None, figsize=(20, 6), figcolor="white", fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, do_verbose=None, do_verbose_deep=None):
+    def plot_performance_confusion_matrix(self, list_evaluations, list_titles, filepath_plot, filename_plot, target_act_classifs=None, target_meas_classifs=None, minmax_exclude_classifs=None, figsize=(20, 6), figcolor="white", fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, do_verbose=None, do_verbose_deep=None):
         """
         Method: plot_performance_confusion_matrix
         Purpose:
@@ -7474,7 +7530,6 @@ class Performance(_Base):
 
         ##Prepare the base figure
         fig = plt.figure(figsize=figsize)
-        plt.title(plot_title)
         fig.set_facecolor(figcolor)
         nrow = 2
         ncol = num_evals
@@ -7482,12 +7537,16 @@ class Performance(_Base):
         ##Plot confusion matrix for each evaluation
         for ii in range(0, num_evals):
             #Fetch actual vs measured classifs
-            if (target_classifs is not None): #Show only specific classifs
-                act_classifs = sorted(target_classifs)
-                meas_classifs = sorted(target_classifs)
+            if (target_act_classifs is not None): #Show only specific classifs
+                act_classifs=sorted([item.lower()
+                                    for item in target_act_classifs])
+                meas_classifs=sorted([item.lower()
+                                    for item in target_meas_classifs])
             else: #Show all allowed classifs
-                act_classifs = sorted(list_evaluations[ii]["act_classnames"])
-                meas_classifs = sorted(list_evaluations[ii]["meas_classnames"])
+                act_classifs = sorted([item.lower() for item in
+                                    list_evaluations[ii]["act_classnames"]])
+                meas_classifs = sorted([item.lower() for item in
+                                    list_evaluations[ii]["meas_classnames"]])
             #
             num_act = len(act_classifs)
             num_meas = len(meas_classifs)
@@ -7521,7 +7580,7 @@ class Performance(_Base):
             for yy in range(0, num_act): #Iterate through actual classifs
                 #Fetch counts of target subset and of all possible classifs
                 row_total = np.sum([curr_counts[act_classifs[yy]][key]
-                                    for key in act_classifs])
+                                    for key in meas_classifs])
                 clf_total = curr_counts[act_classifs[yy]]["_total"]#Classif cnt.
                 #Write row vs total counts into label for this row
                 act_classifs_ylabel[yy] = ("{0}\nRow={1}, Tot.={2}"

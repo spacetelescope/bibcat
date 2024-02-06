@@ -42,5 +42,6 @@ all_kobjs = [keyword_obj_HST, keyword_obj_JWST, keyword_obj_TESS, keyword_obj_Ke
 #
 
 ##Classification mapping parameters
+allowed_classifications = ["SCIENCE", "DATA_INFLUENCED", "MENTION", "SUPERMENTION"]
 map_papertypes = {"science":"science", "mention":"mention", "supermention":"mention", "data_influenced":"data_influenced", "unresolved_grey":"other", "unresolved_gray":"other", "engineering":"other", "instrument":"other"}
 #
