@@ -17,7 +17,8 @@ import json
 import os
 import time
 
-from bibcat import classifier_ml, config, operator
+from core import classifier_ml, config, operator
+
 from bibcat import parameters as params
 
 # do_check_truematch: If any papers in dataset encountered within
@@ -215,4 +216,5 @@ print(f"Time to train the model with run = {time.time()-start} seconds.")
 
 # Save the output error string to a file
 with open(filesave_error, "x") as openfile:
+    openfile.write(str_err)
     openfile.write(str_err)

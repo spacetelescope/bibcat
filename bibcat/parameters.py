@@ -1,10 +1,11 @@
 """
 :title: parameters.py
 
-This module contains parameters for bibcat.
+This module contains keyword parameters for bibcat such as MAST mission names.
+
 """
 
-from bibcat import keyword
+from core import keyword
 
 # Mission parameters
 keyword_obj_HST = keyword.Keyword(

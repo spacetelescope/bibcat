@@ -12,9 +12,9 @@ import unittest
 
 import numpy as np
 import spacy
+from core import base, config, grammar, keyword, operator, paper
 from nltk.corpus import wordnet
 
-from bibcat import base, config, grammar, keyword, operator, paper
 from bibcat import parameters as params
 
 nlp = spacy.load(config.spacy_language_model)

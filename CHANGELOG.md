@@ -8,23 +8,39 @@ Refactoring bibcat has started.
 - Adding tutorial notebooks back
 
 ### Removed
-- Deleted all previous codes and files for a fresh start
+- [PR #7](https://github.com/spacetelescope/bibcat/pull/7)
+    - Deleted all previous codes and files for a fresh start
 
 ### Changed
-- Updated the main README file
-- updated formatting and styling
+- PR #8
+    - Refactored classes.py into several individual class files below, which were moved to a new folder name `core`
+        - base.py, classfier.py, classfier_ml.py, classifier_rules.py, grammar.py, keyword.py, operator.py, paper.py, performance.py
+    - Continued formatting and styling these class files using `Ruff` and the line length set to 120
+    - Updated module updates according to the refactoring
+    - Updated CHANGELOG.MD and pyproject.toml
+
+- [PR #7](https://github.com/spacetelescope/bibcat/pull/7)
+    - Updated the main README file
+    - updated formatting and styling
 
 ### Added 
-- Started with open astronomy cookiecutter template for bibcat 
-- Re-organized the file structure (e.g., bibcat/bibcat/) and modified the file names
-    - bibcat_classes.py to classes.py
-    - bibcat_config.py to config.py
-    - bibcat_parameters.py to parameters.py
-    - bibcat_tests.py to test_bibcat.py
-- Created two main scripts
-    - create_model.py :  this script can be run to create a new training model
-    - classify_papers.py : this script will fetch input papers, classify them into the designated paper categories, and produce performance evaluation materials such as confusion matrix and plots
-- Created CHANGELOG.md
+
+- PR #8    
+    - Created a new folder named `core` to store all refactored class scripts
+    - Added more description to each class script and other main scripts.
+
+- [PR #7](https://github.com/spacetelescope/bibcat/pull/7)
+    - Started with open astronomy cookiecutter template for bibcat 
+    - Re-organized the file structure (e.g., bibcat/bibcat/) and modified the file names
+        - bibcat_classes.py to classes.py
+        - bibcat_config.py to config.py
+        - bibcat_parameters.py to parameters.py
+        - bibcat_tests.py to test_bibcat.py
+    - Refactor classes.py into several individual class script under the `core` directory
+    - Created two main scripts
+        - create_model.py :  this script can be run to create a new training model
+        - classify_papers.py : this script will fetch input papers, classify them into the designated paper categories, and produce performance evaluation materials such as confusion matrix and plots
+    - Created CHANGELOG.md
 
 ## [0.1.0] - 2024-01-29
 

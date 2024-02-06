@@ -1,3 +1,30 @@
+"""
+:title: base.py
+
+The class module is a collection of methods that other classes often use.
+
+The primary methods and use cases of _Base include:
+* `_get_info`, `_store_info`: Store and retrieve information (values, booleans, etc.) 
+   for a given class instance.
+* `_assemble_keyword_wordchunks`: Build noun chunks containing target mission keywords 
+   from the text.
+* `_check_importance`: Check if some given text contains any important terms 
+   (where important terms include mission keywords, 1st-person and 3rd-person pronouns, 
+   a paper citation, etc.).
+* `_check_truematch`: Check if some given ambiguous text relates to a given mission 
+   (e.g., Hubble observations) or is instead likely a false match (e.g., Edwin Hubble).
+* `_cleanse_text`: Cleanse some given text, e.g., excessive whitespace and punctuation. 
+   Can also, e.g., replace citations with an 'Authoretal' placeholder of sorts.
+* `_extract_core_from_phrase`: Formulate a core representative 'meaning' for some given text.
+* `_is_pos_word`: Check if some given word (of the NLP type) has a particular part of speech.
+* `_process_database_ambig`: Load, process, and store an external table of 
+   ambiguous mission-related phrases.
+* `_search_text`: Search some given text for mission keywords/acronyms 
+   (e.g., search for "HST").
+* `_streamline_phrase`: Run _cleanse_text(), and also streamline, e.g., 
+   websites by replacing them with uniform placeholders.
+"""
+
 import re
 
 import matplotlib.pyplot as plt
@@ -111,14 +138,10 @@ class _Base:
                     for ind in range(0, len(curr_sent))
                     if any([item.is_keyword(curr_sent[ind].text) for item in keyword_objs])
                 ]
-            #
-
             # Print some notes
             if do_verbose:
                 print("Current sentence: '{0}'".format(curr_sent))
                 print("Indices of lookups in sent.: '{0}'".format(set_inds))
-            #
-
             # Build wordchunks from indices of current sentence
             first_ind = np.inf
             last_ind = -np.inf
@@ -126,11 +149,9 @@ class _Base:
                 # Print some notes
                 if do_verbose:
                     print("\n-Building wordchunk from {0}: {1}:".format(curr_start, curr_sent[curr_start]))
-                #
                 # Skip if this index has already been surpassed
                 if curr_start <= last_ind:
                     continue
-                #
                 curr_wordtext = [curr_sent[curr_start].text]
 
                 # Build wordchunk from accumulating nouns on the left
@@ -149,9 +170,7 @@ class _Base:
                         check_brackets = self._is_pos_word(word=curr_sent[ii], pos="BRACKET")
                     else:
                         check_brackets = False
-                    #
                     tmp_list = [check_noun, check_adj, check_num, check_dash, check_pos, check_imp, check_brackets]
-                    #
 
                     # Keep word if relevant p.o.s.
                     if any(tmp_list):
@@ -161,8 +180,6 @@ class _Base:
                     # Otherwise, break and end this makeshift wordchunk
                     else:
                         break
-                    #
-                #
 
                 # Build wordchunk from accumulating nouns on the right
                 for ii in range((curr_start + 1), len(curr_sent)):
@@ -180,7 +197,7 @@ class _Base:
                         check_brackets = self._is_pos_word(word=curr_sent[ii], pos="BRACKET")
                     else:
                         check_brackets = False
-                    #
+
                     # Tack on verb check if requested (e.g., to cover noun-verbs)
                     if do_include_verbs:  # E.g., ambig. 'Hubble-imaged data'
                         check_verb = self._is_pos_word(word=curr_sent[ii], pos="VERB")
@@ -197,18 +214,15 @@ class _Base:
                         check_imp,
                         check_dash,
                     ]
-                    #
 
                     # Keep word if relevant p.o.s.
                     if any(tmp_list):
                         curr_wordtext.append(curr_sent[ii].text)
                         last_ind = ii  # Update latest index
-                    #
+
                     # Otherwise, break and end this makeshift wordchunk
                     else:
                         break
-                    #
-                #
 
                 # Store the makeshift wordchunk
                 curr_str_fin = self._cleanse_text(" ".join(curr_wordtext), do_streamline_etal=False)
@@ -226,20 +240,14 @@ class _Base:
                             [item.tag_ for item in list_wordchunks[-1]],
                         )
                     )
-                #
-            #
-        #
 
         # Return the assembled wordchunks
         if do_verbose:
             print("Assembled keyword wordchunks:\n{0}".format(list_wordchunks))
-        #
+
         return list_wordchunks
 
-    #
-
-    ##Method: _ax_confusion_matrix()
-    ##Purpose: Plot rectangular confusion matrix for given data and labels
+    # Plot rectangular confusion matrix for given data and labels
     def _ax_confusion_matrix(
         self,
         matr,
@@ -263,6 +271,7 @@ class _Base:
         WARNING! This method is *not* meant to be used directly by users.
         Purpose: Plots confusion matrix within given axis.
         """
+
         # Set global variables
         if is_norm:
             vmin = 0
@@ -276,7 +285,6 @@ class _Base:
             if config.verdict_rejection.lower() in y_labels:
                 tmpmatr[y_labels.index(config.verdict_rejection.upper()), :] = -1
             vmax = tmpmatr.max()  # None
-        #
 
         # Plot the confusion matrix and colorbar
         image = ax.imshow(matr, origin="lower", cmap=cmap, vmin=vmin, vmax=vmax)
@@ -293,12 +301,11 @@ class _Base:
                     curr_gray = np.mean(cmap(matr[yy, xx])[0:3])
                 else:
                     curr_gray = np.mean(cmap(matr[yy, xx] / vmax)[0:3])
-                #
+
                 if curr_gray <= 0.6:
                     curr_color = "white"
                 else:
                     curr_color = "black"
-                #
 
                 # Write current text
                 if is_norm:
@@ -321,8 +328,6 @@ class _Base:
                         verticalalignment="center",
                         fontsize=valsize,
                     )
-            #
-        #
 
         # Generate the colorbar
         cbarax = make_axes_locatable(ax).append_axes("right", size="5%", pad=0.05)
@@ -344,10 +349,7 @@ class _Base:
         # Exit the method
         return
 
-    #
-
-    ##Method: _check_importance()
-    ##Purpose: Determine if given text is important (e.g., is a keyword)
+    # Determine if given text is important (e.g., is a keyword)
     def _check_importance(
         self, text, include_Ipronouns=True, include_terms=True, include_etal=True, keyword_objs=None, version_NLP=None
     ):
@@ -359,14 +361,14 @@ class _Base:
            - Important terms includes keywords, 1st,3rd person pronouns, etc.
          - Returns dictionary of bools for presence/absence of important terms.
         """
+
         # Extract the NLP version of this text, if not given
         if version_NLP is None:
             version_NLP = nlp(text)
-        #
+
         # Ensure NLP version is iterable
         if not hasattr(version_NLP, "__iter__"):
             version_NLP = [version_NLP]
-        #
 
         # Extract keyword objects from storage, if not given
         if keyword_objs is None:
@@ -374,11 +376,9 @@ class _Base:
                 keyword_objs = [self._get_info("keyword_obj", do_flag_hidden=True)]
             except KeyError:
                 keyword_objs = self._get_info("keyword_objs", do_flag_hidden=True)
-        #
 
         # Cleanse and streamline the given text
         text = self._cleanse_text(text, do_streamline_etal=True)
-        #
 
         # Initialize container for booleans
         dict_results = {}
@@ -386,7 +386,6 @@ class _Base:
         ##Check if text contains keywords, acronyms, important terms, etc
         # For target keywords and acronyms
         dict_results["is_keyword"] = self._search_text(text=text, keyword_objs=keyword_objs)
-        #
 
         # Check for first-person pronouns, if requested
         if include_Ipronouns:
@@ -404,14 +403,13 @@ class _Base:
             dict_results["is_pron_1st"] = check_pronounI
         else:  # Otherwise, remove pronoun contribution
             dict_results["is_pron_1st"] = False
-        #
 
         # Check for special terms, if requested
         if include_terms:
             list_pos_pronoun = config.pos_pronoun
             nlp_lookup_person = config.nlp_lookup_person
             special_synsets_fig = config.special_synsets_fig
-            #
+
             # For 'they' pronouns
             check_terms_they = any(
                 [
@@ -430,14 +428,13 @@ class _Base:
                     for item2 in wordnet.synsets(item1.text)
                 ]
             )  # Check if any words have figure, etc, synsets
-            #
+
             # Store the booleans
             dict_results["is_pron_3rd"] = check_terms_they
             dict_results["is_term_fig"] = check_terms_fig
         else:  # Otherwise, remove term contribution
             dict_results["is_pron_3rd"] = False
             dict_results["is_term_fig"] = False
-        #
 
         # Check for etal terms, if requested
         if include_etal:
@@ -446,19 +443,14 @@ class _Base:
             dict_results["is_etal"] = check_etal
         else:  # Otherwise, remove term contribution
             dict_results["is_etal"] = False
-        #
 
         # Store overall status of if any booleans set to True
         dict_results["is_any"] = any([dict_results[key] for key in dict_results])
-        #
 
         # Return the booleans
         return dict_results
 
-    #
-
-    ##Method: _check_truematch()
-    ##Purpose: Return boolean for whether or not text contains a true vs false match to the given keywords
+    # Return boolean for whether or not text contains a true vs false match to the given keywords
     def _check_truematch(self, text, keyword_objs, dict_ambigs, do_verbose=None, do_verbose_deep=False):
         """
         Method: _check_truematch
@@ -467,14 +459,14 @@ class _Base:
          - Determine if given text contains a true vs. false match to keywords.
            - E.g.: 'Edwin Hubble' as a false match to Hubble Space Telescope.
         """
+
         # Load global variables
         if do_verbose is None:
             do_verbose = self._get_info("do_verbose", do_flag_hidden=True)
-        #
+
         # Process ambig. phrase data, if not given
         if dict_ambigs is None:
             dict_ambigs = self._process_database_ambig(do_verbose=do_verbose_deep, keyword_objs=keyword_objs)
-        #
 
         # Extract info from ambig. database
         list_kw_ambigs = dict_ambigs["all_kw_ambigs"]
@@ -484,7 +476,6 @@ class _Base:
         lookup_ambigs = dict_ambigs["lookup_ambigs"]
         lookup_ambigs_lower = [item.lower() for item in dict_ambigs["lookup_ambigs"]]
         num_ambigs = len(list_kw_ambigs)
-        #
 
         # Replace numerics and citation numerics with placeholders
         text_orig = text
@@ -498,20 +489,18 @@ class _Base:
                     text, text_orig, lookup_ambigs
                 )
             )
-        #
 
         # Extract keyword objects that are potentially ambiguous
         keyword_objs_ambigs = [
             item1 for item1 in keyword_objs if any([item1.is_keyword(item2) for item2 in lookup_ambigs])
         ]
-        #
 
         # Return status as true match if non-ambig keywords match to text
         if any([item1.is_keyword(text) for item1 in keyword_objs if (item1 not in keyword_objs_ambigs)]):
             # Print some notes
             if do_verbose:
                 print("Text matches unambiguous keyword. Returning true state.")
-            #
+
             # Return status as true match
             return {
                 "bool": True,
@@ -525,13 +514,13 @@ class _Base:
                     }
                 ],
             }
-        #
+
         # Return status as false match if no keywords match at all
         elif not any([item.is_keyword(text) for item in keyword_objs_ambigs]):
             # Print some notes
             if do_verbose:
                 print("Text matches no keywords at all. Returning false state.")
-            #
+
             # Return status as true match
             return {
                 "bool": False,
@@ -544,14 +533,13 @@ class _Base:
                     }
                 ],
             }
-        #
 
         # Assemble makeshift wordchunks (not using NLP ones here)
         # Not sure why happened, but NLP sometimes failed to identify nouns/num.
         # Print some notes
         if do_verbose:
             print("Building noun chunks around keywords...")
-        #
+
         # Generate the keyword-based wordchunks
         list_wordchunks = self._assemble_keyword_wordchunks(
             text=text, keyword_objs=keyword_objs, do_verbose=do_verbose, do_include_verbs=False
@@ -567,21 +555,19 @@ class _Base:
                 for bb in range(0, len(tmp_sents[aa])):
                     tmp_word = tmp_sents[aa][bb]
                     errstr += "{0}: {1}, {2}, {3}\n".format(tmp_word, tmp_word.dep_, tmp_word.pos_, tmp_word.tag_)
-            #
+
             raise ValueError(errstr)
-        #
 
         # Print some notes
         if do_verbose:
             print("\n- Wordchunks determined for text: {0}".format(list_wordchunks))
-        #
 
         # Exit method early if any wordchunk is an exact keyword match
         if any([(item.text.lower() in lookup_ambigs) for item in list_wordchunks]):
             # Print some notes
             if do_verbose:
                 print("Exact keyword match found. Returning true status...")
-            #
+
             return {
                 "bool": True,
                 "info": [
@@ -593,7 +579,6 @@ class _Base:
                     }
                 ],
             }
-        #
 
         # Iterate through wordchunks to determine true vs false match status
         num_wordchunks = len(list_wordchunks)
@@ -605,7 +590,6 @@ class _Base:
             # Print some notes
             if do_verbose:
                 print("Considering wordchunk: {0}".format(curr_chunk_text))
-            #
 
             # Store as non-ambig. phrase and skip ahead if non-ambig. term
             is_exact = any(
@@ -620,7 +604,7 @@ class _Base:
                 # Print some notes
                 if do_verbose:
                     print("Exact match to non-ambig. phrase. Marking true...")
-                #
+
                 # Store info for this true match
                 list_results[ii] = {
                     "bool": True,
@@ -628,7 +612,6 @@ class _Base:
                 }
                 # Skip ahead
                 continue
-            #
 
             # Extract representation of core meaning of current wordchunk
             tmp_res = self._extract_core_from_phrase(
@@ -636,7 +619,6 @@ class _Base:
             )
             curr_meaning = tmp_res["str_meaning"]  # Str representation of meaning
             curr_inner_kw = tmp_res["keywords"]  # Matched keywords
-            #
 
             # Extract all ambig. phrases+substrings that match to this meaning
             set_matches_raw = [
@@ -652,13 +634,12 @@ class _Base:
                 if (list_kw_ambigs[jj] in curr_inner_kw)
             ]
             set_matches = [item for item in set_matches_raw if (item["matcher"] is not None)]
-            #
+
             # Print some notes
             if do_verbose_deep:
                 print("Set of matches assembled from ambig. database:")
                 for item1 in set_matches_raw:
                     print(item1)
-            #
 
             # Throw error if no match found
             if len(set_matches) == 0:
@@ -671,7 +652,6 @@ class _Base:
                         curr_chunk, text
                     )
                 )
-            #
 
             # Determine and extract best match (=match with shortest substring)
             best_set = sorted(set_matches, key=(lambda w: len(w["matcher"][0])))[0]
@@ -679,7 +659,6 @@ class _Base:
             # Print some notes
             if do_verbose:
                 print("Current wordchunk: {0}\nMeaning: {2}\nBest set: {1}-".format(curr_chunk, best_set, curr_meaning))
-            #
 
             # Store the verdict for this best match
             list_status[ii] = best_set["bool"]
@@ -687,7 +666,7 @@ class _Base:
             # Exit method early since match found
             if do_verbose:
                 print("Match found. Returning status...")
-            #
+
             list_results[ii] = {
                 "bool": best_set["bool"],
                 "info": {
@@ -697,7 +676,6 @@ class _Base:
                     "text_database": best_set["text_database"],
                 },
             }
-        #
 
         # Combine the results and return overall boolean match
         fin_result = {
@@ -705,12 +683,8 @@ class _Base:
             "info": [item["info"] for item in list_results],
         }
         return fin_result
-        #
 
-    #
-
-    ##Method: _cleanse_text()
-    ##Purpose: Cleanse given (any length) string of extra whitespace, dashes, etc.
+    # Cleanse given (any length) string of extra whitespace, dashes, etc.
     def _cleanse_text(self, text, do_streamline_etal):
         """
         Method: _cleanse_text
@@ -719,6 +693,7 @@ class _Base:
          - Cleanse text of extra whitespace, punctuation, etc.
          - Replace paper citations (e.g. 'et al.') with uniform placeholder.
         """
+
         # Extract global punctuation expressions
         set_apostrophe = config.set_apostrophe
         set_punctuation = config.set_punctuation
@@ -742,7 +717,6 @@ class _Base:
         # For apostrophes
         tmp_exp_inner = "\\" + "|\\".join(set_apostrophe)
         text = re.sub((" ?(" + tmp_exp_inner + ") ?"), r"\1", text)
-        #
 
         # Remove empty brackets and doubled-up punctuation
         # Extract ids of empty brackets and doubled-up punctuation
@@ -757,7 +731,6 @@ class _Base:
         # Remove the characters (in reverse order!) at the identified ids
         for ii in sorted(ids_rem)[::-1]:  # Reverse-sorted
             text = text[0:ii] + text[(ii + 1) : len(text)]
-        #
 
         # Replace pesky "Author & Author (date)", et al., etc., wordage
         if do_streamline_etal:
@@ -781,14 +754,13 @@ class _Base:
                 + r"(\)|\]|\})"
             )
             exp_cites_nobrackets = rf"{bit_author}{bit_additional}*{exp_year_yesbrackets}"
-            #
+
             # Replace not-bracketed citations or remove bracketed citations
             text = re.sub(exp_cites_yesbrackets, "", text)
             text = re.sub(exp_cites_nobrackets, config.placeholder_author, text)
-            #
+
             # Replace singular et al. (e.g. SingleAuthor et al.) wordage as well
             text = re.sub(r" et al\b\.?", "etal", text)
-        #
 
         # Remove starting+ending whitespace
         text = text.lstrip().rstrip()
@@ -796,10 +768,7 @@ class _Base:
         # Return cleansed text
         return text
 
-    #
-
-    ##Method: _extract_core_from_phrase()
-    ##Purpose: Extract core meaning (e.g., synsets) from given phrase
+    # Extract core meaning (e.g., synsets) from given phrase
     def _extract_core_from_phrase(self, phrase_NLP, do_skip_useless, do_verbose=None, keyword_objs=None):
         """
         Method: _extract_core_from_phrase
@@ -807,6 +776,7 @@ class _Base:
         Purpose:
          - Extract representative "meaning" (i.e., synsets) of given phrase.
         """
+
         # Set global variables
         num_words = len(phrase_NLP)
         if do_verbose is None:
@@ -816,11 +786,10 @@ class _Base:
                 keyword_objs = [self._get_info("keyword_obj", do_flag_hidden=True)]
             except KeyError:
                 keyword_objs = self._get_info("keyword_objs", do_flag_hidden=True)
-        #
+
         # Print some notes
         if do_verbose:
             print("\n> Running _extract_core_from_phrase for phrase: {0}".format(phrase_NLP))
-        #
 
         # Initialize containers of core information
         core_keywords = []
@@ -834,7 +803,6 @@ class _Base:
                 print("-\nLatest keywords: {0}".format(core_keywords))
                 print("Latest synsets: {0}".format(core_synsets))
                 print("-Now considering word: {0}".format(curr_word))
-            #
 
             # Skip if this word is punctuation or possessive marker
             if self._is_pos_word(word=curr_word, pos="PUNCTUATION") or self._is_pos_word(
@@ -843,9 +811,8 @@ class _Base:
                 # Print some notes
                 if do_verbose:
                     print("Word is punctuation or possessive. Skipping.")
-                #
+
                 continue
-            #
 
             # Store the keyword itself and skip ahead if this word is a keyword
             matched_kobjs = [item for item in keyword_objs if (item.is_keyword(curr_word.text))]
@@ -853,13 +820,12 @@ class _Base:
                 name_kobj = matched_kobjs[0].get_name()  # Fetch name for kobj
                 core_keywords.append(name_kobj.lower())
                 core_synsets.append([name_kobj.lower()])
-                #
+
                 # Print some notes
                 if do_verbose:
                     print("Word itself is keyword. Stored synset: {0}".format(core_synsets))
-                #
+
                 continue
-            #
 
             # Store a representative synset and skip ahead if word is a numeral
             if bool(re.search(("^(ID)?[0-9]+"), curr_word.text, flags=re.IGNORECASE)):
@@ -868,9 +834,8 @@ class _Base:
                 # Print some notes
                 if do_verbose:
                     print("Word itself is a numeral. Stored synset: {0}".format(core_synsets))
-                #
+
                 continue
-            #
 
             # Ignore this word if not a relevant p.o.s.
             check_useless = self._is_pos_word(word=curr_word, pos="USELESS", keyword_objs=keyword_objs)
@@ -879,35 +844,30 @@ class _Base:
                 # Print some notes
                 if do_verbose:
                     print("Word itself is useless. Skipping.")
-                #
+
                 continue
-            #
 
             # Gather and store the noun synsets
             curr_synsets_raw = [
                 item.name() for item in wordnet.synsets(curr_word.text) if (".n." in item.name())
             ]  # Noun synsets only
-            #
+
             # If no synsets known, store word itself
             if len(curr_synsets_raw) == 0:
                 core_synsets.append([curr_word.text.lower()])
             # Otherwise, store synsets
             else:
                 core_synsets += [curr_synsets_raw]
-            #
 
             # Print some notes
             if do_verbose:
                 print("-Done considering word: {0}".format(curr_word))
                 print("Updated synsets: {0}".format(core_synsets))
                 print("Updated keywords: {0}".format(core_keywords))
-            #
-        #
 
         # Throw an error if any empty strings passed as synsets
         if any([("" in item) for item in core_synsets]):
             raise ValueError("Err: Empty synset?\n{0}".format(core_synsets))
-        #
 
         # Extract unique roots of sets of synsets
         exp_synset = config.exp_synset
@@ -917,7 +877,6 @@ class _Base:
             ).tolist()
             for item1 in core_synsets
         ]
-        #
 
         # Convert core meaning into string representation
         str_meaning = " ".join([" ".join(item) for item in core_roots])  # Long spaced string
@@ -929,7 +888,7 @@ class _Base:
                     "\n-\nPhrase '{0}':\nKeyword: {1}\nSynsets: {2}" + "\nRoots: {3}\nString representation: {4}\n-\n"
                 ).format(phrase_NLP, core_keywords, core_synsets, core_roots, str_meaning)
             )
-        #
+
         return {
             "keywords": core_keywords,
             "synsets": core_synsets,
@@ -938,10 +897,7 @@ class _Base:
             "str_meaning": str_meaning,
         }
 
-    #
-
-    ##Method: _is_pos_conjoined()
-    ##Purpose: Return boolean for if given word (NLP type word) is of conjoined given part of speech
+    # Return boolean for if given word (NLP type word) is of conjoined given part of speech
     def _is_pos_conjoined(self, word, pos):
         """
         Method: _is_pos_conjoined
@@ -949,40 +905,34 @@ class _Base:
         Purpose:
          - Determine if original part-of-speech (p.o.s.) for given word (if conjoined) matches given p.o.s.
         """
+
         # Return False if pos is aux (which may not be conjoined)
         if pos in config.pos_aux:
             return False
-        #
 
         # Check if this word is conjoined
         is_conjoined = self._is_pos_word(word=word, pos="CONJOINED")
         if not is_conjoined:  # Terminate early if not conjoined
             return False
-        #
 
         # Check if this word has any previous nodes
         word_ancestors = list(word.ancestors)  # All previous nodes leading to word
         if len(word_ancestors) == 0:  # Terminate early if no previous nodes
             return False
-        #
 
         # Follow chain upward to find if original p.o.s. matches given p.o.s.
         for pre_node in word_ancestors:
             # Continue if previous word also conjoined
             if self._is_pos_word(word=pre_node, pos="CONJOINED"):
                 continue
-            #
+
             # Otherwise, check if original p.o.s. matches given p.o.s.
             return self._is_pos_word(word=pre_node, pos=pos)
-        #
 
         # If no original p.o.s. found, throw an error
         raise ValueError("Err: No original p.o.s. for conjoined word {0}!\n{1}".format(word, word_ancestors))
 
-    #
-
-    ##Method: _is_pos_word()
-    ##Purpose: Return boolean for if given word (NLP type word) is of given part of speech
+    # Return boolean for if given word (NLP type word) is of given part of speech
     def _is_pos_word(self, word, pos, keyword_objs=None, do_verbose=False):
         """
         Method: _is_pos_word
@@ -990,6 +940,7 @@ class _Base:
         Purpose:
          - Return if the given word (of NLP type) is of the given part-of-speech.
         """
+
         ##Load global variables
         word_i = word.i  # Index
         word_dep = word.dep_  # dep label
@@ -997,27 +948,26 @@ class _Base:
         word_tag = word.tag_  # tag label
         word_text = word.text  # Text version of word
         word_ancestors = list(word.ancestors)  # All previous nodes leading to word
-        #
+
         # Print some notes
         if do_verbose:
             print("Running _is_pos_word for: {0}".format(word))
             print("dep_: {0}\npos_: {1}\ntag_: {2}".format(word_dep, word_pos, word_tag))
             print("Node head: {0}\nSentence: {1}".format(word.head, word.sent))
             print("Node lefts: {0}\nNode rights: {1}".format(list(word.lefts), list(word.rights)))
-        #
 
-        ##Check if given word is of given part-of-speech
+        # Check if given word is of given part-of-speech
         # Identify roots
         if pos in ["ROOT"]:
             check_all = word_dep in config.dep_root
-        #
+
         # Identify verbs
         elif pos in ["VERB"]:
             check_posaux = word_pos in config.pos_aux
             # check_isrightword = (len(list(word.rights)) > 0)
             # NOTE: 'isrightword' check, since aux-verb would have right word(s)
             # (E.g., 'The star is observable')
-            #
+
             check_root = self._is_pos_word(word=word, pos="ROOT")
             check_conj = self._is_pos_conjoined(word=word, pos=pos)
             check_ccomp = word_dep in config.dep_ccomp
@@ -1026,7 +976,7 @@ class _Base:
             check_dep = word_dep in config.dep_verb
             tag_approved = config.tag_verb_present + config.tag_verb_past + config.tag_verb_future
             check_approved = word_tag in tag_approved
-            #
+
             # For ambiguous adjectival modifier sentences
             # (E.g. "Hubble calibrated data")
             check_nounroot = (
@@ -1037,7 +987,7 @@ class _Base:
             check_amod = word_dep in config.dep_adjective
             check_islefts = len(list(word.lefts)) > 0
             check_valid_amod = check_nounroot and check_amod and check_islefts
-            #
+
             check_all = (
                 (
                     (
@@ -1050,7 +1000,7 @@ class _Base:
                 # or (check_isrightword and check_posaux))
                 or (check_valid_amod)
             ) and check_approved
-        #
+
         # Identify useless words
         elif pos in ["USELESS"]:
             # Fetch keyword objects
@@ -1059,7 +1009,7 @@ class _Base:
                     keyword_objs = [self._get_info("keyword_obj")]
                 except KeyError:
                     keyword_objs = self._get_info("keyword_objs", do_flag_hidden=True)
-            #
+
             # Check p.o.s. components
             check_tag = word_tag in config.tag_useless
             check_dep = word_dep in config.dep_useless
@@ -1073,13 +1023,13 @@ class _Base:
             check_all = (check_tag and check_dep and check_pos) and (
                 not (check_use or check_neg or check_subj or check_root)
             )
-        #
+
         # Identify subjects
         elif pos in ["SUBJECT"]:
             check_noun = self._is_pos_word(word=word, pos="NOUN")
             check_adj = self._is_pos_word(word=word, pos="ADJECTIVE")
             check_obj = self._is_pos_word(word=word, pos="BASE_OBJECT")
-            #
+
             # Determine if to left of verb or root, if applicable
             is_leftofverb = False
             if len(word_ancestors) > 0:
@@ -1088,7 +1038,7 @@ class _Base:
                 # if (tmp_verb or tmp_root):
                 if tmp_verb:
                     is_leftofverb = word in word_ancestors[0].lefts
-            #
+
             # Determine if conjoined to subject, if applicable
             is_conjsubj = self._is_pos_conjoined(word, pos=pos)
             is_root = self._is_pos_word(word=word, pos="ROOT")
@@ -1099,7 +1049,7 @@ class _Base:
                 or (check_noun and is_root)
                 or ((check_noun or check_adj) and is_leftofverb)
             ) and (not check_obj)
-        #
+
         # Identify prepositions
         elif pos in ["PREPOSITION"]:
             check_dep = word_dep in config.dep_preposition
@@ -1109,13 +1059,13 @@ class _Base:
                 (word_dep in config.dep_aux) and (word_pos in config.pos_aux) and (check_tag)
             )  # For e.g. mishandled 'to'
             check_all = (check_dep and check_pos and check_tag) or (check_prepaux)
-        #
+
         # Identify base objects (so either direct or prep. objects)
         elif pos in ["BASE_OBJECT"]:
             check_dep = word_dep in config.dep_object
             check_noun = self._is_pos_word(word=word, pos="NOUN")
             check_all = check_noun and check_dep
-        #
+
         # Identify direct objects
         elif pos in ["DIRECT_OBJECT"]:
             check_baseobj = self._is_pos_word(word=word, pos="BASE_OBJECT")
@@ -1132,9 +1082,9 @@ class _Base:
                 elif self._is_pos_word(word=pre_node, pos="VERB"):
                     check_afterverb = True
                     break
-            #
+
             check_all = ((not check_afterprep) and (check_afterverb) and (check_baseobj)) or is_conjdirobj
-        #
+
         # Identify prepositional objects
         elif pos in ["PREPOSITION_OBJECT"]:
             check_baseobj = self._is_pos_word(word=word, pos="BASE_OBJECT")
@@ -1152,9 +1102,9 @@ class _Base:
                 elif self._is_pos_word(word=pre_node, pos="VERB"):
                     check_objprep = False
                     break
-            #
+
             check_all = is_conjprepobj or (check_baseobj and check_objprep)
-        #
+
         # Identify prepositional subjects
         elif pos in ["PREPOSITION_SUBJECT"]:
             check_obj = self._is_pos_word(word=word, pos="BASE_OBJECT")
@@ -1172,9 +1122,9 @@ class _Base:
                 elif self._is_pos_word(word=pre_node, pos="VERB"):
                     check_subjprep = False
                     break
-            #
+
             check_all = is_conjprepsubj or (check_obj and check_subjprep)
-        #
+
         # Identify markers
         elif pos in ["MARKER"]:
             check_dep = word_dep in config.dep_marker
@@ -1188,54 +1138,54 @@ class _Base:
                 check_subj = self._is_pos_word(word=word, pos="SUBJECT")
                 check_det = self._is_pos_word(word=word, pos="DETERMINANT")
                 check_subjmark = check_det and check_subj
-            #
+
             check_all = (check_marker or check_subjmark) and (not is_afterroot)
-        #
+
         # Identify improper X-words (for improper sentences)
         elif pos in ["X"]:
             check_dep = word_dep in config.dep_xpos
             check_pos = word_pos in config.pos_xpos
             check_all = check_dep or check_pos
-        #
+
         # Identify conjoined words
         elif pos in ["CONJOINED"]:
             check_conj = word_dep in config.dep_conjoined
             check_appos = word_dep in config.dep_appos
             check_det = word_tag in config.tag_determinant
             check_all = (check_conj or check_appos) and (not check_det)
-        #
+
         # Identify determinants
         elif pos in ["DETERMINANT"]:
             check_pos = word_pos in config.pos_determinant
             check_tag = word_tag in config.tag_determinant
             check_all = check_pos and check_tag
-        #
+
         # Identify aux
         elif pos in ["AUX"]:
             check_dep = word_dep in config.dep_aux
             check_pos = word_pos in config.pos_aux
             check_prep = word_tag in config.tag_preposition
             check_num = word_tag in config.tag_number
-            #
+
             tags_approved = (
                 config.tag_verb_past + config.tag_verb_present + config.tag_verb_future + config.tag_verb_purpose
             )
             check_approved = word_tag in tags_approved
-            #
+
             check_all = (check_dep and check_pos and check_approved) and (not (check_prep or check_num))
-        #
+
         # Identify nouns
         elif pos in ["NOUN"]:
             check_pos = word_pos in config.pos_noun
             check_det = word_tag in config.tag_determinant
             check_all = check_pos and (not check_det)
-        #
+
         # Identify pronouns
         elif pos in ["PRONOUN"]:
             check_tag = word_tag in config.tag_pronoun
             check_pos = word_pos in config.pos_pronoun
             check_all = check_tag or check_pos
-        #
+
         # Identify adjectives
         elif pos in ["ADJECTIVE"]:
             check_adjverb = (
@@ -1246,48 +1196,47 @@ class _Base:
             check_pos = word_pos in config.pos_adjective
             check_tag = word_tag in config.tag_adjective
             check_all = check_tag or check_pos or check_adjverb
-        #
+
         # Identify  conjunctions
         elif pos in ["CONJUNCTION"]:
             check_pos = word_pos in config.pos_conjunction
             check_tag = word_tag in config.tag_conjunction
             check_all = check_pos and check_tag
-        #
+
         # Identify passive verbs and aux
         elif pos in ["PASSIVE"]:
             check_dep = word_dep in config.dep_verb_passive
             check_all = check_dep
-        #
+
         # Identify negative words
         elif pos in ["NEGATIVE"]:
             check_dep = word_dep in config.dep_negative
             check_all = check_dep
-        #
+
         # Identify punctuation
         elif pos in ["PUNCTUATION"]:
             check_punct = word_dep in config.dep_punctuation
             check_letter = bool(re.search(".*[a-z|0-9].*", word_text, flags=re.IGNORECASE))
             check_all = check_punct and (not check_letter)
-        #
+
         # Identify punctuation
         elif pos in ["BRACKET"]:
             check_brackets = word_tag in (config.tag_brackets)
             check_all = check_brackets
-        #
+
         # Identify possessive markers
         elif pos in ["POSSESSIVE"]:
             check_possessive = word_tag in config.tag_possessive
             check_all = check_possessive
-        #
+
         # Identify numbers
         elif pos in ["NUMBER"]:
             check_number = word_pos in config.pos_number
             check_all = check_number
-        #
+
         # Otherwise, raise error if given pos is not recognized
         else:
             raise ValueError("Err: {0} is not a recognized part of speech.".format(pos))
-        #
 
         # Print some notes
         if do_verbose:
@@ -1295,26 +1244,21 @@ class _Base:
         # Return the final verdict
         return check_all
 
-    #
-
-    ##Method: _load_text
-    ##Purpose: Load text from given file
+    # Load text from given file
     def _load_text(self, filepath):
         """
         Method: _load_text
         WARNING! This method is *not* meant to be used directly by users.
         Purpose: Load text from a given filepath.
         """
+
         # Load text from file
         with open(filepath, "r") as openfile:
             text = openfile.read()
         # Return the loaded text
         return text
 
-    #
-
-    ##Method: _process_database_ambig()
-    ##Purpose: Process database of ambig. phrases into lookups and dictionary
+    # Process database of ambig. phrases into lookups and dictionary
     def _process_database_ambig(self, keyword_objs=None, do_verbose=False):
         """
         Method: _process_database_ambig
@@ -1322,19 +1266,19 @@ class _Base:
         Purpose:
          - Process database of ambiguous keyword phrases into dictionary of keywords, regular expressions, boolean verdicts, etc.
         """
+
         # Load the ambig. phrase data
         lookup_ambigs = [str(item).lower() for item in np.genfromtxt(config.KW_AMBIG, comments="#", dtype=str)]
         data_ambigs = np.genfromtxt(config.PHR_AMBIG, comments="#", dtype=str, delimiter="\t")
         if len(data_ambigs.shape) == 1:  # If single row, reshape to 2D
             data_ambigs = data_ambigs.reshape(1, data_ambigs.shape[0])
         num_ambigs = data_ambigs.shape[0]
-        #
+
         str_anymatch_ambig = config.string_anymatch_ambig.lower()
-        #
+
         ind_keyword = 0
         ind_phrase = 1
         ind_bool = 2
-        #
 
         # Initialize containers for processed ambig. data
         list_kw_ambigs = []
@@ -1355,7 +1299,6 @@ class _Base:
                 curr_bool = False
             else:
                 raise ValueError("Err: {0}:{1} in ambig. database not bool!".format(ii, data_ambigs[ii, ind_bool]))
-            #
 
             # Formulate current regular expression
             curr_roots = self._extract_core_from_phrase(
@@ -1364,7 +1307,6 @@ class _Base:
             curr_exp = (
                 r"(" + r")( .*)* (".join([(r"(\b" + r"\b|\b".join(item) + r"\b)") for item in curr_roots]) + r")"
             )  # Convert to reg. exp. for substring search later
-            #
 
             # Extract current keywords
             curr_kw_raw = data_ambigs[ii, ind_keyword].lower()
@@ -1372,7 +1314,6 @@ class _Base:
                 curr_kw = [item.lower() for item in lookup_ambigs]
             else:  # Otherwise, store given keyword
                 curr_kw = [curr_kw_raw]
-            #
 
             # Store the extracted data for each keyword
             tmp_num = len(curr_kw)
@@ -1382,7 +1323,6 @@ class _Base:
             ]
             list_bool_ambigs += [curr_bool] * tmp_num
             list_text_ambigs += [curr_text] * tmp_num
-        #
 
         # Gather all of the results into a dictionary
         dict_ambigs = {
@@ -1392,15 +1332,11 @@ class _Base:
             "all_bool_ambigs": list_bool_ambigs,
             "all_text_ambigs": list_text_ambigs,
         }
-        #
 
         # Return the processed results
         return dict_ambigs
 
-    #
-
-    ##Method: _search_text()
-    ##Purpose: Search text for given keywords and acronyms and return metric
+    # Search text for given keywords and acronyms and return metric
     def _search_text(self, text, keyword_objs, do_verbose=False):
         """
         Method: _search_text
@@ -1409,7 +1345,7 @@ class _Base:
         """
         # Check if keywords and/or acronyms present in given text
         check_keywords = any([item.is_keyword(text) for item in keyword_objs])
-        #
+
         # Print some notes
         if do_verbose:
             # Extract global variables
@@ -1419,15 +1355,12 @@ class _Base:
             print("Completed _search_text().")
             print("Keywords={0}\nAcronyms={1}".format(keywords, acronyms))
             print("Boolean: {0}".format(check_keywords))
-        #
 
         # Return boolean result
         return check_keywords
 
-    #
-
-    ##Method: _streamline_phrase()
-    ##Purpose: Cleanse given (short) string of extra whitespace, dashes, etc, and replace websites, etc, with uniform placeholders.
+    # Cleanse given (short) string of extra whitespace, dashes, etc, and replace websites, etc,
+    # with uniform placeholders.
     def _streamline_phrase(self, text):
         """
         Method: _streamline_phrase
@@ -1437,6 +1370,7 @@ class _Base:
          - Replace websites with uniform placeholder.
          - Replace some common science abbreviations that confuse external NLP package sentence parsing.
         """
+
         # Extract global variables
         dict_exp_abbrev = config.dict_exp_abbrev
 
@@ -1452,7 +1386,6 @@ class _Base:
         # Replace annoying abbreviations that confuse NLP sentence parser
         for key1 in dict_exp_abbrev:
             text = re.sub(key1, dict_exp_abbrev[key1], text)
-        #
 
         # Replace annoying object numerical name notations
         # E.g.: HD 123456, 2MASS123-456
@@ -1472,21 +1405,18 @@ class _Base:
 
         # Remove any new excessive whitespace and punctuation spaces
         text = self._cleanse_text(text=text, do_streamline_etal=True)
-        #
 
         # Return streamlined text
         return text
 
-    #
-
-    ##Method: _write_text
-    ##Purpose: Write given text to given filepath
+    # Write given text to given filepath
     def _write_text(self, text, filepath):
         """
         Method: _write_text
         WARNING! This method is *not* meant to be used directly by users.
         Purpose: Write given text to given filepath.
         """
+
         # Write text to file
         with open(filepath, "w") as openfile:
             openfile.write(text)

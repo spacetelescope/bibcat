@@ -1,30 +1,29 @@
 """
+:title: config.py
+
 This module contains necessary configuration setups.
 """
 
-##Import external packages
+# Import external packages
 import os
 
 from nltk.corpus import wordnet
 
-#
-
-##Set global user paths, which should be set outside the bibcat repo folder.
-PATH_INPUT = "/Users/jyoon/Documents/asb/bibliography_automation/bibcat_datasets/dataset_combined_all_2018-2023.json"  # set the path to the location of the JSON file you #PATH_INPUT = "/path/to/datasets/dataset_combined_all_2018-2023.json" # set the path to the location of the JSON file you downloaded from Box
+# Set global user paths, which should be set outside the bibcat repo folder.
+# set the path to the location of the JSON file you
+PATH_INPUT = "/path/to/datasets/dataset_combined_all_2018-2023.json"  # set the path to the location of the JSON file you downloaded from Box
 name_model = "my_test_run_1"  # Name of model run to save or load
-#
+
 
 # Set paths for bibcat_tests.py testing purposes only
-filepath_dataset = "/Users/jyoon/Documents/asb/bibliography_automation/bibcat_datasets/"
-# filepath_dataset = "/path/to/datasets/"
+filepath_dataset = "/path/to/datasets/"
 # papertrack data that Sarah W. created
 path_papertrack = os.path.join(filepath_dataset, "papertrack_export_2023-11-06.json")
 # fulltext data from the ADS team
 path_papertext = os.path.join(filepath_dataset, "ST_Request2018_2023.json")
-#
 
 
-##Set global fixed paths
+# Set global fixed paths
 SRC_ROOT = os.path.dirname(__file__)
 _parent = os.path.dirname(SRC_ROOT)
 print(f"Root directory ={SRC_ROOT}, parent directory={_parent}")
@@ -48,26 +47,26 @@ else:
 
 KW_AMBIG = os.path.join(PATH_CONFIG, "keywords_ambig.txt")
 PHR_AMBIG = os.path.join(PATH_CONFIG, "phrases_ambig.txt")
-#
 
-##Set global input and output paths
+
+# Set global input and output paths
 dir_allmodels = PATH_MODELS  # Path to directory for saving or loading a model
 path_modiferrors = os.path.join(dir_allmodels, name_model, "dict_modiferrors.npy")
 path_TVTinfo = os.path.join(dir_allmodels, name_model, "dict_TVTinfo.npy")
 tfoutput_prefix = "tfoutput_"
 folders_TVT = {"train": "dir_train", "validate": "dir_validate", "test": "dir_test"}
 
-##Set text processing and regular expression variables
+# Set text processing and regular expression variables
 # Placeholders for replacing various substrings in text
 placeholder_anon = "OBJ"
 placeholder_numeric = "numeric"
 placeholder_number = "000"
 placeholder_website = "website"
 placeholder_author = "Authorsetal"
-#
+
 # Regular expressions: acronym matching
 exp_acronym_midwords = r" +(?:(?:(?:for )|(?:the )|(?:in )|(?:of )|(?:from ))*)\b"
-#
+
 # Regular expressions: punctuation
 exp_nopunct = "[^\w\s]"  # For removing punctuation from strings
 exp_punctuation = ["\.", ",", ";", "\:", "\?", "\!"]  # For matching open brackets in string
@@ -75,7 +74,7 @@ set_punctuation = [".", ",", ";", ":", "?", "!"]  # For matching open brackets i
 set_apostrophe = ["'"]  # For matching apostrophes
 set_openbrackets = ["(", "[", "{", "<"]  # For matching open brackets in string
 set_closebrackets = [")", "]", "}", ">"]  # For matching close brackets in string
-#
+
 # Regular expressions: split text
 exp_splittext = "(?<=.[.?!]) +(?=[A-Z])"  # Splits text into rough sentences; based on stackoverflow post, heh: Avinash Raj answer from Sep 9 2014 from https://stackoverflow.com/questions/25735644/python-regex-for-splitting-text-into-sentences-sentence-tokenizing
 exp_splitbracketstarts = (
@@ -84,10 +83,10 @@ exp_splitbracketstarts = (
 exp_splitbracketends = (
     "(?<=.[.?!][" + ("\\" + "\\".join(set_closebrackets)) + "]) +(?=[A-Z])"
 )  # Splits bracketed sentences into separate sentences
-#
+
 # Regular expressions: synsets
 exp_synset = "[A-Z|a-z]+\.[a-z]\.[0-9]{2,2}"  # Regular expression to match to wordnet synsets
-#
+
 # Regular expressions: text cleansing
 exp_website = (
     r"\b(http(s?):(//)?)?(www\.)?[A-Z|a-z|-]*"
@@ -97,9 +96,9 @@ exp_website = (
 )  # Slash, etc, after domain
 exp_etal_cleansed = r"\b[A-Z][A-Z|a-z]+etal\b"
 dict_exp_abbrev = {r"\bFig\b\.": "Figure", r"\bTab\b\.": "Table", r"\bvs\b\.": "vs"}
-#
 
-##Set Grammar variables
+
+# Set Grammar variables
 # For important pos flags
 trail_pos_main = ["VERB"]
 special_pos_main = [
@@ -112,7 +111,7 @@ special_pos_main = [
     "AUX",
 ]
 ignore_pos_main = ["USELESS", "PUNCTUATION", "ADJECTIVE", "MARKER", "CONJUNCTION"]
-#
+
 # For part-of-speech (pos) identification
 # Conjoined
 dep_conjoined = ["conj"]
@@ -178,19 +177,19 @@ tag_brackets = ["-LRB-", "-RRB-"]
 tag_possessive = ["POS"]
 # Punctuation
 dep_punctuation = ["punct"]
-#
 
-##Set natural language processing (NLP) variables
+
+# Set natural language processing (NLP) variables
 spacy_language_model = "en_core_web_sm"  # Simpler language model
-#
+
 # For natural language processing
 nlp_lookup_person = "Person"  # To look up e.g. 1st,3rd person status of pronoun
-#
+
 # For ambiguous phrase processing
 string_anymatch_ambig = "anymission"  # Mission marker in ambig. phrase database to match to any mission
 string_numeral_ambig = "000"  # String representation of given numeral word
 # Spacy language model
-#
+
 # Special synsets
 special_synsets_fig = [
     "table.n.01",
@@ -200,9 +199,9 @@ special_synsets_fig = [
     "chapter.n.01",
     "appendix.n.01",
 ]  # Includes synset for 'Tab', which can be 'Table' abbreviated
-#
 
-##Set machine learning variables
+
+# Set machine learning variables
 ML_label_model = "categorical"
 ML_activation_dense = "softmax"
 ML_batch_size = 32
@@ -214,7 +213,7 @@ ML_frac_dropout = 0.2
 ML_frac_steps_warmup = 0.1
 ML_num_epochs = 5
 ML_init_lr = 3e-5
-#
+
 dict_ml_model_encoders = {
     "bert_en_uncased_L-12_H-768_A-12": "https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/3",
     "bert_en_cased_L-12_H-768_A-12": "https://tfhub.dev/tensorflow/bert_en_cased_L-12_H-768_A-12/3",
@@ -285,20 +284,20 @@ dict_ml_model_preprocessors = {
     "experts_wiki_books": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
     "talking-heads_base": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
 }
-#
 
-##Classification
+
+# Classification
 # For custom classification verdicts
 verdict_error = "z_error"
 verdict_lowprob = "z_lowprob"
 verdict_rejection = "z_notmatch"
 list_other_verdicts = [verdict_error, verdict_lowprob, verdict_rejection]
-#
+
 # For preset custom verdict outputs
 dictverdict_lowprob = {"verdict": verdict_lowprob, "scores_comb": None, "scores_indiv": None, "uncertainty": None}
 dictverdict_rejection = {"verdict": verdict_rejection, "scores_comb": None, "scores_indiv": None, "uncertainty": None}
 dictverdict_error = {"verdict": verdict_error, "scores_comb": None, "scores_indiv": None, "uncertainty": None}
-#
+
 # For rule-based classification
 list_default_verdicts_decisiontree = ["science", "data_influenced", "mention"]
 dict_tree_possible_values = {
@@ -307,14 +306,14 @@ dict_tree_possible_values = {
     "verbclass": ["be", "has", "know", "plot", "root_nonverb", "science", "datainfluenced"],
     "verbtypes": ["FUTURE", "PASSIVE", "PAST", "POTENTIAL", "PURPOSE", "PRESENT"],
 }
-#
 
-##Set rule-based processing variables
+
+# Set rule-based processing variables
 # Rule-based thresholds
 thres_category_fracdiff = 0.1
 thres_verbsimilaritymain = 0.75  # 25 #Threshold of similarity to say two verbs are similar
 thres_verbsimilarityhigh = 0.75  # Threshold of similarity to say two verbs are similar
-#
+
 # Grammar nest generation
 conv_pos_fromtreetonest = {
     "PREPOSITION_SUBJECT": "subjectmatter",
@@ -343,7 +342,7 @@ nest_keys_matter = ["subjectmatter", "objectmatter"]  # List of matter keywords 
 nest_key_verbtype = "verbtypes"  # verbtype keyword
 nest_prefix_link = "link_"  # Prefix for linked keys within nest
 max_num_hypernyms = 3
-#
+
 # Verb synsets
 synsets_verbs_be = ["be.v.01"]
 synsets_verbs_be = [wordnet.synset(s) for s in synsets_verbs_be]
@@ -385,7 +384,7 @@ synsets_verbs_plot = [
 synsets_verbs_plot = [wordnet.synset(s) for s in synsets_verbs_plot]
 synsets_verbs_know = ["know.v.01", "understand.v.01", "want.v.02"]
 synsets_verbs_know = [wordnet.synset(s) for s in synsets_verbs_know]
-#
+
 # Verb categorization
 category_nonverb_root = "root_nonverb"
 list_category_names = ["science", "datainfluenced", "plot", "know"]
@@ -396,4 +395,3 @@ list_category_threses = [
     thres_verbsimilaritymain,
     thres_verbsimilarityhigh,
 ]
-#

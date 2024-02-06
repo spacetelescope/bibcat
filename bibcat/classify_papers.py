@@ -20,8 +20,8 @@ import json
 import os
 
 import numpy as np
+from core import classifier_ml, classifier_rules, config, operator, performance
 
-from bibcat import classifier_ml, classifier_rules, config, operator, performance
 from bibcat import parameters as params
 
 # Fetch filepath for model
@@ -172,7 +172,7 @@ fileloc_ML = os.path.join(dir_model, (config.tfoutput_prefix + name_model))
 classifier_ML = classifier_ml.Classifier_ML(filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True)
 
 # Load a rule-based classifier
-classifier_rules = bibcat.classifier_rules.Classifier_Rules()
+classifier_rules = classifier_rules.Classifier_Rules()
 
 
 # Initialize operators by loading models into instances of the Operator class

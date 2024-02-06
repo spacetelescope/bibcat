@@ -1,10 +1,30 @@
+"""
+:title: operator.py
+
+The primary purpose of this class is to direct and run the entire workflow of 'bibcat', 
+from reading in a given block of text to ultimately classifying that block of text. 
+Using its `classify` method, the Operator class internally handles all calls to 
+the other classes (Paper, Grammar, and the given classifier). 
+
+The primary methods and use cases of Operator are:
+* `_fetch_keyword_object`: A hidden method for fetching the stored Keyword instance 
+   that matches a given term.
+* `classify`: A method designed for users that prepares and runs the entire 'bibcat' workflow, 
+   from input raw text to classified output.
+* `process`: A method designed for users that processes given text into modifs, 
+   from input raw text to output modifs. It does not include classification (for that, run `classify`); 
+   it is useful for preprocessing raw text.
+* `train_model_ML`: A method designed for users that trains a machine learning (ML) model 
+   on input raw text. Under the hood, this is called `process` to preprocess the raw text.
+"""
+
 import os
 
 import numpy as np
+from core.base import _Base
+from core.grammar import Grammar
 
 import bibcat.config as config
-from bibcat.base import _Base
-from bibcat.grammar import Grammar
 
 
 class Operator(_Base):
@@ -27,8 +47,7 @@ class Operator(_Base):
           - Whether or not to print surface-level log information and tests.
     """
 
-    ##Method: __init__
-    ##Purpose: Initialize this class instance
+    # Initialize this class instance
     def __init__(
         self,
         classifier,
@@ -59,21 +78,19 @@ class Operator(_Base):
             # Run method to load and process external ambig. database
             dict_ambigs = self._process_database_ambig(keyword_objs=keyword_objs)
             lookup_ambigs = dict_ambigs["lookup_ambigs"]
-            #
+
             # Print some notes
             if do_verbose_deep:
                 print("Loaded+Assembled data for ambiguous phrases.")
-            #
-        #
+
         # Otherwise, set empty placeholders
         else:
             dict_ambigs = None
             lookup_ambigs = None
-        #
+
         # Store the processed data in this object instance
         self._store_info(dict_ambigs, "dict_ambigs")
         self._store_info(lookup_ambigs, "lookup_ambigs")
-        #
 
         # Exit the method
         if do_verbose:
@@ -81,13 +98,10 @@ class Operator(_Base):
             print("Keyword objects:")
             for ii in range(0, len(keyword_objs)):
                 print("{0}: {1}".format(ii, keyword_objs[ii]))
-        #
+
         return
 
-    #
-
-    ##Method: _fetch_keyword_object
-    ##Purpose: Fetch a keyword object that matches the given lookup
+    # Fetch a keyword object that matches the given lookup
     def _fetch_keyword_object(self, lookup, do_verbose=None, do_raise_emptyerror=True):
         """
         Method: _fetch_keyword_object
@@ -102,7 +116,6 @@ class Operator(_Base):
         # Print some notes
         if do_verbose:
             print("> Running _fetch_keyword_object() for lookup term {0}.".format(lookup))
-        #
 
         # Find keyword object that matches to given lookup term
         match = None
@@ -111,8 +124,6 @@ class Operator(_Base):
             if keyword_objs[ii].is_keyword(lookup):
                 match = keyword_objs[ii]
                 break
-            #
-        #
 
         # Throw error if no matching keyword object found
         if match is None:
@@ -120,22 +131,18 @@ class Operator(_Base):
             errstr += "Available keyword objects are:\n"
             for ii in range(0, num_keyobjs):
                 errstr += "{0}\n".format(keyword_objs[ii])
-            #
+
             # Raise error if so requested
             if do_raise_emptyerror:
                 raise ValueError(errstr)
             # Otherwise, return None
             else:
                 return None
-        #
 
         # Return the matching keyword object
         return match
 
-    #
-
-    ##Method: classify
-    ##Purpose: Inspect text and either reject as false target or give classifications
+    # Inspect text and either reject as false target or give classifications
     def classify(
         self,
         text,
@@ -184,21 +191,19 @@ class Operator(_Base):
             do_verbose = self._get_info("do_verbose")
         if do_verbose_deep is None:
             do_verbose_deep = self._get_info("do_verbose_deep")
-        #
+
         classifier = self._get_info("classifier")
-        #
 
         # Fetch keyword object matching to the given keyword
         keyobj = self._fetch_keyword_object(lookup=lookup, do_verbose=do_verbose)
         if do_verbose:
             print("Best matching keyword object (keyobj) for keyword {0}:\n{1}".format(lookup, keyobj))
-        #
 
         # Process text into modifs using Grammar class, if modif not given
         if modif is None:
             if do_verbose:
                 print("\nPreprocessing and extracting modifs from the text...")
-            #
+
             if do_raise_innererror:  # Allow stop from any exceptions encountered
                 output = self.process(
                     text=text,
@@ -220,7 +225,7 @@ class Operator(_Base):
                         do_verbose=do_verbose,
                         do_verbose_deep=do_verbose_deep,
                     )
-                #
+
                 # Catch any exceptions and force-print some notes
                 except Exception as err:
                     dict_verdicts = config.dictverdict_error.copy()
@@ -230,16 +235,16 @@ class Operator(_Base):
                     dict_verdicts["modif"] = "<PROCESSING ERROR:\n{0}>".format(repr(err))
                     dict_verdicts["modif_none"] = None
                     return dict_verdicts
-            #
+
             # Fetch the generated output
             modif = output["modif"]
             modif_none = output["modif_none"]
             forest = output["forest"]
-            #
+
             # Print some notes
             if do_verbose:
                 print("Text has been processed into modif.")
-        #
+
         # Otherwise, use given modif
         else:
             # Print some notes
@@ -248,16 +253,15 @@ class Operator(_Base):
             #
             modif_none = None
             pass
-        #
 
         # Set rejected verdict if empty text
         if modif.strip() == "":
             if do_verbose:
                 print("No text found matching keyword object.")
                 print("Returning rejection verdict.")
-            #
+
             dict_verdicts = config.dictverdict_rejection.copy()
-        #
+
         # Classify the text using stored classifier with raised error
         elif do_raise_innererror:  # If True, allow raising of inner errors
             dict_verdicts = classifier.classify_text(
@@ -268,7 +272,7 @@ class Operator(_Base):
                 do_verbose=do_verbose,
                 threshold=threshold,
             )
-        #
+
         # Otherwise, run classification while ignoring inner errors
         else:
             # Try running classification
@@ -281,24 +285,20 @@ class Operator(_Base):
                     do_verbose=do_verbose,
                     threshold=threshold,
                 )
-            #
+
             # Catch certain exceptions and force-print some notes
             except Exception as err:
                 dict_verdicts = config.dictverdict_error.copy()
                 print("-\nThe following err. was encountered in operate:")
                 print(repr(err))
                 print("Error was noted. Continuing.\n-")
-        #
 
         # Return the verdict with modif included
         dict_verdicts["modif"] = modif
         dict_verdicts["modif_none"] = modif_none
         return dict_verdicts
 
-    #
-
-    ##Method: classify_set
-    ##Purpose: Classify set of texts as false target or give classifications
+    # Classify set of texts as false target or give classifications
     def classify_set(
         self,
         texts,
@@ -332,15 +332,15 @@ class Operator(_Base):
             - 'scores_indiv': the individual scores.
             - 'uncertainty': the uncertainty of the classification.
         """
-        ##Fetch global variables
+        # Fetch global variables
         if do_verbose is None:
             do_verbose = self._get_info("do_verbose")
         if do_verbose_deep is None:
             do_verbose_deep = self._get_info("do_verbose_deep")
-        #
+
         all_kobjs = self._get_info("keyword_objs")
         num_kobjs = len(all_kobjs)
-        #
+
         # Throw error if both texts and modifs given
         if (texts is not None) and (modifs is not None):
             raise ValueError("Err: texts OR modifs should be given, not both.")
@@ -348,13 +348,12 @@ class Operator(_Base):
             num_texts = len(texts)
         elif modifs is not None:
             num_texts = len(modifs)
-        #
+
         # Print some notes
         if do_verbose:
             print("\n> Running classify_set()!")
-        #
 
-        ##Classify every text against every mission
+        # Classify every text against every mission
         list_results = [None] * num_texts
         curr_text = None
         curr_modif = None
@@ -363,18 +362,18 @@ class Operator(_Base):
         for ii in range(0, num_texts):
             curr_dict = {}  # Dictionary to hold set of results for this text
             list_results[ii] = curr_dict  # Store this dictionary
-            #
+
             # Extract current text if given in raw (not processed) form
             if texts is not None:
                 curr_text = texts[ii]  # Current text to classify
-            #
+
             # Extract current modifs and forests if already processed text
             if modifs is not None:
                 curr_modif = modifs[ii]
-            #
+
             if forests is not None:
                 curr_forest = forests[ii]
-            #
+
             # Iterate through keyword objects
             for jj in range(0, num_kobjs):
                 curr_kobj = all_kobjs[jj]
@@ -391,25 +390,21 @@ class Operator(_Base):
                     do_raise_innererror=do_raise_innererror,
                     do_verbose=do_verbose_deep,
                 )
-                #
+
                 # Store current result
                 curr_dict[curr_name] = curr_result
-            #
+
             # Print some notes at given frequency, if requested
             if do_verbose and ((ii % print_freq) == 0):
                 print("Classification for text #{0} of {1} complete...".format((ii + 1), num_texts))
-        #
 
-        ##Return the classification results
+        # Return the classification results
         if do_verbose:
             print("\nRun of classify_set() complete!\n")
-        #
+
         return list_results
 
-    #
-
-    ##Method: process
-    ##Purpose: Process text into modifs
+    # Process text into modifs
     def process(
         self, text, do_check_truematch, buffer=0, lookup=None, keyword_obj=None, do_verbose=None, do_verbose_deep=None
     ):
@@ -438,22 +433,21 @@ class Operator(_Base):
             - 'modif': the modif.
             - 'forest': the output from internal text processing.
         """
+
         # Fetch global variables
         if do_verbose is None:
             do_verbose = self._get_info("do_verbose")
         if do_verbose_deep is None:
             do_verbose_deep = self._get_info("do_verbose_deep")
-        #
+
         mode = self._get_info("mode")
         dict_ambigs = self._get_info("dict_ambigs")
-        #
 
         # Fetch keyword object matching to the given keyword
         if keyword_obj is None:
             keyword_obj = self._fetch_keyword_object(lookup=lookup, do_verbose=do_verbose_deep)
             if do_verbose:
                 print("Best matching Keyword object for keyword {0}:\n{1}".format(lookup, keyword_obj))
-        #
 
         # Process text into modifs using Grammar class
         if do_verbose:
@@ -472,19 +466,15 @@ class Operator(_Base):
         modif = output["modifs"][mode]
         modif_none = output["modifs"]["none"]  # Include unmodified vers. as well
         forest = output["_forest"]
-        #
+
         # Print some notes
         if do_verbose:
             print("Text has been processed into modifs.")
-        #
 
         # Return the modif and internal processing output
         return {"modif": modif, "modif_none": modif_none, "forest": forest}
 
-    #
-
-    ##Method: train_model_ML
-    ##Purpose: Process text into modifs and then train ML model on the modifs
+    # Process text into modifs and then train ML model on the modifs
     def train_model_ML(
         self,
         dir_model,
@@ -534,24 +524,22 @@ class Operator(_Base):
             do_verbose = self._get_info("do_verbose")
         if do_verbose_deep is None:
             do_verbose_deep = self._get_info("do_verbose_deep")
-        #
+
         dataset = dict_texts
         classifier = self._get_info("classifier")
         folders_TVT = config.folders_TVT
         savename_ML = config.tfoutput_prefix + name_model
         savename_model = name_model + ".npy"
         filepath_dicterrors = config.path_modiferrors
-        #
+
         # Print some notes
         if do_verbose:
             print("\n> Running train_model_ML()!")
-        #
 
         # Throw error if invalid classifier given
         allowed_types = ["Classifier_ML"]
         if type(classifier).__name__ not in allowed_types:
             raise ValueError("Err: Classifier ({0}) not allowed type ({1})".format(type(classifier), allowed_types))
-        #
 
         # Preprocess texts into modifs and store in TVT directories
         # NOTE: TVT = training, validation, testing datasets
@@ -564,12 +552,12 @@ class Operator(_Base):
             # Print some notes
             if do_verbose:
                 print("Previous training/validation directories already exist.")
-            #
+
             # Skip ahead if previous data should be reused
             if do_reuse_run:
                 print("Reusing the existing training/validation data in {0}.".format(dir_model))
                 pass
-            #
+
             # Otherwise, raise error if not to reuse previous run data
             else:
                 raise ValueError(
@@ -579,14 +567,12 @@ class Operator(_Base):
                         + " with do_reuse_run=True."
                     ).format(dir_model)
                 )
-            #
-        #
+
         # Otherwise, preprocess the text and store in TVT directories
         else:
             # Print some notes
             if do_verbose:
                 print("Processing text data into modifs...")
-            #
 
             # Process each text within the database into a modif
             dict_errors = {}  # Container for modifs with caught processing errors
@@ -598,7 +584,7 @@ class Operator(_Base):
             for curr_key in dataset:
                 old_dict = dataset[curr_key]
                 masked_class = mapper[old_dict["class"].lower()]
-                #
+
                 # Extract modif for current text
                 if do_check_truematch:  # Catch and print unknown ambig. phrases
                     try:
@@ -632,11 +618,11 @@ class Operator(_Base):
                         if old_dict["bibcode"] not in dict_errors:
                             dict_errors[old_dict["bibcode"]] = {}
                         dict_errors[old_dict["bibcode"]][curr_key] = err_dict
-                        #
+
                         str_err += curr_str  # Tack this error onto full string
                         i_skipped += 1  # Increment count of skipped papers
                         continue
-                #
+
                 else:  # Otherwise, run without ambig. phrase check
                     curr_res = self.process(
                         text=old_dict["text"],
@@ -647,7 +633,7 @@ class Operator(_Base):
                         do_verbose=do_verbose_deep,
                         do_verbose_deep=do_verbose_deep,
                     )
-                #
+
                 # Store the modif and previous classification information
                 new_dict = {
                     "text": curr_res["modif"],
@@ -658,22 +644,20 @@ class Operator(_Base):
                     "bibcode": old_dict["bibcode"],
                 }
                 dict_modifs[curr_key] = new_dict
-                #
+
                 # Increment count of modifs generated
                 i_track += 1
-                #
+
                 # Print some notes at desired frequency
                 if do_verbose and ((i_track % print_freq) == 0):
                     print("{0} of {1} total texts have been processed...".format(i_track, num_data))
-                #
-            #
+
             # Print some notes
             if do_verbose:
                 print("{0} texts have been processed into modifs.".format(i_track))
                 if do_check_truematch:
                     print("{0} texts skipped due to unknown ambig. phrases.".format(i_skipped))
                 print("Storing the data in train+validate+test directories...")
-            #
 
             # Store the modifs in new TVT directories
             classifier.generate_directory_TVT(
@@ -690,8 +674,6 @@ class Operator(_Base):
             # Print some notes
             if do_verbose:
                 print("Train+validate+test directories created in {0}.".format(dir_model))
-            #
-        #
 
         # Train a new machine learning (ML) model
         is_exist = os.path.exists(os.path.join(dir_model, savename_model)) or os.path.exists(
@@ -702,12 +684,12 @@ class Operator(_Base):
             # Print some notes
             if do_verbose:
                 print("ML model already exists for {0} in {1}.".format(name_model, dir_model))
-            #
+
             # Skip ahead if previous data should be reused
             if do_reuse_run:
                 print("Reusing the existing ML model in {0}.".format(dir_model))
                 pass
-            #
+
             # Otherwise, raise error if not to reuse previous run data
             else:
                 raise ValueError(
@@ -717,28 +699,25 @@ class Operator(_Base):
                         + " with do_reuse_run=True."
                     ).format(dir_model)
                 )
-            #
-        #
+
         # Otherwise, train new ML model on the TVT directories
         else:
             # Print some notes
             if do_verbose:
                 print("Training new ML model on training data in {0}...".format(dir_model))
-            #
+
             # Train new ML model
             model = classifier.train_ML(
                 dir_model=dir_model, name_model=name_model, seed=seed_ML, do_verbose=do_verbose, do_return_model=True
             )
-            #
+
             # Print some notes
             if do_verbose:
                 print("New ML model trained and stored in {0}.".format(dir_model))
-            #
-        #
 
         # Exit the method with error string
         # Print some notes
         if do_verbose:
             print("Run of train_model_ML() complete!\nError string returned.")
-        #
+
         return str_err

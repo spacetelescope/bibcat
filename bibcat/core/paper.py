@@ -1,9 +1,20 @@
+"""
+:title: paper.py
+
+The primary purpose is to extract all sentences within a larger text block 
+that refers to a given mission(s).  This collection of sentences for each mission, 
+denoted from here on as a 'paragraph,' is created to focus on the portions of 
+the original text related to the target mission.  Using paragraphs for classification 
+instead of the full text allows us to remove much of the 'noise' inherent to 
+the rest of the text.
+
+"""
 import re
 
 import numpy as np
+from core.base import _Base
 
 import bibcat.config as config
-from bibcat.base import _Base
 
 
 class Paper(_Base):
@@ -15,9 +26,11 @@ class Paper(_Base):
         - Gather sentences into 'paragraph'.
     Initialization Arguments:
         - dict_ambigs [None or dict (default=None)]:
-          - If None, will load and process external database of ambiguous mission phrases. If given, will use what is given.
+          - If None, will load and process external database of ambiguous mission phrases.
+            If given, will use what is given.
         - do_check_truematch [bool]:
-          - Whether or not to check that mission phrases found in text are known true vs. false matches. (E.g., 'Edwin Hubble' as false match for the Hubble Space Telescope).
+          - Whether or not to check that mission phrases found in text are known true
+             vs. false matches. (E.g., 'Edwin Hubble' as false match for the Hubble Space Telescope).
         - keyword_objs [list of Keyword instances]:
           - Target missions; terms will be used to search the text.
         - text [str]:
@@ -28,8 +41,6 @@ class Paper(_Base):
           - Whether or not to print inner log information and tests.
     """
 
-    ##Method: __init__
-    ##Purpose: Initialize this class instance
     def __init__(
         self, text, keyword_objs, do_check_truematch, dict_ambigs=None, do_verbose=False, do_verbose_deep=False
     ):
@@ -38,7 +49,8 @@ class Paper(_Base):
         WARNING! This method is *not* meant to be used directly by users.
         Purpose: Initialize instance of Paper class.
         """
-        ##Initialize global storage variable
+
+        # Initialize global storage variable
         self._storage = {}  # Dictionary to hold all information
 
         # Store information about this paper
@@ -49,15 +61,14 @@ class Paper(_Base):
         self._store_info(do_verbose_deep, "do_verbose_deep")
         self._store_info(do_check_truematch, key="do_check_truematch")
 
-        ##Process ambig. phrase data, if not given
+        # Process ambig. phrase data, if not given
         if do_check_truematch:
             if dict_ambigs is None:
                 dict_ambigs = self._process_database_ambig()
-            #
+
             lookup_ambigs = dict_ambigs["lookup_ambigs"]
             self._store_info(dict_ambigs, key="dict_ambigs")
             self._store_info(lookup_ambigs, key="lookup_ambigs")
-        #
 
         # Preprocess the data
         # Cleanse extra whitespace, strange chars, etc.
@@ -69,24 +80,22 @@ class Paper(_Base):
         self._store_info(text_clean, key="text_clean")
         self._store_info(text_clean_split, key="text_clean_split")
 
-        # Close method
         return
 
-    #
-
-    ##Method: get_paragraphs()
-    ##Purpose: Fetch paragraphs for given Keyword instances that were previously stored in this instance
+    # Purpose: Fetch paragraphs for given Keyword instances that were previously stored in this instance
     def get_paragraphs(self, keyword_objs=None):
         """
         Method: get_paragraphs
         Purpose: Fetch and return paragraphs previously assembled for given Keyword instances.
         Arguments:
-          - "keyword_objs" [list of Keyword instances, or None (default=None)]: List of Keyword instances for which previously constructed paragraphs will be extracted.
+          - "keyword_objs" [list of Keyword instances, or None (default=None)]:
+             List of Keyword instances for which previously constructed paragraphs will be extracted.
         Returns:
           - dict:
             - keys = Representative names of the Keyword instances.
             - values = The paragraphs corresponding to the Keyword instances.
         """
+
         # Attempt to access previously extracted paragraphs
         try:
             dict_paragraphs = self._get_info("_paragraphs")
@@ -98,38 +107,37 @@ class Paper(_Base):
                 + "'process_paragraphs(...)' first."
             )
             raise ValueError(errstring)
-        #
 
         # Extract paragraphs associated with keyword objects, if given
         if keyword_objs is not None:
             paragraphs = {key.get_name(): dict_paragraphs[key.get_name()] for key in keyword_objs}
-        #
+
         # Otherwise, return all paragraphs
         else:
             paragraphs = dict_paragraphs
-        #
 
-        # Return paragraphs
         return paragraphs
 
     #
 
-    ##Method: process_paragraphs
-    ##Purpose: Process paragraph that contains given keywords/verified acronyms
+    # Process paragraph that contains given keywords/verified acronyms
     def process_paragraphs(self, buffer=0, do_overwrite=False):
         """
         Method: process_paragraphs
-        Purpose: Assemble collection of sentences (a 'paragraph') that contain references to target missions (as indicated by stored keyword objects).
+        Purpose: Assemble collection of sentences (a 'paragraph') that contain references
+                 to target missions (as indicated by stored keyword objects).
         Arguments:
-          - "buffer" [int (default=0)]: Number of +/- sentences around a sentence containing a target mission to include in the paragraph.
-          - "do_overwrite" [bool (default=False)]: Whether or not to overwrite any previously extracted and stored paragraphs.
+          - "buffer" [int (default=0)]: Number of +/- sentences around a sentence containing
+             a target mission to include in the paragraph.
+          - "do_overwrite" [bool (default=False)]: Whether or not to overwrite
+             any previously extracted and stored paragraphs.
         Returns: None
         """
+
         # Extract clean, naively split paragraphs
         text_clean_split = self._get_info("text_clean_split")
         keyword_objs = self._get_info("keyword_objs")
         do_check_truematch = self._get_info("do_check_truematch")
-        #
 
         # If overwrite not allowed, check if paragraphs already extracted+saved
         if not do_overwrite:
@@ -151,7 +159,6 @@ class Paper(_Base):
                     + "rerun this method with do_overwrite=True."
                 )
                 raise ValueError(errstring)
-        #
 
         # Extract paragraphs for each keyword
         dict_paragraphs = {}  # Dictionary to hold paragraphs for keyword objects
@@ -164,11 +171,9 @@ class Paper(_Base):
             paragraphs = tmp_res["paragraph"]
             dict_results_ambig[keyword_objs[ii].get_name()] = tmp_res["ambig_matches"]
             dict_acronym_meanings[keyword_objs[ii].get_name()] = tmp_res["acronym_meanings"]
-            #
 
             # Store the paragraphs under name of first given keyword
             dict_paragraphs[keyword_objs[ii].get_name()] = paragraphs
-        #
 
         # Store the extracted paragraphs and setup information
         self._store_info(dict_paragraphs, "_paragraphs")
@@ -176,13 +181,9 @@ class Paper(_Base):
         self._store_info(dict_results_ambig, "_results_ambig")
         self._store_info(dict_acronym_meanings, "_dict_acronym_meanings")
 
-        # Close this method
         return
 
-    #
-
-    ##Method: _buffer_indices()
-    ##Purpose: Apply +/- buffer to given list of indices
+    # Apply +/- buffer to given list of indices
     def _buffer_indices(self, indices, buffer, max_index):
         """
         Method: _buffer_indices
@@ -191,7 +192,7 @@ class Paper(_Base):
           - Add a +/- buffer to each index in a set of indices.
           - Merge buffered indices that have overlapping buffers.
         """
-        #
+
         # Build spans for extent of each buffered index
         spans_buffered_init = [[(ind - buffer), (ind + buffer)] for ind in indices]
 
@@ -204,36 +205,29 @@ class Paper(_Base):
                 # Terminate loop early if latest span reaches maximum boundary
                 if spans_buffered_merged[-1][1] >= max_index:
                     break
-                #
+
                 # Otherwise, skip ahead
                 continue
-            #
 
             # For all other spans:
             # If overlap, expand previous span
             if spans_buffered_merged[-1][1] >= spans_buffered_init[ii][0]:
                 spans_buffered_merged[-1][1] = spans_buffered_init[ii][1]
-            #
+
             # Otherwise, append new span
             else:
                 spans_buffered_merged.append(
                     [spans_buffered_init[ii][0], min([spans_buffered_init[ii][1], max_index])]
                 )  # Written out to avoid shallow copy
-            #
 
             # Terminate loop early if latest span reaches maximum boundary
             if spans_buffered_merged[-1][1] >= max_index:
                 break
-            #
-        #
 
         # Return the buffered index spans
         return spans_buffered_merged
 
-    #
-
-    ##Method: _extract_paragraph()
-    ##Purpose: Search for paragraphs that contain target mission terms
+    # Search for paragraphs that contain target mission terms
     def _extract_paragraph(self, keyword_obj, buffer):
         """
         Method: _extract_paragraph
@@ -249,33 +243,32 @@ class Paper(_Base):
         do_check_truematch = self._get_info("do_check_truematch")
         sentences = np.asarray(self._get_info("text_clean_split"))
         num_sentences = len(sentences)
-        #
+
         # Load ambiguous phrases, if necessary
         if do_check_truematch:
             # Print some notes
             if do_verbose:
                 print("do_check_truematch=True, so will verify ambig. phrases.")
-            #
+
             # Load previously stored ambig. phrase data
             dict_ambigs = self._get_info("dict_ambigs")
             lookup_ambigs = dict_ambigs["lookup_ambigs"]
-        #
 
         # Print some notes
         if do_verbose:
             print("Fetching inds of target sentences...")
-        #
 
         # Get indices of sentences that contain any target mission terms
         # For keyword terms
         inds_with_keywords_init = [
             ii for ii in range(0, num_sentences) if keyword_obj.is_keyword(sentences[ii], mode="keyword")
         ]
+
         # For acronym terms
         inds_with_acronyms = [
             ii for ii in range(0, num_sentences) if keyword_obj.is_keyword(sentences[ii], mode="acronym")
         ]
-        #
+
         # Print some notes
         if do_verbose:
             print(
@@ -283,7 +276,6 @@ class Paper(_Base):
                     len(inds_with_keywords_init), len(inds_with_acronyms)
                 )
             )
-        #
 
         # If only acronym terms found, run a check of possible false meanings
         if len(inds_with_acronyms) > 0:
@@ -298,7 +290,6 @@ class Paper(_Base):
             # Print some notes
             if do_verbose:
                 print("Verifying ambiguous phrases...")
-            #
 
             # Run ambiguous phrase check on all sentences with keyword terms
             output_truematch = [
@@ -310,12 +301,11 @@ class Paper(_Base):
                 }
                 for ind in inds_with_keywords_init
             ]
-            #
+
             ambig_matches = [item["result"] for item in output_truematch]
 
             # Keep indices that have true matches
             inds_with_keywords_truematch = [item["ind"] for item in output_truematch if (item["result"]["bool"])]
-            #
 
             # Print some notes
             if do_verbose:
@@ -323,25 +313,21 @@ class Paper(_Base):
                 print("Match output:\n{0}".format(output_truematch))
                 print("Indices with true matches:\n{0}".format(inds_with_keywords_truematch))
                 print("Keyword sentences with true matches:\n{0}".format(sentences[inds_with_keywords_truematch]))
-            #
-        #
+
         # Otherwise, set empty
         else:
             output_truematch = None
             ambig_matches = None
             inds_with_keywords_truematch = inds_with_keywords_init  # Copy over
-        #
 
         # Take note of if keywords and/or acronyms have matches
         dict_has_matches = {
             "keywords": (len(inds_with_keywords_truematch) > 0),
             "acronyms": (len(inds_with_acronyms) > 0),
         }
-        #
 
         # Pool together unique indices of sentences with keywords, acronyms
         inds_with_terms = list(set().union(inds_with_keywords_truematch, inds_with_acronyms))
-        #
 
         # Determine buffered sentences, if requested
         if buffer > 0:
@@ -358,13 +344,11 @@ class Paper(_Base):
             # Print some notes
             if do_verbose:
                 print("Done buffering sentences.\nRanges = {0}.".format(ranges_buffered))
-            #
-        #
+
         # Otherwise, just copy over previous indices
         else:
             ranges_buffered = None
             sentences_buffered = sentences[inds_with_terms].tolist()
-        #
 
         # Return outputs
         return {
@@ -374,10 +358,7 @@ class Paper(_Base):
             "has_matches": dict_has_matches,
         }
 
-    #
-
-    ##Method: _split_text()
-    ##Purpose: Split text into sentences at assumed sentence breaks
+    # Split text into sentences at assumed sentence breaks
     def _split_text(self, text):
         """
         Method: _split_text
@@ -397,8 +378,7 @@ class Paper(_Base):
 
     #
 
-    ##Method: _verify_acronyms()
-    ##Purpose: Find possible meanings of acronyms in text
+    # Find possible meanings of acronyms in text
     def _verify_acronyms(self, keyword_obj):
         """
         Method: _verify_acronyms
@@ -421,7 +401,8 @@ class Paper(_Base):
         # Throw error if any tuple entries found (e.g. loophole in regex)
         if any([(isinstance(item, tuple)) for item in matches]):
             raise ValueError("Err: Regex must have holes!\n{0}\n{1}".format(combined_exp, matches))
-        #
 
         # Return all determined matches
+        return matches
+        return matches
         return matches

@@ -1,10 +1,20 @@
+"""
+:title: performance.py
+
+The `Performance` class contains user-friendly methods for estimating the performance 
+of given classifiers and outputting that performance as, e.g., confusion matrices. 
+This class can be used after creating the model, training, and saving 
+a machine learning model.
+
+"""
+
 import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+from core.base import _Base
 
 import bibcat.config as config
-from bibcat.base import _Base
 
 
 class Performance(_Base):
@@ -103,12 +113,11 @@ class Performance(_Base):
             do_verbose=do_verbose,
             do_verbose_deep=do_verbose_deep,
         )
-        #
+
         # Print some notes
         if do_verbose:
             print("\nEvaluations generated.")
             print("Plotting confusion matrices...")
-        #
 
         # Plot grid of confusion matrices for classifier performance
         titles = [item._get_info("name") for item in operators]
@@ -126,22 +135,17 @@ class Performance(_Base):
             cmap_abs=cmap_abs,
             cmap_norm=cmap_norm,
         )
-        #
+
         # Print some notes
         if do_verbose:
             print("Confusion matrices have been plotted at:\n{0}".format(filepath_output))
-        #
 
-        # Exit the method
         if do_verbose:
             print("\nRun of evaluate_performance_basic() complete!")
-        #
+
         return
 
-    #
-
-    ##Method: evaluate_performance_uncertainty
-    ##Purpose: Evaluate the performance of the internal classifier on a test set of data as a function of uncertainty
+    # Evaluate the performance of the internal classifier on a test set of data as a function of uncertainty
     def evaluate_performance_uncertainty(
         self,
         operators,
@@ -181,7 +185,8 @@ class Performance(_Base):
         """
         Method: evaluate_performance_uncertainty
         Purpose:
-          - Evaluate the performance of the internally stored classifier on a test set of data as a function of uncertainty.
+          - Evaluate the performance of the internally stored classifier on a test set
+            of data as a function of uncertainty.
         Arguments:
           - !
           - do_verbose [bool (default=False)]:
@@ -198,12 +203,11 @@ class Performance(_Base):
             do_verbose = self._get_info("do_verbose")
         if do_verbose_deep is None:
             do_verbose_deep = self._get_info("do_verbose_deep")
-        #
+
         # Print some notes
         if do_verbose:
             print("\n> Running evaluate_performance_uncertainty()!")
             print("Generating evaluations for operators and uncertainties...")
-        #
 
         # Evaluate classifier for each operator at each uncertainty level
         dict_evaluations = self._generate_evaluation(
@@ -225,14 +229,13 @@ class Performance(_Base):
             do_verbose=do_verbose,
             do_verbose_deep=do_verbose_deep,
         )
-        #
+
         # Print some notes
         if do_verbose:
             print("\nEvaluations generated.")
             print("Plotting performance as a function of uncertainty level...")
-        #
 
-        ##Plot grid of classifier performance as function of uncertainty
+        # Plot grid of classifier performance as function of uncertainty
         titles = [item._get_info("name") for item in operators]
         list_evaluations = [dict_evaluations[item] for item in titles]
         # Prepare base figure
@@ -240,7 +243,7 @@ class Performance(_Base):
         fig.set_facecolor(figcolor)
         nrow = num_ops
         ncol = max([len(item["act_classnames"]) for item in list_evaluations])
-        #
+
         # Iterate through operators (one row per operator)
         for ii in range(0, num_ops):
             curr_xs = threshold_arrays[ii]
@@ -281,39 +284,34 @@ class Performance(_Base):
                             linestyle=linestyle_match,
                             marker=marker_match,
                         )
-                #
+
                 # Label the subplot
                 ax0.set_xlabel("Uncertainty Threshold", fontsize=fontsize)
                 ax0.set_ylabel("Count of Classifications", fontsize=fontsize)
                 ax0.set_title("{0}: {1} Texts".format(titles[ii], curr_act), fontsize=fontsize)
                 ax0.tick_params(width=tickwidth, size=tickheight, labelsize=ticksize, direction="in")
-                #
+
                 # Add legend, if last subplot in row
                 if jj == (len(curr_actlabels) - 1):
                     ax0.legend(loc="best", frameon=False, prop={"size": fontsize})
-            #
-        #
+
         # Save and close the figure
         fig.suptitle("Performance vs. Uncertainty", fontsize=fontsize)
         plt.tight_layout()
         plt.savefig(os.path.join(filepath_output, filename_plot))
         plt.close()
-        #
+
         # Print some notes
         if do_verbose:
             print("Results have been plotted at:\n{0}".format(filepath_output))
-        #
 
         # Exit the method
         if do_verbose:
             print("\nRun of evaluate_performance_uncertainty() complete!")
-        #
+
         return
 
-    #
-
-    ##Method: _generate_evaluation
-    ##Purpose: Generate performance evaluation of full classification pipeline (text to rejection/verdict)
+    # Generate performance evaluation of full classification pipeline (text to rejection/verdict)
     def _generate_evaluation(
         self,
         operators,
@@ -348,12 +346,12 @@ class Performance(_Base):
           - dict:
             - !
         """
-        ##Fetch global variables
+        # Fetch global variables
         if do_verbose is None:
             do_verbose = self._get_info("do_verbose")
         if do_verbose_deep is None:
             do_verbose_deep = self._get_info("do_verbose_deep")
-        #
+
         num_ops = len(operators)
         # Throw error if operators do not have unique names
         if len(set([item._get_info("name") for item in operators])) != num_ops:
@@ -361,24 +359,22 @@ class Performance(_Base):
                 "Err: Please give each operator a unique name."
                 + "\nCurrently, the names are:\n{0}".format([item._get_info("name") for item in operators])
             )
-        #
+
         # Print some notes
         if do_verbose:
             print("\n> Running _generate_evaluation()!")
             print("Iterating through Operators to classify each set of text...")
-        #
 
-        ##Use each operator to classify the set of texts and measure performance
+        # Use each operator to classify the set of texts and measure performance
         dict_evaluations = {item._get_info("name"): None for item in operators}
         for ii in range(0, num_ops):
             curr_op = operators[ii]  # Current operator
             curr_name = curr_op._get_info("name")
             curr_data = dicts_texts[ii]
-            #
+
             # Print some notes
             if do_verbose:
                 print("Classifying with Operator #{0}...".format(ii))
-            #
 
             # Unpack the classified information for this operator
             curr_keys = list(curr_data.keys())  # All keys for accessing texts
@@ -392,7 +388,6 @@ class Performance(_Base):
                 curr_texts = [curr_data[curr_keys[jj]]["text"] for jj in range(0, len(curr_keys))]
                 curr_modifs = None
                 curr_forests = None
-            #
 
             # Classify texts with current operator
             curr_results = curr_op.classify_set(
@@ -407,12 +402,11 @@ class Performance(_Base):
                 do_verbose=do_verbose,
                 do_verbose_deep=do_verbose_deep,
             )
-            #
+
             # Print some notes
             if do_verbose:
                 print("Classification complete for Operator #{0}.".format(ii))
                 print("Generating the performance counter...")
-            #
 
             # Measure performance of current operator against actual answers
             # For standard evaluation
@@ -430,7 +424,7 @@ class Performance(_Base):
                 curr_misclassifs = tmp_res["misclassifs"]
                 curr_meas_classnames = tmp_res["meas_classnames"]
                 curr_act_classnames = tmp_res["act_classnames"]
-            #
+
             # For evaluations against multiple uncertainty values
             else:
                 tmp_res = [
@@ -450,11 +444,10 @@ class Performance(_Base):
                 curr_misclassifs = [item["misclassifs"] for item in tmp_res]
                 curr_meas_classnames = tmp_res[0]["meas_classnames"]
                 curr_act_classnames = tmp_res[0]["act_classnames"]
-            #
+
             # Print some notes
             if do_verbose:
                 print("Performance counter complete.")
-            #
 
             # Store the current results
             dict_evaluations[curr_name] = {
@@ -465,9 +458,8 @@ class Performance(_Base):
                 "act_classnames": curr_act_classnames,
                 "meas_classnames": curr_meas_classnames,
             }
-            #
 
-            ##Save the misclassified cases, if so requested
+            # Save the misclassified cases, if so requested
             if do_save_misclassif and (array_thresholds is None):
                 # Print some notes
                 if do_verbose:
@@ -492,49 +484,42 @@ class Performance(_Base):
                     )
                     for key in curr_misclassifs
                 ]
-                #
+
                 str_misclassif = "\n-----\n".join(list_str)  # Combined string
 
                 # Save the full string of misclassifications
                 tmp_filename = "{0}_{1}.txt".format(fileroot_misclassif, curr_name)
                 tmp_filepath = os.path.join(filepath_output, tmp_filename)
                 self._write_text(text=str_misclassif, filepath=tmp_filepath)
-                #
+
                 # Print some notes
                 if do_verbose:
                     print("\nMisclassifications saved at: {0}".format(tmp_filepath))
-            #
 
             # Print some notes
             if do_verbose:
                 print("All work complete for Operator #{0}.".format(ii))
-            #
-        #
+
         # Print some notes
         if do_verbose:
             print("!")
-        #
 
-        ##Save the evaluation components, if so requested
+        # Save the evaluation components, if so requested
         if do_save_evaluation:
             tmp_filepath = os.path.join(filepath_output, (fileroot_evaluation + ".npy"))
             np.save(tmp_filepath, dict_evaluations)
-            #
+
             # Print some notes
             if do_verbose:
                 print("\nEvaluation saved at: {0}".format(tmp_filepath))
-        #
 
-        ##Return the evaluation components
+        # Return the evaluation components
         if do_verbose:
             print("\nRun of _generate_evaluation() complete!")
-        #
+
         return dict_evaluations
 
-    #
-
-    ##Method: _generate_performance_counter
-    ##Purpose: Generate performance counter for set of measured classifications vs actual classifications
+    # Generate performance counter for set of measured classifications vs actual classifications
     def _generate_performance_counter(
         self,
         operator,
@@ -560,18 +545,18 @@ class Performance(_Base):
           - dict:
             - !
         """
+
         # Fetch global variables
         if do_verbose is None:
             do_verbose = self._get_info("do_verbose")
         if do_verbose_deep is None:
             do_verbose_deep = self._get_info("do_verbose_deep")
-        #
+
         num_texts = len(list_measdicts)
         meas_classifs = operator._get_info("classifier")._get_info("class_names")
         # Print some notes
         if do_verbose:
             print("\n> Running _generate_performance_counter()!")
-        #
 
         # Initialize container for counters and misclassifications
         if mapper is not None:  # Use mask classifications, if given
@@ -580,42 +565,39 @@ class Performance(_Base):
         else:  # Otherwise, use internal classifications
             act_classnames_raw = meas_classifs
             meas_classnames_raw = meas_classifs
-        #
+
         # Extend measured allowed class names to include low-uncertainty, etc.
         act_classnames = act_classnames_raw + [config.verdict_rejection]
         meas_classnames = meas_classnames_raw + config.list_other_verdicts
-        #
+
         # Streamline the class names
         act_classnames = [item.lower().replace("_", "") for item in act_classnames]
         meas_classnames = [item.lower().replace("_", "") for item in meas_classnames]
-        #
+
         # Form containers
         dict_counters = {act_key: {meas_key: 0 for meas_key in meas_classnames} for act_key in act_classnames}
         dict_misclassifs = {}
-        #
+
         # Print some notes
         if do_verbose:
             print("Accumulating performance over {0} texts.".format(num_texts))
             print("Actual class names: {0}\nMeasured class names: {1}".format(act_classnames, meas_classnames))
-        #
 
         # Count up classifications from given texts and classifications
         i_misclassif = 0  # Count of misclassifications
         for ii in range(0, num_texts):
             curr_actdict = list_actdicts[ii]
             curr_measdict = list_measdicts[ii]
-            #
+
             # Iterate through missions that were considered
             for curr_key in curr_measdict:
                 lookup = curr_key
-                #
 
                 # Extract actual classif
                 curr_actval = curr_actdict["missions"][lookup]["class"]
                 if (mapper is not None) and (curr_actval.lower() in mapper):
                     # Map to masked value if so requested
                     curr_actval = mapper[curr_actval.lower()]
-                #
 
                 # Extract measured classif, or remeasure if threshold given
                 curr_measval = curr_measdict[lookup]["verdict"]
@@ -625,16 +607,14 @@ class Performance(_Base):
                     if tmp_pass is not None:
                         if tmp_pass[curr_measval] < threshold:
                             curr_measval = config.dictverdict_lowprob.copy()["verdict"]
-                #
+
                 # Map to new masking value, if mapper given
                 if (mapper is not None) and (curr_measval.lower() in mapper):
                     curr_measval = mapper[curr_measval.lower()]
-                #
 
                 # Streamline the class names
                 curr_actval = curr_actval.lower().replace("_", "")
                 curr_measval = curr_measval.lower().replace("_", "")
-                #
 
                 # Increment current counter
                 dict_counters[curr_actval][curr_measval] += 1
@@ -650,19 +630,16 @@ class Performance(_Base):
                         "modif": curr_measdict[lookup]["modif"],
                         "modif_none": curr_measdict[lookup]["modif_none"],
                     }
-                    #
+
                     dict_misclassifs[str(i_misclassif)] = curr_info
                     # Increment count of misclassifications
                     i_misclassif += 1
-                #
-            #
-        #
 
         # Compute internal counter totals
         for key_1 in dict_counters:
             curr_sum = sum([dict_counters[key_1][key_2] for key_2 in dict_counters[key_1]])
             dict_counters[key_1]["_total"] = curr_sum
-        #
+
         # Print some notes
         if do_verbose:
             print("\n-\nPerformance counter generated:")
@@ -670,12 +647,11 @@ class Performance(_Base):
                 print("Actual {0} total: {1}".format(key_1, dict_counters[key_1]["_total"]))
                 for key_2 in dict_counters[key_1]:
                     print("Actual {0} vs Measured {1}: {2}".format(key_1, key_2, dict_counters[key_1][key_2]))
-        #
 
         # Return the counters and misclassifications
         if do_verbose:
             print("\n-\n\nRun of _generate_performance_counter() complete!")
-        #
+
         return {
             "counters": dict_counters,
             "misclassifs": dict_misclassifs,
@@ -683,10 +659,7 @@ class Performance(_Base):
             "meas_classnames": meas_classnames,
         }
 
-    #
-
-    ##Method: plot_performance_confusion_matrix
-    ##Purpose: Plot confusion matrix for given performance counters
+    # Plot confusion matrix for given performance counters
     def plot_performance_confusion_matrix(
         self,
         list_evaluations,
@@ -717,25 +690,25 @@ class Performance(_Base):
           - dict:
             - !
         """
-        ##Fetch global variables
+
+        # Fetch global variables
         if do_verbose is None:
             do_verbose = self._get_info("do_verbose")
         if do_verbose_deep is None:
             do_verbose_deep = self._get_info("do_verbose_deep")
-        #
+
         num_evals = len(list_evaluations)
         # Print some notes
         if do_verbose:
             print("\n> Running plot_performance_confusion_matrix()!")
-        #
 
-        ##Prepare the base figure
+        # Prepare the base figure
         fig = plt.figure(figsize=figsize)
         fig.set_facecolor(figcolor)
         nrow = 2
         ncol = num_evals
 
-        ##Plot confusion matrix for each evaluation
+        # Plot confusion matrix for each evaluation
         for ii in range(0, num_evals):
             # Use current mapper to determine actual vs measured classifs
             act_classifs = list_evaluations[ii]["act_classnames"]
@@ -757,11 +730,9 @@ class Performance(_Base):
                     # For the unnormalized confusion matrix
                     curr_val = curr_counts[act_classifs[yy]][meas_classifs[xx]]
                     confmatr_abs[yy, xx] += curr_val
-                    #
+
                     # For the normalized confusion matrix
                     confmatr_norm[yy, xx] = confmatr_abs[yy, xx] / curr_total
-                #
-            #
 
             # Plot the current set of confusion matrices
             # For the unnormalized matrix
@@ -779,7 +750,7 @@ class Performance(_Base):
                 fontsize=fontsize,
                 is_norm=False,
             )
-            #
+
             # For the normalized matrix
             ax = fig.add_subplot(nrow, ncol, (ii + ncol + 1))
             self._ax_confusion_matrix(
@@ -795,8 +766,6 @@ class Performance(_Base):
                 fontsize=fontsize,
                 is_norm=True,
             )
-            #
-        #
 
         # Save and close the figure
         plt.tight_layout()
@@ -805,8 +774,7 @@ class Performance(_Base):
         plt.savefig(os.path.join(filepath_plot, filename_plot))
         plt.close()
 
-        # Exit the method
         if do_verbose:
             print("\nRun of plot_performance_confusion_matrix() complete!")
-        #
+
         return
