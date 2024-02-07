@@ -5466,6 +5466,12 @@ class Classifier_Rules(_Classifier):
                     max_score = 1 #dict_results[curr_key]["score_tot_norm"]
                     max_verdict = curr_key
                     #
+                    ### !!! START OF TEMPORARY PATCH !!!
+                    dict_uncertainties = {all_keys[ii]:list_scores_comb[ii]
+                                for ii in range(0, len(all_keys))}
+                    dict_uncertainties[max_verdict] = max_score
+                    ### !!! END OF TEMPORARY PATCH !!!
+                    #
                     #Print some notes
                     if do_verbose:
                         print("\n-Max score: {0}".format(max_score))
@@ -5486,6 +5492,11 @@ class Classifier_Rules(_Classifier):
                 print("\n-Max score: {0}".format(max_score))
                 print("Max verdict: {0}\n".format(max_verdict))
             #
+            ### !!! START OF TEMPORARY PATCH !!!
+            dict_uncertainties = {all_keys[ii]:list_scores_comb[ii]
+                        for ii in range(0, len(all_keys))}
+            ### !!! END OF TEMPORARY PATCH !!!
+            #
             #Return low-prob verdict if multiple equal top probabilities
             if (list_scores_comb.count(max_score) > 1):
                 tmp_res = config.dictverdict_lowprob.copy()
@@ -5502,14 +5513,8 @@ class Classifier_Rules(_Classifier):
         #
 
         ##Assemble and return final verdict
-        ### !!! START OF TEMPORARY PATCH !!!
-        tmp_dict = {all_keys[ii]:list_scores_comb[ii]
-                    for ii in range(0, len(all_keys))}
-        tmp_dict[max_verdict] = max_score
-        ### !!! END OF TEMPORARY PATCH !!!
-        #
         fin_res = {"verdict":max_verdict, "scores_indiv":dict_scores_indiv,
-                "uncertainty":tmp_dict, "components":components,
+                "uncertainty":dict_uncertainties, "components":components,
                 "norm_error":dict_error}
         #
         #Print some notes
@@ -6962,7 +6967,7 @@ class Performance(_Base):
 
     ##Method: evaluate_performance_uncertainty
     ##Purpose: Evaluate the performance of the internal classifier on a test set of data as a function of uncertainty
-    def evaluate_performance_uncertainty(self, operators, dicts_texts, mappers, threshold_arrays, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_reuse_run, target_classifs=None, do_save_evaluation=False, do_save_misclassif=False, filename_root="performance_grid_uncertainty", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), fontsize=16, ticksize=14, tickwidth=3, tickheight=5, colors=["tomato", "dodgerblue", "purple", "dimgray", "silver", "darkgoldenrod", "darkgreen", "green", "cyan"], alphas=([0.75]*10), linestyles=["-", "-", "-", "--", "--", "--", ":", ":", ":"], linewidths=([3]*10), markers=(["o"]*10), alpha_match=0.5, color_match="black", linestyle_match="-", linewidth_match=8, marker_match="*", print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def evaluate_performance_uncertainty(self, operators, dicts_texts, mappers, threshold_arrays, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_reuse_run, target_classifs=None, do_save_evaluation=False, filename_root="performance_grid_uncertainty", fileroot_evaluation=None, figcolor="white", figsize=(20, 20), fontsize=16, ticksize=14, tickwidth=3, tickheight=5, colors=["tomato", "dodgerblue", "purple", "dimgray", "silver", "darkgoldenrod", "darkgreen", "green", "cyan"], alphas=([0.75]*10), linestyles=["-", "-", "-", "--", "--", "--", ":", ":", ":"], linewidths=([3]*10), markers=(["o"]*10), alpha_match=0.5, color_match="black", linestyle_match="-", linewidth_match=8, marker_match="*", print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: evaluate_performance_uncertainty
         Purpose:
@@ -7031,7 +7036,7 @@ class Performance(_Base):
         #Print some notes
         if do_verbose:
             print("\nEvaluations generated.")
-            print("Plotting confusion matrices...")
+            print("Plotting performance with respect to uncertainty...")
         #
 
         ##Plot grids of classifier performance as function of uncertainty
@@ -7412,23 +7417,26 @@ class Performance(_Base):
 
                     #Extract measured classif and apply any thresholds
                     curr_measval_raw = curr_measdict[lookup]["verdict"]
-                    curr_measval = curr_measval_raw.lower().replace("_","")
+                    #curr_measval = curr_measval_raw.lower().replace("_","")
                     #If no threshold given, use original verdict
                     if ((thresholds is None) or (thresholds[ii] is None)):
                         if ((curr_mapper is not None)
                                 and (curr_measval_raw.lower() in curr_mapper)):
                             curr_measval = curr_mapper[curr_measval_raw.lower()]
                         #
+                        else:
+                            curr_measval = curr_measval_raw
                         curr_measval = curr_measval.lower().replace("_","")
                     #
                     #Otherwise, apply threshold
                     else:
+                        """
                         if (curr_measval_raw.lower().replace("_","")
                                     in act_classnames):
                             curr_classer = curr_op._get_info("classifier")
                             if (isinstance(curr_classer, Classifier_Rules)):
-                                ###!!! START OF TEMPORARY PATCH !!!
                                 tmppass = curr_measdict[lookup]["uncertainty"]
+                                ###!!! START OF TEMPORARY PATCH !!!
                                 if (tmppass is not None):
                                     tmppass = curr_classer._convert_scorestoverdict(
                                         dict_scores_indiv=curr_measdict[lookup
@@ -7442,6 +7450,29 @@ class Performance(_Base):
                             if ((tmppass is not None) and
                                     (tmppass[curr_measval_raw]<thresholds[ii])):
                                 curr_measval = res_lowprob
+                        """
+                        tmppass = curr_measdict[lookup]["uncertainty"]
+                        curr_classer = curr_op._get_info("classifier")
+                        if (isinstance(curr_classer, Classifier_Rules)):
+                            ###!!! START OF TEMPORARY PATCH !!!
+                            if (tmppass is not None):
+                                tmppass = curr_classer._convert_scorestoverdict(
+                                    dict_scores_indiv=curr_measdict[lookup
+                                                        ]["scores_indiv"],
+                                    components=curr_measdict[lookup
+                                                        ]["components"]
+                                    )["uncertainty"]
+                            ###!!! END OF TEMPORARY PATCH !!!
+                        #else:
+                        #    tmppass = curr_measdict[lookup]["uncertainty"]
+                        if (tmppass is not None):
+                            max_verdict = max(tmppass, key=tmppass.get)
+                            max_val = tmppass[max_verdict]
+                            if (max_val < thresholds[ii]):
+                                curr_measval = res_lowprob
+                            else:
+                                curr_measval = max_verdict
+                        #
                         else:
                             curr_measval = curr_measval_raw
                         #
