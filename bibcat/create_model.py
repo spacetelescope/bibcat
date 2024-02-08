@@ -17,7 +17,7 @@ import json
 import os
 import time
 
-from core import classifier_ml, config, operator
+from bibcat.core import classifier_ml, config, operator
 
 from bibcat import parameters as params
 
