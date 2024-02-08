@@ -20,7 +20,7 @@ import json
 import os
 
 import numpy as np
-from core import classifier_ml, classifier_rules, config, operator, performance
+from bibcat.core import classifier_ml, classifier_rules, config, operator, performance
 
 from bibcat import parameters as params
 
