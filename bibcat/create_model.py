@@ -48,7 +48,7 @@ filepath_input = config.PATH_INPUT
 filepath_output = config.PATH_OUTPUT
 
 # filepath to save processing errors
-filesave_error = os.path.join(dir_model, "{0}_processing_errors.txt".format(name_model))
+filesave_error = os.path.join(dir_model, f"{name_model}_processing_errors.txt")
 
 # Set values for generating ML model below
 
