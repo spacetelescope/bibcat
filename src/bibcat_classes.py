@@ -5466,12 +5466,6 @@ class Classifier_Rules(_Classifier):
                     max_score = 1 #dict_results[curr_key]["score_tot_norm"]
                     max_verdict = curr_key
                     #
-                    ### !!! START OF TEMPORARY PATCH !!!
-                    dict_uncertainties = {all_keys[ii]:list_scores_comb[ii]
-                                for ii in range(0, len(all_keys))}
-                    dict_uncertainties[max_verdict] = max_score
-                    ### !!! END OF TEMPORARY PATCH !!!
-                    #
                     #Print some notes
                     if do_verbose:
                         print("\n-Max score: {0}".format(max_score))
@@ -5492,11 +5486,6 @@ class Classifier_Rules(_Classifier):
                 print("\n-Max score: {0}".format(max_score))
                 print("Max verdict: {0}\n".format(max_verdict))
             #
-            ### !!! START OF TEMPORARY PATCH !!!
-            dict_uncertainties = {all_keys[ii]:list_scores_comb[ii]
-                        for ii in range(0, len(all_keys))}
-            ### !!! END OF TEMPORARY PATCH !!!
-            #
             #Return low-prob verdict if multiple equal top probabilities
             if (list_scores_comb.count(max_score) > 1):
                 tmp_res = config.dictverdict_lowprob.copy()
@@ -5510,6 +5499,12 @@ class Classifier_Rules(_Classifier):
                 #
                 return tmp_res
             #
+        #
+
+        ##Establish uncertainties from scores
+        dict_uncertainties = {all_keys[ii]:list_scores_comb[ii]
+                                for ii in range(0, len(all_keys))}
+        dict_uncertainties[max_verdict] = max_score
         #
 
         ##Assemble and return final verdict
@@ -7044,133 +7039,54 @@ class Performance(_Base):
         list_evaluations = [[list_evaluations_raw[ii][item]
                                 for ii in range(0, num_thres)]
                             for item in titles] #Change hierarchy
+        #
 
         #For performance across all possible classifiers
-        #Prepare base figure
-        fig = plt.figure(figsize=figsize)
-        fig.set_facecolor(figcolor)
-        nrow = num_ops
-        ncol = max([len(item[0]["act_classnames"])
-                    for item in list_evaluations])
-        #
-        #Iterate through operators (one row per operator)
-        for ii in range(0, num_ops):
-            curr_xs = threshold_arrays[ii]
-            curr_eval = list_evaluations[ii]
-            curr_actlabels = sorted(curr_eval[0]["act_classnames"])
-            curr_measlabels = sorted(curr_eval[0]["meas_classnames"])
-            #Iterate through current actual classifs
-            for jj in range(0, len(curr_actlabels)):
-                curr_act = curr_actlabels[jj]
-                #Prepare subplot
-                ax0 = fig.add_subplot(nrow, ncol, ((ii*ncol)+jj+1))
-                #Iterate through measured classifs
-                for kk in range(0, len(curr_measlabels)):
-                    curr_meas = curr_measlabels[kk]
-                    curr_ys = [curr_eval[zz]["counters"][curr_act][curr_meas]
-                                for zz in range(0, len(curr_xs))
-                                ] #Current count of act. vs. meas. classifs
-                    #Plot results as function of uncertainty
-                    ax0.plot(curr_xs, curr_ys, alpha=alphas[kk],
-                            color=colors[kk], linewidth=linewidths[kk],
-                            linestyle=linestyles[kk], marker=markers[kk],
-                            label=curr_meas)
-                    #Highlight correct answers
-                    if (curr_act == curr_meas):
-                        ax0.plot(curr_xs, curr_ys, alpha=alpha_match,
-                                color=colors[kk], linewidth=linewidth_match,
-                                linestyle=linestyle_match, marker=marker_match)
-                        ax0.plot(curr_xs, curr_ys, alpha=0.5,
-                                color="black", linewidth=2, linestyle="-")
-                #
-                #Label the subplot
-                ax0.set_xlabel("Uncertainty Threshold", fontsize=fontsize)
-                ax0.set_ylabel("Count of Classifications", fontsize=fontsize)
-                ax0.set_title("{0}: {1} Texts".format(titles[ii], curr_act),
-                                fontsize=fontsize)
-                ax0.tick_params(width=tickwidth, size=tickheight,
-                                labelsize=ticksize, direction="in")
-                #
-                #Add legend, if last subplot in row
-                if (jj == (len(curr_actlabels)-1)):
-                    ax0.legend(loc="best", frameon=False,
-                                prop={"size":fontsize})
-            #
-        #
-        #Save and close the figure
-        tmp_filename = "{0}_all.png".format(filename_root)
-        fig.suptitle("Performance vs. Uncertainty\nAll Classifs.",
-                    fontsize=fontsize)
-        plt.tight_layout()
-        plt.savefig(os.path.join(filepath_output, tmp_filename))
-        plt.close()
+        list_actlabels = [sorted(item[0]["act_classnames"])
+                            for item in list_evaluations]
+        list_measlabels = [sorted(item[0]["meas_classnames"])
+                            for item in list_evaluations]
+        fig_suptitle = "Performance vs. Uncertainty\nAll Classifs."
+        self.plot_performance_vs_metric(list_xs=threshold_arrays,
+                list_evaluations=list_evaluations,list_actlabels=list_actlabels,
+                list_measlabels=list_measlabels, titles=titles,
+                filepath_output=filepath_output, xlabel="Uncertainty Threshold",
+                ylabel="Count of Classifications",
+                figcolor=figcolor, figsize=figsize, fontsize=fontsize,
+                ticksize=ticksize, tickwidth=tickwidth, tickheight=tickheight,
+                colors=colors, alphas=alphas, linestyles=linestyles,
+                linewidths=linewidths, markers=markers, alpha_match=alpha_match,
+                color_match=color_match, linestyle_match=linestyle_match,
+                linewidth_match=linewidth_match, marker_match=marker_match,
+                do_verbose=do_verbose, do_verbose_deep=do_verbose_deep)
         #
 
         #For performance across just target classifiers
         if (target_classifs is not None):
-            #Prepare base figure
-            fig = plt.figure(figsize=figsize)
-            fig.set_facecolor(figcolor)
-            nrow = num_ops
-            ncol = len(target_classifs)
-            #
-            #Iterate through operators (one row per operator)
-            for ii in range(0, num_ops):
-                curr_xs = threshold_arrays[ii]
-                curr_eval = list_evaluations[ii]
-                curr_actlabels = [item for item in
-                                sorted(curr_eval[0]["act_classnames"])
-                                if (item in target_classifs)]
-                curr_measlabels = [item for item in
-                                sorted(curr_eval[0]["meas_classnames"])
-                                if (item in target_classifs)]
-                #Iterate through current actual classifs
-                for jj in range(0, len(curr_actlabels)):
-                    curr_act = curr_actlabels[jj]
-                    #Prepare subplot
-                    ax0 = fig.add_subplot(nrow, ncol, ((ii*ncol)+jj+1))
-                    #Iterate through measured classifs
-                    for kk in range(0, len(curr_measlabels)):
-                        curr_meas = curr_measlabels[kk]
-                        curr_ys =[curr_eval[zz]["counters"][curr_act][curr_meas]
-                                    for zz in range(0, len(curr_xs))
-                                    ] #Current count of act. vs. meas. classifs
-                        #Plot results as function of uncertainty
-                        ax0.plot(curr_xs, curr_ys, alpha=alphas[kk],
-                                color=colors[kk], linewidth=linewidths[kk],
-                                linestyle=linestyles[kk], marker=markers[kk],
-                                label=curr_meas)
-                        #Highlight correct answers
-                        if (curr_act == curr_meas):
-                            ax0.plot(curr_xs, curr_ys, alpha=alpha_match,
-                                color=colors[kk], linewidth=linewidth_match,
-                                linestyle=linestyle_match, marker=marker_match)
-                            ax0.plot(curr_xs, curr_ys, alpha=0.5,
-                                color="black", linewidth=2, linestyle="-")
-                    #
-                    #Label the subplot
-                    ax0.set_xlabel("Uncertainty Threshold", fontsize=fontsize)
-                    ax0.set_ylabel("Count of Classifications",fontsize=fontsize)
-                    ax0.set_title("{0}: {1} Texts".format(titles[ii], curr_act),
-                                    fontsize=fontsize)
-                    ax0.tick_params(width=tickwidth, size=tickheight,
-                                    labelsize=ticksize, direction="in")
-                    #
-                    #Add legend, if last subplot in row
-                    if (jj == (len(curr_actlabels)-1)):
-                        ax0.legend(loc="best", frameon=False,
-                                    prop={"size":fontsize})
-                #
-            #
-            #Save and close the figure
-            tmp_filename = "{0}_targets.png".format(filename_root)
-            fig.suptitle(
-                    "Performance vs. Uncertainty\nTarget Classifs Only: {0}"
-                    .format(target_classifs),
-                    fontsize=fontsize)
-            plt.tight_layout()
-            plt.savefig(os.path.join(filepath_output, tmp_filename))
-            plt.close()
+            list_actlabels = [[item2 for item2 in
+                                    sorted(item1[0]["act_classnames"])
+                                    if (item2 in target_classifs)]
+                                for item1 in list_evaluations]
+            list_measlabels = [[item2 for item2 in
+                                    sorted(item1[0]["meas_classnames"])
+                                    if (item2 in target_classifs)]
+                                for item1 in list_evaluations]
+            fig_suptitle = ("Performance vs. Uncertainty\nTarget Classifs Only:"
+                            +"{0}".format(target_classifs))
+            self.plot_performance_vs_metric(list_xs=threshold_arrays,
+                list_evaluations=list_evaluations,list_actlabels=list_actlabels,
+                list_measlabels=list_measlabels, titles=titles,
+                xlabel="Uncertainty Threshold",
+                ylabel="Count of Classifications",
+                fig_suptitle=fig_suptitle, filepath_output=filepath_output,
+                filename_plot="{0}_targets.png".format(filename_root)
+                figcolor=figcolor, figsize=figsize, fontsize=fontsize,
+                ticksize=ticksize, tickwidth=tickwidth, tickheight=tickheight,
+                colors=colors, alphas=alphas, linestyles=linestyles,
+                linewidths=linewidths, markers=markers, alpha_match=alpha_match,
+                color_match=color_match, linestyle_match=linestyle_match,
+                linewidth_match=linewidth_match, marker_match=marker_match,
+                do_verbose=do_verbose, do_verbose_deep=do_verbose_deep)
         #
 
         #Print some notes
@@ -7389,7 +7305,8 @@ class Performance(_Base):
             #
             #Print some notes
             if do_verbose:
-                print("Accumulating performance over {0} texts.".format(num_texts))
+                print("Accumulating performance over {0} texts."
+                        .format(num_texts))
                 print("Actual class names: {0}\nMeasured class names: {1}"
                         .format(act_classnames, meas_classnames))
             #
@@ -7430,51 +7347,18 @@ class Performance(_Base):
                     #
                     #Otherwise, apply threshold
                     else:
-                        """
-                        if (curr_measval_raw.lower().replace("_","")
-                                    in act_classnames):
-                            curr_classer = curr_op._get_info("classifier")
-                            if (isinstance(curr_classer, Classifier_Rules)):
-                                tmppass = curr_measdict[lookup]["uncertainty"]
-                                ###!!! START OF TEMPORARY PATCH !!!
-                                if (tmppass is not None):
-                                    tmppass = curr_classer._convert_scorestoverdict(
-                                        dict_scores_indiv=curr_measdict[lookup
-                                                            ]["scores_indiv"],
-                                        components=curr_measdict[lookup
-                                                            ]["components"]
-                                        )["uncertainty"]
-                                ###!!! END OF TEMPORARY PATCH !!!
-                            else:
-                                tmppass = curr_measdict[lookup]["uncertainty"]
-                            if ((tmppass is not None) and
-                                    (tmppass[curr_measval_raw]<thresholds[ii])):
-                                curr_measval = res_lowprob
-                        """
+                        #Fetch uncertainties (higher -> more certain)
                         tmppass = curr_measdict[lookup]["uncertainty"]
-                        curr_classer = curr_op._get_info("classifier")
-                        if (isinstance(curr_classer, Classifier_Rules)):
-                            ###!!! START OF TEMPORARY PATCH !!!
-                            if (tmppass is not None):
-                                tmppass = curr_classer._convert_scorestoverdict(
-                                    dict_scores_indiv=curr_measdict[lookup
-                                                        ]["scores_indiv"],
-                                    components=curr_measdict[lookup
-                                                        ]["components"]
-                                    )["uncertainty"]
-                            ###!!! END OF TEMPORARY PATCH !!!
-                        #else:
-                        #    tmppass = curr_measdict[lookup]["uncertainty"]
                         if (tmppass is not None):
                             max_verdict = max(tmppass, key=tmppass.get)
-                            max_val = tmppass[max_verdict]
-                            if (max_val < thresholds[ii]):
-                                curr_measval = res_lowprob
+                            max_val = tmppass[max_verdict] #Uncertainty of verd.
+                            if (max_val < thresholds[ii]): #If below thres.
+                                curr_measval = res_lowprob #Return low prob.
                             else:
-                                curr_measval = max_verdict
+                                curr_measval = max_verdict #Return verdict
                         #
-                        else:
-                            curr_measval = curr_measval_raw
+                        else: #If no uncertainty, means was not classified
+                            curr_measval = curr_measval_raw #Return orig. verd.
                         #
                         curr_measval = curr_measval.lower().replace("_","")
                     #
@@ -7709,6 +7593,68 @@ class Performance(_Base):
             print("\nRun of plot_performance_confusion_matrix() complete!")
         #
         return
+    #
+
+    ##
+    def plot_performance_vs_metric(self, list_xs, list_evaluations, list_actlabels, list_measlabels, titles, xlabel, ylabel, figcolor="white", figsize=(20, 20), fontsize=16, ticksize=14, tickwidth=3, tickheight=5, colors=["tomato", "dodgerblue", "purple", "dimgray", "silver", "darkgoldenrod", "darkgreen", "green", "cyan"], alphas=([0.75]*10), linestyles=["-", "-", "-", "--", "--", "--", ":", ":", ":"], linewidths=([3]*10), markers=(["o"]*10), alpha_match=0.5, color_match="black", linestyle_match="-", linewidth_match=8, marker_match="*", do_verbose=None, do_verbose_deep=None):
+        #Prepare base figure
+        num_evals = len(list_evaluations)
+        fig = plt.figure(figsize=figsize)
+        fig.set_facecolor(figcolor)
+        nrow = num_evals
+        ncol = max([len(item[0]["act_classnames"])
+                    for item in list_evaluations])
+        #
+
+        #Iterate through operators (one row per operator)
+        for ii in range(0, num_evals):
+            curr_xs = list_xs[ii]
+            curr_eval = list_evaluations[ii]
+            curr_actlabels = list_actlabels[ii]
+            curr_measlabels = list_measlabels[ii]
+            #Iterate through current actual classifs
+            for jj in range(0, len(curr_actlabels)):
+                curr_act = curr_actlabels[jj]
+                #Prepare subplot
+                ax0 = fig.add_subplot(nrow, ncol, ((ii*ncol)+jj+1))
+                #Iterate through measured classifs
+                for kk in range(0, len(curr_measlabels)):
+                    curr_meas = curr_measlabels[kk]
+                    curr_ys = [curr_eval[zz]["counters"][curr_act][curr_meas]
+                                for zz in range(0, len(curr_xs))
+                                ] #Current count of act. vs. meas. classifs
+                    #Plot results as function of uncertainty
+                    ax0.plot(curr_xs, curr_ys, alpha=alphas[kk],
+                            color=colors[kk], linewidth=linewidths[kk],
+                            linestyle=linestyles[kk], marker=markers[kk],
+                            label=curr_meas)
+                    #Highlight correct answers
+                    if (curr_act == curr_meas):
+                        ax0.plot(curr_xs, curr_ys, alpha=alpha_match,
+                                color=colors[kk], linewidth=linewidth_match,
+                                linestyle=linestyle_match, marker=marker_match)
+                        ax0.plot(curr_xs, curr_ys, alpha=0.5,
+                                color="black", linewidth=2, linestyle="-")
+                #
+                #Label the subplot
+                ax0.set_xlabel(xlabel, fontsize=fontsize)
+                ax0.set_ylabel(ylabel, fontsize=fontsize)
+                ax0.set_title("{0}: {1} Texts".format(titles[ii], curr_act),
+                                fontsize=fontsize)
+                ax0.tick_params(width=tickwidth, size=tickheight,
+                                labelsize=ticksize, direction="in")
+                #
+                #Add legend, if last subplot in row
+                if (jj == (len(curr_actlabels)-1)):
+                    ax0.legend(loc="best", frameon=False,
+                                prop={"size":fontsize})
+            #
+        #
+        #Save and close the figure
+        fig.suptitle(fig_suptitle, fontsize=fontsize)
+        plt.tight_layout()
+        plt.savefig(os.path.join(filepath_output, filename_plot))
+        plt.close()
     #
 #
 
