@@ -1,5 +1,5 @@
 """
-:title: classfier_rules.py
+:title: rules.py
 
 """
 import itertools as iterer
@@ -8,12 +8,12 @@ import numpy as np
 from nltk.corpus import wordnet
 
 import bibcat.config as config
-from bibcat.core.classfier import _Classifier
+from bibcat.core.classifiers.textdata import ClassifierBase
 
 
-class Classifier_Rules(_Classifier):
+class RuleBasedClassifier(ClassifierBase):
     """
-    Class: Classifier_Rules
+    Class: RuleBasedClassifier
     Purpose:
         - Use an internal 'decision tree' to classify given text.
     Initialization Arguments:
@@ -42,7 +42,7 @@ class Classifier_Rules(_Classifier):
 
         # Print some notes
         if do_verbose:
-            print("> Initialized instance of Classifier_Rules class.")
+            print("> Initialized instance of RuleBasedClassifier class.")
             print("Internal decision tree has been assembled.")
             print("NOTE: Decision tree probabilities:\n{0}\n".format(decision_tree))
 

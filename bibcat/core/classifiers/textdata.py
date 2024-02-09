@@ -1,14 +1,13 @@
 """
-:title: classify.py
+:title: textdata.py
 
-This module is a class purely meant to be inherited by the various Classifier_* classes and inherits _Base() class.  
-In short, the _Classifier class is a collection of methods used by different classifier types.
+This module is a class purely meant to be inherited by the various *Classifier classes and inherits Base() class.  
+In short, the ClassifierBase class is a collection of methods used by different classifier types.
 
-The primary methods and use cases of _Classifier include:
+The primary methods and use cases of ClassifierBase include:
 * `classify_text`: Base classification method, overwritten by various classifier types during inheritance.
-* `_load_text`: Load text from a given filepath.
 * `_process_text`: Use the Grammar class (and internally the Paper class) to process given text into modifs.
-* `_write_text`: Write a text file to a given file path.
+* `generate_directory_TVT`: Generate directories bor training, validation, and test data sets.
 
 """
 
@@ -18,18 +17,18 @@ import os
 import numpy as np
 
 import bibcat.config as config
-from bibcat.core.base import _Base
+from bibcat.core.base import Base
 from bibcat.core.grammar import Grammar
 
 
-class _Classifier(_Base):
+class ClassifierBase(Base):
     """
     WARNING! This class is *not* meant to be used directly by users.
     -
-    Class: _Classifier
+    Class: ClassifierBase
     Purpose:
-     - Container for common underlying methods used in Classifier_* classes.
-     - Purely meant to be inherited by Classifier_* classes.
+     - Container for common underlying methods used in *Classifier classes.
+     - Purely meant to be inherited by *Classifier classes.
     -
     """
 
@@ -38,7 +37,7 @@ class _Classifier(_Base):
         """
         Method: __init__
         WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Initializes instance of _Classifier class.
+        Purpose: Initializes instance of ClassifierBase class.
         """
         # Nothing to see here - inheritance base
         pass

@@ -13,10 +13,10 @@ much of the 'noise' inherent to the rest of the text.
 import re
 
 from bibcat import config
-from bibcat.core.base import _Base
+from bibcat.core.base import Base
 
 
-class Keyword(_Base):
+class Keyword(Base):
     """
     Class: Keyword
     Purpose: Store terms, i.e. titles and acronyms, that refer to a mission.

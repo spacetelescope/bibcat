@@ -19,13 +19,13 @@ import numpy as np
 import spacy
 
 import bibcat.config as config
-from bibcat.core.base import _Base
+from bibcat.core.base import Base
 from bibcat.core.paper import Paper
 
 nlp = spacy.load(config.spacy_language_model)
 
 
-class Grammar(_Base):
+class Grammar(Base):
     """
     Class: Grammar
     Purpose:

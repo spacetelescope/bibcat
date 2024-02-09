@@ -308,7 +308,7 @@ class TestBase(unittest.TestCase):
             #
 
             # Prepare and run test for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             # For tests where verbs are not included
             for phrase in dict_acts_noverbs:
                 test_res = testbase._assemble_keyword_wordchunks(
@@ -389,7 +389,7 @@ class TestBase(unittest.TestCase):
             #
 
             # Prepare and run test for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             for phrase in dict_acts:
                 test_res = testbase._check_importance(text=phrase, keyword_objs=[kobj])
                 list_res = [key for key in test_res if (test_res[key])]
@@ -426,7 +426,7 @@ class TestBase(unittest.TestCase):
             #
 
             # Prepare and run test for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             for phrase in dict_acts:
                 test_res = testbase._cleanse_text(text=phrase, do_streamline_etal=True)
                 #
@@ -493,7 +493,7 @@ class TestBase(unittest.TestCase):
             #
 
             # Prepare and run test for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             for key1 in dict_acts:
                 test_res = testbase._extract_core_from_phrase(
                     phrase_NLP=nlp(key1), do_skip_useless=False, do_verbose=False, keyword_objs=list_lookup_kobj
@@ -555,7 +555,7 @@ class TestBase(unittest.TestCase):
             #
 
             # Prepare and run tests for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             dict_ambigs = testbase._process_database_ambig(do_verbose=False, keyword_objs=list_lookup_kobj)
             #
             # Check answers
@@ -606,7 +606,7 @@ class TestBase(unittest.TestCase):
             #
 
             # Prepare and run tests for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             #
             # Check answers
             for key1 in dict_tests:
@@ -659,7 +659,7 @@ class TestBase(unittest.TestCase):
             #
 
             # Prepare and run tests for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             #
             # Check answers
             for key1 in dict_tests:
@@ -705,7 +705,7 @@ class TestBase(unittest.TestCase):
             #
 
             # Prepare and run tests for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             #
             # Check answers
             for key1 in dict_tests:
@@ -761,7 +761,7 @@ class TestBase(unittest.TestCase):
             #
 
             # Prepare and run tests for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             #
             # Check answers
             for key1 in dict_tests:
@@ -814,7 +814,7 @@ class TestBase(unittest.TestCase):
             #
 
             # Prepare and run tests for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             #
             # Check answers
             for key1 in dict_tests:
@@ -868,7 +868,7 @@ class TestBase(unittest.TestCase):
             #
 
             # Prepare and run tests for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             #
             # Check answers
             for key1 in dict_tests:
@@ -917,7 +917,7 @@ class TestBase(unittest.TestCase):
             #
 
             # Prepare and run tests for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             #
             # Check answers
             for key1 in dict_tests:
@@ -972,7 +972,7 @@ class TestBase(unittest.TestCase):
             #
 
             # Prepare and run tests for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             #
             # Check answers
             for key1 in dict_tests:
@@ -1022,7 +1022,7 @@ class TestBase(unittest.TestCase):
             #
 
             # Prepare and run tests for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             #
             # Check answers
             for key1 in dict_tests:
@@ -1081,7 +1081,7 @@ class TestBase(unittest.TestCase):
             #
 
             # Prepare and run tests for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             #
             # Check answers
             for key1 in dict_tests:
@@ -1141,7 +1141,7 @@ class TestBase(unittest.TestCase):
             #
 
             # Prepare and run tests for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             #
             # Check answers
             for key1 in dict_tests:
@@ -1174,7 +1174,7 @@ class TestBase(unittest.TestCase):
             }
 
             # Prepare and run tests for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             #
             # Check answers
             for key1 in dict_tests:
@@ -1215,7 +1215,7 @@ class TestBase(unittest.TestCase):
             }
 
             # Prepare and run tests for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             #
             # Check answers
             for key1 in dict_tests:
@@ -1253,7 +1253,7 @@ class TestBase(unittest.TestCase):
             }
 
             # Prepare and run tests for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             #
             # Check answers
             for key1 in dict_tests:
@@ -1285,7 +1285,7 @@ class TestBase(unittest.TestCase):
             }
 
             # Prepare and run tests for bibcat class instance
-            testbase = base._Base()
+            testbase = base.Base()
             #
             # Check answers
             for key1 in dict_tests:

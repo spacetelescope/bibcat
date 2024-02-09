@@ -38,7 +38,7 @@ import bibcat.config as config
 nlp = spacy.load(config.spacy_language_model)
 
 
-class _Base:
+class Base:
     """
     WARNING! This class is *not* meant to be used directly by users.
     -

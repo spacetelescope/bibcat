@@ -13,8 +13,12 @@ Refactoring bibcat has started.
 
 ### Changed
 - PR #8
-    - Refactored classes.py into several individual class files below, which were moved to a new folder name `core`
-        - base.py, classfier.py, classfier_ml.py, classifier_rules.py, grammar.py, keyword.py, operator.py, paper.py, performance.py
+    - Refactored classes.py into several individual class files below, which were moved to the new folder names, `core` and `core/classifiers`.
+        - `core`: base.py, grammar.py, keyword.py, operator.py, paper.py, performance.py
+        - `core/classifiers`: 
+            - _Classfier(): ClassifierBase() in textdata.py, 
+            - Classifier_ML: MachineLearningClassifier() in ml.py, 
+            - Classifier_Rules: RuleBasedClassifier() in rules.py
     - Continued formatting and styling these class files using `Ruff` and the line length set to 120
     - Updated module updates according to the refactoring
     - Updated CHANGELOG.MD and pyproject.toml

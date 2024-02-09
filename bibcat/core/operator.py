@@ -23,17 +23,17 @@ import os
 import numpy as np
 
 import bibcat.config as config
-from bibcat.core.base import _Base
+from bibcat.core.base import Base
 from bibcat.core.grammar import Grammar
 
 
-class Operator(_Base):
+class Operator(Base):
     """
     Class: Operator
     Purpose:
         - Run full workflow of text classification, from input text to internal text processing to output classification.
     Initialization Arguments:
-        - classifier [Classifier_* instance]:
+        - classifier [*Classifier instance]:
           - Classifier to use for classification.
         - keyword_objs [list of Keyword instances]:
           - Target missions; terms will be used to search the text.
@@ -537,7 +537,7 @@ class Operator(_Base):
             print("\n> Running train_model_ML()!")
 
         # Throw error if invalid classifier given
-        allowed_types = ["Classifier_ML"]
+        allowed_types = ["MachineLearningClassifier"]
         if type(classifier).__name__ not in allowed_types:
             raise ValueError("Err: Classifier ({0}) not allowed type ({1})".format(type(classifier), allowed_types))
 

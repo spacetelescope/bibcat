@@ -17,9 +17,10 @@ import json
 import os
 import time
 
-from bibcat.core import classifier_ml, config, operator
-
+from bibcat import config
 from bibcat import parameters as params
+from bibcat.core import operator
+from bibcat.core.classifiers import ml
 
 # do_check_truematch: If any papers in dataset encountered within
 # the codebase that have unknown ambiguous phrases, then a note will be
@@ -31,7 +32,7 @@ do_check_truematch = True
 # num_papers: Set None to use all available papers in external dataset
 # Note: If set to integer, final paper count might be a little more than
 # target num_papers given
-num_papers = 500
+num_papers = 100
 do_verbose_text_summary = True  # print out the text info summary per paper.
 
 # For external data; classifications to include
@@ -78,7 +79,7 @@ buffer = 0
 all_kobjs = params.all_kobjs  # mission keywords to use
 
 # Initialize an empty ML classifier
-classifier_ML = classifier_ml.Classifier_ML(filepath_model=None, fileloc_ML=None, do_verbose=True)
+classifier_ML = ml.MachineLearningClassifier(filepath_model=None, fileloc_ML=None, do_verbose=True)
 
 # Initialize an Operator
 tabby_ML = operator.Operator(
@@ -121,7 +122,7 @@ for ii in range(0, len(dataset)):
 
     # Skip if bibcode already encountered (and so duplicate entry)
     if curr_bibcode in list_bibcodes:
-        print("Duplicate bibcode encountered: {0}. Skipping.".format(curr_bibcode))
+        print(f"Duplicate bibcode encountered: {curr_bibcode}. Skipping.")
         continue
 
     # Iterate through missions for this text
@@ -172,14 +173,14 @@ if (num_papers is not None) and (len(dict_texts) < num_papers):
     )
 
 # print a snippet of each of the entries in the dataset.
-print("Number of processed texts: {0}={1}\n".format(i_track, len(dict_texts)))
+print(f"Number of processed texts: {i_track}={len(dict_texts)}\n")
 if do_verbose_text_summary:
     for curr_key in dict_texts:
-        print("Text #{0}:".format(curr_key))
-        print("Classification: {0}".format(dict_texts[curr_key]["class"]))
-        print("Mission: {0}".format(dict_texts[curr_key]["mission"]))
-        print("ID: {0}".format(dict_texts[curr_key]["id"]))
-        print("Bibcode: {0}".format(dict_texts[curr_key]["bibcode"]))
+        print(f"Text #{curr_key}:")
+        print(f"Classification: {dict_texts[curr_key]['class']}")
+        print(f"Mission: {dict_texts[curr_key]['mission']}")
+        print(f"ID: {dict_texts[curr_key]['id']}")
+        print(f"Bibcode: {dict_texts[curr_key]['bibcode']}")
         print("Text snippet:")
         print(dict_texts[curr_key]["text"][0:500])
         print("---\n\n")
@@ -215,6 +216,5 @@ str_err = tabby_ML.train_model_ML(
 print(f"Time to train the model with run = {time.time()-start} seconds.")
 
 # Save the output error string to a file
-with open(filesave_error, "x") as openfile:
-    openfile.write(str_err)
+with open(filesave_error, "w") as openfile:
     openfile.write(str_err)

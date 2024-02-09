@@ -12,12 +12,12 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-from bibat.core.base import _Base
 
 import bibcat.config as config
+from bibcat.core.base import Base
 
 
-class Performance(_Base):
+class Performance(Base):
     """
     Class: Performance
     Purpose:

@@ -14,10 +14,10 @@ import re
 import numpy as np
 
 import bibcat.config as config
-from bibcat.core.base import _Base
+from bibcat.core.base import Base
 
 
-class Paper(_Base):
+class Paper(Base):
     """
     Class: Paper
     Purpose:

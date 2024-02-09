@@ -20,9 +20,11 @@ import json
 import os
 
 import numpy as np
-from bibcat.core import classifier_ml, classifier_rules, config, operator, performance
 
+from bibcat import config
 from bibcat import parameters as params
+from bibcat.core import operator, performance
+from bibcat.core.classifiers import ml, rules
 
 # Fetch filepath for model
 name_model = config.name_model
@@ -145,15 +147,15 @@ if do_real_testdata:
         dict_texts[str(curr_ind)] = curr_info
 
     # Print some notes about the testing data
-    print("Number of texts in text set: {0}".format(len(dict_texts)))
+    print(f"Number of texts in text set: {dict_texts}")
     print("")
     if do_verbose_text_summary:
         for key in dict_texts:
-            print("Entry {0}:".format(key))
-            print("ID: {0}".format(dict_texts[key]["id"]))
-            print("Bibcode: {0}".format(dict_texts[key]["bibcode"]))
-            print("Missions: {0}".format(dict_texts[key]["missions"]))
-            print("Start of text:\n{0}".format(dict_texts[key]["text"][0:500]))
+            print(f"Entry: {key}")
+            print(f"ID: {dict_texts[key]['id']}")
+            print(f"Bibcode: {dict_texts[key]['bibcode']}")
+            print(f"Missions: {dict_texts[key]['missions']}")
+            print(f"Start of text:\n{dict_texts[key]['text'][0:500]}")
             print("-\n")
 
 # Store texts for each operator and its internal classifier
@@ -169,10 +171,10 @@ list_dict_texts = [dict_texts_ML, dict_texts_RB]
 # initialize classifiers by loading a previously trained ML model
 filepath_model = os.path.join(dir_model, (name_model + ".npy"))
 fileloc_ML = os.path.join(dir_model, (config.tfoutput_prefix + name_model))
-classifier_ML = classifier_ml.Classifier_ML(filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True)
+classifier_ML = ml.MachineLearningClassifier(filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True)
 
 # Load a rule-based classifier
-classifier_rules = classifier_rules.Classifier_Rules()
+rules = rules.RuleBasedClassifier()
 
 
 # Initialize operators by loading models into instances of the Operator class
@@ -189,7 +191,7 @@ operator_ML = operator.Operator(
 )
 # The rule-based operator
 operator_RB = operator.Operator(
-    classifier=classifier_rules,
+    classifier=rules,
     name="Operator_RB",
     mode=mode_modif,
     keyword_objs=all_kobjs,
@@ -228,20 +230,20 @@ results_RB = operator_RB.classify(
 # Print the results
 # Print the text and classes as a reminder
 # print("Text:\n\"\n{0}\n\"\n".format(dict_texts))
-print("Lookup: {0}\n".format(lookup))
+print(f"Lookup: {lookup}\n")
 
 # The machine learning results
 print("> Machine learning results:")
-print('Paragraph:\n"\n{0}\n"'.format(results_ML["modif"]))
-print("Verdict: {0}".format(results_ML["verdict"]))
-print("Probabilities: {0}".format(results_ML["uncertainty"]))
+print(f'Paragraph:\n"\n{results_ML["modif"]}\n"')
+print(f"Verdict: {results_ML['verdict']}")
+print(f"Probabilities: {results_ML['uncertainty']}")
 print("-\n")
 
 # The rule-based results
 print("> Rule-based results:")
-print('Paragraph:\n"\n{0}\n"'.format(results_RB["modif"]))
-print("Verdict: {0}".format(results_RB["verdict"]))
-print("Probabilities: {0}".format(results_RB["uncertainty"]))
+print(f'Paragraph:\n"\n{results_RB["modif"]}\n"')
+print(f"Verdict: {results_RB['verdict']}")
+print(f"Probabilities: {results_RB['uncertainty']}")
 print("-\n")
 
 

@@ -1,5 +1,5 @@
 """
-:title: classifier_ml.py
+:title: ml.py
 
 """
 import os
@@ -8,15 +8,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 import tensorflow_hub as tfhub
+import tensorflow_text as tftext
 from official.nlp import optimization as tf_opt
 
 import bibcat.config as config
-from bibcat.core.classfier import _Classifier
+from bibcat.core.classifiers.textdata import ClassifierBase
 
 
-class Classifier_ML(_Classifier):
+class MachineLearningClassifier(ClassifierBase):
     """
-    Class: Classifier_ML
+    Class: MachineLearningClassifier
     Purpose:
         - Train a machine learning model on text within a directory.
         - Use a trained machine learning model to classify given text.
@@ -36,7 +37,7 @@ class Classifier_ML(_Classifier):
         """
         Method: __init__
         WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Initializes instance of Classifier_ML class.
+        Purpose: Initializes instance of MachineLearningClassifier class.
         """
 
         # Store information about this instance
