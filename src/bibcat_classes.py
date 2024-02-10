@@ -4073,6 +4073,7 @@ class Classifier_ML(_Classifier):
         if do_verbose:
             print("\nMethod classify_text for ML classifier complete!")
             print("Max verdict: {0}\n".format(max_verdict))
+            print("Uncertainties: {0}\n".format(dict_uncertainty))
         #
 
         #Return dictionary of results
@@ -7050,8 +7051,9 @@ class Performance(_Base):
         self.plot_performance_vs_metric(list_xs=threshold_arrays,
                 list_evaluations=list_evaluations,list_actlabels=list_actlabels,
                 list_measlabels=list_measlabels, titles=titles,
-                filepath_output=filepath_output, xlabel="Uncertainty Threshold",
-                ylabel="Count of Classifications",
+                filepath_plot=filepath_output, xlabel="Uncertainty Threshold",
+                ylabel="Count of Classifications", fig_suptitle=fig_suptitle,
+                filename_plot="{0}_all.png".format(filename_root),
                 figcolor=figcolor, figsize=figsize, fontsize=fontsize,
                 ticksize=ticksize, tickwidth=tickwidth, tickheight=tickheight,
                 colors=colors, alphas=alphas, linestyles=linestyles,
@@ -7078,8 +7080,8 @@ class Performance(_Base):
                 list_measlabels=list_measlabels, titles=titles,
                 xlabel="Uncertainty Threshold",
                 ylabel="Count of Classifications",
-                fig_suptitle=fig_suptitle, filepath_output=filepath_output,
-                filename_plot="{0}_targets.png".format(filename_root)
+                fig_suptitle=fig_suptitle, filepath_plot=filepath_output,
+                filename_plot="{0}_targets.png".format(filename_root),
                 figcolor=figcolor, figsize=figsize, fontsize=fontsize,
                 ticksize=ticksize, tickwidth=tickwidth, tickheight=tickheight,
                 colors=colors, alphas=alphas, linestyles=linestyles,
@@ -7595,8 +7597,23 @@ class Performance(_Base):
         return
     #
 
-    ##
-    def plot_performance_vs_metric(self, list_xs, list_evaluations, list_actlabels, list_measlabels, titles, xlabel, ylabel, figcolor="white", figsize=(20, 20), fontsize=16, ticksize=14, tickwidth=3, tickheight=5, colors=["tomato", "dodgerblue", "purple", "dimgray", "silver", "darkgoldenrod", "darkgreen", "green", "cyan"], alphas=([0.75]*10), linestyles=["-", "-", "-", "--", "--", "--", ":", ":", ":"], linewidths=([3]*10), markers=(["o"]*10), alpha_match=0.5, color_match="black", linestyle_match="-", linewidth_match=8, marker_match="*", do_verbose=None, do_verbose_deep=None):
+    ##Method: plot_performance_vs_metric
+    ##Purpose: Plot performance as a function of given metric
+    def plot_performance_vs_metric(self, list_xs, list_evaluations, list_actlabels, list_measlabels, titles, xlabel, ylabel, filepath_plot, filename_plot, fig_suptitle, figcolor="white", figsize=(20, 20), fontsize=16, ticksize=14, tickwidth=3, tickheight=5, colors=["tomato", "dodgerblue", "purple", "dimgray", "silver", "darkgoldenrod", "darkgreen", "green", "cyan"], alphas=([0.75]*10), linestyles=["-", "-", "-", "--", "--", "--", ":", ":", ":"], linewidths=([3]*10), markers=(["o"]*10), alpha_match=0.5, color_match="black", linestyle_match="-", linewidth_match=8, marker_match="*", do_verbose=None, do_verbose_deep=None):
+        """
+        Method: plot_performance_vs_metric
+        Purpose:
+          - !
+        Arguments:
+          - !
+          - do_verbose [bool (default=False)]:
+            - Whether or not to print surface-level log information and tests.
+          - do_verbose_deep [bool (default=False)]:
+            - Whether or not to print inner log information and tests.
+        Returns:
+          - dict:
+            - !
+        """
         #Prepare base figure
         num_evals = len(list_evaluations)
         fig = plt.figure(figsize=figsize)
@@ -7653,7 +7670,7 @@ class Performance(_Base):
         #Save and close the figure
         fig.suptitle(fig_suptitle, fontsize=fontsize)
         plt.tight_layout()
-        plt.savefig(os.path.join(filepath_output, filename_plot))
+        plt.savefig(os.path.join(filepath_plot, filename_plot))
         plt.close()
     #
 #
