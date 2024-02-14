@@ -3,16 +3,20 @@
 ## [Unreleased]
 
 Refactoring bibcat has started.
-- Refactoring classes.py, parameters.py, and config.py 
+- Refactoring test_bibcat.py
 - Refactoring create_model.py and classify_papers.py
 - Adding tutorial notebooks back
 
 ### Removed
+- PR #9 
+    - Deleted test_bibcat.py 
+
 - [PR #7](https://github.com/spacetelescope/bibcat/pull/7)
     - Deleted all previous codes and files for a fresh start
 
 ### Changed
-- PR #8
+
+- [PR #8]
     - Refactored classes.py into several individual class files below, which were moved to the new folder names, `core` and `core/classifiers`.
         - `core`: base.py, grammar.py, keyword.py, operator.py, paper.py, performance.py
         - `core/classifiers`: 
@@ -29,7 +33,16 @@ Refactoring bibcat has started.
 
 ### Added 
 
-- PR #8    
+- PR #9
+    - test_bibcat.py was refactored into several sub test scripts. 
+        - tests/test_core/test_base.py
+        - tests/test_core/test_grammar.py
+        - tests/test_core/test_keyword.py
+        - tests/test_core/test_operator.py
+        - tests/test_core/test_paper.py
+        - tests/test_data/test_dataset.py
+
+- [PR #8]    
     - Created a new folder named `core` to store all refactored class scripts
     - Added more description to each class script and other main scripts.
 

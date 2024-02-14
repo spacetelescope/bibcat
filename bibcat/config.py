@@ -20,7 +20,7 @@ filepath_dataset = "/path/to/datasets/"
 # papertrack data that Sarah W. created
 path_papertrack = os.path.join(filepath_dataset, "papertrack_export_2023-11-06.json")
 # fulltext data from the ADS team
-path_papertext = os.path.join(filepath_dataset, "ST_Request2018_2023.json")
+path_papertext = os.path.join(filepath_dataset, "ST_Request2018-2023.json")
 
 
 # Set global fixed paths
