@@ -1599,9 +1599,79 @@ class Keyword(_Base):
         return self._get_info("name")
     #
 
+    ##Method: identify_keyword
+    ##Purpose: Check if text matches to this keyword object; return match inds
+    def identify_keyword(self, text, mode=None):
+        """
+        Method: identify_keyword
+        Purpose: Return whether or not the given text contains terms (keywords, acronyms) matching this instance.
+        Arguments:
+          - "text" [str]: The text to search within for terms
+        Returns:
+          - [dict] containing:
+            - "bool":[bool] - if any matches
+            - "span":[tuple of 2 ints] - character span of matches
+        """
+        #Fetch global variables
+        exps_k = self._get_info("exps_keywords")
+        keywords = self._get_info("keywords")
+        exp_a = self._get_info("exp_acronyms")
+        banned_overlap_lowercase = self._get_info("banned_overlap_lowercase")
+        do_verbose = self._get_info("do_verbose")
+        allowed_modes = [None, "keyword", "acronym"]
+        #
+
+        #Throw error is specified mode not recognized
+        if ((mode is not None) and (mode.lower() not in allowed_modes)):
+            raise ValueError("Err: Invalid mode '{0}'.\nAllowed modes: {1}"
+                            .format(mode, allowed_modes))
+        #
+
+        #Check if this text contains keywords
+        if ((mode is None) or (mode.lower() == "keyword")):
+            set_keywords = [list(re.finditer(item1, text, flags=re.IGNORECASE)))
+                            for item1 in exps_k
+                            if (not any([(ban1 in text.lower())
+                                    for ban1 in banned_overlap_lowercase]))])
+            charspan_keywords = [(item2.start(), item2.end())
+                                for item1 in set_keywords
+                                for item2 in item1] #Char. span of matches
+            check_keywords = any([(len(item) > 0)
+                                for item in set_keywords]) #If any matches
+        else:
+            charspan_keywords = []
+            check_keywords = False
+        #
+        #Check if this text contains acronyms
+        if (((mode is None) or (mode.lower() == "acronym"))
+                    and (exp_a is not None)):
+            set_acronyms = list(re.finditer(exp_a, text, flags=re.IGNORECASE))
+            charspan_acronyms = [(item.start(), item.end())
+                                for item in set_acronyms]
+            check_acronyms = (len(set_acronyms) > 0)
+        else:
+            charspan_acronyms = []
+            check_acronyms = False
+        #
+
+        #Print some notes
+        if do_verbose:
+            print("Keywords: {0}\nKeyword regex:\n{1}".format(keywords, exps_k))
+            print("Acronyms: {0}\nAcronym regex:\n{1}".format(acronyms, exp_a))
+            print("Keyword bool: {0}\nAcronym bool: {1}"
+                    .format(check_keywords, check_acronyms))
+            print("Keyword char. spans: {0}\nAcronym char. spans: {1}"
+                    .format(charspan_keywords, charspan_acronyms))
+        #
+
+        #Return booleans
+        return {"bool":(check_acronyms or check_keywords),
+                "charspan":(charspan_keywords + charspan_acronyms)}
+    #
+
     ##Method: is_keyword
     ##Purpose: Check if text matches to this keyword object
-    def is_keyword(self, text, mode=None):
+    def x_is_keyword(self, text, mode=None):
         """
         Method: is_keyword
         Purpose: Return whether or not the given text contains terms (keywords, acronyms) matching this instance.
@@ -2888,12 +2958,24 @@ class Grammar(_Base):
         return dict_clauses
     #
 
-    !
     ##Method: _get_conjoined()
     ##Purpose: Retrieve word(s) conjoined to given id (index)
-    def _get_conjoined():
+    def _get_conjoined(word, sentence_NLP, dict_nounchunks, ids_conjoined):
+        """
+        Method: _get_conjoined
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Recursively examine and store information for each word within an NLP-sentence.
+        """
+        #Extract global variables
+        do_verbose = self._get_info("do_verbose")
+
+        #Gather words conjoined to given word
+        words_conj = [sentence_NLP[ind] for ind in range(0, len(sentence_NLP))
+                        if (ids_conjoined[ind] == word.i)]
+
+        #Return list of gathered conjoined words
+        return words_conj
     #
-    !
 
     !
     ##Method: _get_nounchunk()
