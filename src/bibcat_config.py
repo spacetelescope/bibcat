@@ -123,7 +123,8 @@ tag_verb_any = tag_verb_past + tag_verb_present + tag_verb_future
 #Subjects
 dep_subject = ["nsubj", "nsubjpass", "expl"]
 #Objects
-dep_object = ["dobj", "pobj", "attr"] #, "appos"]
+#dep_object = ["dobj", "pobj", "attr"] #, "appos"]
+dep_object = ["dobj", "pobj", "attr", "compound"] #, "appos"]
 #Appositional Modifiers
 dep_appos = ["appos"]
 #Clausal Complements

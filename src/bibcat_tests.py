@@ -14,10 +14,12 @@ import numpy as np
 import bibcat_classes as bibcat
 import bibcat_config as config
 import bibcat_parameters as params
+"""
 import spacy
 nlp = spacy.load(config.spacy_language_model)
 import nltk
 from nltk.corpus import wordnet
+#"""
 #
 #-------------------------------------------------------------------------------
 ###Set global test variables
@@ -68,7 +70,7 @@ allowed_classifications = ["SCIENCE", "DATA_INFLUENCED", "MENTION", "SUPERMENTIO
 #-------------------------------------------------------------------------------
 ###Test Classes
 #
-#"""
+"""
 #class: TestData
 #Purpose: Testing datasets
 class TestData(unittest.TestCase):
@@ -268,7 +270,7 @@ class TestData(unittest.TestCase):
         #
     #
 #"""
-
+"""
 #class: TestBase
 #Purpose: Testing the Base class
 class TestBase(unittest.TestCase):
@@ -1286,7 +1288,7 @@ class TestBase(unittest.TestCase):
         #
     #
 #"""
-#"""
+"""
 #class: TestKeyword
 #Purpose: Testing the Keyword class
 class TestKeyword(unittest.TestCase):
@@ -1453,7 +1455,7 @@ class TestKeyword(unittest.TestCase):
         #
     #
 #"""
-#"""
+"""
 #class: TestPaper
 #Purpose: Testing the Paper class
 class TestPaper(unittest.TestCase):
@@ -1670,7 +1672,7 @@ class TestPaper(unittest.TestCase):
         #
     #
 #"""
-#"""
+"""
 #class: TestGrammar
 #Purpose: Testing the Grammar class
 class TestGrammar(unittest.TestCase):
@@ -1982,6 +1984,148 @@ class TestGrammar(unittest.TestCase):
     #
 #"""
 #"""
+#class: TestClassifierRules
+#Purpose: Testing the Classifier_Rules class
+class TestClassifierRules(unittest.TestCase):
+    #For testing accuracy of rule-based classifier
+    if True:
+        #Test classification of rule-based classifier
+        def test_classifier_rules_classification(self):
+            #Prepare keyword object to use for these tests
+            kobj = dict_lookup_kobj["Hubble"]
+
+            #Prepare texts and answers for tests
+            dict_acts_datainfluenced = {
+            "This work is in compliment to the analysis of HST data performed by AnotherPaper et al. 2015, 2016.":"data_influenced",
+            "In this work, we have discussed any and all previous observations from HST and compared them to trends measured from previously published archival Spitzer data available in the literature.":"data_influenced",
+            "This correlation properly approximates the archival HST fluxes, providing an empirical relationship that is an updated version of the one published by Authorsetal.":"data_influenced",
+            "We extrapolate the star count for the cluster data taken with HST.":"data_influenced",
+            "In light of the findings of Names et al., we have simulated the effects of HST spatial 'jitter' on the predicted S/N ratio.":"data_influenced",
+            "We have here also predicted how the well-known disturbances that come from Hubble spatial jitter would affect the predicted S/N ratio.":"data_influenced"
+            }
+            dict_acts_mention = {
+            "We presented Hubble data in Authors et al. (2023).":"mention",
+            "We will use Hubble data in future work.":"mention",
+            "The data is observed using a newly launched H.S.T instrument that is open to the community.":"mention",
+            "Observations of HST were utilized to bolster the analysis.":"mention",
+            "Supernovae fluxes were corrected with HST calibration tables.":"mention",
+            "The targets were observed by using the Hubble Telescope.":"mention",
+            "Stars were selected from the HST archive, enabling quick analysis.":"mention",
+            "The HST images reveal the stellar anomaly between the poles very starkly.":"mention",
+            "In their study, Authors et al. compared simulations of elliptical galaxies to HST observations of bright point sources believed to be unresolved elliptical galaxies.":"mention",
+            "Stars can be observed with HST.":"mention",
+            "Using HST, bright stars can be observed in the UV.":"mention",
+            "By using multiple quadrants from HST, mosaics can be generated.":"mention",
+            "Astronomical phenomena is timely at times; with the precision of HST, images can be taken swiftly.":"mention",
+            "One star has an image in the HST archive.":"mention",
+            "A subset of the targets already have fluxes extracted from HST images.":"mention",
+            "This technological advancement produced revolutionary HST images.":"mention",
+            "HST operates all year.":"mention",
+            "HST rotates due to gravity, and so the telescope's view changes across the year.":"mention",
+            "The studies investigated asymmetries in the images observed with HST.":"mention",
+            "HST presented a great way to explore the cosmos.":"mention",
+            "HST observations have been used to measure stellar fluxes.":"mention",
+            "Interestingly enough, SH123 Her displays bright protoplanets on a highly elliptical orbit in the HST image.":"mention",
+            "Based on HST observations, Some Name discovered interesting comets that had only just recently been ejected from exoplanet collisions.":"mention",
+            "Based on new spectral capabilities with HST, Wowaname catalogued highly precise spectral types for a large sample of stars with exceptionally bright UV lines biasing the UV average.":"mention",
+            "ABC DEF123 is a survey that observed several stars with HST.":"mention",
+            "YAY123123Z does have observations from HST.":"mention",
+            "Along with M001's companion, M002's orbit has been observed by HST at the following cadence: 2001, 2002, 2003.":"mention",
+            "Our observations of CoolName, a Hot Planet with an atmospheric temperature of 460K, have a resolution of 0.5 arcsec, which is coarser than the resolution of existing work analyzed with HST data (Author et al. 2015).":"mention",
+            "The observation season for NewUVTelescope will start again in some months, and we plan to prepare for that upcoming cycle by not only simulating HST resolution and observations for comparison, but also illustrating how Hubble observations in the archive would compliment our planned observations.":"mention",
+            "We know the limits of HST.":"mention",
+            "We understand how HST works.":"mention",
+            "Considering data from both HST and ALMA, it is possible to analyze the projection across a larger wavelength range.":"mention",
+            "Observing with HST has led to wonderful discoveries.":"mention",
+            "Using HST has led to a plethora of science investigations, leading to many new discoveries.":"mention",
+            "They presented new observations from HST and compared them to trends measured from the plethora of archival HST data available and in the literature.":"mention",
+            "Folksetal published bright lines observed by HST /FOS in the M123-4567 region.":"mention",
+            "The findings from HST are analyzed well in Authorsetal.":"mention",
+            "The other trend is presented by Authorsetal, where HST observations were used to illustrate the stellar mass dependence.":"mention",
+            "It is worth noting that M001 has already been studied by Authors et al. based on HST data.":"mention",
+            "HD1 123 was discovered to be exceptionally stranger than the star discovered by Names et al. using high resolution HST images.":"mention",
+            "Hubble is often used to observe interesting phenomena in space.":"mention",
+            "These observations, which were conducted using HST, are presented in Names et al..":"mention",
+            "This is in contrast to the conclusions put forth by Namesetal, from which we know that it is especially difficult to characterize the UV fields of the cool, fainter groups of these stars without the benefit of a proper UV-focused instrument (like the very instrument we know to be currently attached to HST out in space).":"mention",
+            "We agree with the forementioned cited discussion; we too acknowledge that stars are often observed with HST.":"mention",
+            "The findings from HST are analyzed well in their work.":"mention",
+            "Data from HST were used in their study from 2013.":"mention",
+            "Their study is updated based on new distances that were measured with HST.":"mention",
+            "The targets did not produce bright enough fluxes for observing with HST.":"mention",
+            "HST data was not used in this study.":"mention",
+            "The image was observed with HST.":"mention",
+            "WOW have been used for target finding for HST before.":"mention",
+            "HST is a critical milestone in the history of UV observations.":"mention",
+            "The HST observations are quite bright.":"mention",
+            "There is indeed a relationship between the spectral types classified from the HST images and the stellar masses measured dynamically.":"mention",
+            "This is another publication derived from HST observations.":"mention",
+            "We understand how steady the progression of the HST in orbit was.":"mention",
+            "We need HST observations to do this work.":"mention"
+            }
+            dict_acts_science = {
+            "In this study, we present Hubble observations of UV-bright stars in the Taurus star-forming region.":"science",
+            "We now present new results for GOPLANET-3030 (Somewriter et al. 2016, 2017, 2018) observed as part of the Hubble Space Telescope (HST) Cool Acronym Treasury Survey (CATS) program (GO 12345; PIs Author1 and de Author2 2017, originally published in Paper et al. 2013).":"science",
+            "While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the HST observations, we are unable to even tentatively detect those same targets in the snapshots taken with the Other Telescope.":"science",
+            "We used the fancy machine learning techniques to search HST observational images for the faintest stars above the noise.":"science",
+            "Stars shown in the HST image are plotted left.":"science",
+            "We discovered a transient event in the HST archive.":"science",
+            "Our rms values for the HST observations are quite small, yielding very high signal-to-noise.":"science",
+            "HD 123456 is targeted in our Hubble observing program.":"science",
+            "In Table 4, we list the quadrants covered by our HST observations.":"science",
+            "The trend is measured with the latest HST observations available in the archive.":"science",
+            "The HST target is detected above 5sigma, yielding high signal-to-noise.":"science",
+            "Overplotting the HST stars over the JWST predictions shows that the two telescopes provide great synergy with each other.":"science",
+            "Section 4 describes the new HST observations analyzed in this work.":"science",
+            "Figure 4 shows the correlation between the HST and JWST observations.":"science",
+            "The HST contours are highlighted in Figure 3B.":"science",
+            "The quadrant covered by the HST setup is plotted in Fig A3.":"science",
+            "We describe the new observations in Tab. 4.  Previous HST observations are described in Tab. 7.":"science",
+            "Stars observed with HST are listed in Table A.":"science",
+            "The noise floor of Fig 2 is controlled by the HST image rms.":"science",
+            "Coordinates for the HST targets and JWST predictions are approximated from the measured distances by Authorsetal.":"mention",
+            "These observations, which were conducted using HST, are presented in Fig. 4.":"science",
+            "Fig 20 illustrates the contours derived from the HST analysis, with fitted trends overplotted in purple.":"science",
+            "As portrayed in Figure 3, the stars from the HST observations are similarly correlated with the empirical relationship of Authorsetal.":"science",
+            "Contours indicate the common isochrones for the JWST predictions, HST images, and ALMA spectroscopy.":"science",
+            "We have HST observations.":"science"
+            }
+            #
+            dict_acts = {}
+            dict_acts.update(dict_acts_datainfluenced)
+            dict_acts.update(dict_acts_mention)
+            dict_acts.update(dict_acts_science)
+            #
+
+            #Prepare classifier for tests
+            classifier = bibcat.Classifier_Rules(do_verbose_deep=False)
+
+            #Determine and check answers
+            for phrase in dict_acts:
+                #Run classification of current text
+                result = classifier.classify_text(text=phrase, keyword_obj=kobj,
+									do_verbose=True, do_check_truematch=False,
+                                    which_mode="none")
+                curr_answer = result["verdict"]
+
+                #Check answer
+                try:
+                    self.assertEqual(curr_answer, dict_acts[phrase])
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print(("Text: {0}\n-\nTest answer: {1}\n"
+                            +"\nAct. answer: {2}\n")
+                            .format(phrase, curr_answer, dict_acts[phrase]))
+                    print("---")
+                    print("")
+                    #
+                    self.assertEqual(curr_answer, dict_acts[phrase])
+                #
+            #
+        #
+    #
+#"""
+"""
 #class: TestOperator
 #Purpose: Testing the Operator class
 class TestOperator(unittest.TestCase):

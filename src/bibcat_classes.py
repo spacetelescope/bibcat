@@ -3643,7 +3643,7 @@ class _Classifier(_Base):
         Purpose: Process text into modifs using Grammar class.
         """
         #Generate and store instance of Grammar class for this text
-        use_these_modes = list(set([mode, "none"]))
+        use_these_modes = list(set([which_mode, "none"]))
         grammar = Grammar(text, keyword_obj=keyword_obj,
                             do_check_truematch=do_check_truematch,
                             do_verbose=do_verbose, buffer=buffer)
@@ -4505,8 +4505,8 @@ class Classifier_Rules(_Classifier):
                 "verbclass":{"datainfluenced"},
                 "verbtypes":{"PRESENT", "PAST"},
                 "prob_science":0.0,
-                "prob_data_influenced":0.8,
-                "prob_mention":0.4}
+                "prob_data_influenced":1.0,
+                "prob_mention":0.0}
             #
             #’We simulate/simulated the OBJ data of Authorsetal.’
             itrack += 1
@@ -4516,8 +4516,8 @@ class Classifier_Rules(_Classifier):
                 "verbclass":{"datainfluenced"},
                 "verbtypes":{"PRESENT", "PAST"},
                 "prob_science":0.0,
-                "prob_data_influenced":0.8,
-                "prob_mention":0.6}
+                "prob_data_influenced":1.0,
+                "prob_mention":0.0}
             #
             #’Authorsetal simulate/simulated OBJ data in their study.’
             itrack += 1
@@ -5249,10 +5249,14 @@ class Classifier_Rules(_Classifier):
         #Print some notes
         if do_verbose:
             print("\n> Running _classify_statements.")
-            print("Forest word-trees:")
-            for key in forest:
-                print("{0}".format(forest[key]["modestruct_words_info"].keys()))
-                print("{0}\n".format(forest[key]["modestruct_words_info"]))
+            #print("Forest word-trees:")
+            #for key1 in forest:
+            #    for key2 in forest[key1]:
+            #        print("Key1, Key2: {0}, {1}".format(key1, key2))
+            #        print("{0}".format(forest[key1][key2
+            #                            ]["struct_words_updated"].keys()))
+            #        print("{0}\n-".format(forest[key1][key2
+            #                            ]["struct_words_updated"]))
         #
 
         ##Set the booleans for this statement dictionary
