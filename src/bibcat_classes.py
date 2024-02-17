@@ -2895,62 +2895,75 @@ class Grammar(_Base):
         inds_verbs_ordered = inds_verbs_ordered[::-1] #Descending subtree size
 
         #Initialize container for clauses
-        dict_clauses = {}
+        dict_clauses_text = {}
+        dict_clauses_ids = {}
 
         #Iterate through clausal verbs and characterize clausal components
         for curr_iverb in inds_verbs_ordered:
             #Extract useful characteristics of current verb
             curr_verb = sentence_NLP[curr_iverb]
 
-            #Initialize container for this clause
-            curr_dict = {"verb":curr_verb, "auxs":[], "subjects":[],
-                            "dir_objects":[], "prep_objects":[]}
+            #Initialize containers for this clause
+            curr_dict_text = {"verb":curr_verb, "auxs":[], "subjects":[],
+                                "dir_objects":[], "prep_objects":[]}
+            curr_dict_ids = {"verb":curr_verb, "auxs":[], "subjects":[],
+                                "dir_objects":[], "prep_objects":[]}
 
             #Extract subject(s) for this verb
             self._get_verb_connector(verb=curr_verb, connector="SUBJECT",
-                                    storage=curr_dict["subjects"],
+                                    storage_text=curr_dict_text["subjects"],
+                                    storage_ids=curr_dict_ids["subjects"],
                                     dict_nounchunks=dict_nounchunks,
                                     ids_conjoined=ids_conjoined,
-                                    dict_clauses=dict_clauses)
+                                    dict_clauses_text=dict_clauses_text,
+                                    dict_clauses_ids=dict_clauses_ids)
             #
 
             #Extract direct object(s) for this verb
             self._get_verb_connector(verb=curr_verb, connector="DIRECT_OBJECT",
-                                    storage=curr_dict["dir_objects"],
+                                    storage_text=curr_dict_text["dir_objects"],
+                                    storage_ids=curr_dict_ids["dir_objects"],
                                     dict_nounchunks=dict_nounchunks,
                                     ids_conjoined=ids_conjoined,
-                                    dict_clauses=dict_clauses)
+                                    dict_clauses_text=dict_clauses_text,
+                                    dict_clauses_ids=dict_clauses_ids)
             #
 
             #Extract prepositional object(s) for this verb
             self._get_verb_connector(verb=curr_verb,
                                     connector="PREPOSITIONAL_OBJECT",
-                                    storage=curr_dict["prep_objects"],
+                                    storage_text=curr_dict_text["prep_objects"],
+                                    storage_ids=curr_dict_ids["prep_objects"],
                                     dict_nounchunks=dict_nounchunks,
                                     ids_conjoined=ids_conjoined,
-                                    dict_clauses=dict_clauses)
+                                    dict_clauses_text=dict_clauses_text,
+                                    dict_clauses_ids=dict_clauses_ids)
             #
 
             #Extract aux(s) for this verb
             self._get_verb_connector(verb=curr_verb,
                                     connector="AUX",
-                                    storage=curr_dict["auxs"],
+                                    storage_text=curr_dict_text["auxs"],
+                                    storage_ids=curr_dict_ids["auxs"],
                                     dict_nounchunks=dict_nounchunks,
                                     ids_conjoined=ids_conjoined,
-                                    dict_clauses=dict_clauses)
+                                    dict_clauses_text=dict_clauses_text,
+                                    dict_clauses_ids=dict_clauses_ids)
             #
 
             #Store this dictionary
-            dict_clauses[curr_iverb] = curr_dict
+            dict_clauses_text[curr_iverb] = curr_dict_text
+            dict_clauses_ids[curr_iverb] = curr_dict_ids
         #
 
         #Print some notes
         if do_verbose:
             print("Clausal breakdown complete.\nClauses:")
             for curr_ind in inds_verbs_ordered:
-                print("id={0}: verb={1}:\n{2}\n-"
+                print("id={0}: verb={1}:\n{2}\n{3}\n-"
                         .format(curr_ind, sentence_NLP[curr_ind],
-                                dict_clauses[curr_ind]))
+                                dict_clauses_ids[curr_ind],
+                                dict_clauses_text[curr_ind]))
             print("---")
         #
 
@@ -2980,7 +2993,15 @@ class Grammar(_Base):
     !
     ##Method: _get_nounchunk()
     ##Purpose: Retrieve noun chunk assigned the given id (index)
-    def _get_nounchunk():
+    def _get_nounchunk(self, word, ids_nounchunks):
+        """
+        Method: _get_nounchunks
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Recursively examine and store information for each word within an NLP-sentence.
+        """
+        #Extract global variables
+        do_verbose = self._get_info("do_verbose")
+
     #
     !
 
@@ -3022,7 +3043,7 @@ class Grammar(_Base):
 
     ##Method: _get_verb_connector()
     ##Purpose: Fetch word, such as sentence subjects, connected to given verb
-    def _get_verb_connector(self, verb, connector, storage, dict_clauses, dict_nounchunks):
+    def _get_verb_connector(self, verb, connector, storage_text, storage_ids, dict_clauses_text, dict_clauses_ids, dict_nounchunks):
         """
         Method: _get_verb_connector
         WARNING! This method is *not* meant to be used directly by users.
@@ -3041,12 +3062,19 @@ class Grammar(_Base):
             #Search left for subject(s)
             for curr_left in lefts:
                 if (self._is_pos_word(curr_left, pos="SUBJECT")):
-                    storage.append(self._get_nounchunk(word=curr_left,
+                    new_chunk = self._get_nounchunk(word=curr_left,
                                             dict_nounchunks=dict_nounchunks))
-                    storage += self._get_conjoined(word=curr_left,
+                    new_conj = self._get_conjoined(word=curr_left,
                                             sentence_NLP=sentence_NLP,
                                             dict_nounchunks=dict_nounchunks,
                                             ids_conjoined=ids_conjoined)
+                    #
+                    #Store text
+                    storage_text.append(new_chunk["text"])
+                    storage_text += new_conj["texts"]
+                    #Store ids
+                    storage_ids.append(new_chunk["id"])
+                    storage_ids += new_conj["ids"]
             #
             #If none found, check for verb in roots, then use verb's subject(s)
             if (len(storage) == 0):
@@ -3056,7 +3084,8 @@ class Grammar(_Base):
                     if (self._is_pos_word(curr_root, pos="VERB",
                                             dict_nounchunks=dict_nounchunks)):
                         #Set to same subjects as this previous verb
-                        storage = dict_clauses[curr_root.i]["subjects"]
+                        storage_text =dict_clauses_text[curr_root.i]["subjects"]
+                        storage_ids =dict_clauses_ids[curr_root.i]["subjects"]
                         break #Exit the loop
                 #
             #
@@ -3066,24 +3095,39 @@ class Grammar(_Base):
             #Search right for direct object(s)
             for curr_right in rights:
                 if (self._is_pos_word(curr_right, pos="DIRECT_OBJECT")):
-                    storage.append(self._get_nounchunk(word=curr_right,
+                    new_chunk = self._get_nounchunk(word=curr_right,
                                             dict_nounchunks=dict_nounchunks))
-                    storage += self._get_conjoined(word=curr_right,
+                    new_conj = self._get_conjoined(word=curr_right,
                                             sentence_NLP=sentence_NLP,
                                             dict_nounchunks=dict_nounchunks,
                                             ids_conjoined=ids_conjoined)
+                    #
+                    #Store text
+                    storage_text.append(new_chunk["text"])
+                    storage_text += new_conj["texts"]
+                    #Store ids
+                    storage_ids.append(new_chunk["id"])
+                    storage_ids += new_conj["ids"]
+                #
             #
             #If none found, check for dir.obj. in roots
             if (len(storage) == 0):
                 if ((num_roots > 0) and (self._is_pos_word(roots[0],
                                                         pos="DIRECT_OBJECT"))):
                     #Store this root as dir.object
-                    storage.append(self._get_nounchunk(word=roots[0],
+                    new_chunk = self._get_nounchunk(word=roots[0],
                                             dict_nounchunks=dict_nounchunks))
-                    storage += self._get_conjoined(word=roots[0],
+                    new_conj = self._get_conjoined(word=roots[0],
                                             sentence_NLP=sentence_NLP,
                                             dict_nounchunks=dict_nounchunks,
                                             ids_conjoined=ids_conjoined)
+                    #
+                    #Store text
+                    storage_text.append(new_chunk["text"])
+                    storage_text += new_conj["texts"]
+                    #Store ids
+                    storage_ids.append(new_chunk["id"])
+                    storage_ids += new_conj["ids"]
                 #
             #
         #
@@ -3096,12 +3140,21 @@ class Grammar(_Base):
                 for curr_right2 in curr_right.rights:
                     if (self._is_pos_word(curr_right2,
                                             pos="DIRECT_OBJECT")):
-                        storage.append(self._get_nounchunk(word=curr_right2,
+                        new_chunk = self._get_nounchunk(word=curr_right2,
                                             dict_nounchunks=dict_nounchunks))
-                        storage += self._get_conjoined(word=curr_right2,
+                        new_conj = self._get_conjoined(word=curr_right2,
                                             sentence_NLP=sentence_NLP,
                                             dict_nounchunks=dict_nounchunks,
                                             ids_conjoined=ids_conjoined)
+                        #
+                        #Store text
+                        storage_text.append(new_chunk["text"])
+                        storage_text += new_conj["texts"]
+                        #Store ids
+                        storage_ids.append(new_chunk["id"])
+                        storage_ids += new_conj["ids"]
+                    #
+                #
             #
         #
         #For auxes
@@ -3109,11 +3162,10 @@ class Grammar(_Base):
             #Search for auxes to the left
             for curr_left in lefts:
                 if (self._is_pos_word(curr_left, pos="AUX")):
-                    storage.append(curr_left)
-                    storage += self._get_conjoined(word=curr_left,
-                                            sentence_NLP=sentence_NLP,
-                                            dict_nounchunks=dict_nounchunks,
-                                            ids_conjoined=ids_conjoined)
+                    #Store aux
+                    storage_text.append(curr_left.text)
+                    storage_ids.append(curr_left.i)
+            #
         #
         #Throw error if requested connector not recognized
         else:
