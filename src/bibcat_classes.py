@@ -2388,6 +2388,1385 @@ class Grammar(_Base):
         #
         return
     #
+    ! Splice new _process_sentence into above as needed
+
+    ##Method: _add_aux
+    ##Purpose: Add aux to grammar structure
+    def x_add_aux(self, word, storage_verbs):
+        """
+        Method: _add_aux
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Characterize and store an aux word within grammar structure.
+        """
+        #Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        type_verbs = storage_verbs["verbtype"]
+        tenses_main = ["PAST", "PRESENT", "FUTURE"]
+        word_tag = word.tag_
+        word_dep = word.dep_
+        #
+        #Part-of-speech (pos) tag markers for tense of aux word
+        tags_past = config.tag_verb_past
+        tags_present = config.tag_verb_present
+        tags_future = config.tag_verb_future
+        tags_purpose = config.tag_verb_purpose
+        deps_passive = config.dep_verb_passive
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _add_aux!")
+            print("Word: {0}\nInitial verb types: {1}".format(word, type_verbs))
+        #
+
+        #Determine if passive tense and store if applicable
+        if ((word_dep in deps_passive) and ("PASSIVE" not in type_verbs)):
+            type_verbs.append("PASSIVE")
+        #
+
+        #Determine main tense of this aux word
+        if (word_tag in tags_past): #For past tense
+            tense = "PAST"
+        elif (word_tag in tags_present): #For present tense
+            tense = "PRESENT"
+        elif (word_tag in tags_future): #For future tense
+            tense = "FUTURE"
+        elif (word_tag in tags_purpose): #For purpose tense
+            tense = "PURPOSE"
+        else: #Raise error if tense not recognized
+            raise ValueError(("Err: Tense {1} of word {0} unrecognized!\n{2}"
+                                +"\ndep={3}, pos={4}, tag={5}")
+                            .format(word, word_tag, word.sent, word.dep_,
+                                    word.pos_, word.tag_))
+        #
+
+        #Store main tense of aux if no tenses so far
+        is_updated = False
+        if (not any([(item in tenses_main) for item in type_verbs])):
+            type_verbs.append(tense) #Store aux tense
+            is_updated = True #Mark verb types as updated
+        #
+
+        #Store purpose tense of aux if given
+        if (not is_updated):
+            if ((tense == "PURPOSE") and (tense not in type_verbs)):
+                type_verbs.append(tense) #Store aux tense
+                is_updated = True #Mark verb types as updated
+        #
+
+        #Update verb tenses if aux tense supercedes previous values
+        if (not is_updated):
+            #For past aux: supercedes present
+            if ((tense == "PAST") and ("PRESENT" in type_verbs)):
+                type_verbs.remove("PRESENT")
+                type_verbs.append("PAST")
+                is_updated = True #Mark verb types as updated
+            #
+            #For future aux: supercedes past, present
+            elif ((tense == "FUTURE") and ("PRESENT" in type_verbs)):
+                type_verbs.remove("PRESENT")
+                type_verbs.append("FUTURE")
+                is_updated = True #Mark verb types as updated
+            elif ((tense == "FUTURE") and ("PAST" in type_verbs)):
+                type_verbs.remove("PAST")
+                type_verbs.append("FUTURE")
+                is_updated = True #Mark verb types as updated
+            #
+        #
+
+        #Exit the method
+        if do_verbose:
+            print("\n> Run of _add_aux complete.")
+            print("Aux: {0}\nLatest verb types: {1}\n".format(word, type_verbs))
+        #
+        return
+    #
+
+    ##Method: _add_verb
+    ##Purpose: Add verb to grammar structure
+    def x_add_verb(self, word):
+        """
+        Method: __init__
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Characterize and store a verb within grammar structure.
+        """
+        #Extract global variables
+        tag_verb = word.tag_
+
+        #Initialize dictionary to hold characteristics of this verb
+        dict_verb = {"i_verb":word.i, "verb":word.text, "is_important":False,
+                    "i_postverbs":[], "i_branchwords_all":[], "verbtype":[]}
+
+        #Determine tense, etc. as types of this verb
+        if tag_verb in config.tag_verb_present:
+            dict_verb["verbtype"].append("PRESENT")
+        elif tag_verb in config.tag_verb_past:
+            dict_verb["verbtype"].append("PAST")
+        elif tag_verb in config.tag_verb_future:
+            dict_verb["verbtype"].append("FUTURE")
+        else:
+            raise ValueError(("Err: Tag unrecognized for verb {0}: {1}\n{2}"
+                                +"\ndep={3}, pos={4}, tag={5}")
+                            .format(word, tag_verb, word.sent,
+                                    word.dep_, word.pos_, word.tag_))
+        #
+
+        #Return initialized verb dictionary
+        return dict_verb
+    #
+
+    ##Method: _add_word
+    ##Purpose: Add general word to grammar structure
+    def x_add_word(self, node, i_verb, i_cluster, i_sentence, storage_verbs, storage_words, i_headoftrail):
+        """
+        Method: _add_word
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Characterize and store a word within grammar structure.
+        """
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        text_wordchunk = self._get_wordchunk(node.i, i_sentence=i_sentence,
+                                    i_cluster=i_cluster, do_text=True) #Text
+        NLP_wordchunk = self._get_wordchunk(node.i, i_sentence=i_sentence,
+                                    i_cluster=i_cluster, do_text=False) #NLP
+        i_wordchunk = np.array([word.i for word in NLP_wordchunk]) #Just ids
+        all_pos_mains = config.special_pos_main
+        trail_pos_main = config.trail_pos_main
+        ignore_pos_main = config.ignore_pos_main
+        #
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _add_word for node: {0}. Wordchunk: {1}."
+                    .format(node, text_wordchunk))
+        #
+
+        ##Characterize some traits of entire phrase
+        #Characterize importance
+        res_importance = self._check_importance(text_wordchunk,
+                                                version_NLP=NLP_wordchunk)
+        #
+        #Determine part-of-speech (pos) of main (current) word in wordchunk
+        pos_main = None
+        for check_pos in all_pos_mains:
+            #Keep this pos if valid
+            is_pos = self._is_pos_word(word=node, pos=check_pos) #Check this pos
+            is_conj = self._is_pos_conjoined(word=node, pos=check_pos)#Conjoined
+            if (is_pos or is_conj):
+                #Throw error if pos already identified; should just be 1 valid
+                if (pos_main is not None):
+                #            and ("ROOT" not in [pos_main, check_pos])):
+                    #Take the dominant p.o.s. for allowed cases
+                    #This catches weird overlap cases due to ambig. English
+                    tmp_list = [check_pos, pos_main]
+                    #Aux > verb
+                    #if (("VERB" in tmp_list) and ("AUX" in tmp_list)):
+                    #    pos_main = "AUX"
+                    #Subject > verb
+                    #elif (("VERB" in tmp_list) and ("SUBJECT" in tmp_list)):
+                    #        pos_main = "SUBJECT"
+                    #else:
+                        #Otherwise, throw an error
+                    raise ValueError(
+                                    ("Err: Multi pos for {2}!: {0}, {1}\n{3}"
+                                    +"\ndep={4}, pos={5}, tag={6}\nhead={7}"
+                                    +"\nLefts={8}\nRights={9}")
+                                    .format(pos_main, check_pos, node,
+                                    node.sent, node.dep_, node.pos_, node.tag_,
+                                    node.head, list(node.lefts),
+                                    list(node.rights)))
+                #
+                #Otherwise, store this pos
+                pos_main = check_pos
+        #
+        #Throw error if no pos found and not marked to ignore
+        if ((pos_main is None)
+                    and (not any([(self._is_pos_word(word=node, pos=item))
+                                    for item in ignore_pos_main]))):
+            if do_verbose:
+                print(("No p.o.s. recognized for word: {0} (so likely useless)."
+                            +"\ndep={1}, pos={2}, tag={3}\nSentence: {4}")
+                            .format(node, node.dep_, node.pos_, node.tag_,
+                                    node.sent))
+        #
+        #Print some notes
+        if do_verbose:
+            print("Word {0} has pos={1}, importance={2}:."
+                    .format(node, pos_main, res_importance))
+        #
+
+        ##Generate dictionary of characteristics for each word in chunk
+        num_words = len(NLP_wordchunk)
+        list_dict_words = [None]*num_words
+        #Iterate through words
+        for ww in range(0, num_words):
+            word = NLP_wordchunk[ww] #Current word in wordchunk
+            dict_word = {"i_clausechain":None, "i_clausetrail":None
+                        } #Initialize dictionary to hold word information
+            list_dict_words[ww] = dict_word #Store ahead of time
+            #
+
+            ##Characterize the general word
+            #For word itself
+            dict_word["word"] = word.text
+            dict_word["index"] = word.i
+            dict_word["_dep"] = word.dep_
+            dict_word["_pos"] = word.pos_
+            dict_word["_tag"] = word.tag_
+            dict_word["wordchunk"] = np.array([item.text
+                                                for item in NLP_wordchunk])
+            dict_word["sentence"] = word.sent.text
+            #
+            #For importance
+            #If important, mark as important
+            if res_importance["is_any"]:
+                dict_word["is_important"] = True
+                dict_word["dict_importance"] = res_importance
+                #Mark current verb as important as well
+                storage_verbs["is_important"] = True
+                if (i_verb in storage_words): #If exists already
+                    storage_words[i_verb]["is_important"] = True
+            else:
+                dict_word["is_important"] = False
+                dict_word["dict_importance"] = None
+            #
+            #For uselessness
+            if self._is_pos_word(word, pos="USELESS"):
+                dict_word["is_useless"] = True
+            else:
+                dict_word["is_useless"] = False
+            #
+            #Apply main part-of-speech (p.o.s.) to each word in wordchunk
+            dict_word["pos_main"] = pos_main
+            #
+            #Additional aux characterization, if applicable
+            if (pos_main in ["AUX"]):
+                self._add_aux(word, storage_verbs=storage_verbs)
+            #
+        #
+        #Print some notes
+        if do_verbose:
+            print("Characterized wordchunk '{1}' for word '{0}', with pos={2}."
+                    .format(node, NLP_wordchunk, pos_main))
+        #
+
+        ##Update or append to the latest word trail
+        #NOTE: This trail is for clauses...
+        #      ...so that unimportant inner clauses can be trimmed later
+        #Print some notes
+        if do_verbose:
+            print("Storing word chunk in an id-post-trail, if necessary...")
+        #
+        new_trail = None
+        new_headoftrail = i_headoftrail
+        i_main = [list_dict_words[ww]["index"] for ww in range(0, num_words)
+                    ].index(node.i) #Wordchunk index for main node
+        #
+        #If this word chunk necessitates a new trail
+        if (pos_main in trail_pos_main):
+            #Print some notes
+            if do_verbose:
+                print("Starting new trail from word: {0}"
+                        .format(node))
+            #
+            #Initialize and fill new trail
+            new_trail = [i_wordchunk[ww] for ww in range(0, num_words)]
+            #
+            #Store this trail in storage for the main word of this chunk
+            list_dict_words[i_main]["i_clausetrail"] = new_trail
+            #
+            #Tack the main word onto the end of the previous trail, if necessary
+            if (i_headoftrail is not None):
+                storage_words[i_headoftrail]["i_clausetrail"].append(node.i)
+                #
+                #Copy instance of chain of clauses
+                pre_chain = storage_words[i_headoftrail]["i_clausechain"]
+                pre_chain.append(node.i)
+                list_dict_words[i_main]["i_clausechain"] = pre_chain
+            #
+            #Otherwise, start tracking new chain
+            else:
+                list_dict_words[i_main]["i_clausechain"] = [node.i]
+            #
+            #Update the previous head of trail, regardless
+            new_headoftrail = node.i
+        #
+        #Otherwise, tack entire chunk onto previous trail if exists
+        elif (i_headoftrail is not None):
+            #Print some notes
+            if do_verbose:
+                print("No new trail for word: {0}. Appending to previous trail."
+                        .format(node))
+            #
+            for ww in range(0, num_words):
+                storage_words[i_headoftrail]["i_clausetrail"].append(
+                                                            i_wordchunk[ww])
+        #
+        #Otherwise, do nothing new
+        else:
+            #Print some notes
+            if do_verbose:
+                print("No new trail from word: {0}. Nothing new done."
+                        .format(node))
+            #
+        #
+
+        #Print some notes, if updates occurred
+        if any([(item is not None) for item in [new_trail, i_headoftrail]]):
+            if do_verbose:
+                print("Updated or appended this word chunk to a post-trail.")
+                print("Current main id, word: {0}, {1}".format(node.i, node))
+                print("Latest trail chain: {0}"
+                            .format(list_dict_words[i_main]["i_clausechain"]))
+                print("New trail: {0}".format(new_trail))
+                print("Head of previous trail: {0}".format(i_headoftrail))
+                if (i_headoftrail is not None):
+                    print("Updated previous trail: {0}"
+                        .format(storage_words[i_headoftrail]["i_clausetrail"]))
+                else:
+                    print("No previous trail.")
+        #
+
+        ##Return word dictionaries
+        if do_verbose:
+            print("Run of _add_word complete.")
+            print("Dictionaries per word:")
+            for ww in range(0, num_words):
+                print("{0}: {1}".format(NLP_wordchunk[ww], list_dict_words[ww]))
+                print("-")
+            print("\nLatest verb dictionary: {0}\n".format(storage_verbs))
+        #
+        return {"dict_words":list_dict_words, "i_headoftrail":new_headoftrail}
+    #
+
+    ##Method: _assign_nounchunk_ids()
+    ##Purpose: Assign ids to noun-chunks
+    def _assign_nounchunk_ids(self, sentence_NLP):
+        """
+        Method: _assign_nounchunk_ids
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Characterize and store a word within grammar structure.
+        """
+        #Extract global variables
+        do_verbose = self._get_info("do_verbose")
+
+        #Fetch all NLP-identifieid noun-chunks for this sentence
+        noun_chunks = list(sentence_NLP.noun_chunks)
+
+        #Initialize container for noun-chunk ids
+        ids_nounchunks = [None]*len(sentence_NLP)
+
+        #Iterate through noun-chunks and assign ids
+        i_track = 0
+        for ii in range(0, len(noun_chunks)):
+            #Copy over previous noun-chunk id if separated by 'of'
+            if ((ii > 0)
+                    and ((noun_chunks[ii][0].i - noun_chunks[ii-1][-1].i) == 2)
+                    and (sentence_NLP[noun_chunks[ii-1][-1].i + 1].text.lower()
+                            == "of")):
+                curr_id = ids_nounchunks[noun_chunks[ii-1][0].i] #Previous id
+                #Assign id to 'of'
+                curr_id = ids_nounchunks[noun_chunks[ii-1][-1].i + 1] = curr_id
+            #Otherwise, set new chunk id
+            else:
+                curr_id = i_track
+            #
+
+            #Apply id to entire chunk
+            for curr_word in noun_chunks[ii]:
+                ids_nounchunks[curr_word.i] = curr_id
+
+            #Increment chunk counter
+            i_track += 1
+        #
+
+        #Print some notes
+        if do_verbose:
+            num_words = len(sentence_NLP)
+            tmp_sets = [[sentence_NLP[ind2] for ind2 in range(0, num_words)
+                        if (ind2 == ind1)]
+                        for ind1 in ids_nounchunks if (ind1 is not None)]
+            print("The following noun-chunks have been assigned:\n{0}"
+                    .format(tmp_sets))
+
+        #Return the assigned ids
+        return ids_nounchunks
+    #
+
+    ##Method: _generate_clauses_from_sentence()
+    ##Purpose: Extract verb-clauses from given NLP sentence
+    def _generate_clauses_from_sentence(self, sentence_NLP, dict_nounchunks, ids_conjoined):
+        """
+        Method: _recurse_NLP_categorization
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Recursively examine and store information for each word within an NLP-sentence.
+        """
+        #Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        num_words = len(sentence_NLP)
+        #Print some notes
+        if do_verbose:
+            print(("-"*60)+"\nCURRENT SENTENCE: {0}".format(sentence_NLP))
+        #
+
+        #Iterate through and identify ids of all clausal verbs
+        inds_verbs = []
+        for curr_word in sentence_NLP:
+            #Get index of current word
+            i_word = curr_word.i
+
+            #Determine if this word is a clausal verb
+            if self._is_pos_word(curr_word, dict_nounchunks=dict_nounchunks,
+                                    pos="VERB"):
+                inds_verbs.append(i_word)
+            #
+        #
+
+        #Sort clausal verb indices by length of subtree (large to small)
+        inds_verbs_ordered = inds_verbs.copy()
+        inds_verbs_ordered.sort(key=lambda x:len(list(sentence_NLP[x].subtree)))
+        inds_verbs_ordered = inds_verbs_ordered[::-1] #Descending subtree size
+
+        #Initialize container for clauses
+        dict_clauses = {}
+
+        #Iterate through clausal verbs and characterize clausal components
+        for curr_iverb in inds_verbs_ordered:
+            #Extract useful characteristics of current verb
+            curr_verb = sentence_NLP[curr_iverb]
+
+            #Initialize container for this clause
+            curr_dict = {"verb":curr_verb, "auxs":[], "subjects":[],
+                            "dir_objects":[], "prep_objects":[]}
+
+            #Extract subject(s) for this verb
+            self._get_verb_connector(verb=curr_verb, connector="SUBJECT",
+                                    storage=curr_dict["subjects"],
+                                    dict_nounchunks=dict_nounchunks,
+                                    ids_conjoined=ids_conjoined,
+                                    dict_clauses=dict_clauses)
+            #
+
+            #Extract direct object(s) for this verb
+            self._get_verb_connector(verb=curr_verb, connector="DIRECT_OBJECT",
+                                    storage=curr_dict["dir_objects"],
+                                    dict_nounchunks=dict_nounchunks,
+                                    ids_conjoined=ids_conjoined,
+                                    dict_clauses=dict_clauses)
+            #
+
+            #Extract prepositional object(s) for this verb
+            self._get_verb_connector(verb=curr_verb,
+                                    connector="PREPOSITIONAL_OBJECT",
+                                    storage=curr_dict["prep_objects"],
+                                    dict_nounchunks=dict_nounchunks,
+                                    ids_conjoined=ids_conjoined,
+                                    dict_clauses=dict_clauses)
+            #
+
+            #Extract aux(s) for this verb
+            self._get_verb_connector(verb=curr_verb,
+                                    connector="AUX",
+                                    storage=curr_dict["auxs"],
+                                    dict_nounchunks=dict_nounchunks,
+                                    ids_conjoined=ids_conjoined,
+                                    dict_clauses=dict_clauses)
+            #
+
+            #Store this dictionary
+            dict_clauses[curr_iverb] = curr_dict
+        #
+
+        #Print some notes
+        if do_verbose:
+            print("Clausal breakdown complete.\nClauses:")
+            for curr_ind in inds_verbs_ordered:
+                print("id={0}: verb={1}:\n{2}\n-"
+                        .format(curr_ind, sentence_NLP[curr_ind],
+                                dict_clauses[curr_ind]))
+            print("---")
+        #
+
+        #Return the dictionary of clauses
+        return dict_clauses
+    #
+
+    !
+    ##Method: _get_conjoined()
+    ##Purpose: Retrieve word(s) conjoined to given id (index)
+    def _get_conjoined():
+    #
+    !
+
+    !
+    ##Method: _get_nounchunk()
+    ##Purpose: Retrieve noun chunk assigned the given id (index)
+    def _get_nounchunk():
+    #
+    !
+
+    ##Method: _get_wordchunk()
+    ##Purpose: Retrieve word chunk assigned the given id (index)
+    def x_get_wordchunk(self, index, i_sentence, i_cluster, do_text):
+        """
+        Method: _get_wordchunk
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Fetch the word chunk assigned to word at given index.
+        """
+        #Extract global variables
+        cluster_NLP = self._get_info("clusters_NLP")[i_cluster]
+        sentence_NLP = cluster_NLP[i_sentence]
+        id_wordchunks = self._get_info("_ids_wordchunks")[i_cluster][i_sentence]
+        if (i_sentence > 0):
+            index_shifted = (index - sum([len(cluster_NLP[ii])
+                                        for ii in range(0, (i_sentence-1+1))]))
+        else:
+            index_shifted = index
+        #
+
+        #Return singular word at this index if no word chunk found
+        if (id_wordchunks[index_shifted] is None):
+            phrase = [sentence_NLP[index_shifted]]
+        #Otherwise, join all words within this word chunk
+        else:
+            inds = (id_wordchunks == id_wordchunks[index_shifted])
+            phrase = np.asarray(sentence_NLP)[inds]
+        #
+
+        #Return NLP-word phrase or joined text, as requested
+        if do_text: #Return joined text
+            return " ".join([item.text for item in phrase]).replace(" - ", "-")
+        else: #Return NLP-word form
+            return phrase
+        #
+    #
+
+    ##Method: _get_verb_connector()
+    ##Purpose: Fetch word, such as sentence subjects, connected to given verb
+    def _get_verb_connector(self, verb, connector, storage, dict_clauses, dict_nounchunks):
+        """
+        Method: _get_verb_connector
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Recursively examine and store information for each word within an NLP-sentence.
+        """
+        #Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        lefts = list(verb.lefts)
+        rights = list(verb.rights)
+        roots = list(verb.ancestors)
+        num_roots = len(roots)
+
+        #Search for given connector
+        #For subjects
+        if (connector.upper() == "SUBJECT"):
+            #Search left for subject(s)
+            for curr_left in lefts:
+                if (self._is_pos_word(curr_left, pos="SUBJECT")):
+                    storage.append(self._get_nounchunk(word=curr_left,
+                                            dict_nounchunks=dict_nounchunks))
+                    storage += self._get_conjoined(word=curr_left,
+                                            sentence_NLP=sentence_NLP,
+                                            dict_nounchunks=dict_nounchunks,
+                                            ids_conjoined=ids_conjoined)
+            #
+            #If none found, check for verb in roots, then use verb's subject(s)
+            if (len(storage) == 0):
+                #Iterate through roots
+                for curr_root in roots:
+                    #If root is verb, copy subjects
+                    if (self._is_pos_word(curr_root, pos="VERB",
+                                            dict_nounchunks=dict_nounchunks)):
+                        #Set to same subjects as this previous verb
+                        storage = dict_clauses[curr_root.i]["subjects"]
+                        break #Exit the loop
+                #
+            #
+        #
+        #For direct objects
+        elif (connector.upper() == "DIRECT_OBJECT"):
+            #Search right for direct object(s)
+            for curr_right in rights:
+                if (self._is_pos_word(curr_right, pos="DIRECT_OBJECT")):
+                    storage.append(self._get_nounchunk(word=curr_right,
+                                            dict_nounchunks=dict_nounchunks))
+                    storage += self._get_conjoined(word=curr_right,
+                                            sentence_NLP=sentence_NLP,
+                                            dict_nounchunks=dict_nounchunks,
+                                            ids_conjoined=ids_conjoined)
+            #
+            #If none found, check for dir.obj. in roots
+            if (len(storage) == 0):
+                if ((num_roots > 0) and (self._is_pos_word(roots[0],
+                                                        pos="DIRECT_OBJECT"))):
+                    #Store this root as dir.object
+                    storage.append(self._get_nounchunk(word=roots[0],
+                                            dict_nounchunks=dict_nounchunks))
+                    storage += self._get_conjoined(word=roots[0],
+                                            sentence_NLP=sentence_NLP,
+                                            dict_nounchunks=dict_nounchunks,
+                                            ids_conjoined=ids_conjoined)
+                #
+            #
+        #
+        #For prepositional objects
+        elif (connector.upper() == "PREPOSITIONAL_OBJECT"):
+            #Search for prepositions to the right
+            for curr_right in rights:
+                if (self._is_pos_word(curr_right, pos="PREPOSITION")):
+                #Search right for prep. object(s)
+                for curr_right2 in curr_right.rights:
+                    if (self._is_pos_word(curr_right2,
+                                            pos="DIRECT_OBJECT")):
+                        storage.append(self._get_nounchunk(word=curr_right2,
+                                            dict_nounchunks=dict_nounchunks))
+                        storage += self._get_conjoined(word=curr_right2,
+                                            sentence_NLP=sentence_NLP,
+                                            dict_nounchunks=dict_nounchunks,
+                                            ids_conjoined=ids_conjoined)
+            #
+        #
+        #For auxes
+        elif (connector.upper() == "AUX"):
+            #Search for auxes to the left
+            for curr_left in lefts:
+                if (self._is_pos_word(curr_left, pos="AUX")):
+                    storage.append(curr_left)
+                    storage += self._get_conjoined(word=curr_left,
+                                            sentence_NLP=sentence_NLP,
+                                            dict_nounchunks=dict_nounchunks,
+                                            ids_conjoined=ids_conjoined)
+        #
+        #Throw error if requested connector not recognized
+        else:
+            raise ValueError("Err: Connector '{0}' invalid.".format(connector))
+        #
+
+        #Exit the method; storage was implicitly updated
+        return
+    #
+
+    ##Method: _modify_structure
+    ##Purpose: Modify given grammar structure, following specifications of the given mode
+    def _modify_structure(self, struct_verbs, struct_words, mode):
+        """
+        Method: _modify_structure
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Modify given grammar structure using the specifications of the given mode.
+        """
+        #Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        keyword_obj = self._get_info("keyword_obj")
+        buffer = self._get_info("buffer")
+        allowed_modifications = ["none", "skim", "trim", "anon"] #Implemented
+        #
+
+        #Initialize storage for modified versions of grammar structure
+        num_words = len(struct_words)
+        arr_is_keep = np.ones(num_words).astype(bool)
+        arr_text_keep = np.array([struct_words[ii]["word"]#.text
+                                for ii in range(0, num_words)])
+        text_updated = " ".join(arr_text_keep) #Starting text
+        #
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _modify_structure!")
+            print("Number of words: {1}\nRequested mode: {0}"
+                    .format(mode, num_words))
+        #
+
+        #Fetch the modifications assigned to this mode
+        list_mods = (mode.lower().split("_"))
+        #Throw error if any modifications not recognized
+        if any([(item not in allowed_modifications) for item in list_mods]):
+            raise ValueError(("Err: Looks like {0} is not a recognized mode."
+                            +" It was split into these modifications:\n{2}\n"
+                            +" Allowed modes consist of the following,"
+                            +" joined by '_' signs:\n{1}")
+                            .format(mode, allowed_modifications, list_mods))
+        #
+
+        #Set booleans for which modifications to apply
+        do_skim = ("skim" in list_mods)
+        do_trim = ("trim" in list_mods)
+        do_anon = ("anon" in list_mods)
+
+        #Throw error if a trimming mode was requested with a non-zero buffer
+        if (do_trim and buffer > 0):
+            raise ValueError(("Err: Mode {0} with 'trim' modification given"
+                        +" with a non-zero buffer ({1}). This is not allowed"
+                        +" because buffered sentences would likely be trimmed."
+                        +" Please rerun with a different mode or buffer of 0.")
+                        .format(mode, buffer))
+        #
+
+        #Print some notes
+        if do_verbose:
+            print("Allowed modifications: {0}".format(allowed_modifications))
+            print("Assigned modifications: {0}".format(list_mods))
+        #
+
+        #Apply modifications
+        #For skim: Remove useless words (like adjectives)
+        if do_skim:
+            #Print some notes
+            if do_verbose:
+                print("> Applying skim modifications...")
+            #
+            #Iterate through words
+            for ii in range(0, num_words):
+                #Remove useless words (e.g., adjectives)
+                if struct_words[ii]["is_useless"]:
+                    arr_is_keep[ii] = False
+                    arr_text_keep[ii] = ""
+            #
+            #Update latest text with these updates
+            text_updated = " ".join(arr_text_keep)
+            #
+            #Print some notes
+            if do_verbose:
+                print("skim modifications complete.\nUpdated text:\n{0}\n"
+                        .format(text_updated))
+            #
+        #
+        #For trim: Remove clauses without any important information/subclauses
+        if do_trim:
+            #Print some notes
+            if do_verbose:
+                print("> Applying trim modifications...")
+                print("Iterating through clause chains...")
+            #
+            #Extract all clause chains
+            list_chains = []
+            for ii in range(0, num_words):
+                curr_set = struct_words[ii]["i_clausechain"] #Current chain
+                #Keep chain if not empty and if not already stored
+                if ((curr_set is not None) and (curr_set not in list_chains)):
+                    list_chains.append(curr_set)
+            #
+            #Iterate through chains
+            for curr_chain_raw in list_chains:
+                #Reverse chain order
+                curr_chain = curr_chain_raw[::-1]
+                #
+                #Iterate through heads of clauses in this chain
+                for curr_iclause in curr_chain:
+                    curr_trail = np.asarray(
+                                    struct_words[curr_iclause]["i_clausetrail"])
+                    #Mark as unimportant if no important terms within
+                    if not any([(struct_words[jj]["is_important"])
+                                for jj in curr_trail]):
+                        arr_is_keep[curr_trail] = False
+                        arr_text_keep[curr_trail] = ""
+                    #
+                    #Print some notes
+                    if do_verbose:
+                        print("Considered clause {0} for this text.\nWords: {1}"
+                                .format(curr_trail,
+                                        [struct_words[jj]["word"]
+                                        for jj in curr_trail]))
+                        print("Latest is_keep values for these words:\n{0}"
+                                .format(arr_is_keep[curr_trail]))
+                    #
+                #
+            #
+            #Update latest text with these updates
+            text_updated = " ".join(arr_text_keep)
+            #
+            #Print some notes
+            if do_verbose:
+                print("trim modifications complete.\nUpdated text:\n{0}\n"
+                        .format(text_updated))
+            #
+        #
+        #For anon: Replace mission-specific terms with anonymous placeholder
+        if do_anon:
+            #Print some notes
+            if do_verbose:
+                print("> Applying anon modifications...")
+            #
+            placeholder_anon = config.placeholder_anon
+            #Update latest text with these updates
+            text_updated = keyword_obj.replace_keyword(text=text_updated,
+                                                placeholder=placeholder_anon)
+            #
+            #Print some notes
+            if do_verbose:
+                print("anon modifications complete.\nUpdated text:\n{0}\n"
+                        .format(text_updated))
+            #
+        #
+
+        #Cleanse the text to finalize it
+        text_updated = self._streamline_phrase(text=text_updated)
+        #
+
+        #Build grammar structures using only kept words
+        struct_verbs_updated = {key:struct_verbs[key] for key in struct_verbs
+                                if (arr_is_keep[key])} #Copy kept verb storage
+        struct_words_updated = {key:struct_words[key] for key in struct_words
+                                if (arr_is_keep[key])} #Copy kept word storage
+        #
+
+        #Return dictionary containing the updated grammar structures
+        if do_verbose:
+            print("Run of _modify_structure() complete.")
+            print(("Mode: {0}\nUpdated word structure: {1}\n"
+                    +"Updated verb structure: {2}\nUpdated text: {3}")
+                    .format(mode, struct_words_updated, struct_verbs_updated,
+                            text_updated))
+        #
+        return {"mode":mode, "struct_verbs_updated":struct_verbs_updated,
+                "struct_words_updated":struct_words_updated,
+                "text_updated":text_updated, "arr_is_keep":arr_is_keep}
+    #
+
+    ##Method: _recurse_NLP_tree
+    ##Purpose: Recursively explore each word of NLP-sentence and characterize
+    def _recurse_NLP_tree(self, node, ...):
+        !
+        Should return: ids_conjoined, list_pos, keyword status per node
+    #
+
+    ##Method: _recurse_NLP_categorization
+    ##Purpose: Recursively explore each word of NLP-sentence and categorize
+    def x_recurse_NLP_categorization(self, node, storage_verbs, storage_words, is_checked, i_cluster, i_sentence, i_verb, chain_i_verbs, verb_side, i_headoftrail):
+        """
+        Method: _recurse_NLP_categorization
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Recursively examine and store information for each word within an NLP-sentence.
+        """
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        wordchunk = self._get_wordchunk(index=node.i, i_cluster=i_cluster,
+                                        i_sentence=i_sentence, do_text=False)
+        #Print some notes
+        if do_verbose:
+            print(("-"*60)+"\nCURRENT NODE ({1}): {0}".format(node, node.i))
+            print("node.dep_ = {0}, node.pos_ = {1}, node tag = {2}"
+                    .format(node.dep_, node.pos_, node.tag_))
+            if len(list(node.ancestors)) != 0:
+                print("Root: {0}".format(list(node.ancestors)[0]))
+            print("Wordchunk: '{0}'".format(wordchunk))
+            print("Lefts: {0}, Rights: {1}"
+                    .format(list(node.lefts), list(node.rights)))
+            print("Verb chain: {0}".format(chain_i_verbs))
+            print("Check status of node: {0}".format(is_checked[node.i]))
+        #
+
+
+        ##Skip ahead if this word has already been checked
+        if is_checked[node.i]:
+            #Print some notes
+            if do_verbose:
+                print("This node has already been checked.  Skipping...")
+            #
+            #Go ahead and recurse through successors of this node
+            #For left nodes
+            for left_node in node.lefts:
+                self._recurse_NLP_categorization(node=left_node,
+                        storage_verbs=storage_verbs, verb_side=verb_side,
+                        storage_words=storage_words, is_checked=is_checked,
+                        i_cluster=i_cluster, i_sentence=i_sentence,
+                        i_verb=i_verb, chain_i_verbs=chain_i_verbs.copy(),
+                        i_headoftrail=i_headoftrail)
+            #
+            #For right nodes
+            for right_node in node.rights:
+                self._recurse_NLP_categorization(node=right_node,
+                        storage_verbs=storage_verbs, verb_side=verb_side,
+                        storage_words=storage_words, is_checked=is_checked,
+                        i_cluster=i_cluster, i_sentence=i_sentence,
+                        i_verb=i_verb, chain_i_verbs=chain_i_verbs.copy(),
+                        i_headoftrail=i_headoftrail)
+            #
+            #Exit the method early
+            return
+        #
+
+
+        ##Store characteristics of this word
+        #For verbs vs. non-verbs
+        is_verb = self._is_pos_word(node, pos="VERB")
+        is_root = self._is_pos_word(node, pos="ROOT")
+        #
+        #If verb or root, create new storage for this verb and its info
+        if is_verb:
+            storage_verbs[node.i] = self._add_verb(node) #Verb storage
+            #Iterate through previous verb chains
+            for vv in chain_i_verbs: #Note that root will have empty chain
+                #Tack on current verb
+                storage_verbs[vv]["i_postverbs"].append(node.i)
+            #
+            chain_i_verbs.append(node.i) #Tack current verb onto verb chain
+            i_verb = node.i #Update index of most recent verb
+            verb_side = None #Reset tracking of side of verb
+        #
+        #Handle special case of incomplete sentences (e.g., root is noun)
+        elif is_root:
+            storage_verbs[node.i] = {"i_verb":node.i, "verb":node.text,
+                                    "is_important":False, "i_postverbs":[],
+                                    "i_branchwords_all":[], "verbtype":[]}
+            #Iterate through previous verb chains
+            for vv in chain_i_verbs: #Note that root will have empty chain
+                #Tack on current verb
+                storage_verbs[vv]["i_postverbs"].append(node.i)
+            #
+            chain_i_verbs.append(node.i) #Tack current verb onto verb chain
+            i_verb = node.i #Update index of most recent verb
+            verb_side = None #Reset tracking of side of verb
+        #
+        #Otherwise, store this word underneath latest verb
+        else:
+            storage_verbs[i_verb]["i_branchwords_all"].append(node.i)
+        #
+        #For general words
+        dict_res = self._add_word(node,storage_verbs=storage_verbs[i_verb],
+                                            storage_words=storage_words,
+                                            i_verb=i_verb, i_cluster=i_cluster,
+                                            i_sentence=i_sentence,
+                                            i_headoftrail=i_headoftrail)
+        list_maxed_dict_words = dict_res["dict_words"]
+        i_headoftrail = dict_res["i_headoftrail"]
+        #Set same maximum storage to all words in wordchunk
+        for ww in range(0, len(wordchunk)):
+            storage_words[wordchunk[ww].i] = list_maxed_dict_words[ww]
+            is_checked[wordchunk[ww].i] = True
+        #
+
+
+        ##Check off this node and recurse through successors of this node
+        #For left nodes
+        for left_node in node.lefts:
+            if verb_side is None:
+                self._recurse_NLP_categorization(node=left_node,
+                    storage_verbs=storage_verbs, storage_words=storage_words,
+                    i_cluster=i_cluster, i_sentence=i_sentence,
+                    i_verb=i_verb, verb_side="left",
+                    chain_i_verbs=chain_i_verbs.copy(), is_checked=is_checked,
+                    i_headoftrail=i_headoftrail)
+            else:
+                self._recurse_NLP_categorization(node=left_node,
+                    storage_verbs=storage_verbs, storage_words=storage_words,
+                    i_cluster=i_cluster, i_sentence=i_sentence,
+                    i_verb=i_verb, verb_side=verb_side,
+                    chain_i_verbs=chain_i_verbs.copy(), is_checked=is_checked,
+                    i_headoftrail=i_headoftrail)
+        #
+        #For right nodes
+        for right_node in node.rights:
+            if verb_side is None:
+                self._recurse_NLP_categorization(node=right_node,
+                    storage_verbs=storage_verbs, storage_words=storage_words,
+                    i_cluster=i_cluster, i_sentence=i_sentence,
+                    i_verb=i_verb, verb_side="right",
+                    chain_i_verbs=chain_i_verbs.copy(), is_checked=is_checked,
+                    i_headoftrail=i_headoftrail)
+            else:
+                self._recurse_NLP_categorization(node=right_node,
+                    storage_verbs=storage_verbs, storage_words=storage_words,
+                    i_cluster=i_cluster, i_sentence=i_sentence,
+                    i_verb=i_verb, verb_side=verb_side,
+                    chain_i_verbs=chain_i_verbs.copy(), is_checked=is_checked,
+                    i_headoftrail=i_headoftrail)
+        #
+
+
+        ##Exit the method
+        return
+    #
+
+    ##Method: _run_NLP()
+    ##Purpose: Run natural language processing (NLP) on text using external package
+    def _run_NLP(self, text):
+        """
+        Method: _run_NLP
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Run external natural language processing NLP package on given text.
+        """
+        #Convert text (or clusters of sentences) into clusters of NLP objects
+        #For block of text
+        if isinstance(text, str):
+            #Run external natural language processing (NLP) package
+            clusters_NLP = [list(nlp(text).sents)]
+        #For list of texts
+        else:
+            #Run NLP package for each sentence-cluster in paragraph
+            clusters_NLP = [list(nlp(cluster).sents) for cluster in text]
+        #
+
+        #Return NLP clusters
+        return clusters_NLP
+    #
+
+    ##Method: _set_nounchunk_flags()
+    ##Purpose: !
+    !
+    #Function to set flags and mark keywords for nounchunks
+    def _set_nounchunk_flags(sentence_NLP, ids_nounchunks):
+        #Set global variables
+        set_ids = [ind for ind in set(ids_nounchunks) if (ind is not None)]
+
+        #Set containers to hold output
+        flags_nounchunks = {ind:None for ind in set_ids}
+        ids_keywords = [None]*len(sentence_NLP)
+
+        #Iterate through nounchunks
+        for curr_id in set_ids:
+            tmp_res = _check_importance(!)
+            flags_nounchunks[curr_id] = tmp_res["flags"]
+
+        #Return the flags and ids
+        return {"flags_nounchunks":flags_nounchunks}
+    #
+    !
+    #
+
+    ##Method: _set_wordchunks()
+    ##Purpose: Group nouns into chunks as applicable (e.g., proper nouns)
+    def x_set_wordchunks(self, cluster_NLP):
+        """
+        Method: _set_wordchunks
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Assign words to noun chunks, as applicable.
+        """
+        #Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        num_sentences = len(cluster_NLP)
+
+        #Initialize container to hold chunk ids for each word in sentence
+        ids_wordchunks = [None]*num_sentences
+        entries_wordchunks = [None]*num_sentences #For checks of words
+
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _set_wordchunks()!")
+            print("Assigning word chunks for the following cluster: {0}"
+                    .format(cluster_NLP))
+        #
+
+        #Set individual id for root words; avoids weird nounroot wordchunk issue
+        itrack = 0 #Index for tracking incremental increase in ids over cluster
+        rshift = 0 #Accumulated index across all words in previous sentences
+        for ii in range(0, num_sentences):
+            #Extract current sentence
+            curr_sentence = cluster_NLP[ii]
+            nlp_nounchunks = curr_sentence.noun_chunks
+            #Initialize container for current sentence ids
+            curr_ids = np.array([None]*len(curr_sentence))
+            curr_entries = [None]*len(curr_sentence)
+            #
+            ids_wordchunks[ii] = curr_ids
+            entries_wordchunks[ii] = curr_entries
+            #
+            #Store root index separately to avoid weird noun-root issues
+            curr_ids[curr_sentence.root.i - rshift] = itrack
+            itrack += 1
+            #
+
+            #Iterate through noun chunks identified by external NLP package
+            for nounchunk in nlp_nounchunks:
+                #Iterate through words in this chunk
+                for word in nounchunk:
+                    curr_loc = (word.i - rshift)#Word index, shifted to sentence
+                    #Skip words that are deemed useless
+                    is_useless = self._is_pos_word(word, pos="USELESS")
+                    if (is_useless):
+                        if do_verbose:
+                            print("Skipping {0} because it seems useless...."
+                                    .format(word))
+                        continue
+                    #
+                    #Otherwise, assign chunk id to word, if not already done so
+                    if (curr_ids[curr_loc] is None):
+                        curr_ids[curr_loc] = itrack
+                        curr_entries[curr_loc] = word
+                    #
+                #
+                #Increment id after each word chunk
+                itrack += 1
+            #
+
+            #Update accumulated index across sentences completed so far
+            rshift += len(curr_sentence)
+        #
+
+        #Print some notes about the established word chunks, if so desired
+        if do_verbose:
+            print("Run of _set_wordchunks() complete.")
+            print("Cluster: {0}".format(cluster_NLP))
+            print("Original NLP-generated word chunks for this cluster: {0}"
+                    .format([list(item.noun_chunks) for item in cluster_NLP]))
+            print("Final array of chunk ids: {0}".format(ids_wordchunks))
+        #
+
+        #Return the established ids
+        return ids_wordchunks
+    #
+#
+
+
+##Class: Grammar
+class old_2024_02_17_beforerulebasedclassifupdates_Grammar(_Base):
+    """
+    Class: Grammar
+    Purpose:
+        - Load in text.
+        - Extract 'paragraph' from text using Paper class and Keyword instance.
+        - Convert paragraph into grammar tree structure.
+        - Use grammar tree structure to simplify, streamline, and/or anonymize paragraph as directed by user.
+    Initialization Arguments:
+        - buffer [int (default=0)]:
+          - Number of +/- sentences around a sentence containing a target mission to include in the paragraph.
+        - dict_ambigs [None or dict (default=None)]:
+          - If None, will load and process external database of ambiguous mission phrases. If given, will use what is given.
+        - do_check_truematch [bool]:
+          - Whether or not to check that mission phrases found in text are known true vs. false matches. (E.g., 'Edwin Hubble' as false match for the Hubble Space Telescope).
+        - keyword_obj [Keyword instance]:
+          - Target mission; terms will be used to search the text.
+        - text [str]:
+          - Text to process for target terms.
+        - do_verbose [bool (default=False)]:
+          - Whether or not to print surface-level log information and tests.
+    """
+    #
+
+    ##Method: __init__
+    ##Purpose: Initialize this class instance
+    def __init__(self, text, keyword_obj, do_check_truematch, buffer=0, do_verbose=False, do_verbose_deep=False, dict_ambigs=None):
+        """
+        Method: __init__
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Initialize instance of Grammar class.
+        """
+        #Initialize storage for this class instance
+        self._storage = {}
+        #Store inputs for this instance
+        self._store_info(text, key="text_original")
+        self._store_info(keyword_obj, key="keyword_obj")
+        self._store_info(buffer, key="buffer")
+        self._store_info(do_verbose, key="do_verbose")
+        self._store_info(do_verbose_deep, key="do_verbose_deep")
+        #Print some notes
+        if do_verbose:
+            print("Initializing instance of Grammar class.")
+        #
+
+        #Process ambig. phrase data, if not given
+        if ((do_check_truematch) and (dict_ambigs is None)):
+            #Print some notes
+            if do_verbose:
+                print("Processing database of ambiguous phrases...")
+            #
+            dict_ambigs = self._process_database_ambig()
+        #Otherwise, do nothing new
+        else:
+            #Print some notes
+            if do_verbose:
+                print("No ambiguous phrase processing requested.")
+            #
+        #
+
+        #Extract keyword paragraph from the text
+        if do_verbose:
+            print("Processing text using the Paper class...")
+        #
+        paper = Paper(text, keyword_objs=[keyword_obj], dict_ambigs=dict_ambigs,
+                        do_check_truematch=do_check_truematch,
+                        do_verbose=do_verbose, do_verbose_deep=do_verbose_deep)
+        paper.process_paragraphs(buffer=buffer)
+        self._store_info(paper, "paper")
+
+        #Close the method
+        if do_verbose:
+            print("Text process and Paper instance stored.")
+            print("Initialization of this Grammar class instance complete.")
+        return
+    #
+
+    ##Method: get_modifs
+    ##Purpose: Return modifs (modified paragraphs), modified to specified modes
+    def get_modifs(self, which_modes=None, do_include_forest=False):
+        """
+        Method: get_modifs
+        Purpose: Fetch the modified paragraphs ('modifs') previously assembled and stored within this instance.
+        Arguments:
+          - "which_modes" [list of str, or None (default=None)]: List of modes for which modifs will be extracted. If None, then all previously assembled and stored modifs will be returned.
+        Returns:
+          - dict:
+            - keys = Names of the modes.
+            - values = The modif (the modified paragraph) for each mode.
+        """
+        #Extract global variables
+        forest = self._get_info("forest")
+        dict_modifs_orig = self._get_info("modifs")
+        do_verbose = self._get_info("do_verbose")
+        #Extract all computed modes, if none specified
+        if (which_modes is None):
+            which_modes = [key for key in forest]
+        #
+        #Print some notes
+        if do_verbose:
+            print("\n> Running get_modifs() for modes: {0}".format(which_modes))
+        #
+
+        #Extract and return requested modifs
+        dict_modifs = {key:dict_modifs_orig[key] for key in which_modes}
+        #
+        #Tack on grammar information if requested
+        if (do_include_forest):
+            dict_results = {"modifs":dict_modifs, "_forest":forest}
+        else:
+            dict_results = dict_modifs
+        #
+        #Print some notes
+        if do_verbose:
+            print("Fetched modifs: {0}".format(dict_modifs))
+        #
+        return dict_results
+    #
+
+    ##Method: run_modifications
+    ##Purpose: Run submethods to convert paragraphs into custom grammar trees
+    def run_modifications(self, which_modes=None):
+        """
+        Method: run_modifications
+        Purpose: Parse paragraphs and process them into grammar structures using various modification schemes.
+        Arguments: None
+        Returns: None (internal storage updated)
+        """
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        lookup_kobj = self._get_info("keyword_obj").get_name()
+        if (which_modes is None):
+            which_modes = ["none"]
+        paragraphs = self._get_info("paper").get_paragraphs()[lookup_kobj]
+        #Print some notes
+        if do_verbose:
+            print("\n> Running run_modifications():")
+        #
+
+        ##Process the raw text into NLP-text using external NLP packages
+        clusters_NLP = self._run_NLP(text=paragraphs)
+        num_clusters = len(clusters_NLP) #Num. clusters of sentences
+        #Print some notes
+        if do_verbose:
+            print("{0} NLP-processed clusters. Clusters:\n{1}"
+                    .format(num_clusters, clusters_NLP))
+        #
+
+        ##Store containers and information
+        #Initialize storage for the grammar tree
+        ids_wordchunks = [None for ii in range(0, num_clusters)]
+        forest = {mode:{ii:None for ii in range(0, num_clusters)}
+                for mode in which_modes}
+        dict_modifs = {mode:None for mode in which_modes}
+        #
+        #Store the info in this instance
+        self._store_info(clusters_NLP, "clusters_NLP")
+        self._store_info(num_clusters, "num_clusters")
+        self._store_info(forest, "forest")
+        self._store_info(dict_modifs, "modifs")
+        self._store_info(ids_wordchunks, "_ids_wordchunks")
+        #Print some notes
+        if do_verbose:
+            print("Internal storage for class instance initialized.\nClusters:")
+            for ii in range(0, num_clusters):
+                print("> {0}: '{1}'".format(ii, clusters_NLP[ii]))
+            print("")
+        #
+
+        ##Build grammar structures for NLP-sentences in each cluster
+        #Iterate through clusters
+        for ii in range(0, num_clusters): #Iterate through NLP-sentences
+            #Prepare variables and storage for current cluster
+            curr_cluster = clusters_NLP[ii]
+            num_sentences = len(curr_cluster)
+            num_words = sum([len(item) for item in curr_cluster])
+            #Print some notes
+            if do_verbose:
+                print("\n---------------\n")
+                print("Building structure for cluster {2} ({1} words):\n{0}\n"
+                        .format(curr_cluster, num_words, ii))
+            #
+
+            #Identify word chunks for this NLP-cluster
+            ids_wordchunks[ii] = self._set_wordchunks(cluster_NLP=curr_cluster)
+            #Print some notes
+            if do_verbose:
+                print("Word-chunks identified as:\n{0}\n"
+                        .format(ids_wordchunks[ii]))
+                print("Building grammar structure next...")
+            #
+
+            #Examine and store info for each word within this cluster
+            curr_struct_verbs = {}
+            curr_struct_words = {}
+            curr_is_checked = np.zeros(num_words).astype(bool) #Checked words
+            #Iterate through sentences within this cluster
+            for jj in range(0, num_sentences):
+                curr_sentence = curr_cluster[jj]
+                #Print some notes
+                if do_verbose:
+                    print("Working on sentence #{1} of cluster #{0}:\n{2}"
+                            .format(ii, jj, curr_sentence))
+                #
+                #Recursively navigate NLP-tree from the root
+                self._recurse_NLP_categorization(node=curr_sentence.root,
+                                storage_verbs=curr_struct_verbs,
+                                storage_words=curr_struct_words,
+                                i_cluster=ii, i_sentence=jj,
+                                i_verb=curr_sentence.root.i,
+                                chain_i_verbs=[], is_checked=curr_is_checked,
+                                verb_side=None, i_headoftrail=None)
+                #
+                #Print some notes
+                if do_verbose:
+                    print("Grammar structure for current sentence complete!")
+                    print("Sentence {0}: '{1}'".format(jj, curr_sentence))
+                    print("Verb-struct.:\n{0}\n\n".format(curr_struct_verbs))
+                    print("Word-struct.:")
+                    for key1 in curr_struct_words:
+                        print("- {0}={1}: {2}".format(
+                                        curr_struct_words[key1]["index"], #.i,
+                                        curr_struct_words[key1]["word"],
+                                        curr_struct_words[key1]))
+            #
+
+            #Print some notes
+            if do_verbose:
+                print("\n---\nGrammar structure for this cluster complete!")
+                print("Verb-struct.:\n{0}\n".format(curr_struct_verbs))
+                print("Modifying structure based on given modes ({0})..."
+                        .format(which_modes))
+            #
+
+            #Generate diff. versions of grammar structure (orig, trim, anon...)
+            for curr_mode in which_modes:
+                forest[curr_mode][ii] = self._modify_structure(mode=curr_mode,
+                                                struct_verbs=curr_struct_verbs,
+                                                struct_words=curr_struct_words)
+            #
+        #
+
+        #Generate final modif across all clusters for each mode
+        for curr_mode in which_modes:
+            curr_modif = "\n".join([forest[curr_mode][ii]["text_updated"]
+                                        for ii in range(0, num_clusters)])
+            dict_modifs[curr_mode] = curr_modif
+        #
+
+        #Close the method
+        if do_verbose:
+            print("Modification of grammar structure complete.\n")
+            for curr_mode in which_modes:
+                print("Mod. structure for mode {0}:\n---\n".format(curr_mode))
+                for ii in range(0, num_clusters):
+                    print("\nCluster #{0}, mode {1}:".format(ii, curr_mode))
+                    print("Updated text: {0}".format(
+                                        forest[curr_mode][ii]["text_updated"]))
+                    print("---")
+            #
+            print("\n---------------\n")
+        #
+        return
+    #
 
     ##Method: _add_aux
     ##Purpose: Add aux to grammar structure
@@ -4084,6 +5463,2006 @@ class Classifier_ML(_Classifier):
 
 ##Class: Classifier_Rules
 class Classifier_Rules(_Classifier):
+    """
+    Class: Classifier_Rules
+    Purpose:
+        - Use an internal 'decision tree' to classify given text.
+    Initialization Arguments:
+        - which_classifs [list of str or None (default=None)]:
+          - Names of the classes used in classification. If None, will load from bibcat_constants.py.
+        - do_verbose [bool (default=False)]:
+          - Whether or not to print surface-level log information and tests.
+        - do_verbose_deep [bool (default=False)]:
+          - Whether or not to print inner log information and tests.
+    """
+    ##Method: __init__
+    ##Purpose: Initialize this class instance
+    def __init__(self, which_classifs=None, do_verbose=False, do_verbose_deep=False):
+        ##Initialize storage
+        self._storage = {}
+        #Store global variables
+        self._store_info(do_verbose, "do_verbose")
+        self._store_info(do_verbose_deep, "do_verbose_deep")
+        if (which_classifs is None):
+            which_classifs = config.list_default_verdicts_decisiontree
+        self._store_info(which_classifs, "class_names")
+
+        ##Assemble the fixed decision tree
+        decision_tree = self._assemble_decision_tree()
+        self._store_info(decision_tree, "decision_tree")
+
+        ##Print some notes
+        if do_verbose:
+            print("> Initialized instance of Classifier_Rules class.")
+            print("Internal decision tree has been assembled.")
+            print("NOTE: Decision tree probabilities:\n{0}\n"
+                    .format(decision_tree))
+        #
+
+        ##Nothing to see here
+        return
+    #
+
+    ##Method: _apply_decision_tree
+    ##Purpose: Apply a decision tree to a 'nest' dictionary for some text
+    def _apply_decision_tree(self, decision_tree, tree_nest):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        which_classifs = self._get_info("class_names")
+        keys_main = config.nest_keys_main
+        keys_matter = [item for item in keys_main if (item.endswith("matter"))]
+        bool_keyword = "is_keyword"
+        prefix = "prob_"
+        #
+        dict_nest = tree_nest.copy()
+        for key in keys_main: #Encapsulate any single values into tuples
+            if isinstance(dict_nest[key], str) or (dict_nest[key] is None):
+                dict_nest[key] = [tree_nest[key]]
+            else:
+                dict_nest[key] = tree_nest[key]
+        #
+        #Print some notes
+        if do_verbose:
+            print("Applying decision tree to the following nest:")
+            print(dict_nest)
+        #
+
+        ##Reject this nest if no keywords within
+        if (not any([bool_keyword in dict_nest[key] for key in keys_matter])):
+            #Print some notes
+            if do_verbose:
+                print("No keywords remaining for this cleaned nest. Skipping.")
+            return None
+        #
+
+        ##Find matching decision tree branch
+        best_branch = None
+        for key_tree in decision_tree:
+            curr_branch = decision_tree[key_tree]
+            #Determine if current branch matches
+            is_match = True
+            #Iterate through parameters
+            for key_param in keys_main:
+                #Skip ahead if current parameter allows any value ('is_any')
+                if curr_branch[key_param] == "is_any":
+                    continue
+                #
+                #Otherwise, check for exact matching values based on branch form
+                elif isinstance(curr_branch[key_param], tuple):
+                    #Check for exact matching values
+                    if not np.array_equal(np.sort(curr_branch[key_param]),
+                                        np.sort(dict_nest[key_param])):
+                        is_match = False
+                        break #Exit from this branch early
+                #
+                #Otherwise, check inclusive and excluded ('!') matching values
+                elif isinstance(curr_branch[key_param], list):
+                    #Check for included matching values
+                    if ((not all([(item in dict_nest[key_param])
+                                for item in curr_branch[key_param]
+                                if (not item.startswith("!"))]))
+                            or (any([(item in dict_nest[key_param])
+                                        for item in curr_branch[key_param]
+                                        if (item.startswith("!"))]))):
+                        is_match = False
+                        break #Exit from this branch early
+                #
+                #Otherwise, check if any of allowed values contained
+                elif isinstance(curr_branch[key_param], set):
+                    #Check for any of matching values
+                    if not any([(item in dict_nest[key_param])
+                                for item in curr_branch[key_param]]):
+                        is_match = False
+                        break #Exit from this branch early
+                #
+                #Otherwise, throw error if format not recognized
+                else:
+                    raise ValueError("Err: Invalid format for {0}!"
+                                    .format(curr_branch))
+                #
+            #
+            #Store this branch as match, if valid
+            if is_match:
+                best_branch = curr_branch
+                #Print some notes
+                if do_verbose:
+                    print("\n- Found matching decision branch:\n{0}"
+                            .format(best_branch))
+                #
+                break
+            #Otherwise, carry on
+            else:
+                pass
+            #
+        #
+        #Raise an error if no matching branch found
+        if (not is_match) or (best_branch is None):
+            raise ValueError("Err: No match found for {0}!".format(dict_nest))
+        #
+
+        ##Extract the probabilities from the branch
+        dict_probs = {key:best_branch[prefix+key] for key in which_classifs}
+
+        ##Return the final probabilities
+        if do_verbose:
+            print("Final scores computed for nest:\n{0}\n\n{1}\n\n{2}"
+                    .format(dict_nest, dict_probs, best_branch))
+        #
+        return {"probs":dict_probs, "components":best_branch}
+    #
+
+    ##Method: _assemble_decision_tree
+    ##Purpose: Assemble base of decision tree, with probabilities, that can be read from/expanded as full decision tree
+    def _assemble_decision_tree(self):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        which_classifs = self._get_info("class_names")
+        dict_possible_values = config.dict_tree_possible_values
+        #dict_valid_combos = config.dict_tree_valid_value_combinations
+        keys_matter = config.nest_keys_matter
+        key_verbtype = config.nest_key_verbtype
+        all_params = list(dict_possible_values.keys())
+        prefix = "prob_"
+        #
+
+
+        ##Goal: Generate matrix of probabilities based on 'true' examples
+        if True: #Just to make it easier to hide the example content display
+            dict_examples_base = {}
+            itrack = -1
+            #
+            #<know verb classes>
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":"is_any",
+                "objectmatter":"is_any",
+                "verbclass":{"know"},
+                "verbtypes":"is_any",
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #<be,has verb classes>
+            #'OBJ data has/are/had/were available in the archive.'
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":tuple([]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #'The stars have/are/had/were available in OBJ data.'
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple([]),
+                "objectmatter":tuple(["is_keyword"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #'We have/had OBJ data/Our rms is/was small for the OBJ data.'
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_1st"]),
+                "objectmatter":tuple(["is_keyword"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #’The data is/was from OBJ by Authorsetal.’
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple([]),
+                "objectmatter":tuple(["is_keyword", "is_etal"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.5}
+            #
+            #’The data is from OBJ by Authorsetal.’
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple([]),
+                "objectmatter":tuple(["is_keyword", "is_etal"]),
+                "verbclass":{"be"},
+                "verbtypes":{"PRESENT"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.8,
+                "prob_mention":0.6}
+            #
+            #’We know/knew the limits of the OBJ data.’
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_1st"]),
+                "objectmatter":tuple(["is_keyword"]),
+                "verbclass":{"know"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.5}
+            #
+            #’!.’
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple([]),
+                "objectmatter":tuple(["is_keyword", "is_pron_1st", "is_etal"]),
+                "verbclass":{"know"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.25,
+                "prob_mention":0.5}
+            #
+            #<science,plot verb classes>
+            #'OBJ data shows/detects/showed/detected a trend.'
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":tuple([]),
+                "verbclass":{"plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.4,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.6}
+            #
+            #'People use/used OBJ data.'
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple([]),
+                "objectmatter":tuple(["is_keyword"]),
+                "verbclass":{"plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.4,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.6}
+            #
+            #'We detect/plot/detected/plotted OBJ data.'
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_1st"]),
+                "objectmatter":tuple(["is_keyword"]),
+                "verbclass":{"plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #'This work detects/plots our OBJ data.'
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple([]),
+                "objectmatter":tuple(["is_pron_1st", "is_keyword"]),
+                "verbclass":{"plot", "science"},
+                "verbtypes":{"PRESENT"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #'Figures 1-10 detect/plot/detected/plotted OBJ data.'
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_term_fig"]),
+                "objectmatter":tuple(["is_keyword"]),
+                "verbclass":{"plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #'This work detects/plots the OBJ data in Figure 1.'
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple([]),
+                "objectmatter":tuple(["is_term_fig", "is_keyword"]),
+                "verbclass":{"plot", "science"},
+                "verbtypes":{"PRESENT"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #'We detect/plot/detected/plotted the OBJ data in Figure 1.'
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_1st"]),
+                "objectmatter":tuple(["is_term_fig", "is_keyword"]),
+                "verbclass":{"plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #'Authorsetal detect/plot/detected/plotted OBJ data.'
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_etal"]),
+                "objectmatter":tuple(["is_keyword"]),
+                "verbclass":{"plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.1,
+                "prob_mention":1.0}
+            #
+            #'Authorsetal detect/plot/detected/plotted the OBJ data in Fig 1.'
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_etal"]),
+                "objectmatter":tuple(["is_term_fig", "is_keyword"]),
+                "verbclass":{"plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":1.0,
+                "prob_mention":0.5}
+            #
+            #'The data shows trends for the OBJ data by Authorsetal in Fig 1.'
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple([]),
+                "objectmatter":tuple(["is_term_fig", "is_keyword", "is_etal"]),
+                "verbclass":{"plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":1.0,
+                "prob_mention":0.5}
+            #
+            #'The trend uses/plots/used/plotted the OBJ data from Authorsetal.'
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple([]),
+                "objectmatter":tuple(["is_etal", "is_keyword"]),
+                "verbclass":{"plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":1.0,
+                "prob_mention":0.5}
+            #
+            #'Their OBJ observations detects/detected the star.'
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword", "is_pron_3rd"]),
+                "objectmatter":tuple([]),
+                "verbclass":{"science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.2,
+                "prob_mention":0.6}
+            #
+            #'They plot/plotted/detect/detected stars in their OBJ data.'
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_3rd"]),
+                "objectmatter":tuple(["is_keyword"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.2,
+                "prob_mention":0.6}
+            #
+            #'Their OBJ observations detects/detected the star.'
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword", "is_pron_3rd"]),
+                "objectmatter":tuple([]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.2,
+                "prob_mention":0.6}
+            #
+            #<Data-influenced stuff>
+            #’We simulate/simulated the OBJ data.’
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_1st"]),
+                "objectmatter":tuple(["is_keyword"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":1.0,
+                "prob_mention":0.0}
+            #
+            #’We simulate/simulated the OBJ data of Authorsetal.’
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_1st"]),
+                "objectmatter":tuple(["is_keyword", "is_etal"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":1.0,
+                "prob_mention":0.0}
+            #
+            #’Authorsetal simulate/simulated OBJ data in their study.’
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_etal"]),
+                "objectmatter":tuple(["is_keyword", "is_pron_3rd"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #<All FUTURE verbs>
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":"is_any",
+                "objectmatter":"is_any",
+                "verbclass":"is_any",
+                "verbtypes":["FUTURE"],
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #<All POTENTIAL verbs>
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":"is_any",
+                "objectmatter":"is_any",
+                "verbclass":"is_any",
+                "verbtypes":["POTENTIAL"],
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #<All PURPOSE verbs>
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":"is_any",
+                "objectmatter":"is_any",
+                "verbclass":"is_any",
+                "verbtypes":["PURPOSE"],
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #<All None verbs>
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":"is_any",
+                "objectmatter":"is_any",
+                "verbclass":{None},
+                "verbtypes":"is_any",
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #<All nonverb verbs - usually captions>
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":"is_any",
+                "objectmatter":["is_etal"],
+                "verbclass":{"root_nonverb"},
+                "verbtypes":"is_any",
+                "prob_science":0.0,
+                "prob_data_influenced":0.8,
+                "prob_mention":0.5}
+            #
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":["is_etal"],
+                "objectmatter":"is_any",
+                "verbclass":{"root_nonverb"},
+                "verbtypes":"is_any",
+                "prob_science":0.0,
+                "prob_data_influenced":0.8,
+                "prob_mention":0.5}
+            #
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":"is_any",
+                "objectmatter":"is_any",
+                "verbclass":{"root_nonverb"},
+                "verbtypes":"is_any",
+                "prob_science":0.8,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #
+            #Stuff from missing branch output, now with '!' ability: 2023-05-30
+            #is_key/is_proI/is_fig; is_etal/is_they
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":["is_pron_1st"],
+                "objectmatter":{"is_etal", "is_pron_3rd"},
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #is_key/is_proI/is_fig; is_proI, !is_etal, !is_they
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":{"is_keyword", "is_pron_1st", "is_term_fig"},
+                "objectmatter":["is_pron_1st", "!is_etal", "!is_pron_3rd"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #is_key; is_fig, !is_etal, !is_they
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":["is_term_fig", "!is_etal", "!is_pron_3rd"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #is_key; is_etal, !is_proI, !is_fig
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":["is_etal", "!is_pron_1st", "!is_term_fig"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.5}
+            #
+            #is_key; is_they, !is_proI, !is_fig
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":["is_pron_3rd", "!is_pron_1st", "!is_term_fig"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #is_fig; is_etal, !is_pron_1st
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_term_fig"]),
+                "objectmatter":["is_etal", "!is_pron_1st"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #is_fig, !is_etal, !is_they; is_etal, !is_pron_1st
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":["is_term_fig", "!is_etal", "!is_pron_3rd"],
+                "objectmatter":["is_keyword", "!is_etal", "!is_pron_3rd"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #is_etal + is_any (not proI, fig), is_any (not proI, fig)
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":["is_etal", "!is_pron_1st", "!is_term_fig"],
+                "objectmatter":["!is_pron_1st", "!is_term_fig"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #is_they + is_any (not proI, fig), is_any (not proI, fig)
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":["is_pron_3rd", "!is_pron_1st","!is_term_fig"],
+                "objectmatter":["!is_pron_1st", "!is_term_fig"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #Stuff from missing branch output: 2023-05-25
+            #Missing single stuff:
+            #is_key; is_key
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":tuple(["is_keyword"]),
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #is_key; is_fig
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":tuple(["is_term_fig"]),
+                "verbclass":{"be", "has", "plot", "science", "datainfluenced"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #is_etal; is_key
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_etal"]),
+                "objectmatter":tuple(["is_keyword"]),
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #Multi-combos and subj.obj. duplicates
+            #is_key; is_proI, is_key
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":tuple(["is_pron_1st", "is_keyword"]),
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #is_key; is_proI, is_fig
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":tuple(["is_pron_1st", "is_term_fig"]),
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #is_key; is_proI, is_they + is_any
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":["is_pron_1st", "is_pron_3rd"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #is_key; is_proI, is_etal + is_any
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":["is_pron_1st", "is_etal"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #is_key; is_proI, is_etal + is_any
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":["is_pron_1st", "is_etal"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #is_key; is_etal, is_key
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":tuple(["is_keyword", "is_etal"]),
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.5}
+            #
+            #is_key; is_etal, is_fig
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":tuple(["is_term_fig", "is_etal"]),
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.5}
+            #
+            #is_key; is_etal, is_they
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":tuple(["is_pron_3rd", "is_etal"]),
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.5}
+            #
+            #is_proI; is_proI, is_key
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_1st"]),
+                "objectmatter":tuple(["is_pron_1st", "is_keyword"]),
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #is_proI; is_etal, is_key
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_1st"]),
+                "objectmatter":tuple(["is_etal", "is_keyword"]),
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #is_proI; is_they, is_key
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_1st"]),
+                "objectmatter":tuple(["is_pron_3rd", "is_keyword"]),
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #is_proI; is_fig, is_key
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_1st"]),
+                "objectmatter":tuple(["is_term_fig", "is_keyword"]),
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #is_proI; is_proI, is_etal, is_key + is_any
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_1st"]),
+                "objectmatter":["is_pron_1st", "is_keyword", "is_etal"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #is_proI; is_proI, is_they, is_key + is_any
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_1st"]),
+                "objectmatter":["is_pron_1st", "is_keyword", "is_pron_3rd"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #is_proI; is_proI, is_fig, is_key + is_any
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_1st"]),
+                "objectmatter":["is_pron_1st", "is_term_fig", "is_keyword"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #is_proI; is_etal, is_they, is_key + is_any
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_1st"]),
+                "objectmatter":["is_etal", "is_keyword", "is_pron_3rd"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #is_proI; is_etal, is_fig, is_key + is_any
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_1st"]),
+                "objectmatter":["is_etal", "is_keyword", "is_term_fig"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #is_proI; is_they, is_fig, is_key + is_any
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_1st"]),
+                "objectmatter":["is_pron_3rd", "is_keyword", "is_term_fig"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #is_etal; is_key + is_any
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_etal"]),
+                "objectmatter":["is_keyword"], #tuple(["is_pron_1st", "is_keyword"]),
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.5}
+            #
+            #is_they; is_key + is_any
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_3rd"]),
+                "objectmatter":["is_keyword"], #tuple(["is_pron_1st", "is_keyword"]),
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #
+            #Stuff with empty subj/obj.matter: 2023-05-31
+            #is_keyword, is_proI; None; plot, science
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_1st", "is_keyword"]),
+                "objectmatter":tuple([]),
+                "verbclass":{"plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #None; is_keyword; data-infl.; no-verbtype
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_pron_1st"]),
+                "objectmatter":tuple(["is_keyword"]),
+                "verbclass":{"plot"}, #{"be", "has", "plot", "science"},
+                "verbtypes":tuple([]),
+                "prob_science":0.5,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #None; is_keyword; data-infl.; no-verbtype
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple([]),
+                "objectmatter":tuple(["is_keyword"]),
+                "verbclass":{"datainfluenced"}, #{"be", "has", "plot", "science"},
+                "verbtypes":tuple([]),
+                "prob_science":0.0,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.0}
+            #
+            #None; is_keyword; !data-infl.; no-verbtype
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple([]),
+                "objectmatter":tuple(["is_keyword"]),
+                "verbclass":["!datainfluenced"], #{"be", "has", "plot", "science"},
+                "verbtypes":tuple([]),
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #None; is_etal, !is_proI, !is_fig; no-verbtype
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple([]),
+                "objectmatter":["is_etal", "!is_pron_1st", "!is_term_fig"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":tuple([]),
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #!is_etal, !is_they; is_proI, !is_etal, !is_they
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":["!is_etal", "!is_pron_3rd"],
+                "objectmatter":["is_pron_1st", "!is_etal", "!is_pron_3rd"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #!is_etal, !is_they; is_proI, !is_etal, !is_they
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":["!is_etal", "!is_pron_3rd"],
+                "objectmatter":["is_term_fig", "!is_etal", "!is_pron_3rd"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #!is_etal, !is_they; is_proI, !is_etal, !is_they
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":["!is_etal", "!is_pron_3rd"],
+                "objectmatter":["is_keyword", "!is_etal", "!is_pron_3rd"],
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #No-verbtype, all-combos
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":"is_any",
+                "objectmatter":"is_any",
+                "verbclass":"is_any", #{"be", "has", "plot", "science"},
+                "verbtypes":tuple([]),
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+        #
+
+        ##Generate final base tree with only target classifs and norm. probs.
+        decision_tree = {}
+        itrack = -1
+        #Iterate through base examples
+        for key_ex in dict_examples_base:
+            curr_ex = dict_examples_base[key_ex]
+            curr_denom = np.sum([curr_ex[(prefix+item)]
+                                for item in which_classifs]) #Prob. normalizer
+            curr_probs = {(prefix+item):(curr_ex[(prefix+item)]/curr_denom)
+                            for item in which_classifs}
+            #
+
+            ##For main example
+            #Extract all parameters and their values
+            new_ex = {key:curr_ex[key] for key in all_params}
+            #Normalize and store probabilities for target classifs
+            new_ex.update(curr_probs)
+            #Store this example
+            itrack += 1
+            decision_tree[itrack] = new_ex
+            #
+
+            ##For passive example
+            #For general (not is_any, not set) case
+            if ((curr_ex[key_verbtype] == "is_any")):
+                #                    or (curr_ex[key_verbtype] is None)):
+                pass #No passive counterpart necessary for is_any case
+            #For set, add example+passive for each entry in set
+            elif isinstance(curr_ex[key_verbtype], set):
+                #Iterate through set entries
+                for curr_val in curr_ex[key_verbtype]:
+                    #Passive with flipped subj-obj
+                    #Extract all parameters and their values
+                    new_ex = {key:curr_ex[key] for key in all_params
+                            if (key not in (keys_matter+[key_verbtype]))}
+                    #Add in passive term for verbtypes
+                    tmp_vals = [curr_val, "PASSIVE"]
+                    new_ex[key_verbtype] = tmp_vals
+                    #Flip the subject and object terms
+                    new_ex["subjectmatter"] = curr_ex["objectmatter"]
+                    new_ex["objectmatter"] = curr_ex["subjectmatter"]
+                    #Normalize and store probabilities for target classifs
+                    new_ex.update(curr_probs)
+                    #Store this example
+                    itrack += 1
+                    decision_tree[itrack] = new_ex
+            else:
+                #Extract all parameters and their values
+                new_ex = {key:curr_ex[key] for key in all_params
+                        if (key not in (keys_matter+[key_verbtype]))}
+                #Add in passive term for verbtypes
+                tmp_vals = list(curr_ex[key_verbtype]) + ["PASSIVE"]
+                #Apply old data structure type to new expanded verbtype
+                new_ex[key_verbtype]=type(curr_ex[key_verbtype])(tmp_vals)
+                #Flip the subject and object terms
+                new_ex["subjectmatter"] = curr_ex["objectmatter"]
+                new_ex["objectmatter"] = curr_ex["subjectmatter"]
+                #Normalize and store probabilities for target classifs
+                new_ex.update(curr_probs)
+                #Store this example
+                itrack += 1
+                decision_tree[itrack] = new_ex
+        #
+
+        #Return the assembled decision tree
+        return decision_tree
+    #
+
+    ##Method: _categorize_verb
+    ##Purpose: Categorize topic of given verb
+    def _categorize_verb(self, i_verb, struct_words):
+        ##Extract global variables
+        verb = struct_words[i_verb]["word"]
+        verb_dep = struct_words[i_verb]["_dep"]
+        verb_pos = struct_words[i_verb]["_pos"]
+        do_verbose = self._get_info("do_verbose")
+        list_category_names = config.list_category_names
+        list_category_synsets = config.list_category_synsets
+        list_category_threses = config.list_category_threses
+        max_hyp = config.max_num_hypernyms
+        #root_hypernyms = wordnet.synsets(verb, pos=wordnet.VERB)
+        if max_hyp is None:
+            root_hypernyms = wordnet.synsets(verb, pos=wordnet.VERB)
+        else:
+            root_hypernyms = wordnet.synsets(verb, pos=wordnet.VERB)[0:max_hyp]
+        num_categories = len(list_category_synsets)
+
+        ##Print some notes
+        if do_verbose:
+            print("\n> Running _categorize_verb().")
+            print("Verb: {0}\nMax #hyp: {1}\nRoot hyp: {2}\nCategories: {3}\n"
+                .format(verb, max_hyp, root_hypernyms, list_category_names))
+        #
+
+        ##Handle non-verb roots
+        if (verb_dep in ["ROOT"]) and (verb_pos in ["NOUN"]):
+            if do_verbose:
+                print("Verb {0} is a root noun. Marking as such.")
+            #
+            return config.category_nonverb_root
+        #
+
+        ##Handle specialty verbs
+        #For 'be' verbs
+        if any([(roothyp in config.synsets_verbs_be)
+                    for roothyp in root_hypernyms]):
+            return "be"
+        #For 'has' verbs
+        elif any([(roothyp in config.synsets_verbs_has)
+                    for roothyp in root_hypernyms]):
+            return "has"
+        #
+
+        ##Determine likely topical category for this verb
+        score_alls = [None]*num_categories
+        score_fins = [None]*num_categories
+        pass_bools = [None]*num_categories
+        #Iterate through the categories
+        for ii in range(0, num_categories):
+            score_alls[ii] = [roothyp.path_similarity(mainverb)
+                        for mainverb in list_category_synsets[ii]
+                        for roothyp in root_hypernyms]
+            #Take max score, if present
+            if len(score_alls[ii]) > 0:
+                score_fins[ii] = max(score_alls[ii])
+            else:
+                score_fins[ii] = 0
+            #Determine if this score passes any category thresholds
+            pass_bools[ii] = (score_fins[ii] >= list_category_threses[ii])
+        #
+
+        ##Throw an error if no categories fit this verb well
+        if not any(pass_bools):
+            if do_verbose:
+                print("No categories fit verb: {0}, {1}\n"
+                                .format(verb, score_fins))
+            return None
+        #
+
+        ##Throw an error if this verb gives very similar top scores
+        thres = config.thres_category_fracdiff
+        metric_close_raw = (np.abs(np.diff(np.sort(score_fins)[::-1]))
+                            /max(score_fins))
+        metric_close = metric_close_raw[0]
+        if metric_close < thres:
+            #Select most extreme verb with the max score
+            tmp_max = max(score_fins)
+            if score_fins[list_category_names.index("plot")] == tmp_max:
+                tmp_extreme = "plot"
+            elif score_fins[list_category_names.index("science")] == tmp_max:
+                tmp_extreme = "science"
+            else:
+                raise ValueError("Reconsider extreme categories for scoring!")
+            #
+            #Print some notes
+            if do_verbose:
+                print("Multiple categories with max score: {0}: {1}\n{2}\n{3}"
+                        .format(verb, root_hypernyms, score_fins,
+                                list_category_names))
+                print("Selecting most extreme verb: {0}\n".format(tmp_extreme))
+            #Return the selected most-extreme score
+            return tmp_extreme
+
+        ##Return the determined topical category with the best score
+        best_category = list_category_names[np.argmax(score_fins)]
+        #Print some notes
+        if do_verbose:
+            print("Best category: {0}\nScores: {1}"
+                    .format(best_category, score_fins))
+        #Return the best category
+        return best_category
+    #
+
+    ##Method: _classify_statements
+    ##Purpose: Classify a set of statements (rule approach)
+    def _classify_statements(self, forest, do_verbose=None):
+        ##Extract global variables
+        if do_verbose is not None: #Override do_verbose if specified for now
+            self._store_info(do_verbose, "do_verbose")
+        #Load the fixed decision tree
+        decision_tree = self._get_info("decision_tree")
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _classify_statements.")
+            #print("Forest word-trees:")
+            #for key1 in forest:
+            #    for key2 in forest[key1]:
+            #        print("Key1, Key2: {0}, {1}".format(key1, key2))
+            #        print("{0}".format(forest[key1][key2
+            #                            ]["struct_words_updated"].keys()))
+            #        print("{0}\n-".format(forest[key1][key2
+            #                            ]["struct_words_updated"]))
+        #
+
+        ##Set the booleans for this statement dictionary
+        forest_nests = self._make_nest_forest(forest)["main"]
+        num_trees = len(forest_nests)
+
+        ##Send each statement through the decision tree
+        dict_scores = [] #None]*num_trees
+        list_comps = [] #None]*num_trees
+        for ii in range(0, num_trees):
+            #Split this nest into unlinked components
+            nests_unlinked = self._unlink_nest(forest_nests[ii])
+            #Compute score for each component
+            curr_scores = [] #[None]*len(nests_unlinked)
+            curr_comps = []
+            for jj in range(0, len(nests_unlinked)):
+                tmp_stuff = self._apply_decision_tree(
+                                            decision_tree=decision_tree,
+                                            tree_nest=nests_unlinked[jj])
+                if tmp_stuff is not None: #Store if not None
+                    curr_scores.append(tmp_stuff["probs"])
+                    curr_comps.append(tmp_stuff["components"])
+            #
+            #Combine the scores
+            if (len(curr_scores) > 0):
+                dict_scores.append(self._combine_unlinked_scores(curr_scores))
+                list_comps.append(curr_comps)
+        #
+
+        ##Convert the tree scores into a set of verdicts
+        resdict = self._convert_scorestoverdict(dict_scores_indiv=dict_scores,
+                                                components=list_comps)
+
+        ##Return the dictionary containing verdict, etc. for these statements
+        return resdict
+    #
+
+    ##Method: classify_text
+    ##Purpose: Classify full text based on its statements (rule approach)
+    def classify_text(self, keyword_obj, do_check_truematch, which_mode=None, forest=None, text=None, buffer=0, do_verbose=None):
+        #Fetch global variables
+        if do_verbose is None:
+            do_verbose = self._get_info("do_verbose")
+        do_verbose_deep = self._get_info("do_verbose_deep")
+        #Store/Override latest keyword object and None return of classif.
+        self._store_info(keyword_obj, "keyword_obj")
+
+        #Process the text into paragraphs and their statements
+        if (forest is None):
+            forest = self._process_text(text=text,
+                        do_check_truematch=do_check_truematch,
+                        keyword_obj=keyword_obj, do_verbose=do_verbose_deep,
+                        buffer=buffer, which_mode=which_mode)["forest"]
+        #
+
+        #Extract verdict dictionary of statements for keyword object
+        dict_results = self._classify_statements(forest, do_verbose=do_verbose)
+
+        #Print some notes
+        if do_verbose:
+            print("Verdicts complete.")
+            print("Verdict dictionary:\n{0}".format(dict_results))
+            print("---")
+
+        #Return final verdicts
+        return dict_results #dict_verdicts
+    #
+
+    ##Method: _combine_unlinked_scores
+    ##Purpose: Add together scores from unlinked components of a nest
+    def _combine_unlinked_scores(self, component_scores):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _combine_unlinked_scores.")
+            print("Considering set of scores:\n{0}".format(component_scores))
+        #
+
+        ##Verify all score keys are the same
+        if any([(component_scores[0].keys() != item.keys())
+                            for item in component_scores]):
+            raise ValueError("Err: Unequal score keys?\n{0}"
+                            .format(component_scores))
+        #
+
+        ##Combine the scores across all components
+        keys_score = list(component_scores[0].keys())
+        fin_scores = {key:0 for key in keys_score}
+        tot_score = 0 #Total score for normalization purposes
+        for ii in range(0, len(component_scores)):
+            for key in component_scores[ii]:
+                fin_scores[key] += component_scores[ii][key]
+                tot_score += component_scores[ii][key]
+        #
+
+        ##Normalize the combined scores
+        for key in fin_scores:
+            if (tot_score == 0): #If empty score, record as 0
+                fin_scores[key] = 0
+            else: #Otherwise, normalize score
+                fin_scores[key] /= tot_score
+        #
+
+        ##Return the combined scores
+        if do_verbose:
+            print("\n> Run of _combine_unlinked_scores complete!")
+            print("Combined scores:\n{0}".format(fin_scores))
+        #
+        return fin_scores
+    #
+
+    ##Method: _convert_scorestoverdict
+    ##Purpose: Convert set of decision tree scores into single verdict
+    def _convert_scorestoverdict(self, dict_scores_indiv, components, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"]):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _convert_scorestoverdict.")
+            print("Individual components and score sets:")
+            for ii in range(0, len(components)):
+                print("{0}\n{1}\n-".format(components[ii],
+                                            dict_scores_indiv[ii]))
+            #
+        #
+
+        ##Return empty verdict if empty scores
+        #For completely empty scores
+        if len(dict_scores_indiv) == 0:
+            tmp_res = config.dictverdict_error.copy()
+            #Print some notes
+            if do_verbose:
+                print("\n-Empty scores; verdict: {0}".format(tmp_res))
+            #
+            return tmp_res
+        #
+        #Otherwise, remove Nones
+        dict_scores_indiv = [item for item in dict_scores_indiv
+                            if (item is not None)]
+        all_keys = list(dict_scores_indiv[0].keys())
+        #
+
+        ##Calculate and store verdict value statistics from indiv. entries
+        num_indiv = len(dict_scores_indiv)
+        dict_results = {key:{"score_tot_unnorm":0, "count_max":0,
+                                "count_tot":num_indiv}
+                        for key in all_keys}
+        for ii in range(0, num_indiv):
+            curr_scores = dict_scores_indiv[ii]
+            for curr_key in all_keys:
+                tmp_unnorm = curr_scores[curr_key]
+                #Determine if current key has max. score across all keys
+                if (max_diff_thres is not None) and (tmp_unnorm > 0):
+                    tmp_compare = all([(
+                                    (np.abs(tmp_unnorm - curr_scores[other_key])
+                                                / curr_scores[other_key])
+                                        >= max_diff_thres)
+                                    for other_key in all_keys
+                                    if (other_key != curr_key)]
+                                    ) #Check if rel. max. key by some thres.
+                #
+                else:
+                    tmp_compare = False
+                #
+
+                #Increment count of sentences with max-valued verdict
+                if tmp_compare:
+                    dict_results[curr_key]["count_max"] += 1
+                #
+                #Increment unnorm. score count
+                dict_results[curr_key]["score_tot_unnorm"] += tmp_unnorm
+            #
+        #
+
+        #Normalize and store the scores
+        denom = np.sum([dict_results[key]["score_tot_unnorm"]
+                        for key in all_keys])
+        for curr_key in all_keys:
+            #Calculate and store normalized score
+            tmp_score = (dict_results[curr_key]["score_tot_unnorm"] / denom)
+            dict_results[curr_key]["score_tot_norm"] = tmp_score
+        #
+        list_scores_comb = [dict_results[key]["score_tot_norm"]
+                            for key in all_keys]
+        #
+
+        #Gather final scores into set of error
+        dict_error = {key:dict_results[key]["score_tot_norm"]
+                                for key in dict_results}
+        #
+
+        #Print some notes
+        if do_verbose:
+            print("Indiv. scores without Nones:\n{0}".format(dict_scores_indiv))
+            print("Normalizing denominator: {0}".format(denom))
+            print("Full score set:")
+            for curr_key in dict_results:
+                print("{0}: {1}".format(curr_key, dict_results[curr_key]))
+            print("Listed combined scores: {0}: {1}"
+                    .format(all_keys, list_scores_comb))
+        #
+
+        ##Determine best verdict and associated probabilistic error
+        is_found = False
+        #For max sentence count:
+        if (not is_found) and (max_diff_thres is not None):
+            #Check allowed keys that fit max condition
+            for curr_key in max_diff_verdicts:
+                if (dict_results[curr_key]["count_max"] >= max_diff_count):
+                    is_found = True
+                    max_score = 1 #dict_results[curr_key]["score_tot_norm"]
+                    max_verdict = curr_key
+                    #
+                    #Print some notes
+                    if do_verbose:
+                        print("\n-Max score: {0}".format(max_score))
+                        print("Max verdict: {0}\n".format(max_verdict))
+                    #
+                    #Break from loop early if found
+                    break
+            #
+        #
+
+        #For max normalized total score:
+        if (not is_found):
+            max_ind = np.argmax(list_scores_comb)
+            max_score = list_scores_comb[max_ind]
+            max_verdict = all_keys[max_ind]
+            #Print some notes
+            if do_verbose:
+                print("\n-Max score: {0}".format(max_score))
+                print("Max verdict: {0}\n".format(max_verdict))
+            #
+            #Return low-prob verdict if multiple equal top probabilities
+            if (list_scores_comb.count(max_score) > 1):
+                tmp_res = config.dictverdict_lowprob.copy()
+                tmp_res["scores_indiv"] = dict_scores_indiv
+                tmp_res["uncertainty"] = dict_uncertainties
+                tmp_res["components"] = components
+                #Print some notes
+                if do_verbose:
+                    print("-Multiple top prob. scores.")
+                    print("Returning low-prob verdict:\n{0}".format(tmp_res))
+                #
+                return tmp_res
+            #
+        #
+
+        ##Establish uncertainties from scores
+        dict_uncertainties = {all_keys[ii]:list_scores_comb[ii]
+                                for ii in range(0, len(all_keys))}
+        dict_uncertainties[max_verdict] = max_score
+        #
+
+        ##Assemble and return final verdict
+        fin_res = {"verdict":max_verdict, "scores_indiv":dict_scores_indiv,
+                "uncertainty":dict_uncertainties, "components":components,
+                "norm_error":dict_error}
+        #
+        #Print some notes
+        if do_verbose:
+            print("-Returning final verdict dictionary:\n{0}".format(fin_res))
+        #
+        return fin_res
+    #
+
+    ##Method: _find_missing_branches
+    ##Purpose: Determine and return missing branches in decision tree
+    def _find_missing_branches(self, do_verbose=None, cap_iter=3, print_freq=100):
+        #Load global variables
+        if (do_verbose is None):
+            do_verbose = self._get_info("do_verbose")
+        decision_tree = self._get_info("decision_tree")
+        #
+        if do_verbose:
+            print("\n\n")
+            print(" > Running _find_missing_branches()!")
+            print("Loading all possible branch parameters...")
+        #
+        #Load all possible values
+        all_possible_values = config.dict_tree_possible_values
+        solo_values = [None]
+        all_subjmatters = [item for item in all_possible_values["subjectmatter"]
+                            if (item is not None)]
+        all_objmatters = [item for item in all_possible_values["objectmatter"]
+                            if (item is not None)]
+        all_verbclasses = [item for item in all_possible_values["verbclass"]
+                            ] #No shallow copying!
+        solo_verbtypes = ["PAST", "PRESENT", "FUTURE"]
+        multi_verbtypes = [item for item in all_possible_values["verbtypes"]
+                            if ((item is not None)
+                                and (item not in solo_verbtypes))]
+        #
+        if do_verbose:
+            print("Done loading all possible branch parameters.")
+            print("Generating combinations of branch parameters...")
+        #
+        #Set caps for multi-parameter combinations
+        if (cap_iter is not None):
+            cap_subj = cap_iter
+            cap_obj = cap_iter
+            cap_vtypes = cap_iter
+        else:
+            cap_subj = len(all_subjmatters)
+            cap_obj = len(all_objmatters)
+            cap_vtypes = len(multi_verbtypes)
+        #
+
+        #Generate set of all possible individual multi-parameter combinations
+        sub_subjmatters = [item for ii in range(1, (cap_subj+1))
+                            for item in iterer.combinations(all_subjmatters,ii)]
+        sub_objmatters = [item for ii in range(1, (cap_obj+1))
+                            for item in iterer.combinations(all_objmatters, ii)]
+        sub_multiverbtypes = [item for ii in range(1, (cap_vtypes+1))
+                            for item in iterer.combinations(multi_verbtypes,ii)]
+        #
+        sub_allverbtypes = [(list(item_sub)+[item_solo])
+                            for item_sub in sub_multiverbtypes
+                            for item_solo in solo_verbtypes] #Fold in verb tense
+        #
+
+        #Fold in solo and required values as needed
+        sets_verbclasses = all_verbclasses
+        sets_subjmatters = (sub_subjmatters) # + [None])
+        sets_objmatters = (sub_objmatters) # + [None])
+        sets_allverbtypes = (sub_allverbtypes) # + [None])
+        #
+        if do_verbose:
+            print("Combinations of branch parameters complete.")
+        #
+
+        #Generate set of all possible branches (all possible valid combos)
+        list_branches = [{"subjectmatter":sets_subjmatters[aa],
+                        "objectmatter":sets_objmatters[bb],
+                        "verbclass":sets_verbclasses[cc],
+                        "verbtypes":sets_allverbtypes[dd]}
+                        for aa in range(0, len(sets_subjmatters))
+                        for bb in range(0, len(sets_objmatters))
+                        for cc in range(0, len(sets_verbclasses))
+                        for dd in range(0, len(sets_allverbtypes))
+                        if (((sets_subjmatters[aa] is not None)
+                                and ("is_keyword" in sets_subjmatters[aa]))
+                            or ((sets_objmatters[bb] is not None)
+                                and ("is_keyword" in sets_objmatters[bb]))
+                            ) #Must have keyword
+                        ]
+        #
+        num_branches = len(list_branches)
+        if do_verbose:
+            print("{0} branches generated across all parameter combinations."
+                    .format(num_branches))
+            print("Extracting branches not covered by decision tree...")
+        #
+
+        #Collect branches that are missing from decision tree
+        bools_is_missing = [None]*num_branches
+        for ii in range(0, num_branches):
+            curr_branch = list_branches[ii]
+            #Apply decision tree and ensure valid output
+            try:
+                tmp_res = self._apply_decision_tree(decision_tree=decision_tree,
+                                                    tree_nest=curr_branch)
+                #
+                bools_is_missing[ii] = False #Branch is covered
+            #
+            #Record this branch as missing if invalid output
+            except:
+                #Mark this branch as missing
+                bools_is_missing[ii] = True
+            #
+            #Print some notes
+            if (do_verbose and ((ii % print_freq) == 0)):
+                print("{0} of {1} branches have been checked."
+                        .format((ii+1), num_branches))
+        #
+
+        #Throw error if any branches not checked
+        if (None in bools_is_missing):
+            raise ValueError("Err: Branches not checked?")
+        #
+
+        #Gather and return missing branches
+        if do_verbose:
+            print("All branches checked.\n{0} of {1} missing."
+                    .format(np.sum(bools_is_missing), num_branches))
+            print("Run of _find_missing_branches() complete!")
+        #
+        return (np.asarray(list_branches)[np.asarray(bools_is_missing)])
+    #
+
+    ##Method: _make_nest_forest
+    ##Purpose: Construct nest of bools, etc, for all verb-clauses, all sentences
+    def _make_nest_forest(self, forest):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        if do_verbose:
+            print("\n> Running _make_nest_forest.")
+        #
+        ##Initialize holder for nests
+        repr_key = "none" #list(forest.keys())[0] #"none"
+        num_trees = len(forest[repr_key])
+        list_nests = [None]*num_trees
+        list_nest_main = [None]*num_trees
+        #Iterate through trees (sentences)
+        for ii in range(0, num_trees):
+            curr_struct_verbs = forest[repr_key][ii]["struct_verbs_updated"]
+            curr_struct_words = forest[repr_key][ii]["struct_words_updated"]
+            num_branches = len(curr_struct_verbs)
+            curr_i_verbs = list(curr_struct_verbs.keys())
+            curr_i_words = list(curr_struct_words.keys())
+            list_nests[ii] = [None]*num_branches
+            #Print some notes
+            if do_verbose:
+                print("\nCurrent tree: {0} ({0}-{1}).".format(ii, num_trees-1))
+                print("\nVerb-tree keys: {0}".format(curr_struct_verbs.keys()))
+                print("Verb-tree: {0}\n".format(curr_struct_verbs))
+                print("\nWord-tree keys: {0}".format(curr_struct_words.keys()))
+                print("Word-tree data: {0}\n".format(curr_struct_words))
+            #
+            #Iterate through branches (verb-clauses)
+            for jj in range(0, num_branches):
+                list_nests[ii][jj] = self._make_nest_verbclause(
+                                                i_verb=curr_i_verbs[jj],
+                                                struct_verbs=curr_struct_verbs,
+                                                struct_words=curr_struct_words)
+            #
+
+            #Pull representative nest for this tree (at tree root)
+            tmp_tomax = [len(curr_struct_verbs[jj]["i_postverbs"])
+                                for jj in curr_i_verbs
+                                if (curr_struct_verbs[jj]["is_important"])]
+            if (len(tmp_tomax) > 0):
+                id_main = np.argmax(tmp_tomax)
+            #Otherwise, throw error
+            else:
+                raise ValueError("Err: Nothing important:\n{0}\n\n{1}\n\n{2}"
+                    .format(curr_struct_words[list(curr_struct_words.keys())[0]]
+                                    ["sentence"], curr_struct_verbs,
+                                    curr_struct_words))
+            #
+            list_nest_main[ii] = list_nests[ii][id_main]
+            #Print some notes
+            if do_verbose:
+                print("Branch nests complete.")
+                print("Individual nests:")
+                for jj in range(0, num_branches):
+                    print(list_nests[ii][jj])
+                    print("")
+                print("\nId of main nest: {0}".format(id_main))
+            #
+        #
+
+        ##Return the completed nests
+        return {"all":list_nests, "main":list_nest_main}
+    #
+
+    ##Method: _make_nest_verbclause
+    ##Purpose: Construct nest of bools, etc, to describe a branch (verb-clause)
+    def _make_nest_verbclause(self, struct_verbs, struct_words, i_verb):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        branch_verb = struct_verbs[i_verb]
+        lookup_pos = config.conv_pos_fromtreetonest
+        ignore_pos = config.nest_unimportant_pos
+        target_bools = config.nest_important_treebools
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _make_nest_verbclause.")
+            print("Considering verb branch:\n{0}".format(branch_verb))
+        #
+
+
+        ##Build a nest for the given verb
+        dict_nest = {"i_verb":i_verb, "subjectmatter":[], "objectmatter":[],
+                    "verbtypes":branch_verb["verbtype"],
+                    #"verbclass":self._categorize_verb(branch_verb["verb"].text),
+                    "verbclass":self._categorize_verb(i_verb=i_verb,
+                                                    struct_words=struct_words),
+                    "link_verbclass":[], "link_verbtypes":[],
+                    "link_subjectmatter":[], "link_objectmatter":[]}
+        #
+
+        #Iterate through words directly attached to this verb
+        tmp_list = list(set((branch_verb["i_branchwords_all"])))
+        tmp_list = [item for item in tmp_list
+                    if ((item != i_verb)
+                        and (struct_words[item]["pos_main"] != "VERB"))]
+        for ii in tmp_list:
+            #Skip word if not stored (i.e., trimmed word for trimming scheme)
+            if ii not in struct_words:
+                if do_verbose:
+                    print("Word {0} trimmed from word-tree, so skipping..."
+                            .format(ii))
+                #
+                continue
+            #
+
+            #Pull current word info
+            curr_info = struct_words[ii]
+            curr_pos_raw = curr_info["pos_main"]
+            if do_verbose:
+                print("Considering word {0}.".format(curr_info["word"]))
+                print("Has info: {0}.".format(curr_info))
+            #
+
+            #Skip if unimportant word
+            if (not curr_info["is_important"]):
+                if do_verbose:
+                    print("Unimportant word. Skipping.")
+                #
+                continue
+            #
+
+            #Skip if unimportant pos
+            if (curr_pos_raw in ignore_pos):
+                if do_verbose:
+                    print("Unimportant pos {0}. Skipping.".format(curr_pos_raw))
+                #
+                continue
+            #
+
+            #Otherwise, convert pos to accepted nest terminology
+            try:
+                curr_pos = lookup_pos[curr_pos_raw]
+            except KeyError:
+                #Print context for this error
+                print("Upcoming KeyError! Context:")
+                print("Word: {0}".format(curr_info["word"]))
+                print("Word info: {0}".format(curr_info))
+                tmp_sent = np.asarray(list(curr_info["sentence"]))
+                print("Sentence: {0}".format(tmp_sent))
+                tmp_chunk = struct_words[i_verb]["wordchunk"]
+                print("Wordchunk: {0}".format(tmp_chunk))
+                print("Chosen main pos.: {0}".format(curr_pos_raw))
+                #
+                curr_pos = lookup_pos[curr_pos_raw]
+            #
+
+            #Store target booleans into this nest
+            for is_item in target_bools:
+                #If this boolean is True, store if not stored previously
+                if (curr_info["dict_importance"][is_item]
+                                    and (is_item not in dict_nest[curr_pos])):
+                    dict_nest[curr_pos].append(is_item)
+                #Otherwise, pass
+                else:
+                    pass
+            #
+        #
+
+        #Print some notes
+        if do_verbose:
+            print("\nDone iterating through main (not linked) terms.")
+            print("Current state of nest:\n{0}\n".format(dict_nest))
+        #
+
+        #Iterate through linked verbs
+        for vv in branch_verb["i_postverbs"]:
+            #Skip verb if not stored (i.e., trimmed for trimming scheme)
+            if vv not in struct_words:
+                if do_verbose:
+                    print("Word {0} trimmed from word-tree, so skipping..."
+                            .format(vv))
+                #
+                continue
+            #
+            #Store current verb class if not stored previously
+            dict_nest["link_verbtypes"].append(struct_verbs[vv]["verbtype"])
+            link_verbclass = self._categorize_verb(
+                                            i_verb=struct_verbs[vv]["i_verb"],
+                                            struct_words=struct_words)
+            dict_nest["link_verbclass"].append(link_verbclass)
+            #
+            #Prepare temporary dictionary to merge with nest dictionary
+            tmp_dict = {"link_subjectmatter":[], "link_objectmatter":[]}
+            #
+            #Iterate through words attached to linked verbs
+            for ii in struct_verbs[vv]["i_branchwords_all"]:
+                #Skip word if not stored (i.e., trimmed for trimming scheme)
+                if ii not in struct_words:
+                    if do_verbose:
+                        print("Word {0} trimmed from word-tree, so skipping..."
+                                .format(ii))
+                    #
+                    continue
+                #
+                #Pull current word info
+                curr_info = struct_words[ii]
+                curr_pos_raw = curr_info["pos_main"]
+
+                #Skip if unimportant word
+                if not curr_info["is_important"]:
+                    continue
+                #
+
+                #Skip if unimportant pos
+                if (curr_pos_raw in ignore_pos):
+                    continue
+                #
+
+                #Otherwise, convert pos to accepted nest terminology
+                curr_pos = lookup_pos[curr_pos_raw]
+
+                #Store target booleans into this nest
+                for is_item in target_bools:
+                    curr_key = ("link_" + curr_pos)
+                    #If this boolean is True, store if not stored previously
+                    if (curr_info["dict_importance"][is_item]
+                                and (is_item not in tmp_dict[curr_key])):
+                        tmp_dict[curr_key].append(is_item)
+                    #Otherwise, pass
+                    else:
+                        pass
+                #
+            #
+
+            #Merge the dictionary for this clause into overall nest
+            for key in tmp_dict:
+                dict_nest[key].append(tmp_dict[key])
+            #
+        #
+
+        ##Return the nest
+        if do_verbose:
+            print("Nest complete!\n\nVerb branch: {0}\n\nNest: {1}\n"
+                    .format(branch_verb, dict_nest))
+            print("Run of _make_nest_verbclause complete!\n---\n")
+        #
+        return dict_nest
+    #
+
+    ##Method: _unlink_nest
+    ##Purpose: Split a nest into its main and linked components
+    def _unlink_nest(self, nest):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        keys_main = config.nest_keys_main
+        keys_matter = [item for item in keys_main if (item.endswith("matter"))]
+        keys_nonmatter = [item for item in keys_main
+                            if (not item.endswith("matter"))]
+        key_matter_obj = "objectmatter"
+        prefix_link = config.nest_prefix_link
+        terms_superior = config.nest_important_treebools_superior
+        keys_linked_main = [(prefix_link+key) for key in keys_main]
+        keys_linked_matter = [(prefix_link+key) for key in keys_matter]
+        num_links = len(nest[keys_linked_matter[0]])
+        bool_keyword = "is_keyword"
+        bool_pronounI = "is_pron_1st"
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _unlink_nest.")
+            print("Considering nest:\n{0}\n".format(nest))
+        #
+
+        ##Extract location of keyword in nest
+        matters_with_keyword = [key for key in keys_matter
+                                if (bool_keyword in nest[key])]
+        matters_with_keyword += [key for key in keys_linked_matter
+                                if any([(bool_keyword in nest[key][ii])
+                                        for ii in range(0, num_links)])]
+        matters_with_keyword = [item.replace(prefix_link,"")
+                                for item in matters_with_keyword]#Rem. link mark
+        matters_with_keyword = list(set(matters_with_keyword))
+        #
+        is_proandkey = False
+        #
+
+        ##Extract and merge components of nest
+        components = []
+        #Extract main component
+        comp_main = {key:nest[key] for key in keys_main} #Main component
+        main_matters = sorted([item for key in keys_matter
+                                for item in nest[key]])
+        #
+        #Note if I-pronoun and keyword already paired
+        if (bool_keyword in main_matters) and (bool_pronounI in main_matters):
+            is_proandkey = True
+        #
+
+        #Merge in any linked components
+        if any([(nest[key] not in [[], None]) for key in keys_linked_matter]):
+            #Throw error if unequal number of components by matter
+            if len(set([len(nest[key]) for key in keys_linked_matter])) != 1:
+                raise ValueError("Err: Unequal num. of matter components?\n{0}"
+                            .format([nest[key] for key in keys_linked_matter]))
+            #
+
+            #Extract and merge in each linked component
+            for ii in range(0, num_links):
+                #Extract current linked component
+                curr_matters = sorted([item for key in keys_linked_matter
+                                        for item in nest[key][ii]])
+                #Print some notes
+                if do_verbose:
+                    print("Current main matters: {0}".format(main_matters))
+                    print("Considering for linkage: {0}".format(curr_matters))
+                #
+
+                #Skip this component if no interesting terms
+                if (len(curr_matters) == 0):
+                    #Print some notes
+                    if do_verbose:
+                        print("No interesting terms, so skipping.")
+                    #
+                    continue
+                #
+
+                #Copy over keyword if only keyword present
+                if (bool_keyword in curr_matters):
+                    #Tack on keyword, if not done so already
+                    if (bool_keyword not in main_matters):
+                        comp_main[key_matter_obj].append(bool_keyword)
+                        main_matters.append(bool_keyword) #Mark as included
+                #
+
+                #Copy over any precedent terms
+                for term in curr_matters:
+                    if (term in terms_superior):
+                        if (term not in main_matters):
+                            comp_main[key_matter_obj].append(term)
+                            main_matters.append(term)
+                        #Override main terms with non-matter terms, if 'I'-term
+                        if ((bool_pronounI in curr_matters)
+                                        and not (is_proandkey)):
+                            for key in keys_nonmatter:
+                                comp_main[key] = nest[(prefix_link+key)][ii]
+                #
+
+                #Print some notes
+                if do_verbose:
+                    print("Done linking current term.")
+                    print("Latest main matters: {0}\n".format(main_matters))
+                #
+            #
+        #
+        #Store the merged component
+        components.append(comp_main)
+        #
+
+        ##Return the unlinked components of the nest
+        if do_verbose:
+            print("\nNest has been unlinked!\nComponents: {0}"
+                    .format(components))
+            print("Run of _unlink_nest complete!\n")
+        #
+        return components
+    #
+
+    !
+    #Function
+    def _convert_clauses_into_rules(clauses, flags_nounchunks):
+        #Initialize container for converted rules
+        dict_rules = {key:None for key in clauses}
+
+        #Iterate through clauses
+        for curr_key in clauses:
+            curr_clause = clauses[curr_key]
+
+            #Fetch all sets of subject characteristics
+            num_subj = len(curr_clause["subjects"])
+            sets_subjmatter = [None]*num_subj
+            for ii in range(0, num_subj):
+                lookup_ind = ids_nounchunks[curr_clause["subjects"][ii][0].i]
+                sets_subjmatter[ii] = [key
+                                        for key in flags_nounchunks[lookup_ind]
+                                        if (flags_nounchunks[lookup_ind][key])]
+            #
+            if (num_subj == 0):
+                sets_subjmatter = [[]]
+            #
+
+            #Fetch all sets of obj. characteristics
+            tmp_list = curr_clause["dir_objects"] + curr_clause["prep_objects"]
+            num_obj = len(tmp_list)
+            sets_objmatter = [None]*num_obj
+            for ii in range(0, num_obj):
+                lookup_ind = ids_nounchunks[tmp_list[ii][0].i]
+                sets_objmatter[ii] = [key
+                                        for key in flags_nounchunks[lookup_ind]
+                                        if (flags_nounchunks[lookup_ind][key])]
+            #
+            if (num_obj == 0):
+                sets_objmatter = [[]]
+            #
+
+            #Set verb characteristics
+            verbclass = !
+            verbtypes = !
+
+            #Set rules from combinations of subj. and obj.matter
+            dict_rules[curr_key] = []
+            for ii in range(0, len(sets_subjmatter)):
+                for jj in range(0, len(sets_objmatter)):
+                    curr_rule = {"subjectmatter":sets_subjmatter[ii],
+                                "objectmatter":sets_objmatter[jj],
+                                "verbclass":verbclass, "verbtypes":verbtypes}
+                    #
+
+                    #Store rules
+                    dict_rules[curr_key].append(curr_rule)
+                #
+            #
+        #
+
+        #Return the assembled rules
+        return dict_rules
+    #
+    !
+
+    !
+    #Function
+    def _combine_score_across_rules(dict_rules):
+        #Straight combination and normalization just for now
+        for curr_key in dict_rules:
+            for curr_rule in dict_rules[curr_key]:
+                curr_score = _apply_tree(curr_rule)
+
+        #Return score
+        return fin_score
+    #
+    !
+#
+
+
+##Class: Classifier_Rules
+class old_2024_02_17_beforerulebasedclassifupdates_Classifier_Rules(_Classifier):
     """
     Class: Classifier_Rules
     Purpose:
