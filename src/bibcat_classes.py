@@ -130,7 +130,8 @@ class _Base():
             #Otherwise, check against all keyword objects
             else:
                 set_inds = [ind for ind in range(0, len(curr_sent))
-                            if any([item.is_keyword(curr_sent[ind].text)
+                            if any([item.identify_keyword(curr_sent[ind].text
+                                                            )["bool"]
                                     for item in keyword_objs])]
             #
 
@@ -169,7 +170,8 @@ class _Base():
                     check_dash = (curr_sent[ii].text == "-")
                     check_imp = self._check_importance(curr_sent[ii].text,
                                         keyword_objs=keyword_objs,
-                                        version_NLP=curr_sent[ii])["is_any"]
+                                        version_NLP=curr_sent[ii]
+                                        )["bools"]["is_any"]
                     #Include punctuation, if so requested
                     if do_include_brackets:
                         check_brackets = self._is_pos_word(word=curr_sent[ii],
@@ -205,7 +207,8 @@ class _Base():
                                                     pos="POSSESSIVE")
                     check_imp = self._check_importance(curr_sent[ii].text,
                                         keyword_objs=keyword_objs,
-                                        version_NLP=curr_sent[ii])["is_any"]
+                                        version_NLP=curr_sent[ii]
+                                        )["bools"]["is_any"]
                     check_dash = (curr_sent[ii].text == "-")
                     #Include brackets, if so requested
                     if do_include_brackets:
@@ -392,8 +395,9 @@ class _Base():
 
         ##Check if text contains keywords, acronyms, important terms, etc
         #For target keywords and acronyms
-        dict_results["is_keyword"] = self._search_text(text=text,
-                                                    keyword_objs=keyword_objs)
+        tmp_res = self._search_text(text=text, keyword_objs=keyword_objs)
+        dict_results["is_keyword"] = tmp_res["bool"]
+        charspans_keyword = tmp_res["charspans"]
         #
 
         #Check for first-person pronouns, if requested
@@ -446,7 +450,7 @@ class _Base():
         #
 
         #Return the booleans
-        return dict_results
+        return {"bools":dict_results, "charspans_keyword":charspans_keyword}
     #
 
     ##Method: _check_truematch()
@@ -495,12 +499,12 @@ class _Base():
 
         #Extract keyword objects that are potentially ambiguous
         keyword_objs_ambigs = [item1 for item1 in keyword_objs
-                                if any([item1.is_keyword(item2)
+                                if any([item1.identify_keyword(item2)["bool"]
                                         for item2 in lookup_ambigs])]
         #
 
         #Return status as true match if non-ambig keywords match to text
-        if any([item1.is_keyword(text) for item1 in keyword_objs
+        if any([item1.identify_keyword(text)["bool"] for item1 in keyword_objs
                 if (item1 not in keyword_objs_ambigs)]):
             #Print some notes
             if do_verbose:
@@ -512,7 +516,8 @@ class _Base():
                         "text_wordchunk":"<Not ambig.>", "text_database":None}]}
         #
         #Return status as false match if no keywords match at all
-        elif (not any([item.is_keyword(text) for item in keyword_objs_ambigs])):
+        elif (not any([item.identify_keyword(text)["bool"]
+                            for item in keyword_objs_ambigs])):
             #Print some notes
             if do_verbose:
                 print("Text matches no keywords at all. Returning false state.")
@@ -819,7 +824,7 @@ class _Base():
 
             #Store the keyword itself and skip ahead if this word is a keyword
             matched_kobjs = [item for item in keyword_objs
-                            if (item.is_keyword(curr_word.text))]
+                            if (item.identify_keyword(curr_word.text)["bool"])]
             if (len(matched_kobjs) > 0): #If word is a keyword
                 name_kobj = matched_kobjs[0].get_name() #Fetch name for kobj
                 core_keywords.append(name_kobj.lower())
@@ -952,7 +957,7 @@ class _Base():
 
     ##Method: _is_pos_word()
     ##Purpose: Return boolean for if given word (NLP type word) is of given part of speech
-    def _is_pos_word(self, word, pos, keyword_objs=None, do_verbose=False):
+    def _is_pos_word(self, word, pos, keyword_objs=None, ids_nounchunks=None, do_verbose=False):
         """
         Method: _is_pos_word
         WARNING! This method is *not* meant to be used directly by users.
@@ -984,7 +989,7 @@ class _Base():
             check_all = (word_dep in config.dep_root)
         #
         #Identify verbs
-        elif pos in ["VERB"]:
+        elif pos in ["VERB_OLD"]:
             check_posaux = (word_pos in config.pos_aux)
             #check_isrightword = (len(list(word.rights)) > 0)
             #NOTE: 'isrightword' check, since aux-verb would have right word(s)
@@ -1020,6 +1025,11 @@ class _Base():
                     or (check_valid_amod))
                 and check_approved)
         #
+        #Identify verbs
+        elif pos in ["VERB"]:
+            check_all = ((word_pos in ["VERB"]) #!!! Set in config. !!!
+                            and (ids_nounchunks[word_i] is None))
+        #
         #Identify useless words
         elif pos in ["USELESS"]:
             #Fetch keyword objects
@@ -1036,7 +1046,8 @@ class _Base():
             check_pos = (word_pos in config.pos_useless)
             check_use = self._check_importance(word_text,
                                         version_NLP=word,
-                                    keyword_objs=keyword_objs)["is_any"] #Useful
+                                    keyword_objs=keyword_objs
+                                    )["bools"]["is_any"] #Useful
             check_root = self._is_pos_word(word=word, pos="ROOT")
             check_neg = self._is_pos_word(word=word, pos="NEGATIVE")
             check_subj = self._is_pos_word(word=word, pos="SUBJECT")
@@ -1087,7 +1098,7 @@ class _Base():
             check_all = (check_noun and check_dep)
         #
         #Identify direct objects
-        elif pos in ["DIRECT_OBJECT"]:
+        elif pos in ["DIRECT_OBJECT_OLD"]:
             check_baseobj = self._is_pos_word(word=word, pos="BASE_OBJECT")
             is_conjdirobj = self._is_pos_conjoined(word, pos=pos)
             #Check preceding term is a verb
@@ -1106,6 +1117,10 @@ class _Base():
             check_all = (((not check_afterprep) and (check_afterverb)
                         and (check_baseobj))
                     or is_conjdirobj)
+        #
+        #Identify direct objects
+        elif pos in ["DIRECT_OBJECT"]:
+            check_all = (word.dep_.endswith("obj"))
         #
         #Identify prepositional objects
         elif pos in ["PREPOSITION_OBJECT"]:
@@ -1392,7 +1407,11 @@ class _Base():
         Purpose: Return boolean for whether or not given text contains keywords/acronyms from given keyword objects.
         """
         #Check if keywords and/or acronyms present in given text
-        check_keywords = any([item.is_keyword(text) for item in keyword_objs])
+        tmp_res = [item.identify_keyword(text) for item in keyword_objs]
+        check_keywords = any([item["bool"] for item in tmp_res])
+        charspans_keywords = []
+        for ii in range(0, len(tmp_res)):
+            charspans_keywords += tmp_res[ii]["charspans"]
         #
         #Print some notes
         if do_verbose:
@@ -1407,10 +1426,11 @@ class _Base():
             print("Completed _search_text().")
             print("Keywords={0}\nAcronyms={1}".format(keywords, acronyms))
             print("Boolean: {0}".format(check_keywords))
+            print("Char. Spans: {0}".format(charspans_keywords))
         #
 
         #Return boolean result
-        return check_keywords
+        return {"bool":check_keywords, "charspans":charspans_keywords}
     #
 
     ##Method: _streamline_phrase()
@@ -1629,28 +1649,28 @@ class Keyword(_Base):
 
         #Check if this text contains keywords
         if ((mode is None) or (mode.lower() == "keyword")):
-            set_keywords = [list(re.finditer(item1, text, flags=re.IGNORECASE)))
+            set_keywords = [list(re.finditer(item1, text, flags=re.IGNORECASE))
                             for item1 in exps_k
                             if (not any([(ban1 in text.lower())
-                                    for ban1 in banned_overlap_lowercase]))])
-            charspan_keywords = [(item2.start(), item2.end())
+                                    for ban1 in banned_overlap_lowercase]))]
+            charspans_keywords = [(item2.start(), item2.end())
                                 for item1 in set_keywords
                                 for item2 in item1] #Char. span of matches
             check_keywords = any([(len(item) > 0)
                                 for item in set_keywords]) #If any matches
         else:
-            charspan_keywords = []
+            charspans_keywords = []
             check_keywords = False
         #
         #Check if this text contains acronyms
         if (((mode is None) or (mode.lower() == "acronym"))
                     and (exp_a is not None)):
             set_acronyms = list(re.finditer(exp_a, text, flags=re.IGNORECASE))
-            charspan_acronyms = [(item.start(), item.end())
+            charspans_acronyms = [(item.start(), item.end())
                                 for item in set_acronyms]
             check_acronyms = (len(set_acronyms) > 0)
         else:
-            charspan_acronyms = []
+            charspans_acronyms = []
             check_acronyms = False
         #
 
@@ -1661,12 +1681,12 @@ class Keyword(_Base):
             print("Keyword bool: {0}\nAcronym bool: {1}"
                     .format(check_keywords, check_acronyms))
             print("Keyword char. spans: {0}\nAcronym char. spans: {1}"
-                    .format(charspan_keywords, charspan_acronyms))
+                    .format(charspans_keywords, charspans_acronyms))
         #
 
         #Return booleans
         return {"bool":(check_acronyms or check_keywords),
-                "charspan":(charspan_keywords + charspan_acronyms)}
+                "charspans":(charspans_keywords + charspans_acronyms)}
     #
 
     ##Method: is_keyword
@@ -2035,12 +2055,12 @@ class Paper(_Base):
         #Get indices of sentences that contain any target mission terms
         #For keyword terms
         inds_with_keywords_init = [ii for ii in range(0, num_sentences)
-                            if keyword_obj.is_keyword(sentences[ii],
-                                                        mode="keyword")]
+                            if keyword_obj.identify_keyword(sentences[ii],
+                                                        mode="keyword")["bool"]]
         #For acronym terms
         inds_with_acronyms = [ii for ii in range(0, num_sentences)
-                            if keyword_obj.is_keyword(sentences[ii],
-                                                        mode="acronym")]
+                            if keyword_obj.identify_keyword(sentences[ii],
+                                                        mode="acronym")["bool"]]
         #
         #Print some notes
         if do_verbose:
@@ -2058,7 +2078,8 @@ class Paper(_Base):
         #
 
         #If requested, run a check for ambiguous phrases if any ambig. keywords
-        if (do_check_truematch and any([keyword_obj.is_keyword(item)
+        if (do_check_truematch and any([
+                                    keyword_obj.identify_keyword(item)["bool"]
                                         for item in lookup_ambigs])):
             #Print some notes
             if do_verbose:
@@ -2387,27 +2408,29 @@ class Grammar(_Base):
                             .format(ii, jj, curr_sentence))
                 #
                 #Assign noun-chunks for this sentence
-                ids_nounchunk = self._assign_nounchunk_ids(sentence_NLP)
+                ids_nounchunks = self._assign_nounchunk_ids(curr_sentence)
                 #
                 #Initialize storage to hold key sentence information
                 list_pos = [None]*num_words
-                list_iskeyword = [None]*num_words
+                ids_iskeyword = [None]*num_words
                 ids_conjoined = [None]*num_words
-                flags_nounchunk = [None]*max(ids_nounchunk)
+                flags_nounchunks = [None]*max([(item+1)
+                                                for item in ids_nounchunks
+                                                if (item is not None)])
                 #
 
                 #Recursively navigate NLP-tree from the root
                 self._recurse_NLP_tree(node=curr_sentence.root,
                                 sentence_NLP=curr_sentence, list_pos=list_pos,
-                                list_iskeyword=list_iskeyword,
+                                ids_iskeyword=ids_iskeyword,
                                 ids_conjoined=ids_conjoined,
-                                ids_nounchunk=ids_nounchunk,
-                                flags_nounchunk=flags_nounchunk)
+                                ids_nounchunks=ids_nounchunks,
+                                flags_nounchunks=flags_nounchunks)
                 #
 
                 #Split sentences into dictionary of clauses
                 curr_clauses = self._generate_clauses_from_sentence(
-                                                sentence_NLP=sentence_NLP,
+                                                sentence_NLP=curr_sentence,
                                                 ids_nounchunks=ids_nounchunks,
                                                 ids_conjoined=ids_conjoined)
 
@@ -2416,17 +2439,17 @@ class Grammar(_Base):
                     print("Sentence {0}: '{1}'".format(jj, curr_sentence))
                     print("NLP p.o.s.:\n{0}".format(list_pos))
                     print("Conjoined ids:\n{0}".format(ids_conjoined))
-                    print("Noun-chunk ids:\n{0}".format(ids_nounchunk))
+                    print("Noun-chunk ids:\n{0}".format(ids_nounchunks))
                     print("Noun-chunks:")
-                    for curr_ind in set(ids_nounchunk):
+                    for curr_ind in set(ids_nounchunks):
                         if (curr_ind is None):
                             continue
                         #
                         print("{0}: {1}\nFlags = {2}"
                             .format(curr_ind,
-                                    [item for item in sentence_NLP
-                                    if (ids_nounchunk[item.i] == curr_ind)],
-                                    flags_nounchunk[curr_ind]))
+                                    [item for item in curr_sentence
+                                    if (ids_nounchunks[item.i] == curr_ind)],
+                                    flags_nounchunks[curr_ind]))
                     #
                     print("Clauses:")
                     for curr_key in curr_clauses:
@@ -2435,9 +2458,9 @@ class Grammar(_Base):
                 #
 
                 #Store the clauses and information
-                forest[ii][jj] = {"pos":list_pos, "flags":flags_nounchunk,
-                                        "ids_nounchunk":ids_nounchunk,
-                                        "iskeyword":list_iskeyword,
+                forest[ii][jj] = {"pos":list_pos, "flags":flags_nounchunks,
+                                        "ids_nounchunk":ids_nounchunks,
+                                        "iskeyword":ids_iskeyword,
                                         "clauses":curr_clauses}
                 #
             #
@@ -2479,6 +2502,8 @@ class Grammar(_Base):
             #
             print("\n---------------\n")
         #
+
+        print(checkthatallkeywordwordsincluded_errifnot)
         return
     #
 
@@ -2779,7 +2804,7 @@ class Grammar(_Base):
         ##Characterize some traits of entire phrase
         #Characterize importance
         res_importance = self._check_importance(text_wordchunk,
-                                                version_NLP=NLP_wordchunk)
+                                            version_NLP=NLP_wordchunk)["bools"]
         #
         #Determine part-of-speech (pos) of main (current) word in wordchunk
         pos_main = None
@@ -3051,8 +3076,8 @@ class Grammar(_Base):
             i_word = curr_word.i
 
             #Determine if this word is a clausal verb
-            if self._is_pos_word(curr_word, ids_nounchunks=ids_nounchunks,
-                                    pos="VERB"):
+            if self._is_pos_word(curr_word, pos="VERB",
+                                ids_nounchunks=ids_nounchunks):
                 inds_verbs.append(i_word)
             #
         #
@@ -3081,6 +3106,7 @@ class Grammar(_Base):
             self._get_verb_connector(verb=curr_verb, connector="SUBJECT",
                                     storage_text=curr_dict_text["subjects"],
                                     storage_ids=curr_dict_ids["subjects"],
+                                    sentence_NLP=sentence_NLP,
                                     ids_nounchunks=ids_nounchunks,
                                     ids_conjoined=ids_conjoined,
                                     dict_clauses_text=dict_clauses_text,
@@ -3091,6 +3117,7 @@ class Grammar(_Base):
             self._get_verb_connector(verb=curr_verb, connector="DIRECT_OBJECT",
                                     storage_text=curr_dict_text["dir_objects"],
                                     storage_ids=curr_dict_ids["dir_objects"],
+                                    sentence_NLP=sentence_NLP,
                                     ids_nounchunks=ids_nounchunks,
                                     ids_conjoined=ids_conjoined,
                                     dict_clauses_text=dict_clauses_text,
@@ -3102,6 +3129,7 @@ class Grammar(_Base):
                                     connector="PREPOSITIONAL_OBJECT",
                                     storage_text=curr_dict_text["prep_objects"],
                                     storage_ids=curr_dict_ids["prep_objects"],
+                                    sentence_NLP=sentence_NLP,
                                     ids_nounchunks=ids_nounchunks,
                                     ids_conjoined=ids_conjoined,
                                     dict_clauses_text=dict_clauses_text,
@@ -3113,6 +3141,7 @@ class Grammar(_Base):
                                     connector="AUX",
                                     storage_text=curr_dict_text["auxs"],
                                     storage_ids=curr_dict_ids["auxs"],
+                                    sentence_NLP=sentence_NLP,
                                     ids_nounchunks=ids_nounchunks,
                                     ids_conjoined=ids_conjoined,
                                     dict_clauses_text=dict_clauses_text,
@@ -3136,12 +3165,12 @@ class Grammar(_Base):
         #
 
         #Return the dictionary of clauses
-        return dict_clauses
+        return {"text":dict_clauses_text, "ids":dict_clauses_ids}
     #
 
     ##Method: _get_conjoined()
     ##Purpose: Retrieve word(s) conjoined to given id (index)
-    def _get_conjoined(word, sentence_NLP, ids_nounchunks, ids_conjoined):
+    def _get_conjoined(self, word, sentence_NLP, ids_nounchunks, ids_conjoined):
         """
         Method: _get_conjoined
         WARNING! This method is *not* meant to be used directly by users.
@@ -3155,7 +3184,8 @@ class Grammar(_Base):
                         if (ids_conjoined[ind] == word.i)]
 
         #Return list of gathered conjoined words
-        return words_conj
+        return {"texts":[item.text for item in words_conj],
+                "ids":[item.i for item in words_conj]}
     #
 
     ##Method: _get_nounchunk()
@@ -3178,7 +3208,7 @@ class Grammar(_Base):
 
         #Extract text and ids of this chunk
         set_chunk = [item for item in sentence_NLP
-                    if (ids_nounchunks[item.i] == curr_chunkid)])
+                    if (ids_nounchunks[item.i] == curr_chunkid)]
         chunk_text = " ".join([item.text for item in set_chunk]) #Text version
         chunk_ids = [item.i for item in set_chunk] #id version
 
@@ -3224,7 +3254,7 @@ class Grammar(_Base):
 
     ##Method: _get_verb_connector()
     ##Purpose: Fetch word, such as sentence subjects, connected to given verb
-    def _get_verb_connector(self, verb, connector, storage_text, storage_ids, dict_clauses_text, dict_clauses_ids, ids_nounchunks):
+    def _get_verb_connector(self, verb, connector, sentence_NLP, storage_text, storage_ids, dict_clauses_text, dict_clauses_ids, ids_conjoined, ids_nounchunks):
         """
         Method: _get_verb_connector
         WARNING! This method is *not* meant to be used directly by users.
@@ -3244,26 +3274,27 @@ class Grammar(_Base):
             for curr_left in lefts:
                 if (self._is_pos_word(curr_left, pos="SUBJECT")):
                     new_chunk = self._get_nounchunk(word=curr_left,
-                                            ids_nounchunks=ids_nounchunks))
+                                            sentence_NLP=sentence_NLP,
+                                            ids_nounchunks=ids_nounchunks)
                     new_conj = self._get_conjoined(word=curr_left,
                                             sentence_NLP=sentence_NLP,
                                             ids_nounchunks=ids_nounchunks,
                                             ids_conjoined=ids_conjoined)
                     #
-                    #Store text
-                    storage_text.append(new_chunk["text"])
-                    storage_text += new_conj["texts"]
-                    #Store ids
-                    storage_ids.append(new_chunk["id"])
-                    storage_ids += new_conj["ids"]
+                    #Store text and ids
+                    if (new_chunk is not None):
+                        storage_text.append(new_chunk["text"])
+                        storage_ids.append(new_chunk["ids"])
+                    if (new_conj is not None):
+                        storage_text += new_conj["texts"]
+                        storage_ids += new_conj["ids"]
             #
             #If none found, check for verb in roots, then use verb's subject(s)
-            if (len(storage) == 0):
+            if (len(storage_text) == 0):
                 #Iterate through roots
                 for curr_root in roots:
                     #If root is verb, copy subjects
-                    if (self._is_pos_word(curr_root, pos="VERB",
-                                            ids_nounchunks=ids_nounchunks)):
+                    if (self._is_pos_word(curr_root, pos="VERB")):
                         #Set to same subjects as this previous verb
                         storage_text =dict_clauses_text[curr_root.i]["subjects"]
                         storage_ids =dict_clauses_ids[curr_root.i]["subjects"]
@@ -3277,27 +3308,30 @@ class Grammar(_Base):
             for curr_right in rights:
                 if (self._is_pos_word(curr_right, pos="DIRECT_OBJECT")):
                     new_chunk = self._get_nounchunk(word=curr_right,
-                                            ids_nounchunks=ids_nounchunks))
+                                            sentence_NLP=sentence_NLP,
+                                            ids_nounchunks=ids_nounchunks)
                     new_conj = self._get_conjoined(word=curr_right,
                                             sentence_NLP=sentence_NLP,
                                             ids_nounchunks=ids_nounchunks,
                                             ids_conjoined=ids_conjoined)
                     #
-                    #Store text
-                    storage_text.append(new_chunk["text"])
-                    storage_text += new_conj["texts"]
-                    #Store ids
-                    storage_ids.append(new_chunk["id"])
-                    storage_ids += new_conj["ids"]
+                    #Store text and ids
+                    if (new_chunk is not None):
+                        storage_text.append(new_chunk["text"])
+                        storage_ids.append(new_chunk["ids"])
+                    if (new_conj is not None):
+                        storage_text += new_conj["texts"]
+                        storage_ids += new_conj["ids"]
                 #
             #
             #If none found, check for dir.obj. in roots
-            if (len(storage) == 0):
+            if (len(storage_text) == 0):
                 if ((num_roots > 0) and (self._is_pos_word(roots[0],
                                                         pos="DIRECT_OBJECT"))):
                     #Store this root as dir.object
                     new_chunk = self._get_nounchunk(word=roots[0],
-                                            ids_nounchunks=ids_nounchunks))
+                                            sentence_NLP=sentence_NLP,
+                                            ids_nounchunks=ids_nounchunks)
                     new_conj = self._get_conjoined(word=roots[0],
                                             sentence_NLP=sentence_NLP,
                                             ids_nounchunks=ids_nounchunks,
@@ -3307,7 +3341,7 @@ class Grammar(_Base):
                     storage_text.append(new_chunk["text"])
                     storage_text += new_conj["texts"]
                     #Store ids
-                    storage_ids.append(new_chunk["id"])
+                    storage_ids.append(new_chunk["ids"])
                     storage_ids += new_conj["ids"]
                 #
             #
@@ -3317,23 +3351,26 @@ class Grammar(_Base):
             #Search for prepositions to the right
             for curr_right in rights:
                 if (self._is_pos_word(curr_right, pos="PREPOSITION")):
-                #Search right for prep. object(s)
-                for curr_right2 in curr_right.rights:
-                    if (self._is_pos_word(curr_right2,
+                    #Search right for prep. object(s)
+                    for curr_right2 in curr_right.rights:
+                        if (self._is_pos_word(curr_right2,
                                             pos="DIRECT_OBJECT")):
-                        new_chunk = self._get_nounchunk(word=curr_right2,
-                                            ids_nounchunks=ids_nounchunks))
-                        new_conj = self._get_conjoined(word=curr_right2,
+                            new_chunk = self._get_nounchunk(word=curr_right2,
+                                            sentence_NLP=sentence_NLP,
+                                            ids_nounchunks=ids_nounchunks)
+                            new_conj = self._get_conjoined(word=curr_right2,
                                             sentence_NLP=sentence_NLP,
                                             ids_nounchunks=ids_nounchunks,
                                             ids_conjoined=ids_conjoined)
+                            #
+                            #Store text and ids
+                            if (new_chunk is not None):
+                                storage_text.append(new_chunk["text"])
+                                storage_ids.append(new_chunk["ids"])
+                            if (new_conj is not None):
+                                storage_text += new_conj["texts"]
+                                storage_ids += new_conj["ids"]
                         #
-                        #Store text
-                        storage_text.append(new_chunk["text"])
-                        storage_text += new_conj["texts"]
-                        #Store ids
-                        storage_ids.append(new_chunk["id"])
-                        storage_ids += new_conj["ids"]
                     #
                 #
             #
@@ -3532,9 +3569,184 @@ class Grammar(_Base):
                 "text_updated":text_updated, "arr_is_keep":arr_is_keep}
     #
 
+    ##Method: _modify_structure
+    ##Purpose: Modify given grammar structure, following specifications of the given mode
+    def old_2024_02_18_beforelatestupdates_modify_structure(self, struct_verbs, struct_words, mode):
+        """
+        Method: _modify_structure
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Modify given grammar structure using the specifications of the given mode.
+        """
+        #Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        keyword_obj = self._get_info("keyword_obj")
+        buffer = self._get_info("buffer")
+        allowed_modifications = ["none", "skim", "trim", "anon"] #Implemented
+        #
+
+        #Initialize storage for modified versions of grammar structure
+        num_words = len(struct_words)
+        arr_is_keep = np.ones(num_words).astype(bool)
+        arr_text_keep = np.array([struct_words[ii]["word"]#.text
+                                for ii in range(0, num_words)])
+        text_updated = " ".join(arr_text_keep) #Starting text
+        #
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _modify_structure!")
+            print("Number of words: {1}\nRequested mode: {0}"
+                    .format(mode, num_words))
+        #
+
+        #Fetch the modifications assigned to this mode
+        list_mods = (mode.lower().split("_"))
+        #Throw error if any modifications not recognized
+        if any([(item not in allowed_modifications) for item in list_mods]):
+            raise ValueError(("Err: Looks like {0} is not a recognized mode."
+                            +" It was split into these modifications:\n{2}\n"
+                            +" Allowed modes consist of the following,"
+                            +" joined by '_' signs:\n{1}")
+                            .format(mode, allowed_modifications, list_mods))
+        #
+
+        #Set booleans for which modifications to apply
+        do_skim = ("skim" in list_mods)
+        do_trim = ("trim" in list_mods)
+        do_anon = ("anon" in list_mods)
+
+        #Throw error if a trimming mode was requested with a non-zero buffer
+        if (do_trim and buffer > 0):
+            raise ValueError(("Err: Mode {0} with 'trim' modification given"
+                        +" with a non-zero buffer ({1}). This is not allowed"
+                        +" because buffered sentences would likely be trimmed."
+                        +" Please rerun with a different mode or buffer of 0.")
+                        .format(mode, buffer))
+        #
+
+        #Print some notes
+        if do_verbose:
+            print("Allowed modifications: {0}".format(allowed_modifications))
+            print("Assigned modifications: {0}".format(list_mods))
+        #
+
+        #Apply modifications
+        #For skim: Remove useless words (like adjectives)
+        if do_skim:
+            #Print some notes
+            if do_verbose:
+                print("> Applying skim modifications...")
+            #
+            #Iterate through words
+            for ii in range(0, num_words):
+                #Remove useless words (e.g., adjectives)
+                if struct_words[ii]["is_useless"]:
+                    arr_is_keep[ii] = False
+                    arr_text_keep[ii] = ""
+            #
+            #Update latest text with these updates
+            text_updated = " ".join(arr_text_keep)
+            #
+            #Print some notes
+            if do_verbose:
+                print("skim modifications complete.\nUpdated text:\n{0}\n"
+                        .format(text_updated))
+            #
+        #
+        #For trim: Remove clauses without any important information/subclauses
+        if do_trim:
+            #Print some notes
+            if do_verbose:
+                print("> Applying trim modifications...")
+                print("Iterating through clause chains...")
+            #
+            #Extract all clause chains
+            list_chains = []
+            for ii in range(0, num_words):
+                curr_set = struct_words[ii]["i_clausechain"] #Current chain
+                #Keep chain if not empty and if not already stored
+                if ((curr_set is not None) and (curr_set not in list_chains)):
+                    list_chains.append(curr_set)
+            #
+            #Iterate through chains
+            for curr_chain_raw in list_chains:
+                #Reverse chain order
+                curr_chain = curr_chain_raw[::-1]
+                #
+                #Iterate through heads of clauses in this chain
+                for curr_iclause in curr_chain:
+                    curr_trail = np.asarray(
+                                    struct_words[curr_iclause]["i_clausetrail"])
+                    #Mark as unimportant if no important terms within
+                    if not any([(struct_words[jj]["is_important"])
+                                for jj in curr_trail]):
+                        arr_is_keep[curr_trail] = False
+                        arr_text_keep[curr_trail] = ""
+                    #
+                    #Print some notes
+                    if do_verbose:
+                        print("Considered clause {0} for this text.\nWords: {1}"
+                                .format(curr_trail,
+                                        [struct_words[jj]["word"]
+                                        for jj in curr_trail]))
+                        print("Latest is_keep values for these words:\n{0}"
+                                .format(arr_is_keep[curr_trail]))
+                    #
+                #
+            #
+            #Update latest text with these updates
+            text_updated = " ".join(arr_text_keep)
+            #
+            #Print some notes
+            if do_verbose:
+                print("trim modifications complete.\nUpdated text:\n{0}\n"
+                        .format(text_updated))
+            #
+        #
+        #For anon: Replace mission-specific terms with anonymous placeholder
+        if do_anon:
+            #Print some notes
+            if do_verbose:
+                print("> Applying anon modifications...")
+            #
+            placeholder_anon = config.placeholder_anon
+            #Update latest text with these updates
+            text_updated = keyword_obj.replace_keyword(text=text_updated,
+                                                placeholder=placeholder_anon)
+            #
+            #Print some notes
+            if do_verbose:
+                print("anon modifications complete.\nUpdated text:\n{0}\n"
+                        .format(text_updated))
+            #
+        #
+
+        #Cleanse the text to finalize it
+        text_updated = self._streamline_phrase(text=text_updated)
+        #
+
+        #Build grammar structures using only kept words
+        struct_verbs_updated = {key:struct_verbs[key] for key in struct_verbs
+                                if (arr_is_keep[key])} #Copy kept verb storage
+        struct_words_updated = {key:struct_words[key] for key in struct_words
+                                if (arr_is_keep[key])} #Copy kept word storage
+        #
+
+        #Return dictionary containing the updated grammar structures
+        if do_verbose:
+            print("Run of _modify_structure() complete.")
+            print(("Mode: {0}\nUpdated word structure: {1}\n"
+                    +"Updated verb structure: {2}\nUpdated text: {3}")
+                    .format(mode, struct_words_updated, struct_verbs_updated,
+                            text_updated))
+        #
+        return {"mode":mode, "struct_verbs_updated":struct_verbs_updated,
+                "struct_words_updated":struct_words_updated,
+                "text_updated":text_updated, "arr_is_keep":arr_is_keep}
+    #
+
     ##Method: _recurse_NLP_tree
     ##Purpose: Recursively explore each word of NLP-sentence and characterize
-    def _recurse_NLP_tree(self, node, sentence_NLP, list_pos, list_iskeyword, ids_conjoined, ids_nounchunk, flags_nounchunk):
+    def _recurse_NLP_tree(self, node, sentence_NLP, list_pos, ids_iskeyword, ids_conjoined, ids_nounchunks, flags_nounchunks):
         """
         Method: _get_verb_connector
         WARNING! This method is *not* meant to be used directly by users.
@@ -3545,19 +3757,17 @@ class Grammar(_Base):
         i_node = node.i
         dep_node = node.dep_
         #
-        dep_conj = config.dep_conj
-        #
 
         #Characterize current node
         list_pos[i_node] = node.pos_ #Store current NLP part-of-speech
         #
 
         #If this is a conjoined node, record start of conjoined chain
-        if (dep_node == dep_conj):
+        if self._is_pos_word(node, pos="CONJOINED"):
             #Iterate through roots and find start of conjoined chain
             for curr_root in node.ancestors:
                 #If this root also conjoined, keep looking
-                if (curr_root.dep_ == dep_conj):
+                if self._is_pos_word(curr_root, pos="CONJOINED"):
                     continue
                 #
                 #Otherwise, if not conjoined, must be start of chain
@@ -3571,42 +3781,40 @@ class Grammar(_Base):
         #
 
         #Store importance flags for associated noun-chunk, if applicable
-        if (ids_nounchunk[i_node] is not None):
+        if (ids_nounchunks[i_node] is not None):
             #Fetch id of current chunk
-            curr_chunkid = ids_nounchunk[i_node]
+            curr_chunkid = ids_nounchunks[i_node]
 
-            #Skip if this noun-chunk already characterized
-            if (curr_chunkid in flags_nounchunk):
-                continue
-
-            #Fetch noun-chunk and set flags for this noun-chunk
-            curr_set_nounchunk = self._get_nounchunk(word=node,
+            #Characterize if this noun-chunk not already characterized
+            if (curr_chunkid not in flags_nounchunks):
+                #Fetch noun-chunk and set flags for this noun-chunk
+                curr_set_nounchunk = self._get_nounchunk(word=node,
                                                 sentence_NLP=sentence_NLP,
-                                                ids_nounchunk=ids_nounchunk)
-            tmp_res = self._set_nounchunk_flags(sentence_NLP=sentence_NLP,
+                                                ids_nounchunks=ids_nounchunks)
+                tmp_res = self._set_nounchunk_flags(sentence_NLP=sentence_NLP,
                                             dict_nounchunk=curr_set_nounchunk)
-            #
-            #Store the fetched flags
-            flags_nounchunk[curr_chunkid] = tmp_res["flags"]
-            #Mark off any important words
-            for curr_impid in tmp_res["ids_keywords"]:
-                ids_keyword[curr_impid] = True
+                #
+                #Store the fetched flags
+                flags_nounchunks[curr_chunkid] = tmp_res["flags"]
+                #Mark off any important words
+                for curr_impid in tmp_res["ids_keywords"]:
+                    ids_iskeyword[curr_impid] = True
         #
 
         #Call this recursive method on branch nodes
         #For left nodes
         for left_node in node.lefts:
             self._recurse_NLP_tree(node=left_node, sentence_NLP=sentence_NLP,
-                        list_pos=list_pos, ids_conjoined=ids_conjoined,
-                        ids_nounchunk=ids_nounchunk,ids_iskeyword=ids_iskeyword,
-                        flags_nounchunk=flags_nounchunk)
+                    list_pos=list_pos, ids_conjoined=ids_conjoined,
+                    ids_nounchunks=ids_nounchunks,ids_iskeyword=ids_iskeyword,
+                    flags_nounchunks=flags_nounchunks)
         #
         #For right nodes
         for right_node in node.rights:
             self._recurse_NLP_tree(node=right_node, sentence_NLP=sentence_NLP,
-                        list_pos=list_pos, ids_conjoined=ids_conjoined,
-                        ids_nounchunk=ids_nounchunk,ids_iskeyword=ids_iskeyword,
-                        flags_nounchunk=flags_nounchunk)
+                    list_pos=list_pos, ids_conjoined=ids_conjoined,
+                    ids_nounchunks=ids_nounchunks,ids_iskeyword=ids_iskeyword,
+                    flags_nounchunks=flags_nounchunks)
         #
 
         #Exit the method
@@ -3786,26 +3994,28 @@ class Grammar(_Base):
 
     ##Method: _set_nounchunk_flags()
     ##Purpose: Set importance flags and mark keywords for a given noun-chunk
-    def _set_nounchunk_flags(dict_nounchunk, sentence_NLP):
+    def _set_nounchunk_flags(self, dict_nounchunk, sentence_NLP):
         #Set global variables
         text_nounchunk = dict_nounchunk["text"]
         ids_in_nounchunk = dict_nounchunk["ids"]
-        abschar_chunkstart = sentence_NLP[ids_in_nounchunk[0]].start_char
+        abschar_chunkstart = sentence_NLP[ids_in_nounchunk[0]].idx
+        kobj = self._get_info("keyword_obj")
 
         #Set importance flags and fetch char spans of kw. for this noun-chunk
-        tmp_res = self._check_importance(!)
-        flags = tmp_res["flags"]
+        tmp_res = self._check_importance(text_nounchunk, keyword_objs=[kobj])
+        flags = tmp_res["bools"]
         charspans_keywords = tmp_res["charspans_keyword"]
 
         #Determine which words fall within any keyword character spans
         ids_wordsthatarekeywords = []
-        if (len(charspan_keywords) > 0):
+        if (len(charspans_keywords) > 0):
             #Iterate through ids of each word in noun-chunk
             for curr_id in ids_in_nounchunk:
                 #Get relative char. span of current word
-                char_wordstart = (sentence_NLP[curr_id].start_char
+                char_wordstart = (sentence_NLP[curr_id].idx
                                     - abschar_chunkstart) #Rel. char start ind
-                char_wordend = (sentence_NLP[curr_id].end_char
+                char_wordend = (
+                        (sentence_NLP[curr_id].idx+len(sentence_NLP[curr_id]))
                                     - abschar_chunkstart) #Rel. char end ind
 
                 #Check for intersects with flagged keywords
@@ -4324,7 +4534,7 @@ class old_2024_02_17_beforerulebasedclassifupdates_Grammar(_Base):
         ##Characterize some traits of entire phrase
         #Characterize importance
         res_importance = self._check_importance(text_wordchunk,
-                                                version_NLP=NLP_wordchunk)
+                                            version_NLP=NLP_wordchunk)["bools"]
         #
         #Determine part-of-speech (pos) of main (current) word in wordchunk
         pos_main = None
@@ -7790,7 +8000,6 @@ class Classifier_Rules(_Classifier):
         return components
     #
 
-    !
     #Function
     def _convert_clauses_into_rules(clauses, flags_nounchunks):
         #Initialize container for converted rules
@@ -7828,8 +8037,8 @@ class Classifier_Rules(_Classifier):
             #
 
             #Set verb characteristics
-            verbclass = !
-            verbtypes = !
+            verbclass = stuff
+            verbtypes = stuff
 
             #Set rules from combinations of subj. and obj.matter
             dict_rules[curr_key] = []
@@ -7849,9 +8058,7 @@ class Classifier_Rules(_Classifier):
         #Return the assembled rules
         return dict_rules
     #
-    !
 
-    !
     #Function
     def _combine_score_across_rules(dict_rules):
         #Straight combination and normalization just for now
@@ -7862,7 +8069,6 @@ class Classifier_Rules(_Classifier):
         #Return score
         return fin_score
     #
-    !
 #
 
 
@@ -9890,7 +10096,7 @@ class Operator(_Base):
         match = None
         for ii in range(0, num_keyobjs):
             #If current keyword object matches, record and stop loop
-            if (keyword_objs[ii].is_keyword(lookup)):
+            if (keyword_objs[ii].identify_keyword(lookup)["bool"]):
                 match = keyword_objs[ii]
                 break
             #
