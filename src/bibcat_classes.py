@@ -2390,7 +2390,7 @@ class Grammar(_Base):
             curr_cluster = clusters_NLP[ii]
             num_sentences = len(curr_cluster)
             num_words = sum([len(item) for item in curr_cluster])
-            forest[ii] = {jj:None for jj in range(0, num_sentences)}
+            forest[ii] = [None for jj in range(0, num_sentences)]
             #Print some notes
             if do_verbose:
                 print("\n---------------\n")
@@ -2504,7 +2504,7 @@ class Grammar(_Base):
             print("\n---------------\n")
         #
 
-        print(checkthatallkeywordwordsincluded_errifnot)
+        #print(checkthatallkeywordwordsincluded_errifnot)
         return
     #
 
@@ -3099,12 +3099,15 @@ class Grammar(_Base):
             curr_verb = sentence_NLP[curr_iverb]
 
             #Initialize containers for this clause
+            clause_nounchunks = []
             curr_dict_text = {"verb":curr_verb, "auxs":[], "subjects":[],
                                 "dir_objects":[], "prep_objects":[],
-                                "order":i_track}
+                                "order":i_track, "verbtype":None,
+                                "clause_nounchunks":clause_nounchunks}
             curr_dict_ids = {"verb":curr_verb, "auxs":[], "subjects":[],
                                 "dir_objects":[], "prep_objects":[],
-                                "order":i_track}
+                                "order":i_track, "verbtype":None,
+                                "clause_nounchunks":clause_nounchunks}
 
             #Extract subject(s) for this verb
             self._get_verb_connector(verb=curr_verb, connector="SUBJECT",
@@ -3114,7 +3117,8 @@ class Grammar(_Base):
                                     ids_nounchunks=ids_nounchunks,
                                     ids_conjoined=ids_conjoined,
                                     dict_clauses_text=dict_clauses_text,
-                                    dict_clauses_ids=dict_clauses_ids)
+                                    dict_clauses_ids=dict_clauses_ids,
+                                    clause_nounchunks=clause_nounchunks)
             #
 
             #Extract direct object(s) for this verb
@@ -3125,7 +3129,8 @@ class Grammar(_Base):
                                     ids_nounchunks=ids_nounchunks,
                                     ids_conjoined=ids_conjoined,
                                     dict_clauses_text=dict_clauses_text,
-                                    dict_clauses_ids=dict_clauses_ids)
+                                    dict_clauses_ids=dict_clauses_ids,
+                                    clause_nounchunks=clause_nounchunks)
             #
 
             #Extract prepositional object(s) for this verb
@@ -3137,7 +3142,8 @@ class Grammar(_Base):
                                     ids_nounchunks=ids_nounchunks,
                                     ids_conjoined=ids_conjoined,
                                     dict_clauses_text=dict_clauses_text,
-                                    dict_clauses_ids=dict_clauses_ids)
+                                    dict_clauses_ids=dict_clauses_ids,
+                                    clause_nounchunks=clause_nounchunks)
             #
 
             #Extract aux(s) for this verb
@@ -3149,8 +3155,16 @@ class Grammar(_Base):
                                     ids_nounchunks=ids_nounchunks,
                                     ids_conjoined=ids_conjoined,
                                     dict_clauses_text=dict_clauses_text,
-                                    dict_clauses_ids=dict_clauses_ids)
+                                    dict_clauses_ids=dict_clauses_ids,
+                                    clause_nounchunks=clause_nounchunks)
             #
+
+            #Set the tense/type of verb
+            verbtype = self._tense_verb(i_verb=curr_iverb,
+                                        sentence_NLP=sentence_NLP,
+                                        i_auxs=curr_dict_ids["auxs"])
+            curr_dict_text["verbtype"] = verbtype
+            curr_dict_ids["verbtype"] = verbtype
 
             #Store this dictionary
             dict_clauses_text[curr_iverb] = curr_dict_text
@@ -3190,9 +3204,16 @@ class Grammar(_Base):
         words_conj = [sentence_NLP[ind] for ind in range(0, len(sentence_NLP))
                         if (ids_conjoined[ind] == word.i)]
 
-        #Return list of gathered conjoined words
-        return {"texts":[item.text for item in words_conj],
-                "ids":[item.i for item in words_conj]}
+        #Fetch noun-chunks for conjoined words
+        tmp_res = [self._get_nounchunk(item, sentence_NLP=sentence_NLP,
+                                        ids_nounchunks=ids_nounchunks)
+                    for item in words_conj]
+        list_text = [item["text"] for item in tmp_res]
+        list_ids = [item["ids"] for item in tmp_res]
+        list_chunk_id = [item["chunk_id"] for item in tmp_res]
+
+        #Return list of gathered conjoined noun-chunks
+        return {"texts":list_text, "ids":list_ids, "chunk_ids":list_chunk_id}
     #
 
     ##Method: _get_nounchunk()
@@ -3206,21 +3227,21 @@ class Grammar(_Base):
         #Extract global variables
         do_verbose = self._get_info("do_verbose")
         i_word = word.i #Index of given word
-        curr_chunkid = ids_nounchunks[i_word] #Id of current wordchunk
+        chunkid = ids_nounchunks[i_word] #Id of current wordchunk
 
         #Return None if no noun-chunk for this word
-        if (curr_chunkid is None):
+        if (chunkid is None):
             return None
         #
 
         #Extract text and ids of this chunk
         set_chunk = [item for item in sentence_NLP
-                    if (ids_nounchunks[item.i] == curr_chunkid)]
+                    if (ids_nounchunks[item.i] == chunkid)]
         chunk_text = " ".join([item.text for item in set_chunk]) #Text version
-        chunk_ids = [item.i for item in set_chunk] #id version
+        word_ids = [item.i for item in set_chunk] #id version
 
         #Return extracted text and ids of chunk
-        return {"text":chunk_text, "ids":chunk_ids}
+        return {"text":chunk_text, "ids":word_ids, "chunk_id":chunkid}
     #
 
     ##Method: _get_wordchunk()
@@ -3261,7 +3282,7 @@ class Grammar(_Base):
 
     ##Method: _get_verb_connector()
     ##Purpose: Fetch word, such as sentence subjects, connected to given verb
-    def _get_verb_connector(self, verb, connector, sentence_NLP, storage_text, storage_ids, dict_clauses_text, dict_clauses_ids, ids_conjoined, ids_nounchunks):
+    def _get_verb_connector(self, verb, connector, sentence_NLP, storage_text, storage_ids, dict_clauses_text, dict_clauses_ids, ids_conjoined, ids_nounchunks, clause_nounchunks):
         """
         Method: _get_verb_connector
         WARNING! This method is *not* meant to be used directly by users.
@@ -3292,9 +3313,11 @@ class Grammar(_Base):
                     if (new_chunk is not None):
                         storage_text.append(new_chunk["text"])
                         storage_ids.append(new_chunk["ids"])
+                        clause_nounchunks.append(new_chunk["chunk_id"])
                     if (new_conj is not None):
                         storage_text += new_conj["texts"]
                         storage_ids += new_conj["ids"]
+                        clause_nounchunks += new_conj["chunk_ids"]
             #
             #If none found, check for verb in roots, then use verb's subject(s)
             if (len(storage_text) == 0):
@@ -3326,9 +3349,11 @@ class Grammar(_Base):
                     if (new_chunk is not None):
                         storage_text.append(new_chunk["text"])
                         storage_ids.append(new_chunk["ids"])
+                        clause_nounchunks.append(new_chunk["chunk_id"])
                     if (new_conj is not None):
                         storage_text += new_conj["texts"]
                         storage_ids += new_conj["ids"]
+                        clause_nounchunks += new_conj["chunk_ids"]
                 #
             #
             #If none found, check for dir.obj. in roots
@@ -3374,9 +3399,11 @@ class Grammar(_Base):
                             if (new_chunk is not None):
                                 storage_text.append(new_chunk["text"])
                                 storage_ids.append(new_chunk["ids"])
+                                clause_nounchunks.append(new_chunk["chunk_id"])
                             if (new_conj is not None):
                                 storage_text += new_conj["texts"]
                                 storage_ids += new_conj["ids"]
+                                clause_nounchunks += new_conj["chunk_ids"]
                         #
                     #
                 #
@@ -3506,7 +3533,7 @@ class Grammar(_Base):
                 #Fetch keys for clauses marked as important
                 list_iverbs_imp = [ind for ind in list_iverbs_sorted
                                 if any([(item in
-                                    curr_clauses_ids[ind]["which_nounchunks"])
+                                    curr_clauses_ids[ind]["clause_nounchunks"])
                                     for item in curr_imp_chunkids])]
 
                 #Fetch the min,max word indices in important clauses
@@ -4039,6 +4066,74 @@ class Grammar(_Base):
 
         #Return the flags and ids
         return {"flags":flags, "ids_keywords":ids_wordsthatarekeywords}
+    #
+
+    ##Method: _tense_verb()
+    ##Purpose: Set verb tense using verb and auxs
+    def _tense_verb(self, i_verb, i_auxs, sentence_NLP):
+        """
+        Method: _tense_verb
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Run external natural language processing NLP package on given text.
+        """
+        #Set global variables
+        ordered_poss_values = ["FUTURE", "PAST", "PRESENT", "PURPOSE"
+                                ] #Allowed verb types in priority order
+        tags_past = config.tag_verb_past
+        tags_present = config.tag_verb_present
+        tags_future = config.tag_verb_future
+        tags_purpose = config.tag_verb_purpose
+
+        #Initialize containers for extracted information
+        type_verbs = []
+
+        #Iterate through verbs and auxs
+        for curr_id in ([i_verb] + i_auxs):
+            #Set current word traits
+            curr_word = sentence_NLP[curr_id]
+            word_dep = curr_word.dep_
+            word_tag = curr_word.tag_
+
+            #Determine if passive tense and store if applicable
+            #if (word_dep in config.deps_passive):
+            #    type_verbs.append("PASSIVE")
+            #
+
+            #Determine main tense of this word
+            if (word_tag in tags_past): #For past tense
+                tense = "PAST"
+            elif (word_tag in tags_present): #For present tense
+                tense = "PRESENT"
+            elif (word_tag in tags_future): #For future tense
+                tense = "FUTURE"
+            elif (word_tag in tags_purpose): #For purpose tense
+                tense = "PURPOSE"
+            else: #Raise error if tense not recognized
+                raise ValueError(("Err: Tag {4} of word {0} unknown!\n{1}"
+                                +"\ndep={2}, pos={3}, tag={4}")
+                            .format(curr_word, sentence_NLP, word_dep, word_pos,
+                                    word_tag))
+
+            #Store current tense
+            type_verbs.append(tense)
+        #
+
+        #Set priority verb type
+        type_fin = None
+        for curr_type in ordered_poss_values:
+            #If current type matches, keep it and stop search
+            if (curr_type in type_verbs):
+                type_fin = curr_type
+                break
+        #Throw error if no match found
+        if (type_fin is None):
+            raise ValueError(("Err: No match found!\nWord: {0}\n{1}"
+                            +"\ndep={2}, pos={3}, tag={4}")
+                        .format(curr_word, sentence_NLP, word_dep, word_pos,
+                                word_tag))
+
+        #Return finalized verb type
+        return type_fin
     #
 
     ##Method: _set_wordchunks()
@@ -7137,7 +7232,101 @@ class Classifier_Rules(_Classifier):
 
     ##Method: _categorize_verb
     ##Purpose: Categorize topic of given verb
-    def _categorize_verb(self, i_verb, struct_words):
+    def _categorize_verb(self, verb):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        list_category_names = config.list_category_names
+        list_category_synsets = config.list_category_synsets
+        list_category_threses = config.list_category_threses
+        max_hyp = config.max_num_hypernyms
+        #root_hypernyms = wordnet.synsets(verb, pos=wordnet.VERB)
+        if (max_hyp is None):
+            root_hypernyms = wordnet.synsets(verb, pos=wordnet.VERB)
+        else:
+            root_hypernyms = wordnet.synsets(verb, pos=wordnet.VERB)[0:max_hyp]
+        num_categories = len(list_category_synsets)
+
+        ##Print some notes
+        if do_verbose:
+            print("\n> Running _categorize_verb().")
+            print("Verb: {0}\nMax #hyp: {1}\nRoot hyp: {2}\nCategories: {3}\n"
+                .format(verb, max_hyp, root_hypernyms, list_category_names))
+        #
+
+        ##Handle specialty verbs
+        #For 'be' verbs
+        if any([(roothyp in config.synsets_verbs_be)
+                    for roothyp in root_hypernyms]):
+            return "be"
+        #For 'has' verbs
+        elif any([(roothyp in config.synsets_verbs_has)
+                    for roothyp in root_hypernyms]):
+            return "has"
+        #
+
+        ##Determine likely topical category for this verb
+        score_alls = [None]*num_categories
+        score_fins = [None]*num_categories
+        pass_bools = [None]*num_categories
+        #Iterate through the categories
+        for ii in range(0, num_categories):
+            score_alls[ii] = [roothyp.path_similarity(mainverb)
+                        for mainverb in list_category_synsets[ii]
+                        for roothyp in root_hypernyms]
+            #Take max score, if present
+            if len(score_alls[ii]) > 0:
+                score_fins[ii] = max(score_alls[ii])
+            else:
+                score_fins[ii] = 0
+            #Determine if this score passes any category thresholds
+            pass_bools[ii] = (score_fins[ii] >= list_category_threses[ii])
+        #
+
+        ##Throw an error if no categories fit this verb well
+        if not any(pass_bools):
+            if do_verbose:
+                print("No categories fit verb: {0}, {1}\n"
+                                .format(verb, score_fins))
+            return None
+        #
+
+        ##Throw an error if this verb gives very similar top scores
+        thres = config.thres_category_fracdiff
+        metric_close_raw = (np.abs(np.diff(np.sort(score_fins)[::-1]))
+                            /max(score_fins))
+        metric_close = metric_close_raw[0]
+        if metric_close < thres:
+            #Select most extreme verb with the max score
+            tmp_max = max(score_fins)
+            if score_fins[list_category_names.index("plot")] == tmp_max:
+                tmp_extreme = "plot"
+            elif score_fins[list_category_names.index("science")] == tmp_max:
+                tmp_extreme = "science"
+            else:
+                raise ValueError("Reconsider extreme categories for scoring!")
+            #
+            #Print some notes
+            if do_verbose:
+                print("Multiple categories with max score: {0}: {1}\n{2}\n{3}"
+                        .format(verb, root_hypernyms, score_fins,
+                                list_category_names))
+                print("Selecting most extreme verb: {0}\n".format(tmp_extreme))
+            #Return the selected most-extreme score
+            return tmp_extreme
+
+        ##Return the determined topical category with the best score
+        best_category = list_category_names[np.argmax(score_fins)]
+        #Print some notes
+        if do_verbose:
+            print("Best category: {0}\nScores: {1}"
+                    .format(best_category, score_fins))
+        #Return the best category
+        return best_category
+    #
+
+    ##Method: _categorize_verb
+    ##Purpose: Categorize topic of given verb
+    def x_categorize_verb(self, i_verb, struct_words):
         ##Extract global variables
         verb = struct_words[i_verb]["word"]
         verb_dep = struct_words[i_verb]["_dep"]
@@ -7243,6 +7432,57 @@ class Classifier_Rules(_Classifier):
     ##Method: _classify_statements
     ##Purpose: Classify a set of statements (rule approach)
     def _classify_statements(self, forest, do_verbose=None):
+        #Extract global variables
+        if do_verbose is not None: #Override do_verbose if specified for now
+            self._store_info(do_verbose, "do_verbose")
+        #Load the fixed decision tree
+        decision_tree = self._get_info("decision_tree")
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _classify_statements.")
+            #print("Forest word-trees:")
+            #for key1 in forest:
+            #    for key2 in forest[key1]:
+            #        print("Key1, Key2: {0}, {1}".format(key1, key2))
+            #        print("{0}".format(forest[key1][key2
+            #                            ]["struct_words_updated"].keys()))
+            #        print("{0}\n-".format(forest[key1][key2
+            #                            ]["struct_words_updated"]))
+        #
+
+        #Iterate through and score clauses
+        list_scores = [[] for ii in range(0, len(forest))]
+        list_components = [[] for ii in range(0, len(forest))]
+        for ii in range(0, len(forest)):
+            for jj in range(0, len(forest[ii])):
+                curr_info = forest[ii][jj]
+                #Convert current clause into rules
+                curr_rules = self._convert_clause_into_rule(
+                                            dict_clause=curr_info["clauses"],
+                                            flags=curr_info["flags"])
+                #Fetch and store score of each rule
+                tmp_res = [self.apply_decision_tree(rule=item,
+                                                decision_tree=decision_tree)
+                                for item in curr_rules]
+                list_scores[ii] += [item["scores"] for item in tmp_res]
+                list_components[ii] += [item["components"] for item in tmp_res]
+        #
+
+        #Combine scores across clauses
+        comb_score = self._combine_scores(list_scores)
+
+        #Convert final score into verdict and other information
+        results = self._convert_score_to_verdict(comb_score)
+        results["indiv_scores"] = list_scores
+        results["indiv_components"] = list_components
+
+        ##Return the dictionary containing verdict, etc. for these statements
+        return results
+    #
+
+    ##Method: _classify_statements
+    ##Purpose: Classify a set of statements (rule approach)
+    def x_classify_statements(self, forest, do_verbose=None):
         ##Extract global variables
         if do_verbose is not None: #Override do_verbose if specified for now
             self._store_info(do_verbose, "do_verbose")
@@ -7652,7 +7892,7 @@ class Classifier_Rules(_Classifier):
 
     ##Method: _make_nest_forest
     ##Purpose: Construct nest of bools, etc, for all verb-clauses, all sentences
-    def _make_nest_forest(self, forest):
+    def x_make_nest_forest(self, forest):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         if do_verbose:
@@ -7718,7 +7958,7 @@ class Classifier_Rules(_Classifier):
 
     ##Method: _make_nest_verbclause
     ##Purpose: Construct nest of bools, etc, to describe a branch (verb-clause)
-    def _make_nest_verbclause(self, struct_verbs, struct_words, i_verb):
+    def x_make_nest_verbclause(self, struct_verbs, struct_words, i_verb):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         branch_verb = struct_verbs[i_verb]
@@ -7893,7 +8133,7 @@ class Classifier_Rules(_Classifier):
 
     ##Method: _unlink_nest
     ##Purpose: Split a nest into its main and linked components
-    def _unlink_nest(self, nest):
+    def x_unlink_nest(self, nest):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         keys_main = config.nest_keys_main
@@ -8009,62 +8249,67 @@ class Classifier_Rules(_Classifier):
     #
 
     #Function
-    def _convert_clauses_into_rules(clauses, flags_nounchunks):
-        #Initialize container for converted rules
-        dict_rules = {key:None for key in clauses}
+    def _convert_clause_into_rule(self, dict_clause, flags_nounchunks):
+        """
+        Method: _convert_clause_into_rule
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Process text into modifs using Grammar class.
+        """
+        #Set global variables
+        clause_text = dict_clause["text"]
+        clause_ids = dict_clause["ids"]
 
-        #Iterate through clauses
-        for curr_key in clauses:
-            curr_clause = clauses[curr_key]
+        #Fetch all sets of subject flags via their ids
+        num_subj = len(clause_text["subjects"])
+        sets_subjmatter = [None]*num_subj #Container for subject flags
+        for ii in range(0, num_subj): #Iterate through subjects
+            id_chunk = ids_nounchunks[clause_ids["subjects"][ii][0]]
+            sets_subjmatter[ii] = [key
+                                    for key in flags_nounchunks[id_chunk]
+                                    if (flags_nounchunks[id_chunk][key])
+                                    ] #Store all subj. flags for this clause
+        #
+        #If no subjects, set container to empty
+        if (num_subj == 0):
+            sets_subjmatter = [[]]
+        #
 
-            #Fetch all sets of subject characteristics
-            num_subj = len(curr_clause["subjects"])
-            sets_subjmatter = [None]*num_subj
-            for ii in range(0, num_subj):
-                lookup_ind = ids_nounchunks[curr_clause["subjects"][ii][0].i]
-                sets_subjmatter[ii] = [key
-                                        for key in flags_nounchunks[lookup_ind]
-                                        if (flags_nounchunks[lookup_ind][key])]
-            #
-            if (num_subj == 0):
-                sets_subjmatter = [[]]
-            #
+        #Fetch all sets of object flags via their ids
+        tmp_list = (clause_ids["dir_objects"] + clause_ids["prep_objects"])
+        num_obj = len(tmp_list)
+        sets_objmatter = [None]*num_obj #Container for object flags
+        for ii in range(0, num_obj): #Iterate through objects
+            id_chunk = ids_nounchunks[tmp_list[ii][0]]
+            sets_objmatter[ii] = [key
+                                    for key in flags_nounchunks[id_chunk]
+                                    if (flags_nounchunks[id_chunk][key])
+                                    ] #Store all obj. flags for this clause
+        #
+        #If no objects, set container to empty
+        if (num_obj == 0):
+            sets_objmatter = [[]]
+        #
 
-            #Fetch all sets of obj. characteristics
-            tmp_list = curr_clause["dir_objects"] + curr_clause["prep_objects"]
-            num_obj = len(tmp_list)
-            sets_objmatter = [None]*num_obj
-            for ii in range(0, num_obj):
-                lookup_ind = ids_nounchunks[tmp_list[ii][0].i]
-                sets_objmatter[ii] = [key
-                                        for key in flags_nounchunks[lookup_ind]
-                                        if (flags_nounchunks[lookup_ind][key])]
-            #
-            if (num_obj == 0):
-                sets_objmatter = [[]]
-            #
+        #Set verb characteristics
+        verbclass = self._categorize_verb(verb=clause_text["verb"])
+        verbtype = clause_text["verbtype"]
 
-            #Set verb characteristics
-            verbclass = stuff
-            verbtypes = stuff
-
-            #Set rules from combinations of subj. and obj.matter
-            dict_rules[curr_key] = []
-            for ii in range(0, len(sets_subjmatter)):
-                for jj in range(0, len(sets_objmatter)):
-                    curr_rule = {"subjectmatter":sets_subjmatter[ii],
-                                "objectmatter":sets_objmatter[jj],
-                                "verbclass":verbclass, "verbtypes":verbtypes}
-                    #
-
-                    #Store rules
-                    dict_rules[curr_key].append(curr_rule)
+        #Set rules from combinations of subj. and obj.matter
+        rules = []
+        for ii in range(0, len(sets_subjmatter)):
+            for jj in range(0, len(sets_objmatter)):
+                curr_rule = {"subjectmatter":sets_subjmatter[ii],
+                            "objectmatter":sets_objmatter[jj],
+                            "verbclass":verbclass, "verbtype":verbtype}
                 #
+
+                #Store rules
+                rules.append(curr_rule)
             #
         #
 
         #Return the assembled rules
-        return dict_rules
+        return rules
     #
 
     #Function
