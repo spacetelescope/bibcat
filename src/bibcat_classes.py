@@ -2314,8 +2314,177 @@ class Grammar(_Base):
     #
 
     ##Method: run_modifications
-    ##Purpose: Run submethods to convert paragraphs into custom grammar trees
+    ##Purpose: Run submethods to convert paragraphs into custom grammar clauses
     def run_modifications(self, which_modes=None):
+        """
+        Method: run_modifications
+        Purpose: Parse paragraphs and process them into grammar structures using various modification schemes.
+        Arguments: None
+        Returns: None (internal storage updated)
+        """
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        lookup_kobj = self._get_info("keyword_obj").get_name()
+        if (which_modes is None):
+            which_modes = ["none"]
+        paragraphs = self._get_info("paper").get_paragraphs()[lookup_kobj]
+        #Print some notes
+        if do_verbose:
+            print("\n> Running run_modifications():")
+        #
+
+        ##Process the raw text into NLP-text using external NLP packages
+        clusters_NLP = self._run_NLP(text=paragraphs)
+        num_clusters = len(clusters_NLP) #Num. clusters of sentences
+        #Print some notes
+        if do_verbose:
+            print("{0} NLP-processed clusters. Clusters:\n{1}"
+                    .format(num_clusters, clusters_NLP))
+        #
+
+        ##Store containers and information
+        #Initialize storage for the grammar tree
+        #forest = {mode:{ii:None for ii in range(0, num_clusters)}
+        #        for mode in which_modes}
+        forest = [None for ii in range(0, num_clusters)]
+        dict_modifs = {mode:None for mode in which_modes}
+        #
+        #Store the info in this instance
+        self._store_info(clusters_NLP, "clusters_NLP")
+        self._store_info(num_clusters, "num_clusters")
+        self._store_info(forest, "forest")
+        self._store_info(dict_modifs, "modifs")
+        #Print some notes
+        if do_verbose:
+            print("Internal storage for class instance initialized.\nClusters:")
+            for ii in range(0, num_clusters):
+                print("> {0}: '{1}'".format(ii, clusters_NLP[ii]))
+            print("")
+        #
+
+        ##Build grammar structures for NLP-sentences in each cluster
+        #Iterate through clusters
+        for ii in range(0, num_clusters): #Iterate through NLP-sentences
+            #Prepare variables and storage for current cluster
+            curr_cluster = clusters_NLP[ii]
+            num_sentences = len(curr_cluster)
+            num_words = sum([len(item) for item in curr_cluster])
+            forest[ii] = {jj:None for jj in range(0, num_sentences)}
+            #Print some notes
+            if do_verbose:
+                print("\n---------------\n")
+                print("Building structure for cluster {2} ({1} words):\n{0}\n"
+                        .format(curr_cluster, num_words, ii))
+            #
+
+            #Iterate through sentences within this cluster
+            for jj in range(0, num_sentences):
+                curr_sentence = curr_cluster[jj]
+                num_words = len(curr_sentence)
+                #Print some notes
+                if do_verbose:
+                    print("Working on sentence #{1} of cluster #{0}:\n{2}"
+                            .format(ii, jj, curr_sentence))
+                #
+                #Assign noun-chunks for this sentence
+                ids_nounchunk = self._assign_nounchunk_ids(sentence_NLP)
+                #
+                #Initialize storage to hold key sentence information
+                list_pos = [None]*num_words
+                list_iskeyword = [None]*num_words
+                ids_conjoined = [None]*num_words
+                flags_nounchunk = [None]*max(ids_nounchunk)
+                #
+
+                #Recursively navigate NLP-tree from the root
+                self._recurse_NLP_tree(node=curr_sentence.root,
+                                sentence_NLP=curr_sentence, list_pos=list_pos,
+                                list_iskeyword=list_iskeyword,
+                                ids_conjoined=ids_conjoined,
+                                ids_nounchunk=ids_nounchunk,
+                                flags_nounchunk=flags_nounchunk)
+                #
+
+                #Split sentences into dictionary of clauses
+                curr_clauses = self._generate_clauses_from_sentence(
+                                                sentence_NLP=sentence_NLP,
+                                                ids_nounchunks=ids_nounchunks,
+                                                ids_conjoined=ids_conjoined)
+
+                #Print some notes
+                if do_verbose:
+                    print("Sentence {0}: '{1}'".format(jj, curr_sentence))
+                    print("NLP p.o.s.:\n{0}".format(list_pos))
+                    print("Conjoined ids:\n{0}".format(ids_conjoined))
+                    print("Noun-chunk ids:\n{0}".format(ids_nounchunk))
+                    print("Noun-chunks:")
+                    for curr_ind in set(ids_nounchunk):
+                        if (curr_ind is None):
+                            continue
+                        #
+                        print("{0}: {1}\nFlags = {2}"
+                            .format(curr_ind,
+                                    [item for item in sentence_NLP
+                                    if (ids_nounchunk[item.i] == curr_ind)],
+                                    flags_nounchunk[curr_ind]))
+                    #
+                    print("Clauses:")
+                    for curr_key in curr_clauses:
+                        print("{0}: {1}".format(curr_key,
+                                                curr_clauses[curr_key]))
+                #
+
+                #Store the clauses and information
+                forest[ii][jj] = {"pos":list_pos, "flags":flags_nounchunk,
+                                        "ids_nounchunk":ids_nounchunk,
+                                        "iskeyword":list_iskeyword,
+                                        "clauses":curr_clauses}
+                #
+            #
+
+            #Print some notes
+            if do_verbose:
+                print("\n---\nGrammar structure for this cluster complete!")
+                print("Modifying structure based on given modes ({0})..."
+                        .format(which_modes))
+            #
+
+            #Generate diff. versions of grammar structure (orig, trim, anon...)
+            #for curr_mode in which_modes:
+            #    forest[curr_mode][ii] = self._modify_structure(mode=curr_mode,
+            #                                    struct_verbs=curr_struct_verbs,
+            #                                    struct_words=curr_struct_words)
+            #
+        #
+
+        #Generate final modif across all clusters for each mode
+        for curr_mode in which_modes:
+            #Assemble modif for each requested mode
+            curr_modif = "\n".join([self._modify_structure(mode=curr_mode,
+                                                        cluster_info=forest[ii]
+                                                        )["text_updated"]
+                                    for ii in range(0, num_clusters)])
+            dict_modifs[curr_mode] = curr_modif
+        #
+
+        #Close the method
+        if do_verbose:
+            print("Modification of grammar structure complete.\n")
+            for curr_mode in which_modes:
+                print("Mod. structure for mode {0}:\n---\n".format(curr_mode))
+                for ii in range(0, num_clusters):
+                    print("\nCluster #{0}, mode {1}:".format(ii, curr_mode))
+                    print("Updated text: {0}".format(dict_modifs[curr_mode]))
+                    print("---")
+            #
+            print("\n---------------\n")
+        #
+        return
+    #
+
+    ##Method: run_modifications
+    ##Purpose: Run submethods to convert paragraphs into custom grammar trees
+    def x_run_modifications(self, which_modes=None):
         """
         Method: run_modifications
         Purpose: Parse paragraphs and process them into grammar structures using various modification schemes.
@@ -2458,7 +2627,6 @@ class Grammar(_Base):
         #
         return
     #
-    ! Splice new _process_sentence into above as needed
 
     ##Method: _add_aux
     ##Purpose: Add aux to grammar structure
