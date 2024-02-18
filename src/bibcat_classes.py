@@ -2484,8 +2484,9 @@ class Grammar(_Base):
         for curr_mode in which_modes:
             #Assemble modif for each requested mode
             curr_modif = "\n".join([self._modify_structure(mode=curr_mode,
-                                                        cluster_info=forest[ii]
-                                                        )["text_updated"]
+                                            cluster_NLP=clusters_NLP[ii],
+                                            cluster_info=forest[ii]
+                                            )["text_updated"]
                                     for ii in range(0, num_clusters)])
             dict_modifs[curr_mode] = curr_modif
         #
@@ -3092,15 +3093,18 @@ class Grammar(_Base):
         dict_clauses_ids = {}
 
         #Iterate through clausal verbs and characterize clausal components
+        i_track = 0
         for curr_iverb in inds_verbs_ordered:
             #Extract useful characteristics of current verb
             curr_verb = sentence_NLP[curr_iverb]
 
             #Initialize containers for this clause
             curr_dict_text = {"verb":curr_verb, "auxs":[], "subjects":[],
-                                "dir_objects":[], "prep_objects":[]}
+                                "dir_objects":[], "prep_objects":[],
+                                "order":i_track}
             curr_dict_ids = {"verb":curr_verb, "auxs":[], "subjects":[],
-                                "dir_objects":[], "prep_objects":[]}
+                                "dir_objects":[], "prep_objects":[],
+                                "order":i_track}
 
             #Extract subject(s) for this verb
             self._get_verb_connector(verb=curr_verb, connector="SUBJECT",
@@ -3151,6 +3155,9 @@ class Grammar(_Base):
             #Store this dictionary
             dict_clauses_text[curr_iverb] = curr_dict_text
             dict_clauses_ids[curr_iverb] = curr_dict_ids
+
+            #Increment clause counter
+            i_track += 1
         #
 
         #Print some notes
@@ -3396,7 +3403,7 @@ class Grammar(_Base):
 
     ##Method: _modify_structure
     ##Purpose: Modify given grammar structure, following specifications of the given mode
-    def _modify_structure(self, struct_verbs, struct_words, mode):
+    def _modify_structure(self, cluster_NLP, cluster_info, mode):
         """
         Method: _modify_structure
         WARNING! This method is *not* meant to be used directly by users.
@@ -3407,20 +3414,19 @@ class Grammar(_Base):
         keyword_obj = self._get_info("keyword_obj")
         buffer = self._get_info("buffer")
         allowed_modifications = ["none", "skim", "trim", "anon"] #Implemented
+        num_sents = len(cluster_NLP)
+        arrcluster_NLP = [np.asarray(item) for item in cluster_NLP]
         #
 
         #Initialize storage for modified versions of grammar structure
-        num_words = len(struct_words)
-        arr_is_keep = np.ones(num_words).astype(bool)
-        arr_text_keep = np.array([struct_words[ii]["word"]#.text
-                                for ii in range(0, num_words)])
-        text_updated = " ".join(arr_text_keep) #Starting text
+        arrs_is_keep = [np.ones(len(item)).astype(bool) for item in cluster_NLP]
+        sents_updated = [item.text for item in cluster_NLP] #Init. sentences
         #
         #Print some notes
         if do_verbose:
             print("\n> Running _modify_structure!")
-            print("Number of words: {1}\nRequested mode: {0}"
-                    .format(mode, num_words))
+            print("Number of sentences in cluster: {1}\nRequested mode: {0}"
+                    .format(mode, num_sents))
         #
 
         #Fetch the modifications assigned to this mode
@@ -3461,20 +3467,20 @@ class Grammar(_Base):
             if do_verbose:
                 print("> Applying skim modifications...")
             #
-            #Iterate through words
-            for ii in range(0, num_words):
-                #Remove useless words (e.g., adjectives)
-                if struct_words[ii]["is_useless"]:
-                    arr_is_keep[ii] = False
-                    arr_text_keep[ii] = ""
-            #
-            #Update latest text with these updates
-            text_updated = " ".join(arr_text_keep)
+            #Iterate through sentences
+            for ii in range(0, num_sents):
+                curr_is_useless = cluster_info[ii]["ids_useless"]
+                #Remove words marked as useless
+                arrs_is_keep[ii][curr_is_useless] = False
+                #
+                #Update latest text with these updates
+                tmp_res = arrcluster_NLP[ii][arrs_is_keep[ii]]
+                sents_updated[ii] = " ".join(item.text for item in tmp_res)
             #
             #Print some notes
             if do_verbose:
                 print("skim modifications complete.\nUpdated text:\n{0}\n"
-                        .format(text_updated))
+                        .format(sents_updated))
             #
         #
         #For trim: Remove clauses without any important information/subclauses
@@ -3484,47 +3490,56 @@ class Grammar(_Base):
                 print("> Applying trim modifications...")
                 print("Iterating through clause chains...")
             #
-            #Extract all clause chains
-            list_chains = []
-            for ii in range(0, num_words):
-                curr_set = struct_words[ii]["i_clausechain"] #Current chain
-                #Keep chain if not empty and if not already stored
-                if ((curr_set is not None) and (curr_set not in list_chains)):
-                    list_chains.append(curr_set)
-            #
-            #Iterate through chains
-            for curr_chain_raw in list_chains:
-                #Reverse chain order
-                curr_chain = curr_chain_raw[::-1]
+            #Iterate through sentences
+            for ii in range(0, num_sents):
+                curr_clauses_ids = cluster_info[ii]["clauses"]["ids"]
+                #Sort clausal keys by verb hierarchical order
+                list_iverbs_sorted = list(curr_sent_clauses_ids.keys())
+                list_iverbs_sorted.sort(key=lambda x
+                                            :curr_clauses_ids[x]["order"])
+
+                #Fetch ids of noun-chunks flagged as important
+                curr_flags = cluster_info[ii]["flags_nounchunks"]
+                curr_imp_chunkids = [key for key in curr_flags
+                                            if (curr_flags[key]["is_any"])]
+
+                #Fetch keys for clauses marked as important
+                list_iverbs_imp = [ind for ind in list_iverbs_sorted
+                                if any([(item in
+                                    curr_clauses_ids[ind]["which_nounchunks"])
+                                    for item in curr_imp_chunkids])]
+
+                #Fetch the min,max word indices in important clauses
+                min_ids_imp = [min([min([min(item["subjects"]),
+                                            min(item["dir_objects"]),
+                                            min(item["prep_objects"])])
+                                        for item in curr_clauses_ids[key]])
+                                    for key in list_iverbs_imp]
+                max_ids_imp = [max([max([max(item["subjects"]),
+                                            max(item["dir_objects"]),
+                                            max(item["prep_objects"])])
+                                        for item in curr_clauses_ids[key]])
+                                    for key in list_iverbs_imp]
                 #
-                #Iterate through heads of clauses in this chain
-                for curr_iclause in curr_chain:
-                    curr_trail = np.asarray(
-                                    struct_words[curr_iclause]["i_clausetrail"])
-                    #Mark as unimportant if no important terms within
-                    if not any([(struct_words[jj]["is_important"])
-                                for jj in curr_trail]):
-                        arr_is_keep[curr_trail] = False
-                        arr_text_keep[curr_trail] = ""
-                    #
-                    #Print some notes
-                    if do_verbose:
-                        print("Considered clause {0} for this text.\nWords: {1}"
-                                .format(curr_trail,
-                                        [struct_words[jj]["word"]
-                                        for jj in curr_trail]))
-                        print("Latest is_keep values for these words:\n{0}"
-                                .format(arr_is_keep[curr_trail]))
-                    #
+
+                #Take note of important words within these spans
+                tmp_iskeep = np.zeros(len(cluster_NLP[ii])).astype(bool)
+                for jj in range(0, len(min_ids_imp)):
+                    tmp_iskeep[min_ids_imp[jj]:max_ids_imp[jj]+1] = True
                 #
-            #
-            #Update latest text with these updates
-            text_updated = " ".join(arr_text_keep)
+
+                #Merge notes of importance into global array of kept words
+                arrs_is_keep[ii][~tmp_iskeep] = False
+                #
+                #Update latest text with these updates
+                tmp_res = arrcluster_NLP[ii][arrs_is_keep[ii]]
+                sents_updated[ii] = " ".join(item.text for item in tmp_res)
+
             #
             #Print some notes
             if do_verbose:
                 print("trim modifications complete.\nUpdated text:\n{0}\n"
-                        .format(text_updated))
+                        .format(sents_updated))
             #
         #
         #For anon: Replace mission-specific terms with anonymous placeholder
@@ -3535,38 +3550,31 @@ class Grammar(_Base):
             #
             placeholder_anon = config.placeholder_anon
             #Update latest text with these updates
-            text_updated = keyword_obj.replace_keyword(text=text_updated,
+            for ii in range(0, num_sents):
+                sents_updated[ii] = keyword_obj.replace_keyword(
+                                                text=sents_updated[ii],
                                                 placeholder=placeholder_anon)
             #
             #Print some notes
             if do_verbose:
                 print("anon modifications complete.\nUpdated text:\n{0}\n"
-                        .format(text_updated))
+                        .format(sents_updated))
             #
         #
 
-        #Cleanse the text to finalize it
+        #Join and cleanse the text to finalize it
+        text_updated = " ".join(sents_updated)
         text_updated = self._streamline_phrase(text=text_updated)
-        #
-
-        #Build grammar structures using only kept words
-        struct_verbs_updated = {key:struct_verbs[key] for key in struct_verbs
-                                if (arr_is_keep[key])} #Copy kept verb storage
-        struct_words_updated = {key:struct_words[key] for key in struct_words
-                                if (arr_is_keep[key])} #Copy kept word storage
         #
 
         #Return dictionary containing the updated grammar structures
         if do_verbose:
             print("Run of _modify_structure() complete.")
-            print(("Mode: {0}\nUpdated word structure: {1}\n"
-                    +"Updated verb structure: {2}\nUpdated text: {3}")
-                    .format(mode, struct_words_updated, struct_verbs_updated,
-                            text_updated))
+            print(("Mode: {0}\nUpdated text: {1}")
+                    .format(mode, text_updated))
         #
-        return {"mode":mode, "struct_verbs_updated":struct_verbs_updated,
-                "struct_words_updated":struct_words_updated,
-                "text_updated":text_updated, "arr_is_keep":arr_is_keep}
+        return {"mode":mode, "text_updated":text_updated,
+                "arrs_is_keep":arrs_is_keep}
     #
 
     ##Method: _modify_structure
