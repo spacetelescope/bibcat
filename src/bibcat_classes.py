@@ -1027,8 +1027,12 @@ class _Base():
         #
         #Identify verbs
         elif pos in ["VERB"]:
-            check_all = ((word_pos in ["VERB"]) #!!! Set in config. !!!
-                            and (ids_nounchunks[word_i] is None))
+            check_verb = (word_pos in ["VERB"]) #!!! Set in config. !!!
+            check_root = self._is_pos_word(word=word, pos="ROOT")
+            check_aux = (word_pos in ["AUX"])
+            check_rootaux = (check_root and check_aux)
+            check_notnoun = (ids_nounchunks[word_i] is None)
+            check_all = ((check_verb or check_rootaux) and check_notnoun)
         #
         #Identify useless words
         elif pos in ["USELESS"]:
@@ -1075,7 +1079,7 @@ class _Base():
             is_root = self._is_pos_word(word=word, pos="ROOT")
             check_dep = (word_dep in config.dep_subject)
             check_all = ((
-                        (check_dep and is_leftofverb)
+                        (check_noun and check_dep and is_leftofverb)
                         #or (is_conjsubj)
                         or (check_noun and is_root)
                         or ((check_noun or check_adj) and is_leftofverb))
@@ -1127,6 +1131,7 @@ class _Base():
         #
         #Identify prepositional objects
         elif pos in ["PREPOSITIONAL_OBJECT"]:
+            check_noun = self._is_pos_word(word=word, pos="NOUN")
             check_baseobj = self._is_pos_word(word=word, pos="BASE_OBJECT")
             #is_conjprepobj = self._is_pos_conjoined(word, pos=pos)
             #Check if this word follows preposition
@@ -1147,7 +1152,7 @@ class _Base():
                     break
             #
             #check_all = (is_conjprepobj or (check_baseobj and check_objprep))
-            check_all = ((check_baseobj and check_objprep))
+            check_all = ((check_baseobj and check_objprep and check_noun))
         #
         #Identify prepositional subjects
         elif pos in ["PREPOSITION_SUBJECT"]:
@@ -3132,12 +3137,13 @@ class Grammar(_Base):
         """
         #Extract global variables
         do_verbose = self._get_info("do_verbose")
+        num_words = len(sentence_NLP)
 
         #Fetch all NLP-identifieid noun-chunks for this sentence
         noun_chunks = list(sentence_NLP.noun_chunks)
 
         #Initialize container for noun-chunk ids
-        ids_nounchunks = [None]*len(sentence_NLP)
+        ids_nounchunks = np.asarray([None]*len(sentence_NLP))
 
         #Iterate through noun-chunks and assign ids
         i_track = 0
@@ -3158,6 +3164,35 @@ class Grammar(_Base):
             #Apply id to entire chunk
             for curr_word in noun_chunks[ii]:
                 ids_nounchunks[curr_word.i] = curr_id
+
+            #Increment chunk counter
+            i_track += 1
+        #
+
+        #Iterate through words and assign any missed nouns to noun-chunks
+        for ii in range(0, num_words):
+            #Skip words with noun-chunks already
+            if (ids_nounchunks[ii] is not None):
+                continue
+
+            #Skip words that are not nouns
+            if (not self._is_pos_word(sentence_NLP[ii], pos="NOUN")):
+                continue
+
+            #Chain together adjacent nouns
+            i_end = None
+            for jj in range((ii+1), num_words):
+                if (not self._is_pos_word(sentence_NLP[jj], pos="NOUN")):
+                    i_end = jj
+                    break
+            #
+            #If last word in sentence is noun and in chunk, handle edge case
+            if ((i_end is None) and (self._is_pos_word(
+                                    sentence_NLP[num_words-1], pos="NOUN"))):
+                i_end = num_words
+            #
+            #Set noun-chunk id for this latest chunk
+            ids_nounchunks[ii:i_end] = i_track
 
             #Increment chunk counter
             i_track += 1
@@ -8725,7 +8760,8 @@ class Classifier_Rules(_Classifier):
             id_chunk = ids_nounchunks[clause_ids["subjects"][ii][0]]
             sets_subjmatter[ii] = [key
                                     for key in flags_nounchunks[id_chunk]
-                                    if (flags_nounchunks[id_chunk][key])
+                                    if ((flags_nounchunks[id_chunk][key])
+                                        and (key != "is_any"))
                                     ] #Store all subj. flags for this clause
         #
         #If no subjects, set container to empty
@@ -8741,7 +8777,8 @@ class Classifier_Rules(_Classifier):
             id_chunk = ids_nounchunks[tmp_list[ii][0]]
             sets_objmatter[ii] = [key
                                     for key in flags_nounchunks[id_chunk]
-                                    if (flags_nounchunks[id_chunk][key])
+                                    if ((flags_nounchunks[id_chunk][key])
+                                        and (key != "is_any"))
                                     ] #Store all obj. flags for this clause
         #
         #If no objects, set container to empty
