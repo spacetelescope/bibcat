@@ -576,426 +576,6 @@ class TestBase(unittest.TestCase):
             #
         #
     #
-    #For tests of _is_pos_word:
-    if True:
-        #Test identification of adjectives in a sentence
-        def test_is_pos_word__adjective(self):
-            test_pos = "ADJECTIVE" #Current p.o.s. to be tested
-            #Prepare text and answers for test
-            dict_tests = {
-                    "Hubble's calibrated data is in the database.":["calibrated"],
-                    "She went to the clean store.":["clean"],
-                    "Hubble has observed many stars.":["many"],
-                    "That is one hideous dog.":["hideous"],
-                    "The flying pig forms their sigil.":["flying"],
-                    "She, the bird, and the cat all bought the book.":[],
-                    "The observed spectra are quickly plotted in pretty figures.":["observed", "pretty"]
-                    }
-            #
-
-            #Prepare and run tests for bibcat class instance
-            testbase = bibcat._Base()
-            #
-            #Check answers
-            for key1 in dict_tests:
-                try:
-                    curr_phrase = key1
-                    curr_NLP = nlp(curr_phrase)
-                    answer = dict_tests[key1]
-                    test_bools = np.array([testbase._is_pos_word(word=item,
-                                            keyword_objs=list_lookup_kobj,
-                                            pos=test_pos) for item in curr_NLP])
-                    test_res = [item.text for item in
-                                np.asarray(curr_NLP)[test_bools]]
-                    self.assertEqual(test_res, answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n"
-                            .format(test_res, answer, key1, test_bools))
-                    print("All p.o.s.:")
-                    for word1 in curr_NLP:
-                        print("{0}: {1}, {2}, {3}"
-                            .format(word1, word1.dep_, word1.pos_, word1.tag_))
-                    print("---")
-                    print("")
-                    #
-                    self.assertEqual(test_res, answer)
-            #
-        #
-        #Test identification of aux in a sentence
-        def test_is_pos_word__aux(self):
-            test_pos = "AUX" #Current p.o.s. to be tested
-            #Prepare text and answers for test
-            dict_tests = {
-                    "I think that is a good idea.":[],
-                    "Also shown are new curves.":["are"],
-                    "They were frolicking and will soon be at the party.":["were", "will"],
-                    "Hubble has observed many stars.":["has"],
-                    "There are only so many entries in the database.":[],
-                    "That is one hideous dog.":[],
-                    "We would have gone there for vacation.":["would", "have"],
-                    "The doors of the cage were open.":[],
-                    "The doors of the cage were having their locks fixed.":["were"],
-                    "The option was not available at the time.":[],
-                    "The option was not noted at the time.":["was"],
-                    "She could not see the mountain.":["could"],
-                    "She will try to be there on time.":["will", "to"],
-                    "They shall find the clue.":["shall"]
-                    }
-            #
-
-            #Prepare and run tests for bibcat class instance
-            testbase = bibcat._Base()
-            #
-            #Check answers
-            for key1 in dict_tests:
-                try:
-                    curr_phrase = key1
-                    curr_NLP = nlp(curr_phrase)
-                    answer = dict_tests[key1]
-                    test_bools = np.array([testbase._is_pos_word(word=item,
-                                            keyword_objs=list_lookup_kobj,
-                                            pos=test_pos)
-                                            for item in curr_NLP])
-                    test_res = [item.text for item in
-                                np.asarray(curr_NLP)[test_bools]]
-                    self.assertEqual(test_res, answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n"
-                            .format(test_res, answer, key1, test_bools))
-                    print("All p.o.s.:")
-                    for word1 in curr_NLP:
-                        print("{0}: {1}, {2}, {3}"
-                            .format(word1, word1.dep_, word1.pos_, word1.tag_))
-                    print("---")
-                    print("")
-                    #
-                    self.assertEqual(test_res, answer)
-            #
-        #
-        #Test identification of direct object in a sentence
-        def test_is_pos_word__directobject(self):
-            test_pos = "DIRECT_OBJECT" #Current p.o.s. to be tested
-            #Prepare text and answers for test
-            dict_tests = {
-                    "She went to the clean store.":[],
-                    "Hubble has observed many stars.":["stars"],
-                    "There are only so many entries in the database.":["entries"],
-                    "Many bought cakes that day.":["cakes"],
-                    "That is one hideous dog.":["dog"],
-                    "She treats them like her own plants.":["them"],
-                    "Hubble is short for the Hubble Space Telescope.":[],
-                    "We went there on vacation.":[],
-                    "We went quickly on vacation.":[],
-                    "The door of the cage is open.":[],
-                    "We wanted to know the name of the movie.":["name"],
-                    "They then wanted to know the name and length of the movie.":["name", "length"],
-                    "She took a turn on the road along the left lane.":["turn"],
-                    "She tried to take a picture.":["picture"],
-                    "She tried to send the picture to the agent.":["picture"]
-                    }
-            #
-
-            #Prepare and run tests for bibcat class instance
-            testbase = bibcat._Base()
-            #
-            #Check answers
-            for key1 in dict_tests:
-                try:
-                    curr_phrase = key1
-                    curr_NLP = nlp(curr_phrase)
-                    answer = dict_tests[key1]
-                    test_bools = np.array([testbase._is_pos_word(word=item,
-                                            keyword_objs=list_lookup_kobj,
-                                            pos=test_pos) for item in curr_NLP])
-                    test_res = [item.text for item in
-                                np.asarray(curr_NLP)[test_bools]]
-                    self.assertEqual(test_res, answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n"
-                            .format(test_res, answer, key1, test_bools))
-                    print("All p.o.s.:")
-                    for word1 in curr_NLP:
-                        print("{0}: {1}, {2}, {3}"
-                            .format(word1, word1.dep_, word1.pos_, word1.tag_))
-                    print("---")
-                    print("")
-                    #
-                    self.assertEqual(test_res, answer)
-            #
-        #
-        #Test identification of prepositions in a sentence
-        def test_is_pos_word__preposition(self):
-            test_pos = "PREPOSITION" #Current p.o.s. to be tested
-            #Prepare text and answers for test
-            dict_tests = {
-                    "She went to the clean store.":["to"],
-                    "Hubble has observed many stars.":[],
-                    "There are only so many entries in the database.":["in"],
-                    "Many bought cakes that day.":[],
-                    "That is one hideous dog.":[],
-                    "Hubble is short for the Hubble Space Telescope.":["for"],
-                    "We went there on vacation.":["on"],
-                    "The door of the cage is open.":["of"],
-                    "We wanted to know the name of the movie.":["of"],
-                    "She took a turn on the road along the left lane.":["on", "along"],
-                    "She gave a treat to the cat.":["to"],
-                    "She tried to take a picture.":[],
-                    "She tried to send the picture to the agent.":["to"],
-                    "The book was written by her.":["by"]
-                    }
-            #
-
-            #Prepare and run tests for bibcat class instance
-            testbase = bibcat._Base()
-            #
-            #Check answers
-            for key1 in dict_tests:
-                try:
-                    curr_phrase = key1
-                    curr_NLP = nlp(curr_phrase)
-                    answer = dict_tests[key1]
-                    test_bools = np.array([testbase._is_pos_word(word=item,
-                                            keyword_objs=list_lookup_kobj,
-                                            pos=test_pos) for item in curr_NLP])
-                    test_res = [item.text for item in
-                                np.asarray(curr_NLP)[test_bools]]
-                    self.assertEqual(test_res, answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n"
-                            .format(test_res, answer, key1, test_bools))
-                    print("All p.o.s.:")
-                    for word1 in curr_NLP:
-                        print("{0}: {1}, {2}, {3}"
-                            .format(word1, word1.dep_, word1.pos_, word1.tag_))
-                    print("---")
-                    print("")
-                    #
-                    self.assertEqual(test_res, answer)
-            #
-        #
-        #Test identification of preposition objects in a sentence
-        def test_is_pos_word__prepositionobject(self):
-            test_pos = "PREPOSITIONAL_OBJECT" #Current p.o.s. to be tested
-            #Prepare text and answers for test
-            dict_tests = {
-                    "She went to the clean store.":["store"],
-                    "Hubble has observed many stars.":[],
-                    "There are only so many entries in the database.":["database"],
-                    "That is one hideous dog.":[],
-                    "Hubble is short for the Hubble Space Telescope.":["Telescope"],
-                    "She treats them like her own plants.":["plants"],
-                    "We went there on vacation.":["vacation"],
-                    "The door of the cage is open.":[],
-                    "We wanted to know the name of the movie.":["movie"],
-                    "The name of the movie is long.":[],
-                    "She took a turn on the road along the left lane.":["road", "lane"],
-                    "She tried to take a picture.":[],
-                    "She tried to send the picture to the agent.":["agent"],
-                    "She gave a treat to the cat.":["cat"],
-                    "She gave a treat to the cat and the dog.":["cat", "dog"]
-                    }
-            #
-
-            #Prepare and run tests for bibcat class instance
-            testbase = bibcat._Base()
-            #
-            #Check answers
-            for key1 in dict_tests:
-                try:
-                    curr_phrase = key1
-                    curr_NLP = nlp(curr_phrase)
-                    answer = dict_tests[key1]
-                    test_bools = np.array([testbase._is_pos_word(word=item,
-                                            keyword_objs=list_lookup_kobj,
-                                            pos=test_pos) for item in curr_NLP])
-                    test_res = [item.text for item in
-                                np.asarray(curr_NLP)[test_bools]]
-                    self.assertEqual(test_res, answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n"
-                            .format(test_res, answer, key1, test_bools))
-                    print("All p.o.s.:")
-                    for word1 in curr_NLP:
-                        print("{0}: {1}, {2}, {3}"
-                            .format(word1, word1.dep_, word1.pos_, word1.tag_))
-                    print("---")
-                    print("")
-                    #
-                    self.assertEqual(test_res, answer)
-            #
-        #
-        #Test identification of subjects in a sentence
-        def test_is_pos_word__subject(self):
-            test_pos = "SUBJECT" #Current p.o.s. to be tested
-            #Prepare text and answers for test
-            dict_tests = {
-                    "The Hubble calibrated data was used.":["data"],
-                    "Hubble calibrated the data.":["Hubble"],
-                    "Calibrated data was used.":["data"],
-                    "Calibrated data.":["data"],
-                    "Fixed units.":["units"],
-                    "She went to the clean store.":["She"],
-                    "Hubble has observed many stars.":["Hubble"],
-                    "There are only so many entries in the database.":["There"],
-                    "That is a good idea.":["That"],
-                    "Many bought cakes that day.":["Many"],
-                    "That is one hideous dog.":["That"],
-                    "Hubble is short for the Hubble Space Telescope.":["Hubble"],
-                    "We went there on vacation.":["We"],
-                    "The flying pig forms their sigil.":["pig"],
-                    "The name of the cat rhymes with mat.":["name"],
-                    "She, the bird, and the cat all bought the book.":["She", "bird", "cat"]
-                    }
-            #
-
-            #Prepare and run tests for bibcat class instance
-            testbase = bibcat._Base()
-            #
-            #Check answers
-            for key1 in dict_tests:
-                try:
-                    curr_phrase = key1
-                    curr_NLP = nlp(curr_phrase)
-                    answer = dict_tests[key1]
-                    test_bools = np.array([testbase._is_pos_word(word=item,
-                                            keyword_objs=list_lookup_kobj,
-                                            pos=test_pos, do_verbose=False)
-                                            for item in curr_NLP])
-                    test_res = [item.text for item in
-                                np.asarray(curr_NLP)[test_bools]]
-                    self.assertEqual(test_res, answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n"
-                            .format(test_res, answer, key1, test_bools))
-                    print("All p.o.s.:")
-                    for word1 in curr_NLP:
-                        print("{0}: {1}, {2}, {3}"
-                            .format(word1, word1.dep_, word1.pos_, word1.tag_))
-                    print("---")
-                    print("")
-                    #
-                    self.assertEqual(test_res, answer)
-            #
-        #
-        #Test identification of useless words in a sentence
-        def test_is_pos_word__useless(self):
-            test_pos = "USELESS" #Current p.o.s. to be tested
-            #Prepare text and answers for test
-            dict_tests = {
-                    "She went to the clean store.":["clean"],
-                    "Hubble has observed many stars.":["many"],
-                    "There are only so many entries in the database.":["only", "so", "many"],
-                    "There are only so many.":["only", "so"],
-                    "Many bought cakes that day.":[],
-                    "That is one hideous dog.":["hideous"],
-                    "Hubble is short for the Hubble Space Telescope.":[],
-                    "That was not cool.":[],
-                    "That was not a cool cat.":["cool"]
-                    }
-            #
-
-            #Prepare and run tests for bibcat class instance
-            testbase = bibcat._Base()
-            #
-            #Check answers
-            for key1 in dict_tests:
-                try:
-                    curr_phrase = key1
-                    curr_NLP = nlp(curr_phrase)
-                    answer = dict_tests[key1]
-                    test_bools = np.array([testbase._is_pos_word(word=item,
-                                            keyword_objs=list_lookup_kobj,
-                                            pos=test_pos) for item in curr_NLP])
-                    test_res = [item.text for item in
-                                np.asarray(curr_NLP)[test_bools]]
-                    self.assertEqual(test_res, answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n"
-                            .format(test_res, answer, key1, test_bools))
-                    print("All p.o.s.:")
-                    for word1 in curr_NLP:
-                        print("{0}: {1}, {2}, {3}"
-                            .format(word1, word1.dep_, word1.pos_, word1.tag_))
-                    print("---")
-                    print("")
-                    #
-                    self.assertEqual(test_res, answer)
-            #
-        #
-        #Test identification of verbs in a sentence
-        def test_is_pos_word__verb(self):
-            test_pos = "VERB"
-            #Prepare text and answers for test
-            dict_tests = {
-                    "I think that is a good idea.":["think", "is"],
-                    "Also shown are new curves.":["shown"],
-                    "They were frolicking and will soon be at the party.":["frolicking", "be"],
-                    "The Hubble calibrated data was used.":["used"],
-                    "Hubble calibrated the data.":["calibrated"],
-                    "Calibrated data was used.":["used"],
-                    "Calibrated data.":[],
-                    "Fixed units.":[],
-                    "She went to the clean store.":["went"],
-                    "Hubble has observed many stars.":["observed"],
-                    "There are only so many entries in the database.":["are"],
-                    "That is one hideous dog.":["is"],
-                    "Many bought cakes that day.":["bought"],
-                    "They are watching the movie.":["watching"],
-                    "Hubble is short for the Hubble Space Telescope.":["is"],
-                    "That was not cool.":["was"],
-                    "The flying pig forms their sigil.":["forms"],
-                    "Those raining clouds will float by.":["float"],
-                    "Those clouds will float by while raining on the emptied town.":["float", "raining"],
-                    "Follow me to the rendesvous.":["Follow"]
-                    }
-            #
-
-            #Prepare and run tests for bibcat class instance
-            testbase = bibcat._Base()
-            #
-            #Check answers
-            for key1 in dict_tests:
-                try:
-                    curr_phrase = key1
-                    curr_NLP = nlp(curr_phrase)
-                    answer = dict_tests[key1]
-                    test_bools = np.array([testbase._is_pos_word(word=item,
-                                            keyword_objs=list_lookup_kobj,
-                                            pos=test_pos, do_verbose=False)
-                                            for item in curr_NLP])
-                    test_res = [item.text for item in
-                                np.asarray(curr_NLP)[test_bools]]
-                    self.assertEqual(test_res, answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n"
-                            .format(test_res, answer, key1, test_bools))
-                    print("All p.o.s.:")
-                    for word1 in curr_NLP:
-                        print("{0}: {1}, {2}, {3}"
-                            .format(word1, word1.dep_, word1.pos_, word1.tag_))
-                    print("---")
-                    print("")
-                    #
-                    self.assertEqual(test_res, answer)
-            #
-        #
-    #
     #For tests of _search_text:
     if True:
         #Test boolean search for keywords and acronyms within text
@@ -2084,6 +1664,429 @@ class TestOperator(unittest.TestCase):
                     #
                     self.assertEqual(test_res, curr_answer)
                 #
+            #
+        #
+    #
+#"""
+#-------------------------------------------------------------------------------
+"""Splice these into new tests of clausal breakdowns...
+    #For tests of _is_pos_word:
+    if True:
+        #Test identification of adjectives in a sentence
+        def test_is_pos_word__adjective(self):
+            test_pos = "ADJECTIVE" #Current p.o.s. to be tested
+            #Prepare text and answers for test
+            dict_tests = {
+                    "Hubble's calibrated data is in the database.":["calibrated"],
+                    "She went to the clean store.":["clean"],
+                    "Hubble has observed many stars.":["many"],
+                    "That is one hideous dog.":["hideous"],
+                    "The flying pig forms their sigil.":["flying"],
+                    "She, the bird, and the cat all bought the book.":[],
+                    "The observed spectra are quickly plotted in pretty figures.":["observed", "pretty"]
+                    }
+            #
+
+            #Prepare and run tests for bibcat class instance
+            testbase = bibcat._Base()
+            #
+            #Check answers
+            for key1 in dict_tests:
+                try:
+                    curr_phrase = key1
+                    curr_NLP = nlp(curr_phrase)
+                    answer = dict_tests[key1]
+                    test_bools = np.array([testbase._is_pos_word(word=item,
+                                            keyword_objs=list_lookup_kobj,
+                                            pos=test_pos) for item in curr_NLP])
+                    test_res = [item.text for item in
+                                np.asarray(curr_NLP)[test_bools]]
+                    self.assertEqual(test_res, answer)
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n"
+                            .format(test_res, answer, key1, test_bools))
+                    print("All p.o.s.:")
+                    for word1 in curr_NLP:
+                        print("{0}: {1}, {2}, {3}"
+                            .format(word1, word1.dep_, word1.pos_, word1.tag_))
+                    print("---")
+                    print("")
+                    #
+                    self.assertEqual(test_res, answer)
+            #
+        #
+        #Test identification of aux in a sentence
+        def test_is_pos_word__aux(self):
+            test_pos = "AUX" #Current p.o.s. to be tested
+            #Prepare text and answers for test
+            dict_tests = {
+                    "I think that is a good idea.":[],
+                    "Also shown are new curves.":["are"],
+                    "They were frolicking and will soon be at the party.":["were", "will"],
+                    "Hubble has observed many stars.":["has"],
+                    "There are only so many entries in the database.":[],
+                    "That is one hideous dog.":[],
+                    "We would have gone there for vacation.":["would", "have"],
+                    "The doors of the cage were open.":[],
+                    "The doors of the cage were having their locks fixed.":["were"],
+                    "The option was not available at the time.":[],
+                    "The option was not noted at the time.":["was"],
+                    "She could not see the mountain.":["could"],
+                    "She will try to be there on time.":["will", "to"],
+                    "They shall find the clue.":["shall"]
+                    }
+            #
+
+            #Prepare and run tests for bibcat class instance
+            testbase = bibcat._Base()
+            #
+            #Check answers
+            for key1 in dict_tests:
+                try:
+                    curr_phrase = key1
+                    curr_NLP = nlp(curr_phrase)
+                    answer = dict_tests[key1]
+                    test_bools = np.array([testbase._is_pos_word(word=item,
+                                            keyword_objs=list_lookup_kobj,
+                                            pos=test_pos)
+                                            for item in curr_NLP])
+                    test_res = [item.text for item in
+                                np.asarray(curr_NLP)[test_bools]]
+                    self.assertEqual(test_res, answer)
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n"
+                            .format(test_res, answer, key1, test_bools))
+                    print("All p.o.s.:")
+                    for word1 in curr_NLP:
+                        print("{0}: {1}, {2}, {3}"
+                            .format(word1, word1.dep_, word1.pos_, word1.tag_))
+                    print("---")
+                    print("")
+                    #
+                    self.assertEqual(test_res, answer)
+            #
+        #
+        #Test identification of direct object in a sentence
+        def test_is_pos_word__directobject(self):
+            test_pos = "DIRECT_OBJECT" #Current p.o.s. to be tested
+            #Prepare text and answers for test
+            dict_tests = {
+                    "She went to the clean store.":[],
+                    "Hubble has observed many stars.":["stars"],
+                    "There are only so many entries in the database.":["entries"],
+                    "Many bought cakes that day.":["cakes"],
+                    "That is one hideous dog.":["dog"],
+                    "She treats them like her own plants.":["them"],
+                    "Hubble is short for the Hubble Space Telescope.":[],
+                    "We went there on vacation.":[],
+                    "We went quickly on vacation.":[],
+                    "The door of the cage is open.":[],
+                    "We wanted to know the name of the movie.":["name"],
+                    "They then wanted to know the name and length of the movie.":["name", "length"],
+                    "She took a turn on the road along the left lane.":["turn"],
+                    "She tried to take a picture.":["picture"],
+                    "She tried to send the picture to the agent.":["picture"]
+                    }
+            #
+
+            #Prepare and run tests for bibcat class instance
+            testbase = bibcat._Base()
+            #
+            #Check answers
+            for key1 in dict_tests:
+                try:
+                    curr_phrase = key1
+                    curr_NLP = nlp(curr_phrase)
+                    answer = dict_tests[key1]
+                    test_bools = np.array([testbase._is_pos_word(word=item,
+                                            keyword_objs=list_lookup_kobj,
+                                            pos=test_pos) for item in curr_NLP])
+                    test_res = [item.text for item in
+                                np.asarray(curr_NLP)[test_bools]]
+                    self.assertEqual(test_res, answer)
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n"
+                            .format(test_res, answer, key1, test_bools))
+                    print("All p.o.s.:")
+                    for word1 in curr_NLP:
+                        print("{0}: {1}, {2}, {3}"
+                            .format(word1, word1.dep_, word1.pos_, word1.tag_))
+                    print("---")
+                    print("")
+                    #
+                    self.assertEqual(test_res, answer)
+            #
+        #
+        #Test identification of prepositions in a sentence
+        def test_is_pos_word__preposition(self):
+            test_pos = "PREPOSITION" #Current p.o.s. to be tested
+            #Prepare text and answers for test
+            dict_tests = {
+                    "She went to the clean store.":["to"],
+                    "Hubble has observed many stars.":[],
+                    "There are only so many entries in the database.":["in"],
+                    "Many bought cakes that day.":[],
+                    "That is one hideous dog.":[],
+                    "Hubble is short for the Hubble Space Telescope.":["for"],
+                    "We went there on vacation.":["on"],
+                    "The door of the cage is open.":["of"],
+                    "We wanted to know the name of the movie.":["of"],
+                    "She took a turn on the road along the left lane.":["on", "along"],
+                    "She gave a treat to the cat.":["to"],
+                    "She tried to take a picture.":[],
+                    "She tried to send the picture to the agent.":["to"],
+                    "The book was written by her.":["by"]
+                    }
+            #
+
+            #Prepare and run tests for bibcat class instance
+            testbase = bibcat._Base()
+            #
+            #Check answers
+            for key1 in dict_tests:
+                try:
+                    curr_phrase = key1
+                    curr_NLP = nlp(curr_phrase)
+                    answer = dict_tests[key1]
+                    test_bools = np.array([testbase._is_pos_word(word=item,
+                                            keyword_objs=list_lookup_kobj,
+                                            pos=test_pos) for item in curr_NLP])
+                    test_res = [item.text for item in
+                                np.asarray(curr_NLP)[test_bools]]
+                    self.assertEqual(test_res, answer)
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n"
+                            .format(test_res, answer, key1, test_bools))
+                    print("All p.o.s.:")
+                    for word1 in curr_NLP:
+                        print("{0}: {1}, {2}, {3}"
+                            .format(word1, word1.dep_, word1.pos_, word1.tag_))
+                    print("---")
+                    print("")
+                    #
+                    self.assertEqual(test_res, answer)
+            #
+        #
+        #Test identification of preposition objects in a sentence
+        def test_is_pos_word__prepositionobject(self):
+            test_pos = "PREPOSITIONAL_OBJECT" #Current p.o.s. to be tested
+            #Prepare text and answers for test
+            dict_tests = {
+                    "She went to the clean store.":["store"],
+                    "Hubble has observed many stars.":[],
+                    "There are only so many entries in the database.":["database"],
+                    "That is one hideous dog.":[],
+                    "Hubble is short for the Hubble Space Telescope.":["Telescope"],
+                    "She treats them like her own plants.":["plants"],
+                    "We went there on vacation.":["vacation"],
+                    "The door of the cage is open.":[],
+                    "We wanted to know the name of the movie.":["movie"],
+                    "The name of the movie is long.":[],
+                    "She took a turn on the road along the left lane.":["road", "lane"],
+                    "She tried to take a picture.":[],
+                    "She tried to send the picture to the agent.":["agent"],
+                    "She gave a treat to the cat.":["cat"],
+                    "She gave a treat to the cat and the dog.":["cat", "dog"]
+                    }
+            #
+
+            #Prepare and run tests for bibcat class instance
+            testbase = bibcat._Base()
+            #
+            #Check answers
+            for key1 in dict_tests:
+                try:
+                    curr_phrase = key1
+                    curr_NLP = nlp(curr_phrase)
+                    answer = dict_tests[key1]
+                    test_bools = np.array([testbase._is_pos_word(word=item,
+                                            keyword_objs=list_lookup_kobj,
+                                            pos=test_pos) for item in curr_NLP])
+                    test_res = [item.text for item in
+                                np.asarray(curr_NLP)[test_bools]]
+                    self.assertEqual(test_res, answer)
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n"
+                            .format(test_res, answer, key1, test_bools))
+                    print("All p.o.s.:")
+                    for word1 in curr_NLP:
+                        print("{0}: {1}, {2}, {3}"
+                            .format(word1, word1.dep_, word1.pos_, word1.tag_))
+                    print("---")
+                    print("")
+                    #
+                    self.assertEqual(test_res, answer)
+            #
+        #
+        #Test identification of subjects in a sentence
+        def test_is_pos_word__subject(self):
+            test_pos = "SUBJECT" #Current p.o.s. to be tested
+            #Prepare text and answers for test
+            dict_tests = {
+                    "The Hubble calibrated data was used.":["Hubble", "data"],
+                    "Hubble calibrated the data.":["Hubble"],
+                    "Calibrated data was used.":["data"],
+                    "Calibrated data.":["data"],
+                    "Fixed units.":["units"],
+                    "She went to the clean store.":["She"],
+                    "Hubble has observed many stars.":["Hubble"],
+                    "There are only so many entries in the database.":[],
+                    "That is a good idea.":[],
+                    "Many bought cakes that day.":["Many"],
+                    "That is one hideous dog.":[],
+                    "Hubble is short for the Hubble Space Telescope.":["Hubble"],
+                    "We went there on vacation.":["We"],
+                    "The flying pig forms their sigil.":["pig"],
+                    "The name of the cat rhymes with mat.":["name"],
+                    "She, the bird, and the cat all bought the book.":["She", "bird", "cat"]
+                    }
+            #
+
+            #Prepare and run tests for bibcat class instance
+            testbase = bibcat._Base()
+            #
+            #Check answers
+            for key1 in dict_tests:
+                try:
+                    curr_phrase = key1
+                    curr_NLP = nlp(curr_phrase)
+                    answer = dict_tests[key1]
+                    test_bools = np.array([testbase._is_pos_word(word=item,
+                                            keyword_objs=list_lookup_kobj,
+                                            pos=test_pos, do_verbose=False)
+                                            for item in curr_NLP])
+                    test_res = [item.text for item in
+                                np.asarray(curr_NLP)[test_bools]]
+                    self.assertEqual(test_res, answer)
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print("{4}:\n{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n"
+                            .format(test_res, answer, key1, test_bools, key1))
+                    print("All p.o.s.:")
+                    for word1 in curr_NLP:
+                        print("{0}: {1}, {2}, {3}"
+                            .format(word1, word1.dep_, word1.pos_, word1.tag_))
+                    print("---")
+                    print("")
+                    #
+                    self.assertEqual(test_res, answer)
+            #
+        #
+        #Test identification of useless words in a sentence
+        def test_is_pos_word__useless(self):
+            test_pos = "USELESS" #Current p.o.s. to be tested
+            #Prepare text and answers for test
+            dict_tests = {
+                    "She went to the clean store.":["clean"],
+                    "Hubble has observed many stars.":["many"],
+                    "There are only so many entries in the database.":["only", "so", "many"],
+                    "There are only so many.":["only", "so"],
+                    "Many bought cakes that day.":[],
+                    "That is one hideous dog.":["hideous"],
+                    "Hubble is short for the Hubble Space Telescope.":[],
+                    "That was not cool.":[],
+                    "That was not a cool cat.":["cool"]
+                    }
+            #
+
+            #Prepare and run tests for bibcat class instance
+            testbase = bibcat._Base()
+            #
+            #Check answers
+            for key1 in dict_tests:
+                try:
+                    curr_phrase = key1
+                    curr_NLP = nlp(curr_phrase)
+                    answer = dict_tests[key1]
+                    test_bools = np.array([testbase._is_pos_word(word=item,
+                                            keyword_objs=list_lookup_kobj,
+                                            pos=test_pos) for item in curr_NLP])
+                    test_res = [item.text for item in
+                                np.asarray(curr_NLP)[test_bools]]
+                    self.assertEqual(test_res, answer)
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n"
+                            .format(test_res, answer, key1, test_bools))
+                    print("All p.o.s.:")
+                    for word1 in curr_NLP:
+                        print("{0}: {1}, {2}, {3}"
+                            .format(word1, word1.dep_, word1.pos_, word1.tag_))
+                    print("---")
+                    print("")
+                    #
+                    self.assertEqual(test_res, answer)
+            #
+        #
+        #Test identification of verbs in a sentence
+        def test_is_pos_word__verb(self):
+            test_pos = "VERB"
+            #Prepare text and answers for test
+            dict_tests = {
+                    "I think that is a good idea.":["think", "is"],
+                    "Also shown are new curves.":["shown"],
+                    "They were frolicking and will soon be at the party.":["frolicking", "be"],
+                    "The Hubble calibrated data was used.":["calibrated", "used"],
+                    "Hubble calibrated the data.":["calibrated"],
+                    "Calibrated data was used.":["used"],
+                    "Calibrated data.":[],
+                    "Fixed units.":["Fixed"],
+                    "She went to the clean store.":["went"],
+                    "Hubble has observed many stars.":["observed"],
+                    "There are only so many entries in the database.":["are"],
+                    "That is one hideous dog.":["is"],
+                    "Many bought cakes that day.":["bought"],
+                    "They are watching the movie.":["watching"],
+                    "Hubble is short for the Hubble Space Telescope.":["is"],
+                    "That was not cool.":["was"],
+                    "The flying pig forms their sigil.":["flying", "forms"],
+                    "Those raining clouds will float by.":["raining", "float"],
+                    "Those clouds will float by while raining on the emptied town.":["float", "raining", "emptied"],
+                    "Follow me to the rendesvous.":["Follow"]
+                    }
+            #
+
+            #Prepare and run tests for bibcat class instance
+            testbase = bibcat._Base()
+            #
+            #Check answers
+            for key1 in dict_tests:
+                try:
+                    curr_phrase = key1
+                    curr_NLP = nlp(curr_phrase)
+                    answer = dict_tests[key1]
+                    test_bools = np.array([testbase._is_pos_word(word=item,
+                                            keyword_objs=list_lookup_kobj,
+                                            pos=test_pos, do_verbose=False)
+                                            for item in curr_NLP])
+                    test_res = [item.text for item in
+                                np.asarray(curr_NLP)[test_bools]]
+                    self.assertEqual(test_res, answer)
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n"
+                            .format(test_res, answer, key1, test_bools)))
+                    print("All p.o.s.:")
+                    for word1 in curr_NLP:
+                        print("{0}: {1}, {2}, {3}"
+                            .format(word1, word1.dep_, word1.pos_, word1.tag_))
+                    print("---")
+                    print("")
+                    #
+                    self.assertEqual(test_res, answer)
             #
         #
     #

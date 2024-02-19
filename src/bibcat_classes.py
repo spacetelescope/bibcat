@@ -951,13 +951,18 @@ class _Base():
         elif pos in ["VERB"]:
             check_verb = (word_pos in ["VERB"]) #!!! Set in config. !!!
             check_root = self._is_pos_word(word=word, pos="ROOT")
-            check_aux = (word_pos in ["AUX"])
-            check_rootaux = (check_root and check_aux)
+            check_pos = (word_pos in ["AUX"])
+            check_auxverb = ((word_tag in config.tag_verb_any)
+                                and (word_dep not in ["aux", "auxpass"])
+                                and (check_pos))
+            check_rootaux = (check_root and check_pos)
             if do_exclude_nounverbs:
                 check_notnoun = (ids_nounchunks[word_i] is None)
             else:
                 check_notnoun = True
-            check_all = ((check_verb or check_rootaux) and check_notnoun)
+            #
+            check_all = ((check_verb or check_rootaux or check_auxverb)
+                            and check_notnoun)
         #
         #Identify useless words
         elif pos in ["USELESS"]:
@@ -2817,48 +2822,6 @@ class Grammar(_Base):
                                     for item2 in item1] #Flatten
                 list_iverbs_imp = set(list_iverbs_imp) #Take unique
 
-                """
-                print("woo")
-                print(list_iverbs_imp)
-                print(curr_clauses_ids)
-                print([[[curr_clauses_ids[key][item] for item in curr_clauses_ids[key] if (item in ["subjects", "dir_objects", "prep_objects"])]
-                                    for key in list_iverbs_imp
-                                    ]])
-                #Fetch indices of subject+object matter from important clauses
-                tmp_list = [curr_clauses_ids[key][item]
-                        for item in ["subjects", "dir_objects", "prep_objects"]
-                        for key in list_iverbs_imp]
-                tmp_list = [item2 for item1 in tmp_list for item2 in item1]#Flat
-                #
-                print(tmp_list)
-                print("yay")
-                print(list(cluster_info[ii].keys()))
-
-                #Fetch the min,max word indices in important clauses
-                min_ids_imp = [np.min(item) for item in tmp_list]
-                max_ids_imp = [np.max(item) for item in tmp_list]
-                #
-
-                #!!!
-                list_iverbs = cluster_info[ii]["iverbs"]
-                print(list_iverbs)
-                #!!!
-
-                #Take note of important words within these spans
-                tmp_iskeep = np.zeros(len(cluster_NLP[ii])).astype(bool)
-                for jj in range(0, len(min_ids_imp)):
-                    tmp_iskeep[min_ids_imp[jj]:max_ids_imp[jj]+1] = True
-                #
-
-                print("woo")
-                print(list_iverbs_imp)
-                print(curr_clauses_ids)
-                print(min_ids_imp)
-                print(max_ids_imp)
-                print(tmp_iskeep)
-                print("-")
-                """
-
                 #Take note of important words within these spans
                 list_word_iverbs = cluster_info[ii]["iverbs"]
                 tmp_iskeep = np.array([True
@@ -4196,7 +4159,8 @@ class Classifier_Rules(_Classifier):
         #
         #Raise an error if no matching branch found
         if (not is_match) or (best_branch is None):
-            raise ValueError("Err: No match found for {0}!".format(rule_mod))
+            raise NotImplementedError("Err: No match found for {0}!"
+                                        .format(rule_mod))
         #
 
         ##Extract the scores from the branch
@@ -5296,7 +5260,7 @@ class Classifier_Rules(_Classifier):
 
     ##Method: _convert_scorestoverdict
     ##Purpose: Convert set of decision tree scores into single verdict
-    def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"]):
+    def x_convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"]):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         #Print some notes
@@ -5452,9 +5416,188 @@ class Classifier_Rules(_Classifier):
         return fin_res
     #
 
+    ##Method: _convert_scorestoverdict
+    ##Purpose: Convert set of decision tree scores into single verdict
+    def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=1.0, order_override_acceptance=["science", "data_influenced"]):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _convert_scorestoverdict.")
+            print("Individual components and score sets:")
+            for ii in range(0, len(dict_scores_indiv)):
+                print("{0}\n-".format(#components[ii],
+                                            dict_scores_indiv[ii]))
+            #
+        #
+
+        ##Return empty verdict if empty scores
+        #For completely empty scores
+        if len(dict_scores_indiv) == 0:
+            tmp_res = config.dictverdict_error.copy()
+            #Print some notes
+            if do_verbose:
+                print("\n-Empty scores; verdict: {0}".format(tmp_res))
+            #
+            return tmp_res
+        #
+        #Otherwise, remove Nones
+        dict_scores_indiv = [item for item in dict_scores_indiv
+                            if (item is not None)]
+        all_keys = list(dict_scores_indiv[0].keys())
+        #
+
+        ##Calculate and store verdict value statistics from indiv. entries
+        num_indiv = len(dict_scores_indiv)
+        dict_results = {key:{"score_tot_unnorm":0, "count_max":0,
+                                "count_tot":num_indiv}
+                        for key in all_keys}
+        for ii in range(0, num_indiv):
+            curr_scores = dict_scores_indiv[ii]
+            for curr_key in all_keys:
+                tmp_unnorm = curr_scores[curr_key]
+                #Determine if current key has max. score across all keys
+                if (max_diff_thres is not None) and (tmp_unnorm > 0):
+                    tmp_compare = all([(
+                                    (np.abs(tmp_unnorm - curr_scores[other_key])
+                                                / curr_scores[other_key])
+                                        >= max_diff_thres)
+                                    for other_key in all_keys
+                                    if (other_key != curr_key)]
+                                    ) #Check if rel. max. key by some thres.
+                #
+                else:
+                    tmp_compare = False
+                #
+
+                #Increment count of sentences with max-valued verdict
+                if tmp_compare:
+                    dict_results[curr_key]["count_max"] += 1
+                #
+                #Increment unnorm. score count
+                dict_results[curr_key]["score_tot_unnorm"] += tmp_unnorm
+            #
+        #
+
+        #Normalize and store the scores
+        denom = np.sum([dict_results[key]["score_tot_unnorm"]
+                        for key in all_keys])
+        for curr_key in all_keys:
+            #Calculate and store normalized score
+            tmp_score = (dict_results[curr_key]["score_tot_unnorm"] / denom)
+            dict_results[curr_key]["score_tot_norm"] = tmp_score
+        #
+
+        #Override combined scores with absolutes if requested
+        tmp_max_key = None
+        if ((thres_override_acceptance is not None)
+                            and (order_override_acceptance is not None)):
+            for curr_key in order_override_acceptance:
+                if any([(item[curr_key] >= thres_override_acceptance)
+                                for item in dict_scores_indiv]):
+                    #Override scores
+                    tmp_max_key = curr_key
+                    break
+        #
+        if (tmp_max_key is not None):
+            for curr_key in all_keys:
+                if (curr_key == tmp_max_key):
+                    dict_results[curr_key] = 1.0
+                else:
+                    dict_results[curr_key] = 0.0
+        #
+
+        #Combined score storage
+        list_scores_comb = [dict_results[key]["score_tot_norm"]
+                            for key in all_keys]
+        #
+
+        #Gather final scores into set of error
+        dict_error = {key:dict_results[key]["score_tot_norm"]
+                                for key in dict_results}
+        #
+
+        #Print some notes
+        if do_verbose:
+            print("Indiv. scores without Nones:\n{0}".format(dict_scores_indiv))
+            print("Normalizing denominator: {0}".format(denom))
+            print("Full score set:")
+            for curr_key in dict_results:
+                print("{0}: {1}".format(curr_key, dict_results[curr_key]))
+            print("Listed combined scores: {0}: {1}"
+                    .format(all_keys, list_scores_comb))
+        #
+
+        ##Establish uncertainties from scores
+        dict_uncertainties = {all_keys[ii]:list_scores_comb[ii]
+                                for ii in range(0, len(all_keys))}
+        #
+
+        ##Determine best verdict and associated probabilistic error
+        is_found = False
+        #For max sentence count:
+        if (not is_found) and (max_diff_thres is not None):
+            #Check allowed keys that fit max condition
+            for curr_key in max_diff_verdicts:
+                if (dict_results[curr_key]["count_max"] >= max_diff_count):
+                    is_found = True
+                    max_score = 1 #dict_results[curr_key]["score_tot_norm"]
+                    max_verdict = curr_key
+                    #
+                    #Print some notes
+                    if do_verbose:
+                        print("\n-Max score: {0}".format(max_score))
+                        print("Max verdict: {0}\n".format(max_verdict))
+                    #
+                    #Break from loop early if found
+                    break
+            #
+        #
+
+        #For max normalized total score:
+        if (not is_found):
+            max_ind = np.argmax(list_scores_comb)
+            max_score = list_scores_comb[max_ind]
+            max_verdict = all_keys[max_ind]
+            #Print some notes
+            if do_verbose:
+                print("\n-Max score: {0}".format(max_score))
+                print("Max verdict: {0}\n".format(max_verdict))
+            #
+            #Return low-prob verdict if multiple equal top probabilities
+            if (list_scores_comb.count(max_score) > 1):
+                tmp_res = config.dictverdict_lowprob.copy()
+                tmp_res["scores_indiv"] = dict_scores_indiv
+                tmp_res["uncertainty"] = dict_uncertainties
+                #tmp_res["components"] = components
+                #Print some notes
+                if do_verbose:
+                    print("-Multiple top prob. scores.")
+                    print("Returning low-prob verdict:\n{0}".format(tmp_res))
+                #
+                return tmp_res
+            #
+        #
+
+        ##Establish uncertainty for max verdict from scores
+        dict_uncertainties[max_verdict] = max_score
+        #
+
+        ##Assemble and return final verdict
+        fin_res = {"verdict":max_verdict, "scores_indiv":dict_scores_indiv,
+                "uncertainty":dict_uncertainties, #"components":components,
+                "norm_error":dict_error}
+        #
+        #Print some notes
+        if do_verbose:
+            print("-Returning final verdict dictionary:\n{0}".format(fin_res))
+        #
+        return fin_res
+    #
+
     ##Method: _find_missing_branches
     ##Purpose: Determine and return missing branches in decision tree
-    def _find_missing_branches(self, do_verbose=None, cap_iter=3, print_freq=100):
+    def _find_missing_branches(self, do_verbose=None, cap_iter=None, print_freq=100):
         #Load global variables
         if (do_verbose is None):
             do_verbose = self._get_info("do_verbose")
@@ -5474,7 +5617,7 @@ class Classifier_Rules(_Classifier):
                             if (item is not None)]
         all_verbclasses = [item for item in all_possible_values["verbclass"]
                             ] #No shallow copying!
-        solo_verbtypes = ["PAST", "PRESENT", "FUTURE"]
+        solo_verbtypes = ["PAST", "PRESENT", "FUTURE", "PURPOSE"]
         multi_verbtypes = [item for item in all_possible_values["verbtypes"]
                             if ((item is not None)
                                 and (item not in solo_verbtypes))]
@@ -5487,10 +5630,10 @@ class Classifier_Rules(_Classifier):
         if (cap_iter is not None):
             cap_subj = cap_iter
             cap_obj = cap_iter
-            cap_vtypes = cap_iter
+            #cap_vtypes = cap_iter
         else:
-            cap_subj = len(all_subjmatters)
-            cap_obj = len(all_objmatters)
+            cap_subj = 2 #len(all_subjmatters)
+            cap_obj = 2 #len(all_objmatters)
             cap_vtypes = len(multi_verbtypes)
         #
 
@@ -5502,9 +5645,12 @@ class Classifier_Rules(_Classifier):
         sub_multiverbtypes = [item for ii in range(1, (cap_vtypes+1))
                             for item in iterer.combinations(multi_verbtypes,ii)]
         #
-        sub_allverbtypes = [(list(item_sub)+[item_solo])
+        if (cap_vtypes > 0):
+            sub_allverbtypes = [(list(item_sub)+[item_solo])
                             for item_sub in sub_multiverbtypes
                             for item_solo in solo_verbtypes] #Fold in verb tense
+        else:
+            sub_allverbtypes = all_possible_values["verbtypes"]
         #
 
         #Fold in solo and required values as needed
@@ -5515,6 +5661,10 @@ class Classifier_Rules(_Classifier):
         #
         if do_verbose:
             print("Combinations of branch parameters complete.")
+            print(("Verb classes: {0}\nSubj.matter: {1}\nObj. matter: {2}"
+                    +"\nVerbtypes: {3}")
+                    .format(sets_verbclasses, sets_subjmatters,
+                            sets_objmatters, sets_allverbtypes))
         #
 
         #Generate set of all possible branches (all possible valid combos)
@@ -5547,12 +5697,12 @@ class Classifier_Rules(_Classifier):
             #Apply decision tree and ensure valid output
             try:
                 tmp_res = self._apply_decision_tree(decision_tree=decision_tree,
-                                                    tree_nest=curr_branch)
+                                                    rule=curr_branch)
                 #
                 bools_is_missing[ii] = False #Branch is covered
             #
             #Record this branch as missing if invalid output
-            except:
+            except NotImplementedError:
                 #Mark this branch as missing
                 bools_is_missing[ii] = True
             #
@@ -5576,7 +5726,8 @@ class Classifier_Rules(_Classifier):
         return (np.asarray(list_branches)[np.asarray(bools_is_missing)])
     #
 
-    #Function
+    ##Method: _convert_clause_into_rule
+    ##Purpose: Convert Grammar-made clause into rule for rule-based classifier
     def _convert_clause_into_rule(self, clause_text, clause_ids, flags_nounchunks, ids_nounchunks):
         """
         Method: _convert_clause_into_rule
@@ -5647,17 +5798,6 @@ class Classifier_Rules(_Classifier):
 
         #Return the assembled rules
         return rules
-    #
-
-    #Function
-    def _combine_score_across_rules(dict_rules):
-        #Straight combination and normalization just for now
-        for curr_key in dict_rules:
-            for curr_rule in dict_rules[curr_key]:
-                curr_score = _apply_tree(curr_rule)
-
-        #Return score
-        return fin_score
     #
 #
 

@@ -362,7 +362,8 @@ dictverdict_error = {
 #
 #For rule-based classification
 list_default_verdicts_decisiontree = ["science", "data_influenced", "mention"]
-dict_tree_possible_values = {"subjectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "objectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "verbclass":["be", "has", "know", "plot", "root_nonverb", "science", "datainfluenced"], "verbtypes":["FUTURE", "PASSIVE", "PAST", "POTENTIAL", "PURPOSE", "PRESENT"]}
+#dict_tree_possible_values = {"subjectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "objectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "verbclass":["be", "has", "know", "plot", "root_nonverb", "science", "datainfluenced"], "verbtypes":["FUTURE", "PASSIVE", "PAST", "POTENTIAL", "PURPOSE", "PRESENT"]}
+dict_tree_possible_values = {"subjectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "objectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "verbclass":["be", "has", "know", "plot", "root_nonverb", "science", "datainfluenced"], "verbtypes":["FUTURE", "PAST", "PURPOSE", "PRESENT"]}
 #
 
 ##Set rule-based processing variables
