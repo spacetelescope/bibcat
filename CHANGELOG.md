@@ -10,11 +10,15 @@ Refactoring bibcat has started.
 ### Removed
 - PR #9 
     - Deleted test_bibcat.py 
+    - Deleted the same set of test gloabal variables assigned in multiple test scripts
 
 - [PR #7](https://github.com/spacetelescope/bibcat/pull/7)
     - Deleted all previous codes and files for a fresh start
 
 ### Changed
+- PR #9 
+    - The test global variables are called directly in the script rather than using redundantly reassigned to other variables.
+    - Moved test Keyword-object lookup variables to parameters.py
 
 - [PR #8]
     - Refactored classes.py into several individual class files below, which were moved to the new folder names, `core` and `core/classifiers`.

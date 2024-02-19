@@ -4,7 +4,7 @@
 This module creates a new training ML model.
 
 - The input full text JSON file (papertrack + ADS full texts) is called via
-  `PATH_INPUT` configured in `bibcat/config.py` and is used for training,
+  `config.path_input_data` configured in `bibcat/config.py` and is used for training,
   validating, and testing the trained model.
   
 - Once the model is trained, the `models` folder and its subdirectories for T/V/T
@@ -45,7 +45,7 @@ name_model = config.name_model
 dir_model = os.path.join(config.dir_allmodels, name_model)
 
 # Fetch filepaths for input and output
-filepath_input = config.PATH_INPUT
+filepath_input = config.path_input_data
 filepath_output = config.PATH_OUTPUT
 
 # filepath to save processing errors

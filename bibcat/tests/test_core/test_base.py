@@ -16,34 +16,6 @@ from bibcat.core.base import Base
 
 nlp = spacy.load(config.spacy_language_model)
 
-# Set global test variables
-# Fetch filepaths for model and data
-name_model = config.name_model
-filepath_input = config.PATH_INPUT
-filepath_papertrack = config.path_papertrack
-filepath_papertext = config.path_papertext
-filepath_dictinfo = config.path_TVTinfo
-filepath_modiferrors = config.path_modiferrors
-
-
-# Mission terms
-# Keyword objects
-kobj_hla = params.keyword_obj_HLA
-kobj_hubble = params.keyword_obj_HST
-kobj_kepler = params.keyword_obj_Kepler
-kobj_k2 = params.keyword_obj_K2
-
-# Keyword-object lookups
-list_lookup_kobj = [kobj_hubble, kobj_kepler, kobj_k2]
-dict_lookup_kobj = {"Hubble": kobj_hubble, "Kepler": kobj_kepler, "K2": kobj_k2, "HLA": kobj_hla}
-
-
-# Placeholders
-placeholder_author = config.placeholder_author
-placeholder_number = config.placeholder_number
-placeholder_numeric = config.placeholder_numeric
-placeholder_website = config.placeholder_website
-
 
 class TestBase(unittest.TestCase):
     # For tests of _assemble_keyword_wordchunks:
@@ -82,7 +54,7 @@ class TestBase(unittest.TestCase):
             # For tests where verbs are not included
             for phrase in dict_acts_noverbs:
                 test_res = testbase._assemble_keyword_wordchunks(
-                    text=phrase, keyword_objs=list_lookup_kobj, do_include_verbs=False, do_verbose=False
+                    text=phrase, keyword_objs=params.test_list_lookup_kobj, do_include_verbs=False, do_verbose=False
                 )
                 test_res = [item.text for item in test_res]
 
@@ -105,7 +77,7 @@ class TestBase(unittest.TestCase):
             # For tests where verbs are indeed included
             for phrase in dict_acts_yesverbs:
                 test_res = testbase._assemble_keyword_wordchunks(
-                    text=phrase, keyword_objs=list_lookup_kobj, do_include_verbs=True, do_verbose=False
+                    text=phrase, keyword_objs=params.test_list_lookup_kobj, do_include_verbs=True, do_verbose=False
                 )
                 test_res = [item.text for item in test_res]
 
@@ -130,7 +102,7 @@ class TestBase(unittest.TestCase):
         # Test determination of importance of given text with various terms
         def test__check_importance__variety(self):
             # Prepare text and answers for test
-            kobj = kobj_hubble
+            kobj = params.kobj_hubble
             dict_acts = {
                 "I went to the store.": ["is_pron_1st", "is_any"],
                 "We all went to their house.": ["is_pron_1st", "is_pron_3rd", "is_any"],
@@ -173,7 +145,7 @@ class TestBase(unittest.TestCase):
         # Test _cleanse_text for variety of text
         def test__cleanse_text__variety(self):
             # Prepare text and answers for test
-            kobj = kobj_hubble
+            kobj = params.kobj_hubble
             dict_acts = {
                 "  J.W .. . S. - T .  .S-c": "J.W. S. - T.S-c",
                 " We  walked to the   store/shop - across   the street. \n   We bought:   carrots-celery, and  - tofu-juice /milk.  ": "We walked to the store/shop - across the street. \n We bought: carrots-celery, and - tofu-juice /milk.",
@@ -223,7 +195,7 @@ class TestBase(unittest.TestCase):
                 dict_acts[key1]["roots"] = []
                 for curr_word in curr_text:
                     curr_syns = wordnet.synsets(curr_word)
-                    curr_kobjs = [item for item in list_lookup_kobj if (item.is_keyword(curr_word))]
+                    curr_kobjs = [item for item in params.test_list_lookup_kobj if (item.is_keyword(curr_word))]
                     curr_set = [item.name() for item in curr_syns if (".n." in item.name())]
                     # Store as name if keyword
                     if len(curr_kobjs) > 0:
@@ -246,7 +218,10 @@ class TestBase(unittest.TestCase):
             testbase = Base()
             for key1 in dict_acts:
                 test_res = testbase._extract_core_from_phrase(
-                    phrase_NLP=nlp(key1), do_skip_useless=False, do_verbose=False, keyword_objs=list_lookup_kobj
+                    phrase_NLP=nlp(key1),
+                    do_skip_useless=False,
+                    do_verbose=False,
+                    keyword_objs=params.test_list_lookup_kobj,
                 )
 
                 # Check answer
@@ -300,13 +275,13 @@ class TestBase(unittest.TestCase):
 
             # Prepare and run tests for bibcat class instance
             testbase = Base()
-            dict_ambigs = testbase._process_database_ambig(do_verbose=False, keyword_objs=list_lookup_kobj)
+            dict_ambigs = testbase._process_database_ambig(do_verbose=False, keyword_objs=params.test_list_lookup_kobj)
 
             # Check answers
             for key1 in dict_tests:
                 try:
                     curr_phrase = key1
-                    curr_kobjs = [dict_lookup_kobj[dict_tests[key1]["lookup"]]]
+                    curr_kobjs = [params.test_dict_lookup_kobj[dict_tests[key1]["lookup"]]]
                     answer = dict_tests[key1]["bool"]
                     test_res = testbase._check_truematch(
                         text=curr_phrase,
@@ -356,7 +331,7 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array(
                         [
-                            testbase._is_pos_word(word=item, keyword_objs=list_lookup_kobj, pos=test_pos)
+                            testbase._is_pos_word(word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos)
                             for item in curr_NLP
                         ]
                     )
@@ -406,7 +381,7 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array(
                         [
-                            testbase._is_pos_word(word=item, keyword_objs=list_lookup_kobj, pos=test_pos)
+                            testbase._is_pos_word(word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos)
                             for item in curr_NLP
                         ]
                     )
@@ -450,7 +425,7 @@ class TestBase(unittest.TestCase):
                     test_bools = np.array(
                         [
                             testbase._is_pos_word(
-                                word=item, keyword_objs=list_lookup_kobj, pos=test_pos, do_verbose=False
+                                word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos, do_verbose=False
                             )
                             for item in curr_NLP
                         ]
@@ -503,7 +478,7 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array(
                         [
-                            testbase._is_pos_word(word=item, keyword_objs=list_lookup_kobj, pos=test_pos)
+                            testbase._is_pos_word(word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos)
                             for item in curr_NLP
                         ]
                     )
@@ -553,7 +528,7 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array(
                         [
-                            testbase._is_pos_word(word=item, keyword_objs=list_lookup_kobj, pos=test_pos)
+                            testbase._is_pos_word(word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos)
                             for item in curr_NLP
                         ]
                     )
@@ -604,7 +579,7 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array(
                         [
-                            testbase._is_pos_word(word=item, keyword_objs=list_lookup_kobj, pos=test_pos)
+                            testbase._is_pos_word(word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos)
                             for item in curr_NLP
                         ]
                     )
@@ -650,7 +625,7 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array(
                         [
-                            testbase._is_pos_word(word=item, keyword_objs=list_lookup_kobj, pos=test_pos)
+                            testbase._is_pos_word(word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos)
                             for item in curr_NLP
                         ]
                     )
@@ -703,7 +678,7 @@ class TestBase(unittest.TestCase):
                     test_bools = np.array(
                         [
                             testbase._is_pos_word(
-                                word=item, keyword_objs=list_lookup_kobj, pos=test_pos, do_verbose=False
+                                word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos, do_verbose=False
                             )
                             for item in curr_NLP
                         ]
@@ -749,7 +724,7 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array(
                         [
-                            testbase._is_pos_word(word=item, keyword_objs=list_lookup_kobj, pos=test_pos)
+                            testbase._is_pos_word(word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos)
                             for item in curr_NLP
                         ]
                     )
@@ -806,7 +781,7 @@ class TestBase(unittest.TestCase):
                     test_bools = np.array(
                         [
                             testbase._is_pos_word(
-                                word=item, keyword_objs=list_lookup_kobj, pos=test_pos, do_verbose=False
+                                word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos, do_verbose=False
                             )
                             for item in curr_NLP
                         ]
@@ -857,7 +832,7 @@ class TestBase(unittest.TestCase):
             for key1 in dict_tests:
                 try:
                     answer = dict_tests[key1]
-                    test_res = testbase._search_text(text=key1, keyword_objs=list_lookup_kobj)
+                    test_res = testbase._search_text(text=key1, keyword_objs=params.test_list_lookup_kobj)
                     self.assertEqual(test_res, answer)
                 except AssertionError:
                     print("")
@@ -902,19 +877,19 @@ class TestBase(unittest.TestCase):
         def test_streamline_phrase__citations(self):
             # Prepare text and answers for test
             dict_tests = {
-                "Somename (2013) published  in SJ.": "{0} published in SJ.".format(placeholder_author),
+                "Somename (2013) published  in SJ.": "{0} published in SJ.".format(config.placeholder_author),
                 "Hubble (1953) was a landmark paper (for that subfield).": "{0} was a landmark paper (for that subfield).".format(
-                    placeholder_author
+                    config.placeholder_author
                 ),
                 "See also: Kepler [2023], Hubble & Author (2020), Author, Somename, and Kepler et al. [1990];": "See also: {0}, {0}, {0};".format(
-                    placeholder_author
+                    config.placeholder_author
                 ),
                 "Also Author papers (Author et al. 1997, 2023),": "Also Author papers,",
                 "(Someone, Author, Somename et al. 1511; 1612)": "",
                 "(Someone, Author, and Somename et al. 1913,15)": "",
                 "(Author et al. 80; Somename & Author 2012)": "",
                 "McThatname, Kepler, & Othername [1993] (see our paper)": "{0} (see our paper)".format(
-                    placeholder_author
+                    config.placeholder_author
                 ),
                 "{Othername et al. 1991} (see Hubble observations)": "(see Hubble observations)",
             }
@@ -942,16 +917,16 @@ class TestBase(unittest.TestCase):
             # Prepare text and answers for test
             dict_tests = {
                 "There were 200-300 observations done of star AB100+300.": "There were {1} observations done of star AB{0}.".format(
-                    placeholder_number, placeholder_numeric
+                    config.placeholder_number, config.placeholder_numeric
                 ),
                 "Consider planet J9385-193 and 2MASS293-04-331+101.": "Consider planet J{0} and 2MASS{0}.".format(
-                    placeholder_number
+                    config.placeholder_number
                 ),
                 "Disk HD 193283-10, Kepler-234c, and Planet 312b as well.": "Disk HD{0}, Kepler {0}, and Planet {0} as well.".format(
-                    placeholder_number
+                    config.placeholder_number
                 ),
                 "The latter had ~450 - 650 data points in total.": "The latter had {0} data points in total.".format(
-                    placeholder_numeric
+                    config.placeholder_numeric
                 ),
             }
 
@@ -978,11 +953,11 @@ class TestBase(unittest.TestCase):
             # Prepare text and answers for test
             dict_tests = {
                 "Please check out: www.stsci.edu/home for more info.": "Please check out: {0} for more info.".format(
-                    placeholder_website
+                    config.placeholder_website
                 ),
-                "Consider also https://jwst.edu/,": "Consider also {0},".format(placeholder_website),
-                "http:hst.edu/lookup=wow?; public.stsci.edu,": "{0}; {0},".format(placeholder_website),
-                "   www.roman-telescope.stsci.edu/main/about/. ": "{0}.".format(placeholder_website),
+                "Consider also https://jwst.edu/,": "Consider also {0},".format(config.placeholder_website),
+                "http:hst.edu/lookup=wow?; public.stsci.edu,": "{0}; {0},".format(config.placeholder_website),
+                "   www.roman-telescope.stsci.edu/main/about/. ": "{0}.".format(config.placeholder_website),
             }
 
             # Prepare and run tests for bibcat class instance

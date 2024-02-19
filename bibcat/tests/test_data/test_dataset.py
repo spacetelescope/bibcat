@@ -14,28 +14,7 @@ import numpy as np
 from bibcat import config
 from bibcat import parameters as params
 
-# Set global test variables
-# Fetch filepaths for model and data
-filepath_input = config.PATH_INPUT
-filepath_papertrack = config.path_papertrack
-filepath_papertext = config.path_papertext
-filepath_dictinfo = config.path_TVTinfo
-filepath_modiferrors = config.path_modiferrors
-
-
-##Classifier setup
 mapper = params.map_papertypes
-all_kobjs = [
-    params.keyword_obj_HST,
-    params.keyword_obj_JWST,
-    params.keyword_obj_TESS,
-    params.keyword_obj_Kepler,
-    params.keyword_obj_PanSTARRS,
-    params.keyword_obj_GALEX,
-    params.keyword_obj_K2,
-    params.keyword_obj_HLA,
-]
-allowed_classifications = ["SCIENCE", "DATA_INFLUENCED", "MENTION", "SUPERMENTION"]
 
 
 class TestData(unittest.TestCase):
@@ -46,15 +25,15 @@ class TestData(unittest.TestCase):
             print("Running test__combined_dataset.")
             # Load each of the datasets
             # For the combined dataset
-            with open(filepath_input, "r") as openfile:
+            with open(config.path_input_data, "r") as openfile:
                 data_combined = json.load(openfile)
 
             # For the original text data
-            with open(filepath_papertext, "r") as openfile:
+            with open(config.path_papertext, "r") as openfile:
                 data_text = json.load(openfile)
 
             # For the original classification data
-            with open(filepath_papertrack, "r") as openfile:
+            with open(config.path_papertrack, "r") as openfile:
                 data_classif = json.load(openfile)
 
             # Build list of bibcodes for the original data sources
@@ -162,14 +141,14 @@ class TestData(unittest.TestCase):
             print("Running test__TVT_directory.")
             # Load the datasets
             # Check if TVT information exists
-            if not os.path.isfile(filepath_dictinfo):
-                raise AssertionError("TVT directory does not exist yet at: {0}".format(filepath_dictinfo))
+            if not os.path.isfile(config.path_TVTinfo):
+                raise AssertionError("TVT directory does not exist yet at: {0}".format(config.path_TVTinfo))
 
             # If exists, carry on with this test
-            dict_info = np.load(filepath_dictinfo, allow_pickle=True).item()
-            dict_errors = np.load(filepath_modiferrors, allow_pickle=True).item()
+            dict_info = np.load(config.path_TVTinfo, allow_pickle=True).item()
+            dict_errors = np.load(config.path_modiferrors, allow_pickle=True).item()
             # Dataset of text and classification information
-            with open(filepath_input, "r") as openfile:
+            with open(config.path_input_data, "r") as openfile:
                 dataset = json.load(openfile)
 
             list_bibcodes_dataset = [item["bibcode"] for item in dataset]
@@ -182,8 +161,8 @@ class TestData(unittest.TestCase):
                     key: dataset[ind_dataset]["class_missions"][key]
                     for key in dataset[ind_dataset]["class_missions"]
                     if (
-                        (any([item.is_keyword(key) for item in all_kobjs]))
-                        and (dataset[ind_dataset]["class_missions"][key]["papertype"] in allowed_classifications)
+                        (any([item.is_keyword(key) for item in params.all_kobjs]))
+                        and (dataset[ind_dataset]["class_missions"][key]["papertype"] in params.allowed_classifications)
                     )
                 }
 

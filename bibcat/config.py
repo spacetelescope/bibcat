@@ -9,19 +9,19 @@ import os
 
 from nltk.corpus import wordnet
 
+# Define the name of the model directory
+name_model = "my_test_run_1"
+
 # Set global user paths, which should be set outside the bibcat repo folder.
-# set the path to the location of the JSON file you
-PATH_INPUT = "/path/to/datasets/dataset_combined_all_2018-2023.json"  # set the path to the location of the JSON file you downloaded from Box
-name_model = "my_test_run_1"  # Name of model run to save or load
-
-
-# Set paths for bibcat_tests.py testing purposes only
 filepath_dataset = "/path/to/datasets/"
+filepath_dataset = "/Users/jyoon/Documents/asb/bibliography_automation/bibcat_datasets/"
+# To construct the dataset, it requires the papertrack data and and the paper corpus texts from ASDS
 # papertrack data that Sarah W. created
 path_papertrack = os.path.join(filepath_dataset, "papertrack_export_2023-11-06.json")
 # fulltext data from the ADS team
 path_papertext = os.path.join(filepath_dataset, "ST_Request2018-2023.json")
-
+# set the path to the location of the JSON file you created from papertrack and papertext
+path_input_data = os.path.join(filepath_dataset, "dataset_combined_all_2018-2023.json")
 
 # Set global fixed paths
 SRC_ROOT = os.path.dirname(__file__)
@@ -55,6 +55,9 @@ path_modiferrors = os.path.join(dir_allmodels, name_model, "dict_modiferrors.npy
 path_TVTinfo = os.path.join(dir_allmodels, name_model, "dict_TVTinfo.npy")
 tfoutput_prefix = "tfoutput_"
 folders_TVT = {"train": "dir_train", "validate": "dir_validate", "test": "dir_test"}
+
+# for pytest: modifs
+test_which_modes = ["none", "skim", "trim", "anon", "skim_trim_anon"]
 
 # Set text processing and regular expression variables
 # Placeholders for replacing various substrings in text

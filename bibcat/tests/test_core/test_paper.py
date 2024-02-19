@@ -9,14 +9,6 @@ import unittest
 from bibcat import parameters as params
 from bibcat.core import paper
 
-# Keyword objects
-kobj_hubble = params.keyword_obj_HST
-kobj_kepler = params.keyword_obj_Kepler
-kobj_k2 = params.keyword_obj_K2
-
-# Keyword-object lookups
-list_lookup_kobj = [kobj_hubble, kobj_kepler, kobj_k2]
-
 
 class TestPaper(unittest.TestCase):
     # For tests of process_paragraphs and get_paragraphs:
@@ -25,16 +17,11 @@ class TestPaper(unittest.TestCase):
         def test_processandget_paragraphs__variety(self):
             # placeholder = config.string_anymatch_ambig
             # Prepare text and answers for test
-            text1 = """Despite the low S/N of the data, we still detect the stars. Figure 1 plots 
-                    the Hubble Space Telescope (HST) observations. The HST stars are especially bright. 
-                    We analyze them in the next section. A filler sentence. Here is another filler sentence 
-                    (with parentheses). Some more filler content. We summarize our Hubble results next."""
+            text1 = "Despite the low S/N of the data, we still detect the stars. Figure 1 plots the Hubble Space Telescope (HST) observations. The HST stars are especially bright. We analyze them in the next section. A filler sentence. Here is another filler sentence (with parentheses). Some more filler content. We summarize our Hubble results next."
             meanings1 = {"Hubble": ["Hubble Space Telescope"], "Kepler": None, "K2": None}
             ambigs1 = [("our Hubble results", True)]
 
-            text2 = """Kepler observations are presented in Section 1. Table 1 then gives the measured 
-                    Kepler velocity data and Kepler planets. The Kepler images and Kepler plots indicate 
-                    a correlation. The Kepler results are further shown in part 2. Note the Keplerian rotation."""
+            text2 = "Kepler observations are presented in Section 1. Table 1 then gives the measured Kepler velocity data and Kepler planets. The Kepler images and Kepler plots indicate a correlation. The Kepler results are further shown in part 2. Note the Keplerian rotation."
             meanings2 = {"Hubble": None, "Kepler": None, "K2": None}
             ambigs2 = [
                 ("Kepler observations", True),
@@ -48,7 +35,7 @@ class TestPaper(unittest.TestCase):
             list_acts = [
                 {
                     "text": text1,
-                    "kobj": kobj_hubble,
+                    "kobj": params.kobj_hubble,
                     "buffer": 0,
                     "answer": [
                         "Figure 1 plots the Hubble Space Telescope (HST) observations.",
@@ -60,12 +47,10 @@ class TestPaper(unittest.TestCase):
                 },
                 {
                     "text": text1,
-                    "kobj": kobj_hubble,
+                    "kobj": params.kobj_hubble,
                     "buffer": 1,
                     "answer": [
-                        """Despite the low S/N of the data, we still detect the stars. Figure 1 plots 
-                        the Hubble Space Telescope (HST) observations. The HST stars are especially bright. 
-                        We analyze them in the next section.""",
+                        "Despite the low S/N of the data, we still detect the stars. Figure 1 plots the Hubble Space Telescope (HST) observations. The HST stars are especially bright. We analyze them in the next section.",
                         "Some more filler content. We summarize our Hubble results next.",
                     ],
                     "acronym_meanings": meanings1,
@@ -73,33 +58,27 @@ class TestPaper(unittest.TestCase):
                 },
                 {
                     "text": text1,
-                    "kobj": kobj_hubble,
+                    "kobj": params.kobj_hubble,
                     "buffer": 3,
                     "answer": [
-                        """Despite the low S/N of the data, we still detect the stars. Figure 1 plots 
-                        the Hubble Space Telescope (HST) observations. The HST stars are especially bright. 
-                        We analyze them in the next section. A filler sentence. Here is another filler sentence 
-                        (with parentheses). Some more filler content. We summarize our Hubble results next."""
+                        "Despite the low S/N of the data, we still detect the stars. Figure 1 plots the Hubble Space Telescope (HST) observations. The HST stars are especially bright. We analyze them in the next section. A filler sentence. Here is another filler sentence (with parentheses). Some more filler content. We summarize our Hubble results next."
                     ],
                     "acronym_meanings": meanings1,
                     "results_ambig": ambigs1,
                 },
                 {
                     "text": text1,
-                    "kobj": kobj_hubble,
+                    "kobj": params.kobj_hubble,
                     "buffer": 10,
                     "answer": [
-                        """Despite the low S/N of the data, we still detect the stars. Figure 1 plots 
-                        the Hubble Space Telescope (HST) observations. The HST stars are especially bright. 
-                        We analyze them in the next section. A filler sentence. Here is another filler sentence 
-                        (with parentheses). Some more filler content. We summarize our Hubble results next."""
+                        "Despite the low S/N of the data, we still detect the stars. Figure 1 plots the Hubble Space Telescope (HST) observations. The HST stars are especially bright. We analyze them in the next section. A filler sentence. Here is another filler sentence (with parentheses). Some more filler content. We summarize our Hubble results next."
                     ],
                     "acronym_meanings": meanings1,
                     "results_ambig": ambigs1,
                 },
                 {
                     "text": text2,
-                    "kobj": kobj_kepler,
+                    "kobj": params.kobj_kepler,
                     "buffer": 0,
                     "answer": [
                         "Kepler observations are presented in Section 1.",
@@ -111,12 +90,10 @@ class TestPaper(unittest.TestCase):
                 },
                 {
                     "text": text2,
-                    "kobj": kobj_kepler,
+                    "kobj": params.kobj_kepler,
                     "buffer": 1,
                     "answer": [
-                        """Kepler observations are presented in Section 1. Table 1 then gives the measured 
-                        Kepler velocity data and Kepler planets. The Kepler images and Kepler plots indicate 
-                        a correlation. The Kepler results are further shown in part 2. Note the Keplerian rotation."""
+                        "Kepler observations are presented in Section 1. Table 1 then gives the measured Kepler velocity data and Kepler planets. The Kepler images and Kepler plots indicate a correlation. The Kepler results are further shown in part 2. Note the Keplerian rotation."
                     ],
                     "acronym_meanings": meanings2,
                     "results_ambig": ambigs2,
@@ -127,15 +104,17 @@ class TestPaper(unittest.TestCase):
             for info in list_acts:
                 curr_text = info["text"]
                 curr_kobj = info["kobj"]
-                # curr_buffer = info["buffer"]
+                curr_buffer = info["buffer"]
                 curr_answer = info["answer"]
                 curr_ambig = info["results_ambig"]
                 curr_acr_meanings = info["acronym_meanings"]
                 curr_name = curr_kobj.get_name()
 
                 # Prepare and run test for bibcat class instance
-                testbase = paper.Paper(text=curr_text, keyword_objs=list_lookup_kobj, do_check_truematch=True)
-                # set_res = testbase.process_paragraphs(buffer=curr_buffer)
+                testbase = paper.Paper(
+                    text=curr_text, keyword_objs=params.test_list_lookup_kobj, do_check_truematch=True
+                )
+                set_res = testbase.process_paragraphs(buffer=curr_buffer)
                 test_res = testbase.get_paragraphs()[curr_name]
 
                 ambig_output = testbase._get_info("_results_ambig")[curr_name]
@@ -205,7 +184,7 @@ class TestPaper(unittest.TestCase):
                 curr_answer = info["result"]
 
                 # Prepare and run test for bibcat class instance
-                testbase = paper.Paper(text="", keyword_objs=[kobj_hubble], do_check_truematch=False)
+                testbase = paper.Paper(text="", keyword_objs=[params.kobj_hubble], do_check_truematch=False)
                 test_res = testbase._buffer_indices(indices=curr_inds, buffer=curr_buffer, max_index=curr_max)
 
                 # Check answer
@@ -253,7 +232,7 @@ class TestPaper(unittest.TestCase):
             ]
 
             # Prepare and run test for bibcat class instance
-            testbase = paper.Paper(text="", keyword_objs=[kobj_hubble], do_check_truematch=False)
+            testbase = paper.Paper(text="", keyword_objs=[params.kobj_hubble], do_check_truematch=False)
             test_res = testbase._split_text(text=text)
             # Check answer
             try:
@@ -275,22 +254,25 @@ class TestPaper(unittest.TestCase):
             # Prepare text and answers for test
             dict_acts = {
                 "The Hubble Space Telescope is a telescope often referred to as H.S.T. or HST.": {
-                    "kobj": kobj_hubble,
+                    "kobj": params.kobj_hubble,
                     "matches": ["Hubble Space Telescope"],
                 },
                 "The Heralding of the Swan Trumphets will be showing in the Healing Song Theatre Plaza next week.": {
-                    "kobj": kobj_hubble,
+                    "kobj": params.kobj_hubble,
                     "matches": ["Heralding of the Swan Trumphets", "Healing Song Theatre"],
                 },
-                "Hello. Space Tyrants is showing in the theatre next door.": {"kobj": kobj_hubble, "matches": []},
-                "H. Space Tyrants is showing in the theatre next door.": {"kobj": kobj_hubble, "matches": []},
-                "H S T is showing in the theatre next door.": {"kobj": kobj_hubble, "matches": []},
+                "Hello. Space Tyrants is showing in the theatre next door.": {
+                    "kobj": params.kobj_hubble,
+                    "matches": [],
+                },
+                "H. Space Tyrants is showing in the theatre next door.": {"kobj": params.kobj_hubble, "matches": []},
+                "H S T is showing in the theatre next door.": {"kobj": params.kobj_hubble, "matches": []},
                 "Hijinks of Space Tyrants is showing in the theatre next door.": {
-                    "kobj": kobj_hubble,
+                    "kobj": params.kobj_hubble,
                     "matches": ["Hijinks of Space Tyrants"],
                 },
                 "Hidden space tyrants is showing in the theatre next door. H. S. TheName will be seeing it.": {
-                    "kobj": kobj_hubble,
+                    "kobj": params.kobj_hubble,
                     "matches": [],
                 },
             }
@@ -301,7 +283,7 @@ class TestPaper(unittest.TestCase):
                 curr_answer = dict_acts[phrase]["matches"]
 
                 # Prepare and run test for bibcat class instance
-                testbase = paper.Paper(text=phrase, keyword_objs=[kobj_hubble], do_check_truematch=False)
+                testbase = paper.Paper(text=phrase, keyword_objs=[params.kobj_hubble], do_check_truematch=False)
                 test_res = testbase._verify_acronyms(keyword_obj=curr_kobj)
 
                 # Check answer
