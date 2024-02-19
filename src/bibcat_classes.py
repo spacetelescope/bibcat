@@ -1063,7 +1063,8 @@ class _Base():
             #Determine if to left of verb or root, if applicable
             is_leftofverb = False
             if (len(word_ancestors) > 0):
-                tmp_verb = self._is_pos_word(word=word_ancestors[0], pos="VERB")
+                tmp_verb = self._is_pos_word(word=word_ancestors[0], pos="VERB",
+                                            ids_nounchunks=ids_nounchunks)
                 #tmp_root = self._is_pos_word(word=word_ancestors[0], pos="ROOT")
                 #if (tmp_verb or tmp_root):
                 if tmp_verb:
@@ -3300,7 +3301,8 @@ class Grammar(_Base):
         if (connector.upper() == "SUBJECT"):
             #Search left for subject(s)
             for curr_left in lefts:
-                if (self._is_pos_word(curr_left, pos="SUBJECT")):
+                if (self._is_pos_word(curr_left, pos="SUBJECT",
+                                        ids_nounchunks=ids_nounchunks)):
                     new_chunk = self._get_nounchunk(word=curr_left,
                                             sentence_NLP=sentence_NLP,
                                             ids_nounchunks=ids_nounchunks)
@@ -3324,7 +3326,8 @@ class Grammar(_Base):
                 #Iterate through roots
                 for curr_root in roots:
                     #If root is verb, copy subjects
-                    if (self._is_pos_word(curr_root, pos="VERB")):
+                    if (self._is_pos_word(curr_root, pos="VERB",
+                                            ids_nounchunks=ids_nounchunks)):
                         #Set to same subjects as this previous verb
                         storage_text =dict_clauses_text[curr_root.i]["subjects"]
                         storage_ids =dict_clauses_ids[curr_root.i]["subjects"]
@@ -7576,12 +7579,15 @@ class Classifier_Rules(_Classifier):
                 tmp_res = [self._apply_decision_tree(rule=item,
                                                 decision_tree=decision_tree)
                                 for item in curr_rules]
-                list_scores[ii] += [item["scores"] for item in tmp_res]
-                list_components[ii] += [item["components"] for item in tmp_res]
+                list_scores[ii] += [item["scores"] for item in tmp_res
+                                    if (item is not None)]
+                list_components[ii] += [item["components"] for item in tmp_res
+                                    if (item is not None)]
         #
 
         #Combine scores across clauses
-        comb_score = self._combine_scores(list_scores)
+        #comb_score = self._combine_scores(list_scores)
+        comb_score = [item2 for item1 in list_scores for item2 in item1]
 
         #Convert final score into verdict and other information
         results = self._convert_score_to_verdict(comb_score)
@@ -7772,15 +7778,15 @@ class Classifier_Rules(_Classifier):
 
     ##Method: _convert_scorestoverdict
     ##Purpose: Convert set of decision tree scores into single verdict
-    def _convert_score_to_verdict(self, dict_scores_indiv, components, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"]):
+    def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"]):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         #Print some notes
         if do_verbose:
             print("\n> Running _convert_scorestoverdict.")
             print("Individual components and score sets:")
-            for ii in range(0, len(components)):
-                print("{0}\n{1}\n-".format(components[ii],
+            for ii in range(0, len(dict_scores_indiv)):
+                print("{0}\n-".format(#components[ii],
                                             dict_scores_indiv[ii]))
             #
         #
@@ -7861,6 +7867,11 @@ class Classifier_Rules(_Classifier):
                     .format(all_keys, list_scores_comb))
         #
 
+        ##Establish uncertainties from scores
+        dict_uncertainties = {all_keys[ii]:list_scores_comb[ii]
+                                for ii in range(0, len(all_keys))}
+        #
+
         ##Determine best verdict and associated probabilistic error
         is_found = False
         #For max sentence count:
@@ -7897,7 +7908,7 @@ class Classifier_Rules(_Classifier):
                 tmp_res = config.dictverdict_lowprob.copy()
                 tmp_res["scores_indiv"] = dict_scores_indiv
                 tmp_res["uncertainty"] = dict_uncertainties
-                tmp_res["components"] = components
+                #tmp_res["components"] = components
                 #Print some notes
                 if do_verbose:
                     print("-Multiple top prob. scores.")
@@ -7907,15 +7918,13 @@ class Classifier_Rules(_Classifier):
             #
         #
 
-        ##Establish uncertainties from scores
-        dict_uncertainties = {all_keys[ii]:list_scores_comb[ii]
-                                for ii in range(0, len(all_keys))}
+        ##Establish uncertainty for max verdict from scores
         dict_uncertainties[max_verdict] = max_score
         #
 
         ##Assemble and return final verdict
         fin_res = {"verdict":max_verdict, "scores_indiv":dict_scores_indiv,
-                "uncertainty":dict_uncertainties, "components":components,
+                "uncertainty":dict_uncertainties, #"components":components,
                 "norm_error":dict_error}
         #
         #Print some notes
@@ -8569,6 +8578,9 @@ class Classifier_Rules(_Classifier):
         WARNING! This method is *not* meant to be used directly by users.
         Purpose: Process text into modifs using Grammar class.
         """
+        #Set global variables
+        do_verbose = self._get_info("do_verbose")
+
         #Fetch all sets of subject flags via their ids
         num_subj = len(clause_text["subjects"])
         sets_subjmatter = [None]*num_subj #Container for subject flags
@@ -8617,6 +8629,14 @@ class Classifier_Rules(_Classifier):
                 rules.append(curr_rule)
             #
         #
+
+        #Print some notes
+        if do_verbose:
+            print("\n> Run of _convert_clause_into_rule complete.")
+            print("Orginal clause:\n{0}".format(clause_text))
+            print("Extracted rules:")
+            for ii in range(0, len(rules)):
+                print("{0}: {1}\n-".format(ii, rules[ii]))
 
         #Return the assembled rules
         return rules

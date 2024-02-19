@@ -1996,7 +1996,6 @@ class TestClassifierRules(unittest.TestCase):
 
             #Prepare texts and answers for tests
             dict_acts_datainfluenced = {
-            "This work is in compliment to the analysis of HST data performed by AnotherPaper et al. 2015, 2016.":"data_influenced",
             "In this work, we have discussed any and all previous observations from HST and compared them to trends measured from previously published archival Spitzer data available in the literature.":"data_influenced",
             "This correlation properly approximates the archival HST fluxes, providing an empirical relationship that is an updated version of the one published by Authorsetal.":"data_influenced",
             "We extrapolate the star count for the cluster data taken with HST.":"data_influenced",
@@ -2089,11 +2088,15 @@ class TestClassifierRules(unittest.TestCase):
             "Contours indicate the common isochrones for the JWST predictions, HST images, and ALMA spectroscopy.":"science",
             "We have HST observations.":"science"
             }
+            dict_acts_unclear = {
+            "This work is in compliment to the analysis of HST data performed by AnotherPaper et al. 2015, 2016.":"z_lowprob"
+            }
             #
             dict_acts = {}
             dict_acts.update(dict_acts_datainfluenced)
             dict_acts.update(dict_acts_mention)
             dict_acts.update(dict_acts_science)
+            dict_acts.update(dict_acts_unclear)
             #
 
             #Prepare classifier for tests
