@@ -6,7 +6,7 @@ into three categories; science, mention, data-influenced. Finally, it produces
 performance results such as a confusion matrix.
 
 - Context: the input full text JSON file (papertrack + ADS full texts) is
-  called via PATH_INPUT configured in bibcat/config.py and is used for 
+  called via config.path_input_data configured in bibcat/config.py and is used for 
   training, validating, and testing the trained model.
 
 - Classfication data: this text data is used for prediction (classification),
@@ -29,10 +29,6 @@ from bibcat.core.classifiers import ml, rules
 # Fetch filepath for model
 name_model = config.name_model
 dir_model = os.path.join(config.dir_allmodels, name_model)
-
-# Fetch filepaths for input and output
-filepath_input = config.PATH_INPUT
-filepath_output = config.PATH_OUTPUT
 
 # Set directories for fetching test text
 dir_info = dir_model
@@ -105,7 +101,7 @@ if do_real_testdata:
     list_test_bibcodes = [key for key in dict_TVTinfo if (dict_TVTinfo[key]["folder_TVT"] == folder_test)]
 
     # Load the original data
-    with open(filepath_input, "r") as openfile:
+    with open(config.path_input_data, "r") as openfile:
         dataset = json.load(openfile)
     # Extract text information for the bibcodes reserved for testing
     # Data for test set
@@ -275,7 +271,7 @@ performer.evaluate_performance_basic(
     do_raise_innererror=do_raise_innererror,
     do_save_evaluation=True,
     do_save_misclassif=True,
-    filepath_output=filepath_output,
+    filepath_output=config.PATH_OUTPUT,
     fileroot_evaluation=fileroot_evaluation,
     fileroot_misclassif=fileroot_misclassif,
     print_freq=1,
@@ -304,7 +300,7 @@ performer.evaluate_performance_uncertainty(
     do_raise_innererror=do_raise_innererror,
     do_save_evaluation=True,
     do_save_misclassif=True,
-    filepath_output=filepath_output,
+    filepath_output=config.PATH_OUTPUT,
     fileroot_evaluation=fileroot_evaluation,
     fileroot_misclassif=fileroot_misclassif,
     print_freq=25,
