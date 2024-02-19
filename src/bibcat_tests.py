@@ -14,7 +14,7 @@ import numpy as np
 import bibcat_classes as bibcat
 import bibcat_config as config
 import bibcat_parameters as params
-"""
+#"""
 import spacy
 nlp = spacy.load(config.spacy_language_model)
 import nltk
@@ -224,7 +224,7 @@ class TestData(unittest.TestCase):
                 #Fetch only allowed missions and classifs. from dataset
                 curr_actuals = {key:dataset[ind_dataset]["class_missions"][key]
                             for key in dataset[ind_dataset]["class_missions"]
-                            if ((any([item.is_keyword(key)
+                            if ((any([item.identify_keyword(key)["bool"]
                                     for item in all_kobjs]))
                                 and (dataset[ind_dataset]["class_missions"][key
                                                                 ]["papertype"]
@@ -372,7 +372,7 @@ class TestBase(unittest.TestCase):
             testbase = bibcat._Base()
             for phrase in dict_acts:
                 test_res = testbase._check_importance(
-                                            text=phrase, keyword_objs=[kobj])
+                                    text=phrase, keyword_objs=[kobj])["bools"]
                 list_res = [key for key in test_res if (test_res[key])]
                 #
 
@@ -458,7 +458,7 @@ class TestBase(unittest.TestCase):
                 for curr_word in curr_text:
                     curr_syns = wordnet.synsets(curr_word)
                     curr_kobjs = [item for item in list_lookup_kobj
-                                if (item.is_keyword(curr_word))]
+                                if (item.identify_keyword(curr_word)["bool"])]
                     curr_set = [item.name() for item in curr_syns
                                     if (".n." in item.name())]
                     #Store as name if keyword
@@ -676,52 +676,6 @@ class TestBase(unittest.TestCase):
                     self.assertEqual(test_res, answer)
             #
         #
-        #Test identification of marker in a sentence
-        def test_is_pos_word__marker(self):
-            test_pos = "MARKER" #Current p.o.s. to be tested
-            #Prepare text and answers for test
-            dict_tests = {
-                    "She bought the book which was written by that team.":["which"],
-                    "I think that is a good idea.":["that"],
-                    "Which way to the store?":[],
-                    "They do not know which way to turn.":["which"],
-                    "I read the book, which by the way was great.":["which"],
-                    "They noted there are many ways to do it.":["there"],
-                    "That is a fantastic quote for this poster.":[]
-                    }
-            #
-
-            #Prepare and run tests for bibcat class instance
-            testbase = bibcat._Base()
-            #
-            #Check answers
-            for key1 in dict_tests:
-                try:
-                    curr_phrase = key1
-                    curr_NLP = nlp(curr_phrase)
-                    answer = dict_tests[key1]
-                    test_bools = np.array([testbase._is_pos_word(word=item,
-                                            keyword_objs=list_lookup_kobj,
-                                            pos=test_pos, do_verbose=False)
-                                            for item in curr_NLP])
-                    test_res = [item.text for item in
-                                np.asarray(curr_NLP)[test_bools]]
-                    self.assertEqual(test_res, answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n"
-                            .format(test_res, answer, key1, test_bools))
-                    print("All p.o.s.:")
-                    for word1 in curr_NLP:
-                        print("{0}: {1}, {2}, {3}"
-                            .format(word1, word1.dep_, word1.pos_, word1.tag_))
-                    print("---")
-                    print("")
-                    #
-                    self.assertEqual(test_res, answer)
-            #
-        #
         #Test identification of direct object in a sentence
         def test_is_pos_word__directobject(self):
             test_pos = "DIRECT_OBJECT" #Current p.o.s. to be tested
@@ -829,7 +783,7 @@ class TestBase(unittest.TestCase):
         #
         #Test identification of preposition objects in a sentence
         def test_is_pos_word__prepositionobject(self):
-            test_pos = "PREPOSITION_OBJECT" #Current p.o.s. to be tested
+            test_pos = "PREPOSITIONAL_OBJECT" #Current p.o.s. to be tested
             #Prepare text and answers for test
             dict_tests = {
                     "She went to the clean store.":["store"],
@@ -847,54 +801,6 @@ class TestBase(unittest.TestCase):
                     "She tried to send the picture to the agent.":["agent"],
                     "She gave a treat to the cat.":["cat"],
                     "She gave a treat to the cat and the dog.":["cat", "dog"]
-                    }
-            #
-
-            #Prepare and run tests for bibcat class instance
-            testbase = bibcat._Base()
-            #
-            #Check answers
-            for key1 in dict_tests:
-                try:
-                    curr_phrase = key1
-                    curr_NLP = nlp(curr_phrase)
-                    answer = dict_tests[key1]
-                    test_bools = np.array([testbase._is_pos_word(word=item,
-                                            keyword_objs=list_lookup_kobj,
-                                            pos=test_pos) for item in curr_NLP])
-                    test_res = [item.text for item in
-                                np.asarray(curr_NLP)[test_bools]]
-                    self.assertEqual(test_res, answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n"
-                            .format(test_res, answer, key1, test_bools))
-                    print("All p.o.s.:")
-                    for word1 in curr_NLP:
-                        print("{0}: {1}, {2}, {3}"
-                            .format(word1, word1.dep_, word1.pos_, word1.tag_))
-                    print("---")
-                    print("")
-                    #
-                    self.assertEqual(test_res, answer)
-            #
-        #
-        #Test identification of preposition subjects in a sentence
-        def test_is_pos_word__prepositionsubject(self):
-            test_pos = "PREPOSITION_SUBJECT" #Current p.o.s. to be tested
-            #Prepare text and answers for test
-            dict_tests = {
-                    "She went to the clean store.":[],
-                    "Hubble has observed many stars.":[],
-                    "There are only so many entries in the database.":[],
-                    "The door of the cage is open.":["cage"],
-                    "The key in the lock should not be turned.":["lock"],
-                    "We wanted to know the name of the movie.":[],
-                    "The name of the movie is long.":["movie"],
-                    "The water in the basin seems gray.":["basin"],
-                    "The cats on the couch, chair, and table are sleeping.":["couch", "chair", "table"],
-                    "She took a turn on the road along the left lane.":[]
                     }
             #
 
@@ -1124,7 +1030,7 @@ class TestBase(unittest.TestCase):
                 try:
                     answer = dict_tests[key1]
                     test_res = testbase._search_text(text=key1,
-                                            keyword_objs=list_lookup_kobj)
+                                        keyword_objs=list_lookup_kobj)["bool"]
                     self.assertEqual(test_res, answer)
                 except AssertionError:
                     print("")
@@ -1343,7 +1249,7 @@ class TestKeyword(unittest.TestCase):
     #For tests of is_keyword:
     if True:
         #Test determination of if given text contains keyword terms
-        def test_is_keyword__variety(self):
+        def test_identify_keyword__variety(self):
             #Prepare text and answers for test
             dict_acts = {
             "Keplerian velocity":{"kobj":kobj_kepler, "bool":False},
@@ -1382,7 +1288,7 @@ class TestKeyword(unittest.TestCase):
             for phrase in dict_acts:
                 curr_kobj = dict_acts[phrase]["kobj"]
                 curr_bool = dict_acts[phrase]["bool"]
-                test_res = curr_kobj.is_keyword(text=phrase)
+                test_res = curr_kobj.identify_keyword(text=phrase)["bool"]
                 #
 
                 #Check answer

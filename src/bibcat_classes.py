@@ -916,7 +916,7 @@ class _Base():
 
     ##Method: _is_pos_word()
     ##Purpose: Return boolean for if given word (NLP type word) is of given part of speech
-    def _is_pos_word(self, word, pos, keyword_objs=None, ids_nounchunks=None, do_verbose=False):
+    def _is_pos_word(self, word, pos, keyword_objs=None, ids_nounchunks=None, do_verbose=False, do_exclude_nounverbs=False):
         """
         Method: _is_pos_word
         WARNING! This method is *not* meant to be used directly by users.
@@ -953,7 +953,10 @@ class _Base():
             check_root = self._is_pos_word(word=word, pos="ROOT")
             check_aux = (word_pos in ["AUX"])
             check_rootaux = (check_root and check_aux)
-            check_notnoun = (ids_nounchunks[word_i] is None)
+            if do_exclude_nounverbs:
+                check_notnoun = (ids_nounchunks[word_i] is None)
+            else:
+                check_notnoun = True
             check_all = ((check_verb or check_rootaux) and check_notnoun)
         #
         #Identify useless words
@@ -989,8 +992,7 @@ class _Base():
             #Determine if to left of verb or root, if applicable
             is_leftofverb = False
             if (len(word_ancestors) > 0):
-                tmp_verb = self._is_pos_word(word=word_ancestors[0], pos="VERB",
-                                            ids_nounchunks=ids_nounchunks)
+                tmp_verb = self._is_pos_word(word=word_ancestors[0], pos="VERB")
                 #tmp_root = self._is_pos_word(word=word_ancestors[0], pos="ROOT")
                 #if (tmp_verb or tmp_root):
                 if tmp_verb:
@@ -1027,8 +1029,26 @@ class _Base():
         #Identify direct objects
         elif pos in ["DIRECT_OBJECT"]:
             check_noun = self._is_pos_word(word=word, pos="NOUN")
-            check_obj = word_dep.endswith("obj")
-            check_all = (check_noun and check_obj)
+            check_baseobj = self._is_pos_word(word=word, pos="BASE_OBJECT")
+            #is_conjprepobj = self._is_pos_conjoined(word, pos=pos)
+            #Check if this word follows preposition
+            check_objprep = False
+            for pre_node in word_ancestors:
+                #If preceding preposition found first
+                if self._is_pos_word(word=pre_node, pos="PREPOSITION"):
+                    pre_pre_node = list(pre_node.ancestors)[0]
+                    #Ensure prepositional object instead of prep. subject
+                    check_objprep = (not self._is_pos_word(word=pre_pre_node,
+                                            pos="SUBJECT",
+                                            ids_nounchunks=ids_nounchunks))
+                    break
+                #If preceding verb found first
+                elif self._is_pos_word(word=pre_node, pos="VERB"):
+                    check_objprep = False
+                    break
+            #
+            #check_all = (is_conjprepobj or (check_baseobj and check_objprep))
+            check_all = ((check_baseobj and (not check_objprep) and check_noun))
         #
         #Identify prepositional objects
         elif pos in ["PREPOSITIONAL_OBJECT"]:
@@ -1047,31 +1067,12 @@ class _Base():
                                             ids_nounchunks=ids_nounchunks))
                     break
                 #If preceding verb found first
-                elif self._is_pos_word(word=pre_node, pos="VERB",
-                                        ids_nounchunks=ids_nounchunks):
+                elif self._is_pos_word(word=pre_node, pos="VERB"):
                     check_objprep = False
                     break
             #
             #check_all = (is_conjprepobj or (check_baseobj and check_objprep))
             check_all = ((check_baseobj and check_objprep and check_noun))
-        #
-        #Identify markers
-        elif pos in ["MARKER"]:
-            check_dep = (word_dep in config.dep_marker)
-            check_tag = (word_tag in config.tag_marker)
-            check_marker = (check_dep or check_tag)
-            #Check if subject marker after non-root verb
-            is_notroot = (len(word_ancestors) > 0)
-            is_afterroot = (is_notroot and
-                        self._is_pos_word(word=word_ancestors[0],pos="ROOT"))
-            check_subjmark = False
-            if ((is_notroot) and (not is_afterroot)):
-                check_subj = self._is_pos_word(word=word, pos="SUBJECT")
-                check_det = self._is_pos_word(word=word, pos="DETERMINANT")
-                check_subjmark = (check_det and check_subj)
-            #
-            check_all = ((check_marker or check_subjmark)
-                        and (not is_afterroot))
         #
         #Identify improper X-words (for improper sentences)
         elif pos in ["X"]:
@@ -1085,6 +1086,12 @@ class _Base():
             check_appos = (word_dep in config.dep_appos)
             check_det = (word_tag in config.tag_determinant)
             check_all = ((check_conj or check_appos) and (not check_det))
+        #
+        #Identify  conjunctions
+        elif pos in ["CONJUNCTION"]:
+            check_pos = (word_pos in config.pos_conjunction)
+            check_tag = (word_tag in config.tag_conjunction)
+            check_all = (check_pos and check_tag)
         #
         #Identify determinants
         elif pos in ["DETERMINANT"]:
@@ -1112,12 +1119,6 @@ class _Base():
             check_det = (word_tag in config.tag_determinant)
             check_all = (check_pos and (not check_det))
         #
-        #Identify pronouns
-        elif pos in ["PRONOUN"]:
-            check_tag = (word_tag in config.tag_pronoun)
-            check_pos = (word_pos in config.pos_pronoun)
-            check_all = (check_tag or check_pos)
-        #
         #Identify adjectives
         elif pos in ["ADJECTIVE"]:
             check_adjverb = ((word_dep in config.dep_adjective)
@@ -1126,12 +1127,6 @@ class _Base():
             check_pos = (word_pos in config.pos_adjective)
             check_tag = (word_tag in config.tag_adjective)
             check_all = (check_tag or check_pos or check_adjverb)
-        #
-        #Identify  conjunctions
-        elif pos in ["CONJUNCTION"]:
-            check_pos = (word_pos in config.pos_conjunction)
-            check_tag = (word_tag in config.tag_conjunction)
-            check_all = (check_pos and check_tag)
         #
         #Identify passive verbs and aux
         elif pos in ["PASSIVE"]:
@@ -2147,7 +2142,8 @@ class Grammar(_Base):
         do_verbose = self._get_info("do_verbose")
         #Extract all computed modes, if none specified
         if (which_modes is None):
-            which_modes = [key for key in forest]
+            #which_modes = [key for key in forest]
+            which_modes = [key for key in dict_modifs_orig]
         #
         #Print some notes
         if do_verbose:
@@ -2250,8 +2246,10 @@ class Grammar(_Base):
                 curr_clauses = tmp_res["clauses"]
                 list_pos_NLP = tmp_res["list_pos_NLP"]
                 list_pos_clause = tmp_res["list_pos_clause"]
+                list_iverbs = tmp_res["list_iverbs"]
                 ids_conjoined = tmp_res["ids_conjoined"]
-                ids_iskeyword = tmp_res["ids_iskeyword"]
+                list_iskeyword = tmp_res["list_iskeyword"]
+                list_isuseless = tmp_res["list_isuseless"]
                 ids_nounchunks = tmp_res["ids_nounchunks"]
                 flags_nounchunks = tmp_res["flags_nounchunks"]
 
@@ -2284,7 +2282,9 @@ class Grammar(_Base):
                                     "pos_clause":list_pos_clause,
                                     "flags":flags_nounchunks,
                                     "ids_nounchunk":ids_nounchunks,
-                                    "iskeyword":ids_iskeyword,
+                                    "iverbs":list_iverbs,
+                                    "iskeyword":list_iskeyword,
+                                    "isuseless":list_isuseless,
                                     "clauses":curr_clauses}
                 #
             #
@@ -2334,7 +2334,7 @@ class Grammar(_Base):
 
     ##Method: _add_word_to_clause()
     ##Purpose: Add word, such as sentence subjects, to corresponding verb clause
-    def _add_word_to_clause(self, word, sentence_NLP, clauses_text, clauses_ids, list_pos_NLP, list_pos_clause, list_iverbs, ids_conjoined, ids_nounchunks):
+    def _add_word_to_clause(self, word, i_verb, sentence_NLP, clauses_text, clauses_ids, list_pos_NLP, list_pos_clause, list_iverbs, ids_conjoined, ids_nounchunks):
         """
         Method: _get_verb_connector
         WARNING! This method is *not* meant to be used directly by users.
@@ -2387,14 +2387,15 @@ class Grammar(_Base):
             list_pos_NLP[i_word] = list_pos_NLP[i_root_conj]
             for curr_ind in new_chunk["ids"]:
                 list_pos_clause[curr_ind] = list_pos_clause[i_root_conj]
-                list_iverbs[curr_ind] = list_iverbs[i_root_conj]
             #
             #Store in the same verb-clause as conjoined root, if relevant
             if (list_pos_clause[i_word] is not None):
-                i_verb = list_iverbs[i_word]
                 pos_clause = list_pos_clause[i_word]
                 clauses_text[i_verb][pos_clause].append(new_chunk["text"])
                 clauses_ids[i_verb][pos_clause].append(new_chunk["ids"])
+                clauses_ids[i_verb]["clause_nounchunks"].append(
+                                                        new_chunk["chunk_id"])
+            #
         #
         #For subjects
         elif (is_subject or is_dirobject or is_prepobject):
@@ -2414,38 +2415,40 @@ class Grammar(_Base):
                                     ids_nounchunks=ids_nounchunks)
             #
             #Find verb index for this word so as to look up correct verb-clause
-            for curr_root in roots:
-                #Look for nearest root verb
-                if (self._is_pos_word(curr_root, pos="VERB",
-                                        ids_nounchunks=ids_nounchunks)):
-                    #Extract index and stop search
-                    i_verb = curr_root.i
-                    break #Exit the loop
+            #for curr_root in roots:
+            #    #Look for nearest root verb
+            #    if (self._is_pos_word(curr_root, pos="VERB",
+            #                            ids_nounchunks=ids_nounchunks,
+            #                            do_exclude_nounverbs=True)):
+            #        #Extract index and stop search
+            #        #i_verb = curr_root.i
+            #        break #Exit the loop
             #
             #Fill in notes for this noun-chunk
             for curr_ind in new_chunk["ids"]:
                 list_pos_clause[curr_ind] = pos_clause
-                list_iverbs[curr_ind] = i_verb
             #
             #Add to verb-clause
             clauses_text[i_verb][pos_clause].append(new_chunk["text"])
             clauses_ids[i_verb][pos_clause].append(new_chunk["ids"])
+            clauses_ids[i_verb]["clause_nounchunks"].append(
+                                                        new_chunk["chunk_id"])
         #
         #For auxes
         elif is_aux:
             pos_clause = "auxs"
             #Find verb index for this word so as to look up correct verb-clause
-            for curr_root in roots:
-                #Look for nearest root verb
-                if (self._is_pos_word(curr_root, pos="VERB",
-                                        ids_nounchunks=ids_nounchunks)):
-                    #Extract index and stop search
-                    i_verb = curr_root.i
-                    break #Exit the loop
+            #for curr_root in roots:
+            #    #Look for nearest root verb
+            #    if (self._is_pos_word(curr_root, pos="VERB",
+            #                            ids_nounchunks=ids_nounchunks,
+            #                            do_exclude_nounverbs=True)):
+            #        #Extract index and stop search
+            #        i_verb = curr_root.i
+            #        break #Exit the loop
             #
             #Fill in notes for this aux
             list_pos_clause[i_word] = pos_clause
-            list_iverbs[i_word] = i_verb
             #
             #Add to verb-clause
             clauses_text[i_verb][pos_clause].append(word.text)
@@ -2569,7 +2572,8 @@ class Grammar(_Base):
         list_pos_clause = [None]*num_words
         list_iverbs = [None]*num_words
         list_ischecked = np.zeros(num_words).astype(bool)
-        ids_iskeyword = [None]*num_words
+        list_isuseless = np.zeros(num_words).astype(bool)
+        list_iskeyword = np.zeros(num_words).astype(bool)
         ids_conjoined = [None]*num_words
         flags_nounchunks = [None]*max([(item+1) for item in ids_nounchunks
                                         if (item is not None)])
@@ -2583,7 +2587,8 @@ class Grammar(_Base):
 
             #Determine if this word is a clausal verb
             if self._is_pos_word(curr_word, pos="VERB",
-                                ids_nounchunks=ids_nounchunks):
+                                ids_nounchunks=ids_nounchunks,
+                                do_exclude_nounverbs=True):
                 inds_verbs.append(i_word)
             #
         #
@@ -2604,15 +2609,13 @@ class Grammar(_Base):
             curr_verb = sentence_NLP[curr_iverb]
 
             #Initialize containers for this clause
-            clause_nounchunks = []
             curr_dict_text = {"verb":curr_verb.text, "auxs":[], "subjects":[],
                                 "dir_objects":[], "prep_objects":[],
-                                "order":i_track, "verbtype":None,
-                                "clause_nounchunks":clause_nounchunks}
+                                "order":i_track, "verbtype":None}
             curr_dict_ids = {"verb":curr_iverb, "auxs":[], "subjects":[],
                                 "dir_objects":[], "prep_objects":[],
                                 "order":i_track, "verbtype":None,
-                                "clause_nounchunks":clause_nounchunks}
+                                "clause_nounchunks":[]}
             #
 
             #Store these clausal containers
@@ -2624,10 +2627,10 @@ class Grammar(_Base):
         #
 
         #Recursively navigate NLP-tree from the root and fill in clauses
-        self._recurse_NLP_tree(node=sentence_NLP.root,
-                sentence_NLP=sentence_NLP,
+        self._recurse_NLP_tree(node=sentence_NLP.root, i_verb=None,
+                sentence_NLP=sentence_NLP, list_isuseless=list_isuseless,
                 clauses_text=dict_clauses_text, clauses_ids=dict_clauses_ids,
-                ids_iskeyword=ids_iskeyword, ids_conjoined=ids_conjoined,
+                list_iskeyword=list_iskeyword, ids_conjoined=ids_conjoined,
                 ids_nounchunks=ids_nounchunks,flags_nounchunks=flags_nounchunks,
                 list_ischecked=list_ischecked, list_pos_NLP=list_pos_NLP,
                 list_pos_clause=list_pos_clause, list_iverbs=list_iverbs)
@@ -2661,9 +2664,10 @@ class Grammar(_Base):
         #Return the dictionary of clauses
         return {"clauses":{"text":dict_clauses_text, "ids":dict_clauses_ids},
                 "list_pos_NLP":list_pos_NLP, "list_pos_clause":list_pos_clause,
-                "ids_conjoined":ids_conjoined,
-                "ids_iskeyword":ids_iskeyword, "ids_nounchunks":ids_nounchunks,
-                "flags_nounchunks":flags_nounchunks}
+                "ids_conjoined":ids_conjoined, "list_isuseless":list_isuseless,
+                "list_iskeyword":list_iskeyword,"ids_nounchunks":ids_nounchunks,
+                "flags_nounchunks":flags_nounchunks,
+                "list_iverbs":list_iverbs}
     #
 
     ##Method: _get_nounchunk()
@@ -2764,7 +2768,7 @@ class Grammar(_Base):
             #
             #Iterate through sentences
             for ii in range(0, num_sents):
-                curr_is_useless = cluster_info[ii]["ids_useless"]
+                curr_is_useless = cluster_info[ii]["isuseless"]
                 #Remove words marked as useless
                 arrs_is_keep[ii][curr_is_useless] = False
                 #
@@ -2789,38 +2793,89 @@ class Grammar(_Base):
             for ii in range(0, num_sents):
                 curr_clauses_ids = cluster_info[ii]["clauses"]["ids"]
                 #Sort clausal keys by verb hierarchical order
-                list_iverbs_sorted = list(curr_sent_clauses_ids.keys())
+                list_iverbs_sorted = list(curr_clauses_ids.keys())
                 list_iverbs_sorted.sort(key=lambda x
                                             :curr_clauses_ids[x]["order"])
 
                 #Fetch ids of noun-chunks flagged as important
-                curr_flags = cluster_info[ii]["flags_nounchunks"]
-                curr_imp_chunkids = [key for key in curr_flags
-                                            if (curr_flags[key]["is_any"])]
+                curr_flags = cluster_info[ii]["flags"]
+                curr_imp_chunkids = [ind for ind in range(0, len(curr_flags))
+                                        if ((curr_flags[ind] is not None)
+                                            and (curr_flags[ind]["is_any"]))]
 
                 #Fetch keys for clauses marked as important
-                list_iverbs_imp = [ind for ind in list_iverbs_sorted
+                list_iverbs_imp_raw = [ind for ind in list_iverbs_sorted
                                 if any([(item in
                                     curr_clauses_ids[ind]["clause_nounchunks"])
                                     for item in curr_imp_chunkids])]
 
-                #Fetch the min,max word indices in important clauses
-                min_ids_imp = [min([min([min(item["subjects"]),
-                                            min(item["dir_objects"]),
-                                            min(item["prep_objects"])])
-                                        for item in curr_clauses_ids[key]])
-                                    for key in list_iverbs_imp]
-                max_ids_imp = [max([max([max(item["subjects"]),
-                                            max(item["dir_objects"]),
-                                            max(item["prep_objects"])])
-                                        for item in curr_clauses_ids[key]])
-                                    for key in list_iverbs_imp]
+                #Now add in keys that precede imp. clauses in heirarchical order
+                list_iverbs_imp = [
+                        list_iverbs_sorted[0:list_iverbs_sorted.index(item)+1]
+                        for item in list_iverbs_imp_raw]
+                list_iverbs_imp = [item2 for item1 in list_iverbs_imp
+                                    for item2 in item1] #Flatten
+                list_iverbs_imp = set(list_iverbs_imp) #Take unique
+
+                """
+                print("woo")
+                print(list_iverbs_imp)
+                print(curr_clauses_ids)
+                print([[[curr_clauses_ids[key][item] for item in curr_clauses_ids[key] if (item in ["subjects", "dir_objects", "prep_objects"])]
+                                    for key in list_iverbs_imp
+                                    ]])
+                #Fetch indices of subject+object matter from important clauses
+                tmp_list = [curr_clauses_ids[key][item]
+                        for item in ["subjects", "dir_objects", "prep_objects"]
+                        for key in list_iverbs_imp]
+                tmp_list = [item2 for item1 in tmp_list for item2 in item1]#Flat
                 #
+                print(tmp_list)
+                print("yay")
+                print(list(cluster_info[ii].keys()))
+
+                #Fetch the min,max word indices in important clauses
+                min_ids_imp = [np.min(item) for item in tmp_list]
+                max_ids_imp = [np.max(item) for item in tmp_list]
+                #
+
+                #!!!
+                list_iverbs = cluster_info[ii]["iverbs"]
+                print(list_iverbs)
+                #!!!
 
                 #Take note of important words within these spans
                 tmp_iskeep = np.zeros(len(cluster_NLP[ii])).astype(bool)
                 for jj in range(0, len(min_ids_imp)):
                     tmp_iskeep[min_ids_imp[jj]:max_ids_imp[jj]+1] = True
+                #
+
+                print("woo")
+                print(list_iverbs_imp)
+                print(curr_clauses_ids)
+                print(min_ids_imp)
+                print(max_ids_imp)
+                print(tmp_iskeep)
+                print("-")
+                """
+
+                #Take note of important words within these spans
+                list_word_iverbs = cluster_info[ii]["iverbs"]
+                tmp_iskeep = np.array([True
+                                if (list_word_iverbs[ind] in list_iverbs_imp)
+                                else False
+                                for ind in range(0, len(list_word_iverbs))])
+                #
+
+                #Remove any conjunctions if leading+trailing words not kept
+                for jj in range(1, (len(tmp_iskeep)-1)):
+                    is_conjunction = self._is_pos_word(cluster_NLP[ii][jj],
+                                                        pos="CONJUNCTION")
+                    is_punctuation = self._is_pos_word(cluster_NLP[ii][jj],
+                                                        pos="PUNCTUATION")
+                    if (is_conjunction or is_punctuation):
+                        if ((not tmp_iskeep[jj-1]) or (not tmp_iskeep[jj+1])):
+                            tmp_iskeep[jj] = False
                 #
 
                 #Merge notes of importance into global array of kept words
@@ -2874,7 +2929,7 @@ class Grammar(_Base):
 
     ##Method: _recurse_NLP_tree
     ##Purpose: Recursively explore each word of NLP-sentence and characterize
-    def _recurse_NLP_tree(self, node, sentence_NLP, clauses_text, clauses_ids, list_pos_NLP, list_pos_clause, list_iverbs, list_ischecked, ids_iskeyword, ids_conjoined, ids_nounchunks, flags_nounchunks):
+    def _recurse_NLP_tree(self, node, i_verb, sentence_NLP, clauses_text, clauses_ids, list_pos_NLP, list_pos_clause, list_iverbs, list_ischecked, list_iskeyword, list_isuseless, ids_conjoined, ids_nounchunks, flags_nounchunks):
         """
         Method: _get_verb_connector
         WARNING! This method is *not* meant to be used directly by users.
@@ -2886,26 +2941,33 @@ class Grammar(_Base):
         dep_node = node.dep_
         #
 
+        #If this is a verb index, update latest i_verb
+        if (node.i in clauses_text): #Only verb ids used to build clauses
+            i_verb = node.i
+        #
+
         #Skip if this node has already been characterized
         if list_ischecked[i_node]:
             #Call this recursive method on branch nodes
             #For left nodes
             for left_node in node.lefts:
                 self._recurse_NLP_tree(node=left_node,
-                        sentence_NLP=sentence_NLP,
+                        sentence_NLP=sentence_NLP, i_verb=i_verb,
                         list_pos=list_pos, ids_conjoined=ids_conjoined,
                         ids_nounchunks=ids_nounchunks,
-                        ids_iskeyword=ids_iskeyword,
+                        list_iskeyword=list_iskeyword,
+                        list_isuseless=list_isuseless,
                         flags_nounchunks=flags_nounchunks,
                         list_ischecked=list_ischecked)
             #
             #For right nodes
             for right_node in node.rights:
                 self._recurse_NLP_tree(node=right_node,
-                        sentence_NLP=sentence_NLP,
+                        sentence_NLP=sentence_NLP, i_verb=i_verb,
                         list_pos=list_pos, ids_conjoined=ids_conjoined,
                         ids_nounchunks=ids_nounchunks,
-                        ids_iskeyword=ids_iskeyword,
+                        list_iskeyword=list_iskeyword,
+                        list_isuseless=list_isuseless,
                         flags_nounchunks=flags_nounchunks,
                         list_ischecked=list_ischecked)
             #
@@ -2916,6 +2978,7 @@ class Grammar(_Base):
 
         #Characterize current node
         list_pos_NLP[i_node] = node.pos_ #Store current NLP part-of-speech
+        list_iverbs[i_node] = i_verb
         #
 
         #Add this word to corresponding verb-clause as needed, if not verb
@@ -2924,7 +2987,7 @@ class Grammar(_Base):
                         clauses_ids=clauses_ids, sentence_NLP=sentence_NLP,
                         ids_conjoined=ids_conjoined, list_pos_NLP=list_pos_NLP,
                         list_pos_clause=list_pos_clause,list_iverbs=list_iverbs,
-                        ids_nounchunks=ids_nounchunks)
+                        i_verb=i_verb, ids_nounchunks=ids_nounchunks)
 
         #Store importance flags for associated noun-chunk, if applicable
         if (ids_nounchunks[i_node] is not None):
@@ -2944,8 +3007,12 @@ class Grammar(_Base):
                 flags_nounchunks[curr_chunkid] = tmp_res["flags"]
                 #Mark off any important words
                 for curr_impid in tmp_res["ids_keywords"]:
-                    ids_iskeyword[curr_impid] = True
+                    list_iskeyword[curr_impid] = True
         #
+
+        #Mark word as useless (e.g., if some adverb) as applicable
+        list_isuseless[i_node] = (self._is_pos_word(node, pos="USELESS")
+                                and (not list_iskeyword[i_node]))
 
         #Mark this node as characterized
         list_ischecked[i_node] = True
@@ -2956,8 +3023,9 @@ class Grammar(_Base):
             self._recurse_NLP_tree(node=left_node, sentence_NLP=sentence_NLP,
                     list_pos_NLP=list_pos_NLP, list_pos_clause=list_pos_clause,
                     list_iverbs=list_iverbs, ids_conjoined=ids_conjoined,
-                    ids_nounchunks=ids_nounchunks,ids_iskeyword=ids_iskeyword,
+                    ids_nounchunks=ids_nounchunks,list_iskeyword=list_iskeyword,
                     flags_nounchunks=flags_nounchunks,
+                    list_isuseless=list_isuseless, i_verb=i_verb,
                     clauses_text=clauses_text, clauses_ids=clauses_ids,
                     list_ischecked=list_ischecked)
         #
@@ -2966,8 +3034,9 @@ class Grammar(_Base):
             self._recurse_NLP_tree(node=right_node, sentence_NLP=sentence_NLP,
                     list_pos_NLP=list_pos_NLP, list_pos_clause=list_pos_clause,
                     list_iverbs=list_iverbs, ids_conjoined=ids_conjoined,
-                    ids_nounchunks=ids_nounchunks,ids_iskeyword=ids_iskeyword,
-                    flags_nounchunks=flags_nounchunks,
+                    ids_nounchunks=ids_nounchunks,list_iskeyword=list_iskeyword,
+                    flags_nounchunks=flags_nounchunks, i_verb=i_verb,
+                    list_isuseless=list_isuseless,
                     clauses_text=clauses_text, clauses_ids=clauses_ids,
                     list_ischecked=list_ischecked)
         #
