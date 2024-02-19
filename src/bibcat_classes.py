@@ -3100,11 +3100,11 @@ class Grammar(_Base):
 
             #Initialize containers for this clause
             clause_nounchunks = []
-            curr_dict_text = {"verb":curr_verb, "auxs":[], "subjects":[],
+            curr_dict_text = {"verb":curr_verb.text, "auxs":[], "subjects":[],
                                 "dir_objects":[], "prep_objects":[],
                                 "order":i_track, "verbtype":None,
                                 "clause_nounchunks":clause_nounchunks}
-            curr_dict_ids = {"verb":curr_verb, "auxs":[], "subjects":[],
+            curr_dict_ids = {"verb":curr_iverb, "auxs":[], "subjects":[],
                                 "dir_objects":[], "prep_objects":[],
                                 "order":i_track, "verbtype":None,
                                 "clause_nounchunks":clause_nounchunks}
@@ -6223,7 +6223,115 @@ class Classifier_Rules(_Classifier):
 
     ##Method: _apply_decision_tree
     ##Purpose: Apply a decision tree to a 'nest' dictionary for some text
-    def _apply_decision_tree(self, decision_tree, tree_nest):
+    def _apply_decision_tree(self, decision_tree, rule):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        which_classifs = self._get_info("class_names")
+        keys_main = config.nest_keys_main
+        keys_matter = [item for item in keys_main if (item.endswith("matter"))]
+        bool_keyword = "is_keyword"
+        prefix = "prob_"
+        #
+        rule_mod = rule.copy()
+        for curr_key in keys_main: #Encapsulate any single values into lists
+            if (isinstance(rule[curr_key], str) or (rule[curr_key] is None)):
+                rule_mod[curr_key] = [rule[curr_key]]
+            else:
+                rule_mod[curr_key] = rule[curr_key]
+        #
+        #Print some notes
+        if do_verbose:
+            print("Applying decision tree to the following rule:")
+            print(rule_mod)
+        #
+
+        ##Ignore this rule if no keywords within
+        if (not any([bool_keyword in rule_mod[key] for key in keys_matter])):
+            #Print some notes
+            if do_verbose:
+                print("No keywords in this rule. Skipping.")
+            return None
+        #
+
+        ##Find matching decision tree branch
+        best_branch = None
+        for key_tree in decision_tree:
+            curr_branch = decision_tree[key_tree]
+            #Determine if current branch matches
+            is_match = True
+            #Iterate through parameters
+            for key_param in keys_main:
+                #Skip ahead if current parameter allows any value ('is_any')
+                if curr_branch[key_param] == "is_any":
+                    continue
+                #
+                #Otherwise, check for exact matching values based on branch form
+                elif isinstance(curr_branch[key_param], tuple):
+                    #Check for exact matching values
+                    if not np.array_equal(np.sort(curr_branch[key_param]),
+                                        np.sort(rule_mod[key_param])):
+                        is_match = False
+                        break #Exit from this branch early
+                #
+                #Otherwise, check inclusive and excluded ('!') matching values
+                elif isinstance(curr_branch[key_param], list):
+                    #Check for included matching values
+                    if ((not all([(item in rule_mod[key_param])
+                                for item in curr_branch[key_param]
+                                if (not item.startswith("!"))]))
+                            or (any([(item in rule_mod[key_param])
+                                        for item in curr_branch[key_param]
+                                        if (item.startswith("!"))]))):
+                        is_match = False
+                        break #Exit from this branch early
+                #
+                #Otherwise, check if any of allowed values contained
+                elif isinstance(curr_branch[key_param], set):
+                    #Check for any of matching values
+                    if not any([(item in rule_mod[key_param])
+                                for item in curr_branch[key_param]]):
+                        is_match = False
+                        break #Exit from this branch early
+                #
+                #Otherwise, throw error if format not recognized
+                else:
+                    raise ValueError("Err: Invalid format for {0}!"
+                                    .format(curr_branch))
+                #
+            #
+            #Store this branch as match, if valid
+            if is_match:
+                best_branch = curr_branch
+                #Print some notes
+                if do_verbose:
+                    print("\n- Found matching decision branch:\n{0}"
+                            .format(best_branch))
+                #
+                break
+            #Otherwise, carry on
+            else:
+                pass
+            #
+        #
+        #Raise an error if no matching branch found
+        if (not is_match) or (best_branch is None):
+            raise ValueError("Err: No match found for {0}!".format(rule_mod))
+        #
+
+        ##Extract the scores from the branch
+        dict_scores = {key:best_branch[prefix+key] for key in which_classifs}
+
+        ##Return the final scores
+        if do_verbose:
+            print("Final scores computed for rule:\n{0}\n\n{1}\n\n{2}"
+                    .format(rule_mod, dict_scores, best_branch))
+        #
+        return {"scores":dict_scores, "components":best_branch}
+    #
+
+    ##Method: _apply_decision_tree
+    ##Purpose: Apply a decision tree to a 'nest' dictionary for some text
+    def x_apply_decision_tree(self, decision_tree, tree_nest):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         which_classifs = self._get_info("class_names")
@@ -7457,11 +7565,15 @@ class Classifier_Rules(_Classifier):
             for jj in range(0, len(forest[ii])):
                 curr_info = forest[ii][jj]
                 #Convert current clause into rules
-                curr_rules = self._convert_clause_into_rule(
-                                            dict_clause=curr_info["clauses"],
-                                            flags=curr_info["flags"])
+                curr_rules = [item for key in curr_info["clauses"]["text"]
+                            for item in
+                            self._convert_clause_into_rule(
+                            clause_text=curr_info["clauses"]["text"][key],
+                            clause_ids=curr_info["clauses"]["ids"][key],
+                            flags_nounchunks=curr_info["flags"],
+                            ids_nounchunks=curr_info["ids_nounchunk"])]
                 #Fetch and store score of each rule
-                tmp_res = [self.apply_decision_tree(rule=item,
+                tmp_res = [self._apply_decision_tree(rule=item,
                                                 decision_tree=decision_tree)
                                 for item in curr_rules]
                 list_scores[ii] += [item["scores"] for item in tmp_res]
@@ -7569,7 +7681,54 @@ class Classifier_Rules(_Classifier):
 
     ##Method: _combine_unlinked_scores
     ##Purpose: Add together scores from unlinked components of a nest
-    def _combine_unlinked_scores(self, component_scores):
+    def _combine_scores(self, forest_scores):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _combine_unlinked_scores.")
+            print("Considering set of scores:\n{0}".format(forest_scores))
+        #
+
+        #Flatten scores for now
+        component_scores = [item2 for item1 in forest_scores for item2 in item1]
+
+        ##Verify all score keys are the same
+        if any([(component_scores[0].keys() != item.keys())
+                            for item in component_scores]):
+            raise ValueError("Err: Unequal score keys?\n{0}"
+                            .format(component_scores))
+        #
+
+        ##Combine the scores across all components
+        keys_score = list(component_scores[0].keys())
+        fin_scores = {key:0 for key in keys_score}
+        tot_score = 0 #Total score for normalization purposes
+        for ii in range(0, len(component_scores)):
+            for key in component_scores[ii]:
+                fin_scores[key] += component_scores[ii][key]
+                tot_score += component_scores[ii][key]
+        #
+
+        ##Normalize the combined scores
+        for key in fin_scores:
+            if (tot_score == 0): #If empty score, record as 0
+                fin_scores[key] = 0
+            else: #Otherwise, normalize score
+                fin_scores[key] /= tot_score
+        #
+
+        ##Return the combined scores
+        if do_verbose:
+            print("\n> Run of _combine_unlinked_scores complete!")
+            print("Combined scores:\n{0}".format(fin_scores))
+        #
+        return fin_scores
+    #
+
+    ##Method: _combine_unlinked_scores
+    ##Purpose: Add together scores from unlinked components of a nest
+    def x_combine_unlinked_scores(self, component_scores):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         #Print some notes
@@ -7613,7 +7772,162 @@ class Classifier_Rules(_Classifier):
 
     ##Method: _convert_scorestoverdict
     ##Purpose: Convert set of decision tree scores into single verdict
-    def _convert_scorestoverdict(self, dict_scores_indiv, components, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"]):
+    def _convert_score_to_verdict(self, dict_scores_indiv, components, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"]):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _convert_scorestoverdict.")
+            print("Individual components and score sets:")
+            for ii in range(0, len(components)):
+                print("{0}\n{1}\n-".format(components[ii],
+                                            dict_scores_indiv[ii]))
+            #
+        #
+
+        ##Return empty verdict if empty scores
+        #For completely empty scores
+        if len(dict_scores_indiv) == 0:
+            tmp_res = config.dictverdict_error.copy()
+            #Print some notes
+            if do_verbose:
+                print("\n-Empty scores; verdict: {0}".format(tmp_res))
+            #
+            return tmp_res
+        #
+        #Otherwise, remove Nones
+        dict_scores_indiv = [item for item in dict_scores_indiv
+                            if (item is not None)]
+        all_keys = list(dict_scores_indiv[0].keys())
+        #
+
+        ##Calculate and store verdict value statistics from indiv. entries
+        num_indiv = len(dict_scores_indiv)
+        dict_results = {key:{"score_tot_unnorm":0, "count_max":0,
+                                "count_tot":num_indiv}
+                        for key in all_keys}
+        for ii in range(0, num_indiv):
+            curr_scores = dict_scores_indiv[ii]
+            for curr_key in all_keys:
+                tmp_unnorm = curr_scores[curr_key]
+                #Determine if current key has max. score across all keys
+                if (max_diff_thres is not None) and (tmp_unnorm > 0):
+                    tmp_compare = all([(
+                                    (np.abs(tmp_unnorm - curr_scores[other_key])
+                                                / curr_scores[other_key])
+                                        >= max_diff_thres)
+                                    for other_key in all_keys
+                                    if (other_key != curr_key)]
+                                    ) #Check if rel. max. key by some thres.
+                #
+                else:
+                    tmp_compare = False
+                #
+
+                #Increment count of sentences with max-valued verdict
+                if tmp_compare:
+                    dict_results[curr_key]["count_max"] += 1
+                #
+                #Increment unnorm. score count
+                dict_results[curr_key]["score_tot_unnorm"] += tmp_unnorm
+            #
+        #
+
+        #Normalize and store the scores
+        denom = np.sum([dict_results[key]["score_tot_unnorm"]
+                        for key in all_keys])
+        for curr_key in all_keys:
+            #Calculate and store normalized score
+            tmp_score = (dict_results[curr_key]["score_tot_unnorm"] / denom)
+            dict_results[curr_key]["score_tot_norm"] = tmp_score
+        #
+        list_scores_comb = [dict_results[key]["score_tot_norm"]
+                            for key in all_keys]
+        #
+
+        #Gather final scores into set of error
+        dict_error = {key:dict_results[key]["score_tot_norm"]
+                                for key in dict_results}
+        #
+
+        #Print some notes
+        if do_verbose:
+            print("Indiv. scores without Nones:\n{0}".format(dict_scores_indiv))
+            print("Normalizing denominator: {0}".format(denom))
+            print("Full score set:")
+            for curr_key in dict_results:
+                print("{0}: {1}".format(curr_key, dict_results[curr_key]))
+            print("Listed combined scores: {0}: {1}"
+                    .format(all_keys, list_scores_comb))
+        #
+
+        ##Determine best verdict and associated probabilistic error
+        is_found = False
+        #For max sentence count:
+        if (not is_found) and (max_diff_thres is not None):
+            #Check allowed keys that fit max condition
+            for curr_key in max_diff_verdicts:
+                if (dict_results[curr_key]["count_max"] >= max_diff_count):
+                    is_found = True
+                    max_score = 1 #dict_results[curr_key]["score_tot_norm"]
+                    max_verdict = curr_key
+                    #
+                    #Print some notes
+                    if do_verbose:
+                        print("\n-Max score: {0}".format(max_score))
+                        print("Max verdict: {0}\n".format(max_verdict))
+                    #
+                    #Break from loop early if found
+                    break
+            #
+        #
+
+        #For max normalized total score:
+        if (not is_found):
+            max_ind = np.argmax(list_scores_comb)
+            max_score = list_scores_comb[max_ind]
+            max_verdict = all_keys[max_ind]
+            #Print some notes
+            if do_verbose:
+                print("\n-Max score: {0}".format(max_score))
+                print("Max verdict: {0}\n".format(max_verdict))
+            #
+            #Return low-prob verdict if multiple equal top probabilities
+            if (list_scores_comb.count(max_score) > 1):
+                tmp_res = config.dictverdict_lowprob.copy()
+                tmp_res["scores_indiv"] = dict_scores_indiv
+                tmp_res["uncertainty"] = dict_uncertainties
+                tmp_res["components"] = components
+                #Print some notes
+                if do_verbose:
+                    print("-Multiple top prob. scores.")
+                    print("Returning low-prob verdict:\n{0}".format(tmp_res))
+                #
+                return tmp_res
+            #
+        #
+
+        ##Establish uncertainties from scores
+        dict_uncertainties = {all_keys[ii]:list_scores_comb[ii]
+                                for ii in range(0, len(all_keys))}
+        dict_uncertainties[max_verdict] = max_score
+        #
+
+        ##Assemble and return final verdict
+        fin_res = {"verdict":max_verdict, "scores_indiv":dict_scores_indiv,
+                "uncertainty":dict_uncertainties, "components":components,
+                "norm_error":dict_error}
+        #
+        #Print some notes
+        if do_verbose:
+            print("-Returning final verdict dictionary:\n{0}".format(fin_res))
+        #
+        return fin_res
+    #
+
+    ##Method: _convert_scorestoverdict
+    ##Purpose: Convert set of decision tree scores into single verdict
+    def x_convert_scorestoverdict(self, dict_scores_indiv, components, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"]):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         #Print some notes
@@ -8249,16 +8563,12 @@ class Classifier_Rules(_Classifier):
     #
 
     #Function
-    def _convert_clause_into_rule(self, dict_clause, flags_nounchunks):
+    def _convert_clause_into_rule(self, clause_text, clause_ids, flags_nounchunks, ids_nounchunks):
         """
         Method: _convert_clause_into_rule
         WARNING! This method is *not* meant to be used directly by users.
         Purpose: Process text into modifs using Grammar class.
         """
-        #Set global variables
-        clause_text = dict_clause["text"]
-        clause_ids = dict_clause["ids"]
-
         #Fetch all sets of subject flags via their ids
         num_subj = len(clause_text["subjects"])
         sets_subjmatter = [None]*num_subj #Container for subject flags
@@ -8300,7 +8610,7 @@ class Classifier_Rules(_Classifier):
             for jj in range(0, len(sets_objmatter)):
                 curr_rule = {"subjectmatter":sets_subjmatter[ii],
                             "objectmatter":sets_objmatter[jj],
-                            "verbclass":verbclass, "verbtype":verbtype}
+                            "verbclass":verbclass, "verbtypes":verbtype}
                 #
 
                 #Store rules
