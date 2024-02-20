@@ -924,7 +924,7 @@ class _Base():
          - Return if the given word (of NLP type) is of the given part-of-speech.
         """
         ##Load global variables
-        word_i = word.i #Index
+        word_i = (word.i - word.sent.start) #Index
         word_dep = word.dep_ #dep label
         word_pos = word.pos_ #p.o.s. label
         word_tag = word.tag_ #tag label
@@ -952,10 +952,11 @@ class _Base():
             check_verb = (word_pos in ["VERB"]) #!!! Set in config. !!!
             check_root = self._is_pos_word(word=word, pos="ROOT")
             check_pos = (word_pos in ["AUX"])
-            check_auxverb = ((word_tag in config.tag_verb_any)
+            check_tag = (word_tag in config.tag_verb_any)
+            check_auxverb = (check_tag
                                 and (word_dep not in ["aux", "auxpass"])
                                 and (check_pos))
-            check_rootaux = (check_root and check_pos)
+            check_rootaux = (check_root and check_pos and check_tag)
             if do_exclude_nounverbs:
                 check_notnoun = (ids_nounchunks[word_i] is None)
             else:
@@ -2272,9 +2273,10 @@ class Grammar(_Base):
                         #
                         print("{0}: {1}\nFlags = {2}"
                             .format(curr_ind,
-                                    [item for item in curr_sentence
-                                    if (ids_nounchunks[item.i] == curr_ind)],
-                                    flags_nounchunks[curr_ind]))
+                            [item for item in curr_sentence
+                            if (ids_nounchunks[item.i-curr_sentence.start]
+                                == curr_ind)],
+                            flags_nounchunks[curr_ind]))
                     #
                     print("Clauses:")
                     for curr_key in curr_clauses:
@@ -2347,7 +2349,7 @@ class Grammar(_Base):
         """
         #Extract global variables
         do_verbose = self._get_info("do_verbose")
-        i_word = word.i
+        i_word = (word.i - sentence_NLP.start)
         roots = word.ancestors
         #Booleans
         is_conjoined = self._is_pos_word(word, pos="CONJOINED")
@@ -2380,7 +2382,7 @@ class Grammar(_Base):
                 #
             #
             #Store the index of the start of this chain
-            i_root_conj = root_conj.i
+            i_root_conj = (root_conj.i - sentence_NLP.start)
             ids_conjoined[i_word] = i_root_conj
             #
             #Extract noun-chunk for this word
@@ -2479,6 +2481,7 @@ class Grammar(_Base):
         #Extract global variables
         do_verbose = self._get_info("do_verbose")
         num_words = len(sentence_NLP)
+        i_shift = sentence_NLP.start
 
         #Fetch all NLP-identifieid noun-chunks for this sentence
         noun_chunks = list(sentence_NLP.noun_chunks)
@@ -2491,12 +2494,14 @@ class Grammar(_Base):
         for ii in range(0, len(noun_chunks)):
             #Copy over previous noun-chunk id if separated by 'of'
             if ((ii > 0)
-                    and ((noun_chunks[ii][0].i - noun_chunks[ii-1][-1].i) == 2)
-                    and (sentence_NLP[noun_chunks[ii-1][-1].i + 1].text.lower()
-                            == "of")):
-                curr_id = ids_nounchunks[noun_chunks[ii-1][0].i] #Previous id
+                    and (((noun_chunks[ii][0].i-i_shift)
+                            - (noun_chunks[ii-1][-1].i-i_shift)) == 2)
+                    and (sentence_NLP[noun_chunks[ii-1][-1].i-i_shift + 1
+                                    ].text.lower() == "of")):
+                curr_id = ids_nounchunks[noun_chunks[ii-1][0].i-i_shift] #Prev.
                 #Assign id to 'of'
-                curr_id = ids_nounchunks[noun_chunks[ii-1][-1].i + 1] = curr_id
+                curr_id = ids_nounchunks[noun_chunks[ii-1][-1].i-i_shift + 1
+                                    ] = curr_id
             #Otherwise, set new chunk id
             else:
                 curr_id = i_track
@@ -2504,7 +2509,7 @@ class Grammar(_Base):
 
             #Apply id to entire chunk
             for curr_word in noun_chunks[ii]:
-                ids_nounchunks[curr_word.i] = curr_id
+                ids_nounchunks[curr_word.i-i_shift] = curr_id
 
             #Increment chunk counter
             i_track += 1
@@ -2563,6 +2568,7 @@ class Grammar(_Base):
         #Extract global variables
         do_verbose = self._get_info("do_verbose")
         num_words = len(sentence_NLP)
+        i_shift = sentence_NLP.start
         #Print some notes
         if do_verbose:
             print(("-"*60)+"\nCURRENT SENTENCE: {0}".format(sentence_NLP))
@@ -2580,20 +2586,27 @@ class Grammar(_Base):
         list_isuseless = np.zeros(num_words).astype(bool)
         list_iskeyword = np.zeros(num_words).astype(bool)
         ids_conjoined = [None]*num_words
-        flags_nounchunks = [None]*max([(item+1) for item in ids_nounchunks
-                                        if (item is not None)])
+        if (len([item for item in ids_nounchunks if (item is not None)]) > 0):
+            flags_nounchunks = [None]*max([(item+1) for item in ids_nounchunks
+                                            if (item is not None)])
+        else:
+            flags_nounchunks = []
         #
 
         #Iterate through and identify ids of all clausal verbs
         inds_verbs = []
         for curr_word in sentence_NLP:
             #Get index of current word
-            i_word = curr_word.i
+            i_word = (curr_word.i - i_shift)
 
             #Determine if this word is a clausal verb
-            if self._is_pos_word(curr_word, pos="VERB",
+            is_verb = self._is_pos_word(curr_word, pos="VERB",
                                 ids_nounchunks=ids_nounchunks,
-                                do_exclude_nounverbs=True):
+                                do_exclude_nounverbs=True)
+            is_root = self._is_pos_word(curr_word, pos="ROOT",
+                                ids_nounchunks=ids_nounchunks
+                                ) #Handle incomplete sentence case
+            if (is_verb or is_root):
                 inds_verbs.append(i_word)
             #
         #
@@ -2632,7 +2645,8 @@ class Grammar(_Base):
         #
 
         #Recursively navigate NLP-tree from the root and fill in clauses
-        self._recurse_NLP_tree(node=sentence_NLP.root, i_verb=None,
+        self._recurse_NLP_tree(node=sentence_NLP.root,
+                i_verb=(sentence_NLP.root.i - i_shift),
                 sentence_NLP=sentence_NLP, list_isuseless=list_isuseless,
                 clauses_text=dict_clauses_text, clauses_ids=dict_clauses_ids,
                 list_iskeyword=list_iskeyword, ids_conjoined=ids_conjoined,
@@ -2647,10 +2661,13 @@ class Grammar(_Base):
             curr_dict_text = dict_clauses_text[curr_iverb]
             curr_dict_ids = dict_clauses_ids[curr_iverb]
 
-            #Set the tense/type of verb
-            verbtype = self._tense_verb(i_verb=curr_iverb,
+            #Set the tense/type of verb (if verb and not e.g. root noun)
+            if self._is_pos_word(sentence_NLP[curr_iverb], pos="VERB"):
+                verbtype = self._tense_verb(i_verb=curr_iverb,
                                         sentence_NLP=sentence_NLP,
                                         i_auxs=curr_dict_ids["auxs"])
+            else:
+                verbtype = None
             curr_dict_text["verbtype"] = verbtype
             curr_dict_ids["verbtype"] = verbtype
         #
@@ -2685,7 +2702,8 @@ class Grammar(_Base):
         """
         #Extract global variables
         do_verbose = self._get_info("do_verbose")
-        i_word = word.i #Index of given word
+        i_shift = sentence_NLP.start
+        i_word = (word.i - i_shift) #Index of given word
         word_dep = word.dep_ #NLP dep. of given word
         chunkid = ids_nounchunks[i_word] #Id of current wordchunk
 
@@ -2697,9 +2715,9 @@ class Grammar(_Base):
 
         #Extract text and ids of this chunk
         set_chunk = [item for item in sentence_NLP
-                    if (ids_nounchunks[item.i] == chunkid)]
+                    if (ids_nounchunks[item.i-i_shift] == chunkid)]
         chunk_text = " ".join([item.text for item in set_chunk]) #Text version
-        word_ids = [item.i for item in set_chunk] #id version
+        word_ids = [(item.i-i_shift) for item in set_chunk] #id version
 
         #Return extracted text and ids of chunk
         return {"text":chunk_text, "ids":word_ids, "chunk_id":chunkid}
@@ -2900,13 +2918,14 @@ class Grammar(_Base):
         """
         #Extract global variables
         do_verbose = self._get_info("do_verbose")
-        i_node = node.i
+        i_shift = sentence_NLP.start
+        i_node = (node.i - i_shift)
         dep_node = node.dep_
         #
 
         #If verb index, update latest i_verb and fetch used subj. if needed
-        if (node.i in clauses_text): #Only verb ids used to build clauses
-            i_verb = node.i
+        if (i_node in clauses_text): #Only verb ids used to build clauses
+            i_verb = i_node
             roots = list(node.ancestors)
             #If no subjects to the left, pull subject from root as able
             tmp_bool = any([self._is_pos_word(item, pos="SUBJECT")
@@ -2925,12 +2944,12 @@ class Grammar(_Base):
                                                         new_chunk["chunk_id"])
                 elif self._is_pos_word(roots[0], pos="VERB"): #If conjoined
                     #Add to verb-clause
-                    clauses_text[i_verb]["subjects"] = clauses_text[roots[0].i][
-                                                                    "subjects"]
-                    clauses_ids[i_verb]["subjects"] = clause_ids[roots[0].i][
-                                                                    "subjects"]
+                    clauses_text[i_verb]["subjects"] = clauses_text[
+                                            roots[0].i-i_shift]["subjects"]
+                    clauses_ids[i_verb]["subjects"] = clauses_ids[
+                                            roots[0].i-i_shift]["subjects"]
                     tmp_list = list(set([ids_nounchunks[item[0]]
-                                for item in clause_ids[i_verb]["subjects"]]))
+                                for item in clauses_ids[i_verb]["subjects"]]))
                     clauses_ids[i_verb]["clause_nounchunks"] += tmp_list
         #
 
@@ -3144,8 +3163,8 @@ class Grammar(_Base):
             else: #Raise error if tense not recognized
                 raise ValueError(("Err: Tag {4} of word {0} unknown!\n{1}"
                                 +"\ndep={2}, pos={3}, tag={4}")
-                            .format(curr_word, sentence_NLP, word_dep, word_pos,
-                                    word_tag))
+                            .format(curr_word, sentence_NLP, word_dep,
+                                    curr_word.pos_, word_tag))
 
             #Store current tense
             type_verbs.append(tense)
@@ -5438,6 +5457,7 @@ class Classifier_Rules(_Classifier):
             #Calculate and store normalized score
             tmp_score = (dict_results[curr_key]["score_tot_unnorm"] / denom)
             dict_results[curr_key]["score_tot_norm"] = tmp_score
+            dict_results[curr_key]["score_tot_fin"] = tmp_score
         #
 
         #Override combined scores with absolutes if requested
@@ -5454,13 +5474,13 @@ class Classifier_Rules(_Classifier):
         if (tmp_max_key is not None):
             for curr_key in all_keys:
                 if (curr_key == tmp_max_key):
-                    dict_results[curr_key] = 1.0
+                    dict_results[curr_key]["score_tot_fin"] = 1.0
                 else:
-                    dict_results[curr_key] = 0.0
+                    dict_results[curr_key]["score_tot_fin"] = 0.0
         #
 
         #Combined score storage
-        list_scores_comb = [dict_results[key]["score_tot_norm"]
+        list_scores_comb = [dict_results[key]["score_tot_fin"]
                             for key in all_keys]
         #
 
