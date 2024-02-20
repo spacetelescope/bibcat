@@ -3,12 +3,11 @@
 ## [Unreleased]
 
 Refactoring bibcat has started.
-- Refactoring test_bibcat.py
 - Refactoring create_model.py and classify_papers.py
 - Adding tutorial notebooks back
 
 ### Removed
-- PR #9 
+- [PR #9]
     - Deleted test_bibcat.py 
     - Deleted the same set of test gloabal variables assigned in multiple test scripts
 
@@ -16,7 +15,12 @@ Refactoring bibcat has started.
     - Deleted all previous codes and files for a fresh start
 
 ### Changed
-- PR #9 
+
+- PR #10
+    - Renamed `test_core` to `core`
+    - Renamed `test_data` to `data`
+
+- [PR #9] 
     - The test global variables are called directly in the script rather than using redundantly reassigned to other variables.
     - Moved test Keyword-object lookup variables to parameters.py
 
@@ -37,7 +41,7 @@ Refactoring bibcat has started.
 
 ### Added 
 
-- PR #9
+- [PR #9]
     - test_bibcat.py was refactored into several sub test scripts. 
         - tests/test_core/test_base.py
         - tests/test_core/test_grammar.py
