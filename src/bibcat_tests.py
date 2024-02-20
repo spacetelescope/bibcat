@@ -1481,6 +1481,7 @@ class TestClassifierRules(unittest.TestCase):
             kobj = dict_lookup_kobj["Hubble"]
             verdict_lowprob = config.verdict_lowprob
             do_allow_lowprob = True #If True, allow low-prob as accepted answer
+            do_verbose = True
 
             #Prepare texts and answers for tests
             dict_acts_datainfluenced = {
@@ -1590,9 +1591,11 @@ class TestClassifierRules(unittest.TestCase):
             #Determine and check answers
             for phrase in dict_acts:
                 #Run classification of current text
+                if do_verbose:
+                    print("\nSentence: {0}".format(phrase))
                 result = classifier.classify_text(text=phrase, keyword_obj=kobj,
-									do_verbose=False, do_check_truematch=False,
-                                    which_mode="none")
+								do_verbose=do_verbose, do_check_truematch=False,
+                                which_mode="none")
                 curr_answer = result["verdict"]
 
                 #Check answer

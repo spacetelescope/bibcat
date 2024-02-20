@@ -2904,9 +2904,34 @@ class Grammar(_Base):
         dep_node = node.dep_
         #
 
-        #If this is a verb index, update latest i_verb
+        #If verb index, update latest i_verb and fetch used subj. if needed
         if (node.i in clauses_text): #Only verb ids used to build clauses
             i_verb = node.i
+            roots = list(node.ancestors)
+            #If no subjects to the left, pull subject from root as able
+            tmp_bool = any([self._is_pos_word(item, pos="SUBJECT")
+                            for item in node.lefts])
+            if ((not tmp_bool) and (len(roots) > 0)):
+                if self._is_pos_word(roots[0], pos="NOUN"):
+                    #Extract noun-chunk for this noun
+                    new_chunk = self._get_nounchunk(word=roots[0],
+                                            sentence_NLP=sentence_NLP,
+                                            ids_nounchunks=ids_nounchunks)
+                    #
+                    #Add to verb-clause
+                    clauses_text[i_verb]["subjects"].append(new_chunk["text"])
+                    clauses_ids[i_verb]["subjects"].append(new_chunk["ids"])
+                    clauses_ids[i_verb]["clause_nounchunks"].append(
+                                                        new_chunk["chunk_id"])
+                elif self._is_pos_word(roots[0], pos="VERB"): #If conjoined
+                    #Add to verb-clause
+                    clauses_text[i_verb]["subjects"] = clauses_text[roots[0].i][
+                                                                    "subjects"]
+                    clauses_ids[i_verb]["subjects"] = clause_ids[roots[0].i][
+                                                                    "subjects"]
+                    tmp_list = list(set([ids_nounchunks[item[0]]
+                                for item in clause_ids[i_verb]["subjects"]]))
+                    clauses_ids[i_verb]["clause_nounchunks"] += tmp_list
         #
 
         #Skip if this node has already been characterized
@@ -2946,7 +2971,11 @@ class Grammar(_Base):
 
         #Add this word to corresponding verb-clause as needed, if not verb
         if (i_node not in clauses_text): #Do not add verbs again
-            self._add_word_to_clause(word=node, clauses_text=clauses_text,
+            #Do not add to clause if already added
+            tmp_ind = ids_nounchunks[i_node]
+            if ((tmp_ind is not None) and
+                    (tmp_ind not in clauses_ids[i_verb]["clause_nounchunks"])):
+                self._add_word_to_clause(word=node, clauses_text=clauses_text,
                         clauses_ids=clauses_ids, sentence_NLP=sentence_NLP,
                         ids_conjoined=ids_conjoined, list_pos_NLP=list_pos_NLP,
                         list_pos_clause=list_pos_clause,list_iverbs=list_iverbs,
@@ -4235,7 +4264,7 @@ class Classifier_Rules(_Classifier):
                 "objectmatter":tuple(["is_keyword"]),
                 "verbclass":{"be", "has"},
                 "verbtypes":{"PRESENT", "PAST"},
-                "prob_science":1.0,
+                "prob_science":0.9,
                 "prob_data_influenced":0.0,
                 "prob_mention":0.0}
             #
@@ -4270,17 +4299,6 @@ class Classifier_Rules(_Classifier):
                 "verbtypes":{"PRESENT", "PAST"},
                 "prob_science":0.0,
                 "prob_data_influenced":0.0,
-                "prob_mention":0.5}
-            #
-            #’!.’
-            itrack += 1
-            dict_examples_base[str(itrack)] = {
-                "subjectmatter":tuple([]),
-                "objectmatter":tuple(["is_keyword", "is_pron_1st", "is_etal"]),
-                "verbclass":{"know"},
-                "verbtypes":{"PRESENT", "PAST"},
-                "prob_science":0.0,
-                "prob_data_influenced":0.25,
                 "prob_mention":0.5}
             #
             #<science,plot verb classes>
@@ -4335,7 +4353,7 @@ class Classifier_Rules(_Classifier):
                 "objectmatter":tuple(["is_keyword"]),
                 "verbclass":{"plot", "science"},
                 "verbtypes":{"PRESENT", "PAST"},
-                "prob_science":1.0,
+                "prob_science":0.9,
                 "prob_data_influenced":0.0,
                 "prob_mention":0.0}
             #
@@ -4346,7 +4364,7 @@ class Classifier_Rules(_Classifier):
                 "objectmatter":tuple(["is_term_fig", "is_keyword"]),
                 "verbclass":{"plot", "science"},
                 "verbtypes":{"PRESENT"},
-                "prob_science":1.0,
+                "prob_science":0.9,
                 "prob_data_influenced":0.0,
                 "prob_mention":0.0}
             #
@@ -4381,18 +4399,7 @@ class Classifier_Rules(_Classifier):
                 "verbtypes":{"PRESENT", "PAST"},
                 "prob_science":0.0,
                 "prob_data_influenced":1.0,
-                "prob_mention":0.5}
-            #
-            #'The data shows trends for the OBJ data by Authorsetal in Fig 1.'
-            itrack += 1
-            dict_examples_base[str(itrack)] = {
-                "subjectmatter":tuple([]),
-                "objectmatter":tuple(["is_term_fig", "is_keyword", "is_etal"]),
-                "verbclass":{"plot", "science"},
-                "verbtypes":{"PRESENT", "PAST"},
-                "prob_science":0.0,
-                "prob_data_influenced":1.0,
-                "prob_mention":0.5}
+                "prob_mention":0.0}
             #
             #'The trend uses/plots/used/plotted the OBJ data from Authorsetal.'
             itrack += 1
@@ -4403,7 +4410,7 @@ class Classifier_Rules(_Classifier):
                 "verbtypes":{"PRESENT", "PAST"},
                 "prob_science":0.0,
                 "prob_data_influenced":1.0,
-                "prob_mention":0.5}
+                "prob_mention":0.0}
             #
             #'Their OBJ observations detects/detected the star.'
             itrack += 1
@@ -4483,17 +4490,6 @@ class Classifier_Rules(_Classifier):
                 "prob_data_influenced":0.0,
                 "prob_mention":1.0}
             #
-            #<All POTENTIAL verbs>
-            itrack += 1
-            dict_examples_base[str(itrack)] = {
-                "subjectmatter":"is_any",
-                "objectmatter":"is_any",
-                "verbclass":"is_any",
-                "verbtypes":["POTENTIAL"],
-                "prob_science":0.0,
-                "prob_data_influenced":0.0,
-                "prob_mention":1.0}
-            #
             #<All PURPOSE verbs>
             itrack += 1
             dict_examples_base[str(itrack)] = {
@@ -4560,17 +4556,6 @@ class Classifier_Rules(_Classifier):
                 "prob_data_influenced":0.5,
                 "prob_mention":0.5}
             #
-            #is_key/is_proI/is_fig; is_proI, !is_etal, !is_they
-            itrack += 1
-            dict_examples_base[str(itrack)] = {
-                "subjectmatter":{"is_keyword", "is_pron_1st", "is_term_fig"},
-                "objectmatter":["is_pron_1st", "!is_etal", "!is_pron_3rd"],
-                "verbclass":"is_any", #{"be", "has", "plot", "science"},
-                "verbtypes":{"PAST", "PRESENT"},
-                "prob_science":1.0,
-                "prob_data_influenced":0.0,
-                "prob_mention":0.0}
-            #
             #is_key; is_fig, !is_etal, !is_they
             itrack += 1
             dict_examples_base[str(itrack)] = {
@@ -4578,7 +4563,7 @@ class Classifier_Rules(_Classifier):
                 "objectmatter":["is_term_fig", "!is_etal", "!is_pron_3rd"],
                 "verbclass":"is_any", #{"be", "has", "plot", "science"},
                 "verbtypes":{"PAST", "PRESENT"},
-                "prob_science":1.0,
+                "prob_science":0.9,
                 "prob_data_influenced":0.0,
                 "prob_mention":0.0}
             #
@@ -4622,7 +4607,7 @@ class Classifier_Rules(_Classifier):
                 "objectmatter":["is_keyword", "!is_etal", "!is_pron_3rd"],
                 "verbclass":"is_any", #{"be", "has", "plot", "science"},
                 "verbtypes":{"PAST", "PRESENT"},
-                "prob_science":1.0,
+                "prob_science":0.9,
                 "prob_data_influenced":0.0,
                 "prob_mention":0.0}
             #
@@ -4668,7 +4653,7 @@ class Classifier_Rules(_Classifier):
                 "objectmatter":tuple(["is_term_fig"]),
                 "verbclass":{"be", "has", "plot", "science", "datainfluenced"},
                 "verbtypes":{"PAST", "PRESENT"},
-                "prob_science":1.0,
+                "prob_science":0.9,
                 "prob_data_influenced":0.0,
                 "prob_mention":0.0}
             #
@@ -4816,72 +4801,6 @@ class Classifier_Rules(_Classifier):
                 "prob_data_influenced":0.0,
                 "prob_mention":0.0}
             #
-            #is_proI; is_proI, is_etal, is_key + is_any
-            itrack += 1
-            dict_examples_base[str(itrack)] = {
-                "subjectmatter":tuple(["is_pron_1st"]),
-                "objectmatter":["is_pron_1st", "is_keyword", "is_etal"],
-                "verbclass":"is_any", #{"be", "has", "plot", "science"},
-                "verbtypes":{"PAST", "PRESENT"},
-                "prob_science":0.5,
-                "prob_data_influenced":0.5,
-                "prob_mention":0.5}
-            #
-            #is_proI; is_proI, is_they, is_key + is_any
-            itrack += 1
-            dict_examples_base[str(itrack)] = {
-                "subjectmatter":tuple(["is_pron_1st"]),
-                "objectmatter":["is_pron_1st", "is_keyword", "is_pron_3rd"],
-                "verbclass":"is_any", #{"be", "has", "plot", "science"},
-                "verbtypes":{"PAST", "PRESENT"},
-                "prob_science":0.5,
-                "prob_data_influenced":0.5,
-                "prob_mention":0.5}
-            #
-            #is_proI; is_proI, is_fig, is_key + is_any
-            itrack += 1
-            dict_examples_base[str(itrack)] = {
-                "subjectmatter":tuple(["is_pron_1st"]),
-                "objectmatter":["is_pron_1st", "is_term_fig", "is_keyword"],
-                "verbclass":"is_any", #{"be", "has", "plot", "science"},
-                "verbtypes":{"PAST", "PRESENT"},
-                "prob_science":0.5,
-                "prob_data_influenced":0.0,
-                "prob_mention":0.0}
-            #
-            #is_proI; is_etal, is_they, is_key + is_any
-            itrack += 1
-            dict_examples_base[str(itrack)] = {
-                "subjectmatter":tuple(["is_pron_1st"]),
-                "objectmatter":["is_etal", "is_keyword", "is_pron_3rd"],
-                "verbclass":"is_any", #{"be", "has", "plot", "science"},
-                "verbtypes":{"PAST", "PRESENT"},
-                "prob_science":0.5,
-                "prob_data_influenced":0.5,
-                "prob_mention":0.5}
-            #
-            #is_proI; is_etal, is_fig, is_key + is_any
-            itrack += 1
-            dict_examples_base[str(itrack)] = {
-                "subjectmatter":tuple(["is_pron_1st"]),
-                "objectmatter":["is_etal", "is_keyword", "is_term_fig"],
-                "verbclass":"is_any", #{"be", "has", "plot", "science"},
-                "verbtypes":{"PAST", "PRESENT"},
-                "prob_science":0.5,
-                "prob_data_influenced":0.5,
-                "prob_mention":0.5}
-            #
-            #is_proI; is_they, is_fig, is_key + is_any
-            itrack += 1
-            dict_examples_base[str(itrack)] = {
-                "subjectmatter":tuple(["is_pron_1st"]),
-                "objectmatter":["is_pron_3rd", "is_keyword", "is_term_fig"],
-                "verbclass":"is_any", #{"be", "has", "plot", "science"},
-                "verbtypes":{"PAST", "PRESENT"},
-                "prob_science":0.5,
-                "prob_data_influenced":0.5,
-                "prob_mention":0.5}
-            #
             #is_etal; is_key + is_any
             itrack += 1
             dict_examples_base[str(itrack)] = {
@@ -5005,6 +4924,39 @@ class Classifier_Rules(_Classifier):
                 "prob_data_influenced":0.5,
                 "prob_mention":0.5}
             #
+            #<Keyword figure be/has/plot/science/datainfl. by etal and pron_3rd>
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword", "is_term_fig"]),
+                "objectmatter":["is_etal"],
+                "verbclass":"is_any",
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.0,
+                "prob_data_influenced":1.0,
+                "prob_mention":0.0}
+            #
+            #<Keyword figure be/has/plot/science/datainfl. by etal and pron_3rd>
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword", "is_term_fig"]),
+                "objectmatter":["is_pron_3rd"],
+                "verbclass":"is_any",
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.9,
+                "prob_mention":0.1}
+            #
+            #<Keyword figure be/has/plot/science/datainfl. by etal and pron_3rd>
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":tuple(["is_keyword", "is_term_fig"]),
+                "objectmatter":["is_etal", "is_pron_3rd"],
+                "verbclass":"is_any",
+                "verbtypes":{"PAST", "PRESENT"},
+                "prob_science":0.0,
+                "prob_data_influenced":1.0,
+                "prob_mention":0.1}
+            #
         #
 
         ##Generate final base tree with only target classifs and norm. probs.
@@ -5035,30 +4987,30 @@ class Classifier_Rules(_Classifier):
                 #                    or (curr_ex[key_verbtype] is None)):
                 pass #No passive counterpart necessary for is_any case
             #For set, add example+passive for each entry in set
-            elif isinstance(curr_ex[key_verbtype], set):
+            #elif isinstance(curr_ex[key_verbtype], set):
                 #Iterate through set entries
-                for curr_val in curr_ex[key_verbtype]:
+            #    for curr_val in curr_ex[key_verbtype]:
                     #Passive with flipped subj-obj
                     #Extract all parameters and their values
-                    new_ex = {key:curr_ex[key] for key in all_params
-                            if (key not in (keys_matter+[key_verbtype]))}
+            #        new_ex = {key:curr_ex[key] for key in all_params
+            #                if (key not in (keys_matter+[key_verbtype]))}
                     #Add in passive term for verbtypes
-                    tmp_vals = [curr_val, "PASSIVE"]
-                    new_ex[key_verbtype] = tmp_vals
+            #        tmp_vals = [curr_val, "PASSIVE"]
+            #        new_ex[key_verbtype] = tmp_vals
                     #Flip the subject and object terms
-                    new_ex["subjectmatter"] = curr_ex["objectmatter"]
-                    new_ex["objectmatter"] = curr_ex["subjectmatter"]
+            #        new_ex["subjectmatter"] = curr_ex["objectmatter"]
+            #        new_ex["objectmatter"] = curr_ex["subjectmatter"]
                     #Normalize and store probabilities for target classifs
-                    new_ex.update(curr_probs)
+            #        new_ex.update(curr_probs)
                     #Store this example
-                    itrack += 1
-                    decision_tree[itrack] = new_ex
+            #        itrack += 1
+            #        decision_tree[itrack] = new_ex
             else:
                 #Extract all parameters and their values
                 new_ex = {key:curr_ex[key] for key in all_params
                         if (key not in (keys_matter+[key_verbtype]))}
                 #Add in passive term for verbtypes
-                tmp_vals = list(curr_ex[key_verbtype]) + ["PASSIVE"]
+                tmp_vals = list(curr_ex[key_verbtype]) #+ ["PASSIVE"]
                 #Apply old data structure type to new expanded verbtype
                 new_ex[key_verbtype]=type(curr_ex[key_verbtype])(tmp_vals)
                 #Flip the subject and object terms
