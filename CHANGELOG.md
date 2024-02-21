@@ -16,7 +16,12 @@ Refactoring bibcat has started.
 
 ### Changed
 
-- PR #10
+- PR #11
+    - Renamed create_model.py to build_model.py
+    - Updated README.md
+    - Updated config.py to create variables to support the new script, build_dataset.py
+
+- [PR #10]
     - Renamed `test_core` to `core`
     - Renamed `test_data` to `data`
 
@@ -40,6 +45,10 @@ Refactoring bibcat has started.
     - updated formatting and styling
 
 ### Added 
+- PR # 11
+    - Create a new script to build the input dataset. It's called build_dataset.py
+    - Added some information about the data folder in README.rst
+    - Added __init__.py
 
 - [PR #9]
     - test_bibcat.py was refactored into several sub test scripts. 

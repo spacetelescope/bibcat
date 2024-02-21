@@ -29,20 +29,26 @@ In `bibcat/config.py`, you will need to set several paths as follow.
 
 #### The combined data set used for training models.
 Set the combined data file path outside the `bibcat` folder, which should not be git-committed to the repo.
-- `path_json = "/path/to/dataset_combined_all_2018-2021.json"`
+- `filepath_dataset = "/path/to/datasets/"` : this folder has to be outside this package folder.
+- `path_input_data = os.path.join(filepath_dataset, "dataset_combined_all_2018-2023.json")`
 
 #### When testing with pytest or unittest
 In `tests/test_bibcat.py`
-- `filepath_input = "/path/to/the/dataset"`
-- `path_papertrack = os.path.join(filepath_input, "papertrack_export_2023-11-06.json")`
-- `path_papertext = os.path.join(filepath_input, "ST_Request2018-2021.json")`
+- `filepath_dataset = "/path/to/datasets/"`
+- `path_papertrack = os.path.join(filepath_dataset, "papertrack_export_2023-11-06.json")`
+- `path_papertext = os.path.join(filepath_dataset, "ST_Request2018-2021.json")`
 - Note that you need to set up the input file path outside the `bibcat` folder, which should not be git-committed to the repo.
 
 ## Quick start
 
-- First, set the variables `path_json` (JSON file location path)  and `name_model` (Model name of your choice to save or load) in `bibcat/config.py`.
-- Next, run `create_model.py` to create a training model.  
-- Then, run `classify_papers.py` to classify papers. It will produce some evaluation diagnostics such as a confusion matrix in the `output/` directory.
+- First, run `build_dataset.py` if you do not have the input text data. 
+  To do so, set the variables `filepath_dataset` (datasets location path) in `bibcat/config.py`.
+  where the papertrack export file and the ADS full text file reside before the run.
+- Next, once you have the input combined dataset, assign a model name to `name_model` 
+  (Model name of your choice to save or load) in `bibcat/config.py`.
+- Next, run `build_model.py` to create a training model.  
+- Then, run `classify_papers.py` to classify papers. It will produce some evaluation 
+  diagnostics such as a confusion matrix in the `output/` directory.
 
 
 
