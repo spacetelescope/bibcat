@@ -14,7 +14,7 @@ name_model = "my_test_run_1"
 
 # Set global user paths, which should be set outside the bibcat repo folder.
 filepath_dataset = "/path/to/datasets/"
-filepath_dataset = "/Users/jyoon/Documents/asb/bibliography_automation/bibcat_datasets/"
+
 # To construct the dataset, it requires the papertrack data and and the paper corpus texts from ASDS
 # papertrack data that Sarah W. created
 path_papertrack = os.path.join(filepath_dataset, "papertrack_export_2023-11-06.json")
@@ -22,6 +22,14 @@ path_papertrack = os.path.join(filepath_dataset, "papertrack_export_2023-11-06.j
 path_papertext = os.path.join(filepath_dataset, "ST_Request2018-2023.json")
 # set the path to the location of the JSON file you created from papertrack and papertext
 path_input_data = os.path.join(filepath_dataset, "dataset_combined_all_2018-2023.json")
+
+# path to save the files for bibcodes not in papertrack or ADS papertext
+path_not_in_papertext = os.path.join(filepath_dataset, "bibcodes_notin_papertext.txt")
+path_not_in_papertrack = os.path.join(filepath_dataset, "bibcodes_notin_papertrack.txt")
+
+# Metadata keys of the ADS papertext required for building the input paper text data
+keys_papertext = ["abstract", "author", "bibcode", "body", "keyword", "keyword_norm", "pubdate", "title"]
+
 
 # Set global fixed paths
 SRC_ROOT = os.path.dirname(__file__)
