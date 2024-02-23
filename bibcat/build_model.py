@@ -102,7 +102,7 @@ list_bibcodes = []
 # Organize a new version of the data with: key:text,class,id,mission structure
 i_track = 0  # Track number of papers kept from original dataset
 dict_texts = {}
-for ii in range(0, len(dataset)):
+for ii, curr_data in enumerate(dataset):
     # Extract mission classifications for current text
     curr_data = dataset[ii]
 
