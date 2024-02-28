@@ -1481,7 +1481,7 @@ class TestClassifierRules(unittest.TestCase):
             kobj = dict_lookup_kobj["Hubble"]
             verdict_lowprob = config.verdict_lowprob
             do_allow_lowprob = True #If True, allow low-prob as accepted answer
-            do_verbose = True
+            do_verbose = False
 
             #Prepare texts and answers for tests
             dict_acts_datainfluenced = {
@@ -1605,8 +1605,12 @@ class TestClassifierRules(unittest.TestCase):
                     print("")
                     print(">")
                     print(("Text: {0}\n-\nTest answer: {1}\n"
-                            +"\nAct. answer: {2}\n")
+                            +"\nAct. answer: {2}\nTest components:")
                             .format(phrase, curr_answer, dict_acts[phrase]))
+                    for curr_set in result["indiv_components"]:
+                        print("-")
+                        for curr_comp in curr_set:
+                            print(" - {0}".format(curr_comp))
                     print("---")
                     print("")
                     #

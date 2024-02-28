@@ -4295,19 +4295,19 @@ class Classifier_Rules(_Classifier):
                 "verbclass":{"be", "has"},
                 "verbtypes":{"PRESENT", "PAST"},
                 "prob_science":0.0,
-                "prob_data_influenced":0.0,
+                "prob_data_influenced":0.4,
                 "prob_mention":0.5}
             #
             #’The data is from OBJ by Authorsetal.’
-            itrack += 1
-            dict_examples_base[str(itrack)] = {
-                "subjectmatter":tuple([]),
-                "objectmatter":tuple(["is_keyword", "is_etal"]),
-                "verbclass":{"be"},
-                "verbtypes":{"PRESENT"},
-                "prob_science":0.0,
-                "prob_data_influenced":0.8,
-                "prob_mention":0.6}
+            #itrack += 1
+            #dict_examples_base[str(itrack)] = {
+            #    "subjectmatter":tuple([]),
+            #    "objectmatter":tuple(["is_keyword", "is_etal"]),
+            #    "verbclass":{"be"},
+            #    "verbtypes":{"PRESENT"},
+            #    "prob_science":0.0,
+            #    "prob_data_influenced":0.8,
+            #    "prob_mention":0.6}
             #
             #’We know/knew the limits of the OBJ data.’
             itrack += 1
