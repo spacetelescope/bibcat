@@ -394,7 +394,7 @@ synsets_verbs_influenced = ["imitate.v.01", "model.v.05", "simulate.v.03", "comp
 synsets_verbs_influenced = [wordnet.synset(s) for s in synsets_verbs_influenced]
 synsets_verbs_plot = ["plot.v.01", "show.v.01", "exemplify.v.02", "highlight.v.02", "correlate.v.01", "indicate.v.02", "choose.v.01", "represent.v.01"]
 synsets_verbs_plot = [wordnet.synset(s) for s in synsets_verbs_plot]
-synsets_verbs_know = ["know.v.01", "understand.v.01", "want.v.02"]
+synsets_verbs_know = ["know.v.01", "understand.v.01", "want.v.02", "acknowledge.v.01"]
 synsets_verbs_know = [wordnet.synset(s) for s in synsets_verbs_know]
 #
 #Verb categorization

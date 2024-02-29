@@ -4166,8 +4166,9 @@ class Classifier_Rules(_Classifier):
                                 for key in which_classifs}
         #Normalize the scores
         totval = sum(dict_scores_raw.values())
-        dict_scores = {key:(dict_scores_raw[key]/totval)
-                            for key in which_classifs}
+        dict_scores = {key:
+                        ((dict_scores_raw[key]/totval) if (totval > 0) else 0)
+                        for key in which_classifs}
         #
 
         ##Return the final scores
@@ -4186,19 +4187,22 @@ class Classifier_Rules(_Classifier):
         do_verbose = self._get_info("do_verbose")
         do_verbose_deep = self._get_info("do_verbose_deep")
         which_classifs = self._get_info("class_names")
+        dict_all = config.dict_tree_possible_values
+        prefix = "score_"
         #Print some notes
         if do_verbose:
             print("Assembling scoring matrix...")
         #
 
         #Build in-place dictionary of texts just for now
+        """
         dict_texts = [
         #Future tense
             {"text":"We will use HST data in a future paper.", "class":None,
             "scores":{"science":0, "data_influenced":0, "mention":1}},
             {"text":"They will use HST data in a future paper.", "class":None,
             "scores":{"science":0, "data_influenced":0, "mention":1}},
-            {"text":"Somename et al. will use HST data in a future paper.",
+            {"text":"Authors et al. will use HST data in a future paper.",
                     "class":None,
             "scores":{"science":0, "data_influenced":0, "mention":1}},
         #Present tense
@@ -4214,30 +4218,463 @@ class Classifier_Rules(_Classifier):
             "scores":{"science":0, "data_influenced":1, "mention":0}},
             {"text":"They simulate HST data.", "class":None,
             "scores":{"science":0, "data_influenced":0, "mention":1}},
-            {"text":"Somename et al. simulate HST data.", "class":None,
+            {"text":"Authors et al. simulate HST data.", "class":None,
             "scores":{"science":0, "data_influenced":0, "mention":1}},
-            {"text":"The HST data was simulated by Somename et al.",
+            {"text":"The HST data was simulated by Authors et al.",
                     "class":None,
             "scores":{"science":0, "data_influenced":0.8, "mention":0.2}},
-            {"text":"Somename et al. use HST data.", "class":None,
+            {"text":"Authors et al. use HST data.", "class":None,
             "scores":{"science":0, "data_influenced":0, "mention":1}},
             {"text":"HST data is cool.", "class":None,
             "scores":{"science":0, "data_influenced":0, "mention":1}},
-            {"text":"Our work analyzes the HST data of Somename et al.",
+            {"text":"Our work analyzes the HST data of Authors et al.",
                     "class":None,
             "scores":{"science":0, "data_influenced":1, "mention":0}},
-            #Rules with figures
+        #Rules with figures
+            {"text":"Figure 3 is of HST data.", "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
             {"text":"Figure 3 plots the HST data.", "class":None,
             "scores":{"science":1, "data_influenced":0, "mention":0}},
             {"text":"The trends in the HST data are shown in Figure 3.",
                     "class":None,
             "scores":{"science":1, "data_influenced":0, "mention":0}},
-            {"text":"Figure 3 plots the HST data from Somename etal.",
+            {"text":"The data observed by HST are plotted in Figure 3.",
+                    "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"The data plotted in Figure 3 was observed by HST.",
+                    "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"Figure 3 plots the HST data from Authors etal.",
                     "class":None,
             "scores":{"science":0, "data_influenced":1, "mention":0}},
+        #More rules
+            {"text":"The trends are analyzed in our HST data.", "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"Our analysis is of HST data.", "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"We know that HST is useful.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"HST is known for its beautiful images.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"This telescope is HST.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"This image was from HST.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"This image complimented HST.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            #
+            {"text":"The trends in the HST data are plotted in Figure 3.",
+                    "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"Authors et al. analyzed the HST data.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Authors et al. plotted the HST data.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Authors et al. simulated the HST data.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Authors et al. simulated, plotted, and analyzed the HST data.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"They analyzed the HST data.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"They plotted the HST data.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"They simulated the HST data.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"They simulated and plotted and analyzed the HST data.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            #
+            {"text":"Trends are analyzed in the HST paper by Athors et al..",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Trends were analyzed in the HST paper by Athors et al..",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Trends are presented in the HST paper by Athors et al..",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Trends were presented in the HST paper by Athors et al..",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Trends are analyzed in their HST paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Trends were analyzed in their HST paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Trends are presented in their HST paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Trends were presented in their HST paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            #
+            {"text":"Our bright HST images shows the power of HST.",
+                    "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"Our observations of HST data are analyzed.",
+                    "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"We already presented that HST data in Authors et al..",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"HST is neat.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Our analysis is for HST data.",
+                    "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"Stars were plotted from the HST data.",
+                    "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            #
+            {"text":"HST will revolutionize the industry.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"We will observe HST data in a future paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"We will present HST data in a future paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"They will observe HST data in a future paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"They will present HST data in a future paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Authors et al. will observe HST data in a future paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Authors et al. will present HST data in a future paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            #
+            {"text":"Authors et al. will present HST data in a future paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"HST orbits around.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Our future HST observations will be compared in our future HST paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Our future HST observations will be presented in our future HST paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Our future HST observations will be analyzed in our future HST paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            #
+        #
+        ]
+        """
+
+        #Build in-place dictionary of set blanket-rules for now
+        dict_blanketrules = {}
+        itrack = 0
+        #
+        if True:
+            itrack += 1
+            dict_blanketrules[str(itrack)] = {
+                "subjectmatter":"is_any",
+                "objectmatter":"is_any",
+                "verbclass":{"know"},
+                "verbtypes":"is_any",
+                (prefix+"science"):0.0,
+                (prefix+"data_influenced"):0.0,
+                (prefix+"mention"):1.0}
+        #
+
+        #Initialize container for input matrix of rules and classif vectors
+        input_matr = []
+        classif_vec = {key:[] for key in which_classifs}
+
+        #Convert blanket-rules into matrix rows
+        for curr_rulekey in dict_blanketrules:
+            curr_blanketrule = dict_blanketrules[curr_rulekey]
+
+            #Extract all rule combinations and handle 'is_any' cases
+            #For subject matter
+            if (curr_blanketrule["subjectmatter"] == "is_any"):
+                curr_subjs = [[item] for item in dict_all["subjectmatter"]]
+            else:
+                curr_subjs = [curr_blanketrule["subjectmatter"]]
+            #
+            #For object matter
+            if (curr_blanketrule["objectmatter"] == "is_any"):
+                curr_objs = [[item] for item in dict_all["objectmatter"]]
+            else:
+                curr_objs = [curr_blanketrule["objectmatter"]]
+            #
+            #For verbclass
+            if (curr_blanketrule["verbclass"] == "is_any"):
+                curr_vclass = [[item] for item in dict_all["verbclass"]]
+            else:
+                curr_vclass = [[item] for item in curr_blanketrule["verbclass"]]
+            #
+            #For verbtype
+            if (curr_blanketrule["verbtypes"] == "is_any"):
+                curr_vtypes = [[item] for item in dict_all["verbtypes"]]
+            else:
+                curr_vtypes = [curr_blanketrule["verbtypes"]]
             #
 
+            #Get list of all combinations
+            list_all = [curr_subjs, curr_objs, curr_vclass, curr_vtypes]
+            combos = list(iterer.product(*list_all))
+
+            #Store each combination as a rule
+            for curr_combo in combos:
+                curr_rule = {"subjectmatter":curr_combo[0],
+                            "objectmatter":curr_combo[1],
+                            "verbclass":curr_combo[2],
+                            "verbtypes":curr_combo[3]}
+                #
+                #Convert rules into vector and store them
+                curr_vector = self._convert_rules_into_matrix([curr_rule])
+                input_matr.append(curr_vector)
+                #
+                #Convert actual classifs into answer vector and store them
+                for curr_classkey in which_classifs:
+                    classif_vec[curr_classkey].append(
+                                        curr_blanketrule[prefix+curr_classkey])
+            #
+        #
+
+        #Reformat into matrices
+        input_matr = np.asarray(input_matr).astype(float)
+        for curr_key in classif_vec:
+            classif_vec[curr_key] = np.asarray(classif_vec[curr_key]
+                                                ).astype(float).T
+        #
+
+        #Solve for scoring matrix (least squares)
+        scoring_matrix = {key:np.linalg.lstsq(input_matr, classif_vec[key])[0]
+                            for key in which_classifs}
+
+        #Return the results
+        if do_verbose:
+            print("Scoring matrix has been assembled:\n{0}\n-\n"
+                    .format(scoring_matrix))
+        return scoring_matrix
+    #
+
+    ##Method: _assemble_scoring_matrix
+    ##Purpose: Assemble matrix to use for scoring rules
+    def x_assemble_scoring_matrix(self, keyword_obj, do_check_truematch, buffer=0, which_mode="none"):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        do_verbose_deep = self._get_info("do_verbose_deep")
+        which_classifs = self._get_info("class_names")
+        #Print some notes
+        if do_verbose:
+            print("Assembling scoring matrix...")
+        #
+
+        #Build in-place dictionary of texts just for now
+        """
+        dict_texts = [
+        #Future tense
+            {"text":"We will use HST data in a future paper.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"They will use HST data in a future paper.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Authors et al. will use HST data in a future paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+        #Present tense
+            {"text":"We use HST data.", "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"We used HST data.", "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"They use HST data.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"They used HST data.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"We simulate HST data.", "class":None,
+            "scores":{"science":0, "data_influenced":1, "mention":0}},
+            {"text":"They simulate HST data.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Authors et al. simulate HST data.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"The HST data was simulated by Authors et al.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0.8, "mention":0.2}},
+            {"text":"Authors et al. use HST data.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"HST data is cool.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Our work analyzes the HST data of Authors et al.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":1, "mention":0}},
+        #Rules with figures
+            {"text":"Figure 3 is of HST data.", "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"Figure 3 plots the HST data.", "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"The trends in the HST data are shown in Figure 3.",
+                    "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"The data observed by HST are plotted in Figure 3.",
+                    "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"The data plotted in Figure 3 was observed by HST.",
+                    "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"Figure 3 plots the HST data from Authors etal.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":1, "mention":0}},
+        #More rules
+            {"text":"The trends are analyzed in our HST data.", "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"Our analysis is of HST data.", "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"We know that HST is useful.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"HST is known for its beautiful images.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"This telescope is HST.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"This image was from HST.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"This image complimented HST.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            #
+            {"text":"The trends in the HST data are plotted in Figure 3.",
+                    "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"Authors et al. analyzed the HST data.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Authors et al. plotted the HST data.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Authors et al. simulated the HST data.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Authors et al. simulated, plotted, and analyzed the HST data.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"They analyzed the HST data.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"They plotted the HST data.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"They simulated the HST data.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"They simulated and plotted and analyzed the HST data.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            #
+            {"text":"Trends are analyzed in the HST paper by Athors et al..",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Trends were analyzed in the HST paper by Athors et al..",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Trends are presented in the HST paper by Athors et al..",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Trends were presented in the HST paper by Athors et al..",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Trends are analyzed in their HST paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Trends were analyzed in their HST paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Trends are presented in their HST paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Trends were presented in their HST paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            #
+            {"text":"Our bright HST images shows the power of HST.",
+                    "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"Our observations of HST data are analyzed.",
+                    "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"We already presented that HST data in Authors et al..",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"HST is neat.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Our analysis is for HST data.",
+                    "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"Stars were plotted from the HST data.",
+                    "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            #
+            {"text":"HST will revolutionize the industry.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"We will observe HST data in a future paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"We will present HST data in a future paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"They will observe HST data in a future paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"They will present HST data in a future paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Authors et al. will observe HST data in a future paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Authors et al. will present HST data in a future paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            #
+            {"text":"Authors et al. will present HST data in a future paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"HST orbits around.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Our future HST observations will be compared in our future HST paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Our future HST observations will be presented in our future HST paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Our future HST observations will be analyzed in our future HST paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            #
+        #
         ]
+        """
+
+        #Build in-place dictionary of set rules for now
+        itrack = 0
+        if True:
+            itrack += 1
+            dict_examples_base[str(itrack)] = {
+                "subjectmatter":"is_any",
+                "objectmatter":"is_any",
+                "verbclass":{"know"},
+                "verbtypes":"is_any",
+                "score_science":0.0,
+                "score_data_influenced":0.0,
+                "score_mention":1.0}
+        #
 
         #Initialize container for input matrix of rules and classif vectors
         input_matr = []
