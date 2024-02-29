@@ -2390,17 +2390,18 @@ class Grammar(_Base):
                                     sentence_NLP=sentence_NLP,
                                     ids_nounchunks=ids_nounchunks)
             #
-            #Copy over traits of the conjoined root
-            list_pos_NLP[i_word] = list_pos_NLP[i_root_conj]
-            for curr_ind in new_chunk["ids"]:
-                list_pos_clause[curr_ind] = list_pos_clause[i_root_conj]
-            #
-            #Store in the same verb-clause as conjoined root, if relevant
-            if (list_pos_clause[i_word] is not None):
-                pos_clause = list_pos_clause[i_word]
-                clauses_text[i_verb][pos_clause].append(new_chunk["text"])
-                clauses_ids[i_verb][pos_clause].append(new_chunk["ids"])
-                clauses_ids[i_verb]["clause_nounchunks"].append(
+            #Copy over traits of the conjoined root, if valid chunks
+            if (new_chunk is not None):
+                list_pos_NLP[i_word] = list_pos_NLP[i_root_conj]
+                for curr_ind in new_chunk["ids"]:
+                    list_pos_clause[curr_ind] = list_pos_clause[i_root_conj]
+                #
+                #Store in the same verb-clause as conjoined root, if relevant
+                if (list_pos_clause[i_word] is not None):
+                    pos_clause = list_pos_clause[i_word]
+                    clauses_text[i_verb][pos_clause].append(new_chunk["text"])
+                    clauses_ids[i_verb][pos_clause].append(new_chunk["ids"])
+                    clauses_ids[i_verb]["clause_nounchunks"].append(
                                                         new_chunk["chunk_id"])
             #
         #
@@ -2992,7 +2993,9 @@ class Grammar(_Base):
         if (i_node not in clauses_text): #Do not add verbs again
             #Do not add to clause if already added
             tmp_ind = ids_nounchunks[i_node]
-            if ((tmp_ind is not None) and
+            #if ((tmp_ind is not None) and
+            #        (tmp_ind not in clauses_ids[i_verb]["clause_nounchunks"])):
+            if ((tmp_ind is None) or
                     (tmp_ind not in clauses_ids[i_verb]["clause_nounchunks"])):
                 self._add_word_to_clause(word=node, clauses_text=clauses_text,
                         clauses_ids=clauses_ids, sentence_NLP=sentence_NLP,
@@ -3129,7 +3132,7 @@ class Grammar(_Base):
         Purpose: Run external natural language processing NLP package on given text.
         """
         #Set global variables
-        ordered_poss_values = ["FUTURE", "PAST", "PRESENT", "PURPOSE"
+        ordered_poss_values = ["FUTURE", "PRESENT", "PAST", "PURPOSE"
                                 ] #Allowed verb types in priority order
         tags_past = config.tag_verb_past
         tags_present = config.tag_verb_present
@@ -4220,12 +4223,16 @@ class Classifier_Rules(_Classifier):
             "scores":{"science":0, "data_influenced":0, "mention":1}},
             {"text":"HST data is cool.", "class":None,
             "scores":{"science":0, "data_influenced":0, "mention":1}},
-            {"text":"Figure 3 plots the HST data.", "class":None,
-            "scores":{"science":1, "data_influenced":0, "mention":0}},
-            {"text":"Figure 3 plots the HST data from Somename etal.",
+            {"text":"Our work analyzes the HST data of Somename et al.",
                     "class":None,
             "scores":{"science":0, "data_influenced":1, "mention":0}},
-            {"text":"Our work analyzes the HST data of Somename et al.",
+            #Rules with figures
+            {"text":"Figure 3 plots the HST data.", "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"The trends in the HST data are shown in Figure 3.",
+                    "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"Figure 3 plots the HST data from Somename etal.",
                     "class":None,
             "scores":{"science":0, "data_influenced":1, "mention":0}},
             #
