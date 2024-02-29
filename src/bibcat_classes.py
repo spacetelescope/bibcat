@@ -6013,13 +6013,17 @@ class Classifier_Rules(_Classifier):
     ##Method: _merge_rules
     ##Purpose: Merge list of rules into one rule
     def _merge_rules(self, rules):
+        #Extract global variables
+        keys_matter = config.nest_keys_matter
         #Extract keys of rules
         list_keys = rules[0].keys()
         #Merge rule across all keys
         merged_rule_raw = {key:[] for key in list_keys}
         for ii in range(0, len(rules)):
-            for curr_key in list_keys:
-                merged_rule_raw[curr_key] += rules[ii][curr_key]
+            #Merge if any important terms in this rule
+            if any([(len(rules[ii][key]) > 0) for key in keys_matter]):
+                for curr_key in list_keys:
+                    merged_rule_raw[curr_key] += rules[ii][curr_key]
         #
         #Keep only unique values
         merged_rule = {key:list(set(merged_rule_raw[key])) for key in list_keys}
