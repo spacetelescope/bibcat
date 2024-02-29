@@ -5498,7 +5498,7 @@ class Classifier_Rules(_Classifier):
 
     ##Method: _convert_scorestoverdict
     ##Purpose: Convert set of decision tree scores into single verdict
-    def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=1.0, order_override_acceptance=["science", "data_influenced"]):
+    def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=np.inf, order_override_acceptance=["science", "data_influenced"]):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         #Print some notes
@@ -5810,6 +5810,92 @@ class Classifier_Rules(_Classifier):
     ##Method: _convert_clause_into_rule
     ##Purpose: Convert Grammar-made clause into rule for rule-based classifier
     def _convert_clause_into_rule(self, clause_text, clause_ids, flags_nounchunks, ids_nounchunks):
+        """
+        Method: _convert_clause_into_rule
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Process text into modifs using Grammar class.
+        """
+        #Set global variables
+        do_verbose = self._get_info("do_verbose")
+
+        #Fetch all sets of subject flags via their ids
+        num_subj = len(clause_text["subjects"])
+        sets_subjmatter = [] #[None]*num_subj #Container for subject flags
+        for ii in range(0, num_subj): #Iterate through subjects
+            id_chunk = ids_nounchunks[clause_ids["subjects"][ii][0]]
+            sets_subjmatter += [key
+                                    for key in flags_nounchunks[id_chunk]
+                                    if ((flags_nounchunks[id_chunk][key])
+                                        and (key != "is_any"))
+                                    ] #Store all subj. flags for this clause
+        #
+        #If no subjects, set container to empty
+        if (num_subj == 0):
+            sets_subjmatter = []
+        #
+        sets_subjmatter = list(set(sets_subjmatter))
+
+        #Fetch all sets of object flags via their ids
+        tmp_list = (clause_ids["dir_objects"] + clause_ids["prep_objects"])
+        num_obj = len(tmp_list)
+        sets_objmatter = [] #[None]*num_obj #Container for object flags
+        for ii in range(0, num_obj): #Iterate through objects
+            id_chunk = ids_nounchunks[tmp_list[ii][0]]
+            sets_objmatter += [key
+                                    for key in flags_nounchunks[id_chunk]
+                                    if ((flags_nounchunks[id_chunk][key])
+                                        and (key != "is_any"))
+                                    ] #Store all obj. flags for this clause
+        #
+        #If no objects, set container to empty
+        if (num_obj == 0):
+            sets_objmatter = []
+        #
+        sets_objmatter = list(set(sets_objmatter))
+
+        #Set verb class
+        #verbclass = self._categorize_verb(verb=clause_text["verb"])
+        verbclass_raw = self._categorize_verb(verb=clause_text["verb"])
+        if (verbclass_raw is None):
+            verbclass = []
+        elif isinstance(verbclass_raw, str):
+            verbclass = [verbclass_raw]
+        else:
+            verbclass = verbclass_raw
+        #
+
+        #Set verb type
+        #verbtype = clause_text["verbtype"]
+        verbtype_raw = clause_text["verbtype"]
+        if (verbtype_raw is None):
+            verbtype = []
+        elif isinstance(verbtype_raw, str):
+            verbtype = [verbtype_raw]
+        else:
+            verbtype = verbtype_raw
+        #
+
+        #Set rules from combinations of subj. and obj.matter
+        rules = [{"subjectmatter":sets_subjmatter,
+                            "objectmatter":sets_objmatter,
+                            "verbclass":verbclass, "verbtypes":verbtype}]
+        #
+
+        #Print some notes
+        if do_verbose:
+            print("\n> Run of _convert_clause_into_rule complete.")
+            print("Orginal clause:\n{0}".format(clause_text))
+            print("Extracted rules:")
+            for ii in range(0, len(rules)):
+                print("{0}: {1}\n-".format(ii, rules[ii]))
+
+        #Return the assembled rules
+        return rules
+    #
+
+    ##Method: _convert_clause_into_rule
+    ##Purpose: Convert Grammar-made clause into rule for rule-based classifier
+    def x_convert_clause_into_rule(self, clause_text, clause_ids, flags_nounchunks, ids_nounchunks):
         """
         Method: _convert_clause_into_rule
         WARNING! This method is *not* meant to be used directly by users.

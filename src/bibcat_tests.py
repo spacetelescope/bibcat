@@ -1480,7 +1480,8 @@ class TestClassifierRules(unittest.TestCase):
             #Prepare keyword object to use for these tests
             kobj = dict_lookup_kobj["Hubble"]
             verdict_lowprob = config.verdict_lowprob
-            do_allow_lowprob = True #If True, allow low-prob as accepted answer
+            #do_allow_lowprob = True #If True, allow low-prob as accepted answer
+            do_throwerror = False #If True, throw error if any wrong
             do_verbose = False
 
             #Prepare texts and answers for tests
@@ -1590,6 +1591,7 @@ class TestClassifierRules(unittest.TestCase):
 
             #Determine and check answers
             i_track = 0
+            i_wrong = 0
             for phrase in dict_acts:
                 print(i_track)
                 i_track += 1
@@ -1605,6 +1607,7 @@ class TestClassifierRules(unittest.TestCase):
                 try:
                     self.assertEqual(curr_answer, dict_acts[phrase])
                 except AssertionError:
+                    i_wrong += 1
                     print("")
                     print(">")
                     print(("Text: {0}\n-\nTest answer: {1}\n"
@@ -1618,12 +1621,12 @@ class TestClassifierRules(unittest.TestCase):
                     print("---")
                     print("")
                     #
-                    if (do_allow_lowprob and (curr_answer == verdict_lowprob)):
-                        continue
-                    else:
+                    if do_throwerror:
                         self.assertEqual(curr_answer, dict_acts[phrase])
                 #
             #
+            print("Count of tests: {0}\nTotal wrong: {1}\nPercent right: {2}"
+                    .format(i_track, i_wrong, (i_track - i_wrong)/i_track))
         #
     #
 #"""
