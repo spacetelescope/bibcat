@@ -4154,15 +4154,26 @@ class Classifier_Rules(_Classifier):
         matr_rule = self._convert_rules_into_matrix(rules=[rule_mod])
 
         ##Apply the scoring matrix and order the scores
-        dict_scores = {key:np.dot(matr_rule, scoring_matrix[key])
-                        for key in which_classifs}
+        dict_scores_raw = {key:np.dot(matr_rule, scoring_matrix[key])
+                            for key in which_classifs}
+        #Shift scores to be nonzero
+        minval = min(dict_scores_raw.values())
+        if (minval < 0):
+            dict_scores_raw = {key:(dict_scores_raw[key]+np.abs(minval))
+                                for key in which_classifs}
+        #Normalize the scores
+        totval = sum(dict_scores_raw.values())
+        dict_scores = {key:(dict_scores_raw[key]/totval)
+                            for key in which_classifs}
+        #
 
         ##Return the final scores
         if do_verbose:
             print("Final scores computed for rule:\n{0}\n\n{1}" #\n\n{2}"
                     .format(rule_mod, dict_scores)) #, best_branch))
         #
-        return {"scores":dict_scores, "components":best_branch}
+        return {"scores":dict_scores, "components":rule_mod,
+                "matr_rule":matr_rule}
     #
 
     ##Method: _assemble_scoring_matrix
@@ -4172,12 +4183,20 @@ class Classifier_Rules(_Classifier):
         do_verbose = self._get_info("do_verbose")
         do_verbose_deep = self._get_info("do_verbose_deep")
         which_classifs = self._get_info("class_names")
+        #Print some notes
+        if do_verbose:
+            print("Assembling scoring matrix...")
+        #
 
         #Build in-place dictionary of texts just for now
         dict_texts = [
             {"text":"We use HST data.", "class":None,
             "scores":{"science":1, "data_influenced":0, "mention":0}},
+            {"text":"We used HST data.", "class":None,
+            "scores":{"science":1, "data_influenced":0, "mention":0}},
             {"text":"They use HST data.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"They used HST data.", "class":None,
             "scores":{"science":0, "data_influenced":0, "mention":1}},
             {"text":"We simulate HST data.", "class":None,
             "scores":{"science":0, "data_influenced":1, "mention":0}},
@@ -4185,6 +4204,9 @@ class Classifier_Rules(_Classifier):
             "scores":{"science":0, "data_influenced":0, "mention":1}},
             {"text":"Somename et al. simulate HST data.", "class":None,
             "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"The HST data was simulated by Somename et al.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0.8, "mention":0.2}},
             {"text":"Somename et al. use HST data.", "class":None,
             "scores":{"science":0, "data_influenced":0, "mention":1}},
             {"text":"HST data is cool.", "class":None,
@@ -4251,15 +4273,20 @@ class Classifier_Rules(_Classifier):
         #
 
         #Reformat into matrices
-        input_matr = np.asarray(input_matr)
+        input_matr = np.asarray(input_matr).astype(float)
         for curr_key in classif_vec:
-            classif_vec[curr_key] = np.asarray(classif_vec[curr_key])
+            classif_vec[curr_key] = np.asarray(classif_vec[curr_key]
+                                                ).astype(float).T
         #
 
         #Solve for scoring matrix (least squares)
-        scoring_matrix = np.linalg.lstsq(input_matr, classif_vec)
+        scoring_matrix = {key:np.linalg.lstsq(input_matr, classif_vec[key])[0]
+                            for key in which_classifs}
 
         #Return the results
+        if do_verbose:
+            print("Scoring matrix has been assembled:\n{0}\n-\n"
+                    .format(scoring_matrix))
         return scoring_matrix
     #
 
@@ -5824,9 +5851,27 @@ class Classifier_Rules(_Classifier):
             sets_objmatter = [[]]
         #
 
-        #Set verb characteristics
-        verbclass = self._categorize_verb(verb=clause_text["verb"])
-        verbtype = clause_text["verbtype"]
+        #Set verb class
+        #verbclass = self._categorize_verb(verb=clause_text["verb"])
+        verbclass_raw = self._categorize_verb(verb=clause_text["verb"])
+        if (verbclass_raw is None):
+            verbclass = []
+        elif isinstance(verbclass_raw, str):
+            verbclass = [verbclass_raw]
+        else:
+            verbclass = verbclass_raw
+        #
+
+        #Set verb type
+        #verbtype = clause_text["verbtype"]
+        verbtype_raw = clause_text["verbtype"]
+        if (verbtype_raw is None):
+            verbtype = []
+        elif isinstance(verbtype_raw, str):
+            verbtype = [verbtype_raw]
+        else:
+            verbtype = verbtype_raw
+        #
 
         #Set rules from combinations of subj. and obj.matter
         rules = []

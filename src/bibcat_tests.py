@@ -1589,7 +1589,10 @@ class TestClassifierRules(unittest.TestCase):
             classifier = bibcat.Classifier_Rules(do_verbose_deep=False)
 
             #Determine and check answers
+            i_track = 0
             for phrase in dict_acts:
+                print(i_track)
+                i_track += 1
                 #Run classification of current text
                 if do_verbose:
                     print("\nSentence: {0}".format(phrase))
@@ -1607,6 +1610,7 @@ class TestClassifierRules(unittest.TestCase):
                     print(("Text: {0}\n-\nTest answer: {1}\n"
                             +"\nAct. answer: {2}\nTest components:")
                             .format(phrase, curr_answer, dict_acts[phrase]))
+                    print("Scores: {0}".format(result["indiv_scores"]))
                     for curr_set in result["indiv_components"]:
                         print("-")
                         for curr_comp in curr_set:
