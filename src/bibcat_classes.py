@@ -4190,6 +4190,15 @@ class Classifier_Rules(_Classifier):
 
         #Build in-place dictionary of texts just for now
         dict_texts = [
+        #Future tense
+            {"text":"We will use HST data in a future paper.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"They will use HST data in a future paper.", "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+            {"text":"Somename et al. will use HST data in a future paper.",
+                    "class":None,
+            "scores":{"science":0, "data_influenced":0, "mention":1}},
+        #Present tense
             {"text":"We use HST data.", "class":None,
             "scores":{"science":1, "data_influenced":0, "mention":0}},
             {"text":"We used HST data.", "class":None,
@@ -4218,7 +4227,9 @@ class Classifier_Rules(_Classifier):
             "scores":{"science":0, "data_influenced":1, "mention":0}},
             {"text":"Our work analyzes the HST data of Somename et al.",
                     "class":None,
-            "scores":{"science":0, "data_influenced":1, "mention":0}}
+            "scores":{"science":0, "data_influenced":1, "mention":0}},
+            #
+
         ]
 
         #Initialize container for input matrix of rules and classif vectors
@@ -4253,13 +4264,16 @@ class Classifier_Rules(_Classifier):
                 for kk in range(0, len(forest[jj])):
                     curr_info = forest[jj][kk]
                     #Convert current clause into rules
-                    curr_rules = [item for key in curr_info["clauses"]["text"]
+                    curr_rules_raw = [item for key in curr_info["clauses"]["text"]
                             for item in
                             self._convert_clause_into_rule(
                             clause_text=curr_info["clauses"]["text"][key],
                             clause_ids=curr_info["clauses"]["ids"][key],
                             flags_nounchunks=curr_info["flags"],
                             ids_nounchunks=curr_info["ids_nounchunk"])]
+                    #
+                    #Merge rules
+                    curr_rules = [self._merge_rules(rules=curr_rules_raw)]
                     #
                     #Convert rules into vector and store them
                     curr_vector = self._convert_rules_into_matrix(curr_rules)
@@ -5236,13 +5250,17 @@ class Classifier_Rules(_Classifier):
             for jj in range(0, len(forest[ii])):
                 curr_info = forest[ii][jj]
                 #Convert current clause into rules
-                curr_rules = [item for key in curr_info["clauses"]["text"]
+                curr_rules_raw = [item for key in curr_info["clauses"]["text"]
                             for item in
                             self._convert_clause_into_rule(
                             clause_text=curr_info["clauses"]["text"][key],
                             clause_ids=curr_info["clauses"]["ids"][key],
                             flags_nounchunks=curr_info["flags"],
                             ids_nounchunks=curr_info["ids_nounchunk"])]
+                #
+                #Merge rules
+                curr_rules = [self._merge_rules(rules=curr_rules_raw)]
+                #
                 #Fetch and store score of each rule
                 tmp_res = [self._apply_scoring_matrix(rule=item,
                                                 scoring_matrix=scoring_matrix)
@@ -5983,6 +6001,24 @@ class Classifier_Rules(_Classifier):
 
         #Return the assembled rules
         return rules
+    #
+
+    ##Method: _merge_rules
+    ##Purpose: Merge list of rules into one rule
+    def _merge_rules(self, rules):
+        #Extract keys of rules
+        list_keys = rules[0].keys()
+        #Merge rule across all keys
+        merged_rule_raw = {key:[] for key in list_keys}
+        for ii in range(0, len(rules)):
+            for curr_key in list_keys:
+                merged_rule_raw[curr_key] += rules[ii][curr_key]
+        #
+        #Keep only unique values
+        merged_rule = {key:list(set(merged_rule_raw[key])) for key in list_keys}
+        #
+        #Return merged rule
+        return merged_rule
     #
 #
 
