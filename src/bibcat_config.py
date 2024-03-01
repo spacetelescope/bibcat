@@ -363,7 +363,7 @@ dictverdict_error = {
 #For rule-based classification
 list_default_verdicts_decisiontree = ["science", "data_influenced", "mention"]
 #dict_tree_possible_values = {"subjectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "objectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "verbclass":["be", "has", "know", "plot", "root_nonverb", "science", "datainfluenced"], "verbtypes":["FUTURE", "PASSIVE", "PAST", "POTENTIAL", "PURPOSE", "PRESENT"]}
-dict_tree_possible_values = {"subjectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "objectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "verbclass":["be", "has", "know", "plot", "root_nonverb", "science", "datainfluenced"], "verbtypes":["FUTURE", "PAST", "PURPOSE", "PRESENT"]}
+dict_tree_possible_values = {"subjectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "objectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "verbclass":["be", "has", "know", "plot", "science", "datainfluenced"], "verbtypes":["FUTURE", "PAST", "PURPOSE", "PRESENT"]}
 #
 
 ##Set rule-based processing variables
@@ -398,7 +398,7 @@ synsets_verbs_know = ["know.v.01", "understand.v.01", "want.v.02", "acknowledge.
 synsets_verbs_know = [wordnet.synset(s) for s in synsets_verbs_know]
 #
 #Verb categorization
-category_nonverb_root = "root_nonverb"
+#category_nonverb_root = "root_nonverb"
 list_category_names = ["science", "datainfluenced", "plot", "know"]
 list_category_synsets = [synsets_verbs_science, synsets_verbs_influenced, synsets_verbs_plot, synsets_verbs_know]
 list_category_threses = [thres_verbsimilaritymain, thres_verbsimilaritymain, thres_verbsimilaritymain, thres_verbsimilarityhigh]

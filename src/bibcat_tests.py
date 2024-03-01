@@ -1587,7 +1587,8 @@ class TestClassifierRules(unittest.TestCase):
             #
 
             #Prepare classifier for tests
-            classifier = bibcat.Classifier_Rules(do_verbose_deep=False)
+            classifier = bibcat.Classifier_Rules(do_verbose_deep=False,
+                                                do_final_blanketrule=False)
 
             #Determine and check answers
             i_track = 0
@@ -1598,9 +1599,25 @@ class TestClassifierRules(unittest.TestCase):
                 #Run classification of current text
                 if do_verbose:
                     print("\nSentence: {0}".format(phrase))
-                result = classifier.classify_text(text=phrase, keyword_obj=kobj,
+                try:
+                    result = classifier.classify_text(
+                                text=phrase, keyword_obj=kobj,
 								do_verbose=do_verbose, do_check_truematch=False,
                                 which_mode="none")
+                except NotImplementedError as err:
+                    if do_throwerror:
+                        raise err
+                    else:
+                        i_wrong += 1
+                        print("")
+                        print(">")
+                        print(("Text: {0}\n-\nTest answer: {1}\n"
+                                +"\nAct. answer: {2}\nTest components:")
+                                .format(phrase, err, dict_acts[phrase]))
+                        print("---")
+                        print("")
+                        continue
+                #
                 curr_answer = result["verdict"]
 
                 #Check answer
