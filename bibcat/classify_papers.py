@@ -6,7 +6,7 @@ into three categories; science, mention, data-influenced. Finally, it produces
 performance results such as a confusion matrix.
 
 - Context: the input full text JSON file (papertrack + ADS full texts) is
-  called via config.path_input_data configured in bibcat/config.py and is used for 
+  called via config.path_source_data configured in bibcat/config.py and is used for 
   training, validating, and testing the trained model.
 
 - Classfication data: this text data is used for prediction (classification),
@@ -28,7 +28,7 @@ from bibcat.core.classifiers import ml, rules
 
 # Fetch filepath for model
 name_model = config.name_model
-dir_model = os.path.join(config.dir_allmodels, name_model)
+dir_model = os.path.join(config.PATH_MODELS, name_model)
 
 # Set directories for fetching test text
 dir_info = dir_model
@@ -101,7 +101,7 @@ if do_real_testdata:
     list_test_bibcodes = [key for key in dict_TVTinfo if (dict_TVTinfo[key]["folder_TVT"] == folder_test)]
 
     # Load the original data
-    with open(config.path_input_data, "r") as openfile:
+    with open(config.path_source_data, "r") as openfile:
         dataset = json.load(openfile)
     # Extract text information for the bibcodes reserved for testing
     # Data for test set

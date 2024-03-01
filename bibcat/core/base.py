@@ -1410,7 +1410,7 @@ class Base:
         return text
 
     # Write given text to given filepath
-    def _write_text(self, text, filepath):
+    def _write_text(text, filepath):
         """
         Method: _write_text
         WARNING! This method is *not* meant to be used directly by users.

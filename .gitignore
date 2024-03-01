@@ -1,5 +1,7 @@
-# bibcat output files
+# bibcat files
 bibcat/models
+bibcat/data/partitioned_datasets
+output
 
 # Compiled files
 *.py[cod]
@@ -50,7 +52,7 @@ __pycache__/
 *.idea
 *.pytest_cache
 *.devcontainer
-output/*
+
 
 # Mac OSX
 .DS_Store

@@ -2,9 +2,12 @@
 
 ## [Unreleased]
 
-Refactoring bibcat has started.
-- Refactoring create_model.py and classify_papers.py
+Bibcat to do list
+- Refactor create_model.py 
+- Refactor classify_papers.py
+    -  modify the `output` directory to show the output from multiple model
 - Adding tutorial notebooks back
+
 
 ### Removed
 - [PR #9]
@@ -16,7 +19,12 @@ Refactoring bibcat has started.
 
 ### Changed
 
-- PR #11
+- PR #12
+    - Refactoring build_model.py has started
+        - extracted generate_direcotry_TVT() from `core/classifiers/textdata.py` to create a stand-alone module, `split_dataset.py`
+        - modified to store the training, validation, and test (TVT) data set directories under the `data/partitioned_datasets` directory
+
+- [PR #11]
     - Renamed create_model.py to build_model.py
     - Updated README.md
     - Updated config.py to create variables to support the new script, build_dataset.py
@@ -45,7 +53,7 @@ Refactoring bibcat has started.
     - updated formatting and styling
 
 ### Added 
-- PR # 11
+- [PR # 11]
     - Create a new script to build the input dataset. It's called build_dataset.py
     - Added some information about the data folder in README.rst
     - Added __init__.py

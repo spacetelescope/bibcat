@@ -4,7 +4,7 @@
 This module creates a new training ML model.
 
 - The input full text JSON file (papertrack + ADS full texts) is called via
-  `config.path_input_data` configured in `bibcat/config.py` and is used for training,
+  `config.path_source_data` configured in `bibcat/config.py` and is used for training,
   validating, and testing the trained model.
   
 - Once the model is trained, the `models` folder and its subdirectories for T/V/T
@@ -42,11 +42,13 @@ mapper = params.map_papertypes
 
 # Fetch filepath for model
 name_model = config.name_model
-dir_model = os.path.join(config.dir_allmodels, name_model)
+dir_data = os.path.join(config.path_partitioned_data, name_model)
+dir_model = os.path.join(config.PATH_MODELS, name_model)
 
 # Fetch filepaths for input and output
-filepath_input = config.path_input_data
+filepath_input = config.path_source_data
 filepath_output = config.PATH_OUTPUT
+
 
 # filepath to save processing errors
 filesave_error = os.path.join(dir_model, f"{name_model}_processing_errors.txt")
@@ -198,6 +200,7 @@ print(len(dict_texts))
 start = time.time()
 str_err = tabby_ML.train_model_ML(
     dir_model=dir_model,
+    dir_data=dir_data,
     name_model=name_model,
     do_reuse_run=do_reuse_run,
     do_check_truematch=do_check_truematch,

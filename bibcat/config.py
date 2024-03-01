@@ -13,15 +13,15 @@ from nltk.corpus import wordnet
 name_model = "my_test_run_1"
 
 # Set global user paths, which should be set outside the bibcat repo folder.
-filepath_dataset = "/path/to/datasets/"
-
+# filepath_dataset = "/path/to/datasets/"
+filepath_dataset = "/Users/jyoon/Documents/asb/bibliography_automation/bibcat_datasets"
 # To construct the dataset, it requires the papertrack data and and the paper corpus texts from ASDS
 # papertrack data that Sarah W. created
 path_papertrack = os.path.join(filepath_dataset, "papertrack_export_2023-11-06.json")
 # fulltext data from the ADS team
 path_papertext = os.path.join(filepath_dataset, "ST_Request2018-2023.json")
 # set the path to the location of the JSON file you created from papertrack and papertext
-path_input_data = os.path.join(filepath_dataset, "dataset_combined_all_2018-2023.json")
+path_source_data = os.path.join(filepath_dataset, "dataset_combined_all_2018-2023.json")
 
 # path to save the files for bibcodes not in papertrack or ADS papertext
 path_not_in_papertext = os.path.join(filepath_dataset, "bibcodes_notin_papertext.txt")
@@ -36,33 +36,44 @@ SRC_ROOT = os.path.dirname(__file__)
 _parent = os.path.dirname(SRC_ROOT)
 print(f"Root directory ={SRC_ROOT}, parent directory={_parent}")
 
-PATH_MODELS = os.path.join(SRC_ROOT, "models")
 PATH_CONFIG = os.path.join(SRC_ROOT, "config")
 PATH_DOCS = os.path.join(_parent, "docs")
-PATH_OUTPUT = os.path.join(_parent, "output")
 
+# Path to the models folder
+PATH_MODELS = os.path.join(SRC_ROOT, "models")
 if not os.path.isdir(PATH_MODELS):
     os.makedirs(PATH_MODELS)
     print("created folder : ", PATH_MODELS)
 else:
     print(PATH_MODELS, "folder already exists.")
-
+# Path to the output folder
+PATH_OUTPUT = os.path.join(_parent, "output")
 if not os.path.isdir(PATH_OUTPUT):
     os.makedirs(PATH_OUTPUT)
     print("created folder : ", PATH_OUTPUT)
 else:
     print(PATH_OUTPUT, "folder already exists.")
 
+# path to partitioned datasets
+path_partitioned_data = os.path.join(SRC_ROOT, "data", "partitioned_datasets")
+if not os.path.isdir(path_partitioned_data):
+    os.makedirs(path_partitioned_data)
+    print("created folder : ", path_partitioned_data)
+else:
+    print(path_partitioned_data, "folder already exists.")
+
 KW_AMBIG = os.path.join(PATH_CONFIG, "keywords_ambig.txt")
 PHR_AMBIG = os.path.join(PATH_CONFIG, "phrases_ambig.txt")
 
 
 # Set global input and output paths
-dir_allmodels = PATH_MODELS  # Path to directory for saving or loading a model
-path_modiferrors = os.path.join(dir_allmodels, name_model, "dict_modiferrors.npy")
-path_TVTinfo = os.path.join(dir_allmodels, name_model, "dict_TVTinfo.npy")
-tfoutput_prefix = "tfoutput_"
+# Path to directory for saving or loading input data for a model
 folders_TVT = {"train": "dir_train", "validate": "dir_validate", "test": "dir_test"}
+path_modiferrors = os.path.join(path_partitioned_data, name_model, "dict_modiferrors.npy")
+path_TVTinfo = os.path.join(path_partitioned_data, name_model, "dict_TVTinfo.npy")
+
+# model training output prefix
+tfoutput_prefix = "tfoutput_"
 
 # for pytest: modifs
 test_which_modes = ["none", "skim", "trim", "anon", "skim_trim_anon"]

@@ -25,6 +25,7 @@ import numpy as np
 import bibcat.config as config
 from bibcat.core.base import Base
 from bibcat.core.grammar import Grammar
+from bibcat.data.split_dataset import generate_directory_TVT
 
 
 class Operator(Base):
@@ -478,6 +479,7 @@ class Operator(Base):
     def train_model_ML(
         self,
         dir_model,
+        dir_data,
         name_model,
         do_reuse_run,
         dict_texts,
@@ -543,8 +545,8 @@ class Operator(Base):
 
         # Preprocess texts into modifs and store in TVT directories
         # NOTE: TVT = training, validation, testing datasets
-        is_exist = os.path.exists(os.path.join(dir_model, folders_TVT["train"])) or os.path.exists(
-            os.path.join(dir_model, folders_TVT["validate"])
+        is_exist = os.path.exists(os.path.join(dir_data, folders_TVT["train"])) or os.path.exists(
+            os.path.join(dir_data, folders_TVT["validate"])
         )
         # If TVT directories already exist, either print note or raise error
         if is_exist:
@@ -555,7 +557,7 @@ class Operator(Base):
 
             # Skip ahead if previous data should be reused
             if do_reuse_run:
-                print("Reusing the existing training/validation data in {0}.".format(dir_model))
+                print("Reusing the existing training/validation data in {0}.".format(dir_data))
                 pass
 
             # Otherwise, raise error if not to reuse previous run data
@@ -565,7 +567,7 @@ class Operator(Base):
                         "Err: Training/validation data already exists"
                         + " in {0}. Either delete it, or rerun method"
                         + " with do_reuse_run=True."
-                    ).format(dir_model)
+                    ).format(dir_data)
                 )
 
         # Otherwise, preprocess the text and store in TVT directories
@@ -660,8 +662,9 @@ class Operator(Base):
                 print("Storing the data in train+validate+test directories...")
 
             # Store the modifs in new TVT directories
-            classifier.generate_directory_TVT(
-                dir_model=dir_model,
+            # classifier.generate_directory_TVT(
+            generate_directory_TVT(
+                dir_data=dir_data,
                 fraction_TVT=fraction_TVT,
                 mode_TVT=mode_TVT,
                 dict_texts=dict_modifs,
@@ -708,7 +711,12 @@ class Operator(Base):
 
             # Train new ML model
             model = classifier.train_ML(
-                dir_model=dir_model, name_model=name_model, seed=seed_ML, do_verbose=do_verbose, do_return_model=True
+                dir_model=dir_model,
+                dir_data=dir_data,
+                name_model=name_model,
+                seed=seed_ML,
+                do_verbose=do_verbose,
+                do_return_model=True,
             )
 
             # Print some notes
