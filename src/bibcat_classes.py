@@ -7078,6 +7078,17 @@ class Classifier_Rules(_Classifier):
                 "prob_data_influenced":0.8,
                 "prob_mention":0.1}
             #
+            #E.g.: "Author's analysis considers Author's HST data."
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":tuple(["is_etal"]),
+                "objectmatter":tuple(["is_keyword", "is_etal"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
             #E.g.: "Our HST observations echo the HST trend."
             itrack += 1
             dict_examples_base[strformat.format(itrack)] = {
@@ -7108,6 +7119,17 @@ class Classifier_Rules(_Classifier):
                 "prob_science":0.0,
                 "prob_data_influenced":0.0,
                 "prob_mention":1.0}
+            #
+            #E.g.: "HST data is considered in our Figure 1."
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":tuple(["is_keyword", "is_pron_1st", "is_term_fig"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
             #
             #E.g.: "Their/Author's error bars are guided by the HST data rms."
             itrack += 1
@@ -7536,6 +7558,29 @@ class Classifier_Rules(_Classifier):
                 "prob_science":0.0,
                 "prob_data_influenced":1.0,
                 "prob_mention":0.0}
+            #
+            #HST data is simulated/was simulated in our Figure 1.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":tuple(["is_term_fig", "is_pron_1st"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.3,
+                "prob_data_influenced":0.9,
+                "prob_mention":0.0}
+            #
+            #HST data is simulated/was simulated in our paper.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":tuple(["is_keyword", "is_pron_1st"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.3,
+                "prob_data_influenced":0.9,
+                "prob_mention":0.0}
+            #
             #We simulate/simulated our HST data.
             itrack += 1
             dict_examples_base[strformat.format(itrack)] = {
@@ -7724,6 +7769,20 @@ class Classifier_Rules(_Classifier):
             #
             #
             #
+            #Blanket is_term_fig combinations
+            #<Figure involvement with keyword>.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":["is_term_fig", "!is_pron_3rd", "!is_etal"],
+                "objectmatter":["is_keyword", "!is_pron_3rd", "!is_etal"],
+                "verbclass":{"be", "has", "plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #
+            #
             #Blanket is_etal combinations
             #<Author involvement with keyword figure>.
             itrack += 1
@@ -7777,6 +7836,31 @@ class Classifier_Rules(_Classifier):
                 "prob_science":0.0,
                 "prob_data_influenced":0.3,
                 "prob_mention":0.9}
+            #
+            #<Author object involvement with keyword object>.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":["is_etal", "!is_pron_1st", "!is_term_fig"],
+                "objectmatter":["is_keyword", "!is_pron_1st", "!is_term_fig"],
+                "verbclass":{"be", "has", "plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #
+            #
+            #Blanket is_pron_3rd combinations
+            #<Author object involvement with keyword object>.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":["is_pron_3rd", "!is_etal", "!is_pron_1st", "!is_term_fig"],
+                "objectmatter":["is_keyword", "!is_etal", "!is_pron_1st", "!is_term_fig"],
+                "verbclass":{"be", "has", "plot", "science", "datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
             #
             #
             #
@@ -9031,7 +9115,8 @@ class Classifier_Rules(_Classifier):
 
     ##Method: _convert_scorestoverdict
     ##Purpose: Convert set of decision tree scores into single verdict
-    def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=np.inf, order_override_acceptance=["science", "data_influenced"]):
+    #def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=1.0, order_override_acceptance=["science"], "data_influenced"]):
+    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=3, thres_override_acceptance=1.0, order_override_acceptance=["science"]): #, "data_influenced"]):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         #Print some notes
@@ -9069,6 +9154,7 @@ class Classifier_Rules(_Classifier):
             curr_scores = dict_scores_indiv[ii]
             for curr_key in all_keys:
                 tmp_unnorm = curr_scores[curr_key]
+                """
                 #Determine if current key has max. score across all keys
                 if (max_diff_thres is not None) and (tmp_unnorm > 0):
                     tmp_compare = all([(
@@ -9086,7 +9172,7 @@ class Classifier_Rules(_Classifier):
                 #Increment count of sentences with max-valued verdict
                 if tmp_compare:
                     dict_results[curr_key]["count_max"] += 1
-                #
+                #"""
                 #Increment unnorm. score count
                 dict_results[curr_key]["score_tot_unnorm"] += tmp_unnorm
             #
@@ -9107,8 +9193,9 @@ class Classifier_Rules(_Classifier):
         if ((thres_override_acceptance is not None)
                             and (order_override_acceptance is not None)):
             for curr_key in order_override_acceptance:
-                if any([(item[curr_key] >= thres_override_acceptance)
-                                for item in dict_scores_indiv]):
+                if (sum([(item[curr_key] >= thres_override_acceptance)
+                                for item in dict_scores_indiv])
+                            >= count_for_override):
                     #Override scores
                     tmp_max_key = curr_key
                     break
@@ -9149,6 +9236,7 @@ class Classifier_Rules(_Classifier):
 
         ##Determine best verdict and associated probabilistic error
         is_found = False
+        """
         #For max sentence count:
         if (not is_found) and (max_diff_thres is not None):
             #Check allowed keys that fit max condition
@@ -9166,7 +9254,7 @@ class Classifier_Rules(_Classifier):
                     #Break from loop early if found
                     break
             #
-        #
+        #"""
 
         #For max normalized total score:
         if (not is_found):
