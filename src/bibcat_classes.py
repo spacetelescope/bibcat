@@ -6707,6 +6707,7 @@ class Classifier_Rules(_Classifier):
 
         ##Find matching decision tree branch
         best_branch = None
+        best_id = None
         #for key_tree in decision_tree:
         tmp_list = sorted(list(decision_tree.keys()))
         for key_tree in tmp_list:
@@ -6756,10 +6757,11 @@ class Classifier_Rules(_Classifier):
             #Store this branch as match, if valid
             if is_match:
                 best_branch = curr_branch
+                best_id = key_tree
                 #Print some notes
                 if do_verbose:
-                    print("\n- Found matching decision branch:\n{0}"
-                            .format(best_branch))
+                    print("\n- Found matching decision branch:\n{0}: {1}"
+                            .format(best_id, best_branch))
                 #
                 break
             #Otherwise, carry on
@@ -6781,7 +6783,8 @@ class Classifier_Rules(_Classifier):
             print("Final scores computed for rule:\n{0}\n\n{1}\n\n{2}"
                     .format(rule_mod, dict_scores, best_branch))
         #
-        return {"scores":dict_scores, "components":best_branch}
+        return {"scores":dict_scores, "components":best_branch,
+                "id_branch":best_id}
     #
 
     ##Method: _assemble_decision_tree
@@ -10445,6 +10448,7 @@ class Classifier_Rules(_Classifier):
 
         #Collect branches that are missing from decision tree
         bools_is_missing = [None]*num_branches
+        used_branch_ids = []
         for ii in range(0, num_branches):
             curr_branch = list_branches[ii]
             #Apply decision tree and ensure valid output
@@ -10453,6 +10457,7 @@ class Classifier_Rules(_Classifier):
                                                     rule=curr_branch)
                 #
                 bools_is_missing[ii] = False #Branch is covered
+                used_branch_ids.append(tmp_res["id_branch"])
             #
             #Record this branch as missing if invalid output
             except NotImplementedError:
@@ -10470,13 +10475,21 @@ class Classifier_Rules(_Classifier):
             raise ValueError("Err: Branches not checked?")
         #
 
+        #Streamline list of used branch ids
+        used_branch_ids = sorted(list(set(used_branch_ids)))
+
         #Gather and return missing branches
         if do_verbose:
-            print("All branches checked.\n{0} of {1} missing."
-                    .format(np.sum(bools_is_missing), num_branches))
+            print("All branches checked.\n{0} of {1} missing.\nUsed ids: {2}"
+                    .format(np.sum(bools_is_missing), num_branches,
+                            used_branch_ids))
             print("Run of _find_missing_branches() complete!")
         #
-        return (np.asarray(list_branches)[np.asarray(bools_is_missing)])
+        return {"missing":
+                (np.asarray(list_branches)[np.asarray(bools_is_missing)]),
+                "unused":[decision_tree[key]
+                            for key in sorted(list(decision_tree.keys()))
+                            if (key not in used_branch_ids)]}
     #
 
     ##Method: _find_missing_branches
