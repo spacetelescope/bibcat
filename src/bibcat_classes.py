@@ -6770,7 +6770,7 @@ class Classifier_Rules(_Classifier):
             #
         #
         #Raise an error if no matching branch found
-        if (not is_match) or (best_branch is None):
+        if ((not is_match) or (best_branch is None)):
             raise NotImplementedError("Err: No match found for {0}!"
                                         .format(rule_mod))
         #
@@ -6919,15 +6919,6 @@ class Classifier_Rules(_Classifier):
                 "prob_science":0.7,
                 "prob_data_influenced":0.0,
                 "prob_mention":0.3}
-            #HST targets are simulated/were simulated in the HST observations.
-            itrack += 1
-            dict_examples_base[strformat.format(itrack)] = {
-                "allmatter":tuple(["is_keyword"]),
-                "verbclass":{"datainfluenced"},
-                "verbtypes":{"PRESENT", "PAST"},
-                "prob_science":0.7,
-                "prob_data_influenced":0.0,
-                "prob_mention":0.3}
             #
             #
             #
@@ -6941,16 +6932,6 @@ class Classifier_Rules(_Classifier):
                 "prob_science":0.5,
                 "prob_data_influenced":0.5,
                 "prob_mention":0.5}
-            #
-            #HST orbits/orbitted nearby.
-            itrack += 1
-            dict_examples_base[strformat.format(itrack)] = {
-                "allmatter":tuple(["is_keyword"]),
-                "verbclass":tuple([]),
-                "verbtypes":[],
-                "prob_science":0.1,
-                "prob_data_influenced":0.1,
-                "prob_mention":0.8}
             #
             #HST orbits/orbitted nearby.
             itrack += 1
@@ -6976,15 +6957,6 @@ class Classifier_Rules(_Classifier):
             itrack += 1
             dict_examples_base[strformat.format(itrack)] = {
                 "allmatter":tuple(["is_pron_1st", "is_keyword"]),
-                "verbclass":tuple([]),
-                "verbtypes":[],
-                "prob_science":0.9,
-                "prob_data_influenced":0.0,
-                "prob_mention":0.1}
-            #E.g.: "Our HST data appeared in the archive."
-            itrack += 1
-            dict_examples_base[strformat.format(itrack)] = {
-                "allmatter":tuple(["is_term_fig", "is_keyword"]),
                 "verbclass":tuple([]),
                 "verbtypes":[],
                 "prob_science":0.9,
@@ -7294,6 +7266,15 @@ class Classifier_Rules(_Classifier):
                 "prob_science":0.8,
                 "prob_data_influenced":0.1,
                 "prob_mention":0.1}
+            #Their HST observations are/were/has/had in Authors et al..
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_3rd", "is_etal"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.9}
             #
             #
             #
@@ -7422,6 +7403,29 @@ class Classifier_Rules(_Classifier):
                 "prob_science":0.0,
                 "prob_data_influenced":0.3,
                 "prob_mention":0.9}
+            #
+            #
+            #
+            #<science/plot verb classes>, many matter
+            #Authors analyze/analyzed/plot/plotted HST data in their work.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_etal", "is_keyword", "is_pron_3rd"]),
+                "verbclass":{"be", "has", "science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.9}
+            #
+            #Figure 1 analyze/analyzed/plot/plotted HST data from Authors.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_etal", "is_keyword", "is_term_fig"]),
+                "verbclass":{"be", "has", "science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.2,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.3}
             #
             #
             #
@@ -7571,6 +7575,19 @@ class Classifier_Rules(_Classifier):
                 "prob_science":0.0,
                 "prob_data_influenced":0.3,
                 "prob_mention":0.9}
+            #
+            #
+            #
+            #<data-influenced verb classes>, many matter
+            #Authors simulate/simulated HST data in their work.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_etal", "is_keyword", "is_pron_3rd"]),
+                "verbclass":{"be", "has", "datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.4,
+                "prob_mention":0.8}
             #
             #
             #
@@ -10181,7 +10198,7 @@ class Classifier_Rules(_Classifier):
     ##Method: _convert_scorestoverdict
     ##Purpose: Convert set of decision tree scores into single verdict
     #def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=1.0, order_override_acceptance=["science"], "data_influenced"]):
-    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=3, thres_override_acceptance=1.0, order_override_acceptance=["science"]): #, "data_influenced"]):
+    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=2, thres_override_acceptance=1.0, order_override_acceptance=["science"]): #, "data_influenced"]):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         #Print some notes
@@ -10361,7 +10378,7 @@ class Classifier_Rules(_Classifier):
         #
         return fin_res
     #
-
+#Testing different override thresholds to see if science needs to be more aggressive...
     ##Method: _find_missing_branches
     ##Purpose: Determine and return missing branches in decision tree
     def _find_missing_branches(self, do_verbose=None, cap_iter=None, print_freq=100):
@@ -10415,7 +10432,7 @@ class Classifier_Rules(_Classifier):
         #
 
         #Fold in solo and required values as needed
-        sets_verbclasses = all_verbclasses + [""]
+        sets_verbclasses = all_verbclasses
         sets_allmatters = (sub_allmatters) # + [None])
         sets_allverbtypes = (sub_allverbtypes) # + [None])
         #
