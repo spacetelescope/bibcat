@@ -363,7 +363,8 @@ dictverdict_error = {
 #For rule-based classification
 list_default_verdicts_decisiontree = ["science", "data_influenced", "mention"]
 #dict_tree_possible_values = {"subjectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "objectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "verbclass":["be", "has", "know", "plot", "root_nonverb", "science", "datainfluenced"], "verbtypes":["FUTURE", "PASSIVE", "PAST", "POTENTIAL", "PURPOSE", "PRESENT"]}
-dict_tree_possible_values = {"subjectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "objectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "verbclass":["be", "has", "know", "plot", "science", "datainfluenced"], "verbtypes":["FUTURE", "PAST", "PURPOSE", "PRESENT"]}
+#dict_tree_possible_values = {"subjectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "objectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "verbclass":["be", "has", "know", "plot", "science", "datainfluenced"], "verbtypes":["FUTURE", "PAST", "PURPOSE", "PRESENT"]}
+dict_tree_possible_values = {"allmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "verbclass":["be", "has", "know", "plot", "science", "datainfluenced"], "verbtypes":["FUTURE", "PAST", "PURPOSE", "PRESENT"]}
 #
 
 ##Set rule-based processing variables
@@ -377,8 +378,10 @@ conv_pos_fromtreetonest = {"PREPOSITION_SUBJECT":"subjectmatter", "SUBJECT":"sub
 nest_important_treebools = ["is_pron_1st", "is_keyword", "is_etal", "is_pron_3rd", "is_term_fig"] #List of important booleans to record into a post-grammar nest
 nest_important_treebools_superior = ["is_pron_1st", "is_term_fig", "is_etal"] #List of important booleans that get merged into main component from linked terms in a nest
 nest_unimportant_pos = [None, "PUNCTUATION"] #Any parts-of-speech (pos) that will be ignored+skipped during nest-building
-nest_keys_main = ["subjectmatter", "objectmatter", "verbclass", "verbtypes"] #List of main keywords that define a nest
-nest_keys_matter = ["subjectmatter", "objectmatter"] #List of matter keywords that define a nest
+#nest_keys_main = ["subjectmatter", "objectmatter", "verbclass", "verbtypes"] #List of main keywords that define a nest
+#nest_keys_matter = ["subjectmatter", "objectmatter"] #List of matter keywords that define a nest
+nest_keys_main = ["allmatter", "verbclass", "verbtypes"] #List of main keywords that define a nest
+nest_keys_matter = ["allmatter"] #List of matter keywords that define a nest
 nest_key_verbtype = "verbtypes" #verbtype keyword
 nest_prefix_link = "link_" #Prefix for linked keys within nest
 max_num_hypernyms = 3

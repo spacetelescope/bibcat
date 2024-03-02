@@ -6808,6 +6808,1068 @@ class Classifier_Rules(_Classifier):
             #<know verb classes>
             itrack += 1
             dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":"is_any",
+                "verbclass":{"know"},
+                "verbtypes":"is_any",
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #<future verb classes>
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":"is_any",
+                "verbclass":"is_any",
+                "verbtypes":["FUTURE"],
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #<purpose verb classes>
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":"is_any",
+                "verbclass":"is_any",
+                "verbtypes":["PURPOSE"],
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #
+            #
+            #<Empty keyword statements>
+            #HST is/has/was/had cool images.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.1,
+                "prob_data_influenced":0.1,
+                "prob_mention":0.8}
+            #HST presents/observes cool objects.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #HST simulations simulate cool objects.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #
+            #
+            #<Empty keyword+ statements>
+            #HST data.
+            #itrack += 1
+            #dict_examples_base[strformat.format(itrack)] = {
+            #    "allmatter":tuple(["is_keyword"]),
+            #    "objectmatter":tuple([]),
+            #    "verbclass":tuple([]),
+            #    "verbtypes":tuple([]),
+            #    "prob_science":0.8,
+            #    "prob_data_influenced":0.0,
+            #    "prob_mention":0.2}
+            #Figure 1's HST data presents/analyzes/presented/analyzed the trend.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_term_fig"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #Their HST study presents/analyzes/presented/analyzed a trend.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_3rd"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.9}
+            #Authors' HST study presents/analyzes/presented/analyzed a trend.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_etal"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.9}
+            #
+            #HST targets present/analyze/presented/analyzed in the HST observations.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.7,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.3}
+            #HST targets are simulated/were simulated in the HST observations.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.7,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.3}
+            #
+            #
+            #
+            #<Empty verb statements>
+            #HST.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword"]),
+                "verbclass":tuple([]),
+                "verbtypes":tuple([]),
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #HST orbits/orbitted nearby.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":0.1,
+                "prob_data_influenced":0.1,
+                "prob_mention":0.8}
+            #
+            #HST orbits/orbitted nearby.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":0.1,
+                "prob_data_influenced":0.1,
+                "prob_mention":0.8}
+            #
+            #E.g.: "The HST data adheres to the trend in the HST image in Figure 1."
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_term_fig"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":0.8,
+                "prob_data_influenced":0.1,
+                "prob_mention":0.1}
+            #
+            #E.g.: "Our approach is guided by the HST data rms."
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_1st", "is_keyword"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":0.9,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.1}
+            #E.g.: "Our HST data appeared in the archive."
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_term_fig", "is_keyword"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":0.9,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.1}
+            #E.g.: "Their HST data appeared in the archive."
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_3rd", "is_keyword"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":0.0,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.9}
+            #E.g.: "Author's HST data appeared in the archive."
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_etal", "is_keyword"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":0.0,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.9}
+            #
+            #E.g.: "Our analysis considers our HST data."
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_1st", "is_keyword"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #E.g.: "Our analysis considers their HST data."
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_1st", "is_keyword", "is_pron_3rd"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":0.2,
+                "prob_data_influenced":0.6,
+                "prob_mention":0.2}
+            #
+            #E.g.: "Our analysis considers Author's HST data."
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_1st", "is_keyword", "is_etal"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":0.1,
+                "prob_data_influenced":0.8,
+                "prob_mention":0.1}
+            #
+            #E.g.: "Author's analysis considers Author's HST data."
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_etal"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #E.g.: "Our HST observations echo the HST trend."
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_1st"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #E.g.: "Their HST observations echo the HST trend."
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_3rd"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #E.g.: "Author's HST observations echo the HST trend."
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_etal"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #E.g.: "HST data is considered in our Figure 1."
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_1st", "is_term_fig"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #E.g.: "Their/Author's error bars are guided by the HST data rms."
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_etal"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":0.0,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.9}
+            #E.g.: "They/Author1 noted the trend in Author2's HST data, as plotted in Figure 1."
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_etal", "is_term_fig"]),
+                "verbclass":tuple([]),
+                "verbtypes":[],
+                "prob_science":0.0,
+                "prob_data_influenced":0.35,
+                "prob_mention":0.85}
+            #
+            #
+            #
+            #<be/has verb classes>, singular matter
+            #E.g.: "HST is short for 'Hubble Space Telescope'."
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #Our analysis is/has/was/had HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_1st", "is_keyword"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #Their analysis is/has/was/had HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_3rd", "is_keyword"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #Authors' analysis is/has/was/had HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_etal", "is_keyword"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #Figure 1 is/has/was/had HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_term_fig", "is_keyword"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #
+            #
+            #<be/has verb classes>, multiple matter
+            #Our analysis is/has/was/had neat.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_1st", "is_keyword"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.8,
+                "prob_data_influenced":0.1,
+                "prob_mention":0.1}
+            #
+            #Figure 1 analysis is/has/was/had neat images.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_term_fig", "is_keyword"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.8,
+                "prob_data_influenced":0.1,
+                "prob_mention":0.1}
+            #
+            #The HST analysis is/has/was/had our HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_1st"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #Our analysis is/has/was/had our HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_1st"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #Their analysis is/has/was/had their HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_3rd"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #Authors' analysis is/has/was/had Authors HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_etal"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #Our analysis is/has/was/had their HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_1st", "is_keyword", "is_pron_3rd"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.4,
+                "prob_data_influenced":0.6,
+                "prob_mention":0.0}
+            #Our analysis is/has/was/had Authors HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_1st", "is_keyword", "is_etal"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.2,
+                "prob_data_influenced":0.8,
+                "prob_mention":0.0}
+            #
+            #We is/has/was/had HST data in Figure 1.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_1st", "is_keyword", "is_term_fig"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #They is/has/was/had our HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_3rd", "is_keyword", "is_pron_1st"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.3,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.4}
+            #Authors is/has/was/had our HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_etal", "is_keyword", "is_pron_1st"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.9}
+            #
+            #Their analysis is/has/was/had on the HST data in Figure 1.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_3rd", "is_keyword", "is_term_fig"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.9,
+                "prob_mention":0.3}
+            #Authors' analysis is/has/was/had on the HST data in Figure 1.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_etal", "is_keyword", "is_term_fig"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.9,
+                "prob_mention":0.3}
+            #
+            #
+            #
+            #<be/has verb classes>, many matter
+            #Our analysis of their work is/has/was/had our HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_1st", "is_pron_3rd", "is_keyword"]),
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.8,
+                "prob_data_influenced":0.1,
+                "prob_mention":0.1}
+            #
+            #
+            #
+            #<science/plot verb classes>, singular matter
+            #We analyze/plot/analyzed/plotted HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_1st", "is_keyword"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #They analyze/plot/analyzed/plotted HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_3rd", "is_keyword"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #Authors analyze/plot/analyzed/plotted HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_etal", "is_keyword"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #Figure 1 analyzes/plots/analyzed/plotted HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_term_fig", "is_keyword"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #
+            #
+            #<science/plot verb classes>, multiple matter
+            #Our HST program presents/presented/observes/observed HD 123456.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_1st"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #They analyze/plot/analyzed/plotted their HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_3rd"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #Authors analyze/plot/analyzed/plotted Authors HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_etal"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #We analyze/plot/analyzed/plotted their HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_1st", "is_keyword", "is_pron_3rd"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.2,
+                "prob_data_influenced":0.9,
+                "prob_mention":0.0}
+            #We analyze/plot/analyzed/plotted Authors HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_1st", "is_keyword", "is_etal"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.2,
+                "prob_data_influenced":0.9,
+                "prob_mention":0.0}
+            #
+            #We analyze/plot/analyzed/plotted HST data in Figure 1.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_1st", "is_keyword", "is_term_fig"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #We analyze/plot/analyzed/plotted our HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_1st"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #They analyze/plot/analyzed/plotted our HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_3rd", "is_keyword", "is_pron_1st"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.9}
+            #Authors analyze/plot/analyzed/plotted our HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_etal", "is_keyword", "is_pron_1st"]),
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.9}
+            #
+            #
+            #
+            #<datainfl. verb classes>, singular matter
+            #We simulate/simulated HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_1st", "is_keyword"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":1.0,
+                "prob_mention":0.0}
+            #Figure 1 simulate/simulated HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_term_fig", "is_keyword"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":1.0,
+                "prob_mention":0.0}
+            #They simulate/simulated HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_3rd", "is_keyword"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #Authors simulate/simulated HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_etal", "is_keyword"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #
+            #
+            #<datainfl. verb classes>, multiple matter
+            #Our HST program simulates/simulated HD 123456.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_1st"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":1.0,
+                "prob_mention":0.0}
+            #
+            #HST data is simulated/was simulated in our Figure 1.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_term_fig", "is_pron_1st"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.3,
+                "prob_data_influenced":0.9,
+                "prob_mention":0.0}
+            #
+            #HST data is simulated/was simulated in our paper.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_1st"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.3,
+                "prob_data_influenced":0.9,
+                "prob_mention":0.0}
+            #
+            #We simulate/simulated our HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_1st"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":1.0,
+                "prob_mention":0.0}
+            #They simulate/simulated their HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_3rd"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #Authors simulate/simulated Authors' HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_etal"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #We simulate/simulated their HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_1st", "is_keyword", "is_pron_3rd"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":1.0,
+                "prob_mention":0.0}
+            #We simulate/simulated Authors' HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_1st", "is_keyword", "is_etal"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":1.0,
+                "prob_mention":0.0}
+            #
+            #We simulate/simulated HST data in Figure 1.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_1st", "is_keyword", "is_term_fig"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.3,
+                "prob_data_influenced":0.9,
+                "prob_mention":0.0}
+            #
+            #They simulate/simulated our HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_pron_3rd", "is_keyword", "is_pron_1st"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.9}
+            #Authors simulate/simulated our HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_etal", "is_keyword", "is_pron_1st"]),
+                "verbclass":{"datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.9}
+            #
+            #
+            #
+            #Rules with triple-matter
+            #The HST targets is/has/show/analyze in our Figure 1.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_1st", "is_term_fig"]),
+                "verbclass":{"be", "has", "plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #The Figure 1 HST targets is/has/show/analyze the HST data trend.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_1st"]),
+                "verbclass":{"be", "has", "plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #The Figure 1 HST targets is/has/show/analyze the HST data trend.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_term_fig"]),
+                "verbclass":{"be", "has", "plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #Their HST targets is/has/show/analyze the HST data trend.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_3rd"]),
+                "verbclass":{"be", "has", "plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.9}
+            #The Author HST targets is/has/show/analyze the HST data trend.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_etal"]),
+                "verbclass":{"be", "has", "plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.9}
+            #
+            #
+            #
+            """
+            #Expandable-rules with triple-matter
+            #The trend is/was/has/had/plots/plotted/analyzes/analyzed for the Authors' HST data in Figure 1.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":["is_etal", "is_keyword", "is_term_fig"],
+                "verbclass":{"be", "has", "plot", "science", "datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.3,
+                "prob_data_influenced":0.9,
+                "prob_mention":0.0}
+            #
+            #
+            #
+            #Blanket is_pron_1st combinations
+            #We/Figure 1 analyze/plot/analyzed/plotted our HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":["is_pron_1st", "is_term_fig", "!is_pron_3rd", "!is_etal", "is_keyword"],
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #<Pron.1st involvement with keyword figure
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":["is_pron_1st", "!is_etal", "!is_pron_3rd"],
+                "objectmatter":["is_keyword", "is_pron_1st", "!is_etal", "!is_pron_3rd"],
+                "verbclass":{"science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #<Pron.1st involvement with keyword figure
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":["is_pron_1st", "!is_etal", "!is_pron_3rd"],
+                "objectmatter":["is_keyword", "is_term_fig", "!is_etal", "!is_pron_3rd"],
+                "verbclass":["!datainfluenced"], #{"be", "has", "plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #
+            #
+            #Blanket is_term_fig combinations
+            #<Figure involvement with keyword>.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":["is_term_fig", "!is_pron_3rd", "!is_etal"],
+                "objectmatter":["is_keyword", "!is_pron_3rd", "!is_etal"],
+                "verbclass":{"be", "has", "plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":1.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.0}
+            #
+            #
+            #
+            #Blanket is_etal combinations
+            #<Author involvement with keyword figure>.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":["is_etal"],
+                "objectmatter":["is_keyword", "is_term_fig"],
+                "verbclass":{"be", "has", "plot", "science", "datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.9,
+                "prob_mention":0.3}
+            #
+            #Authors analyze/plot/analyzed/plotted Authors HST data.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":tuple(["is_keyword"]),
+                "objectmatter":["is_pron_3rd", "is_etal", "!is_pron_1st", "!is_term_fig"],
+                "verbclass":{"science", "plot"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.9}
+            #
+            #<Author involvement with keyword data>.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":["is_etal", "is_keyword", "!is_pron_1st", "!is_term_fig"],
+                "objectmatter":tuple([]),
+                "verbclass":{"be", "has", "plot", "science", "datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.9}
+            #<Author involvement with keyword object>.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":["is_etal", "!is_pron_1st", "!is_term_fig"],
+                "objectmatter":["is_keyword", "!is_pron_1st", "!is_term_fig"],
+                "verbclass":{"be", "has", "plot", "science", "datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.9}
+            #<Author object involvement with keyword object>.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":["!is_pron_1st", "!is_term_fig"],
+                "objectmatter":["is_keyword", "is_etal", "!is_pron_1st", "!is_term_fig"],
+                "verbclass":{"be", "has", "plot", "science", "datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.3,
+                "prob_mention":0.9}
+            #
+            #<Author object involvement with keyword object>.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":["is_etal", "!is_pron_1st", "!is_term_fig"],
+                "objectmatter":["is_keyword", "!is_pron_1st", "!is_term_fig"],
+                "verbclass":{"be", "has", "plot", "science"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.0,
+                "prob_data_influenced":0.0,
+                "prob_mention":1.0}
+            #
+            #
+            #
+            #Blanket is_pron_3rd combinations
+            #<Author object involvement with keyword object>.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "subjectmatter":["is_pron_3rd", "!is_etal", "!is_pron_1st", "!is_term_fig"],
+                "objectmatter":["is_keyword", "!is_etal", "!is_pron_1st", "!is_term_fig"],
+                "verbclass":{"be", "has", "plot", "science", "datainfluenced"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.5,
+                "prob_data_influenced":0.5,
+                "prob_mention":0.5}
+            #
+            #"""
+            #
+            #Catch all for now.
+            if do_final_blanketrule:
+                itrack += 1
+                dict_examples_base[strformat.format(itrack)] = {
+                    "allmatter":"is_any",
+                    "verbclass":"is_any",
+                    "verbtypes":"is_any",
+                    "prob_science":0.5,
+                    "prob_data_influenced":0.5,
+                    "prob_mention":0.5}
+            #
+            #
+        #
+
+        ##Generate final base tree with only target classifs and norm. probs.
+        decision_tree = {}
+        itrack = -1
+        #Iterate through base examples
+        for key_ex in dict_examples_base:
+            curr_ex = dict_examples_base[key_ex]
+            curr_denom = np.sum([curr_ex[(prefix+item)]
+                                for item in which_classifs]) #Prob. normalizer
+            curr_probs = {(prefix+item):(curr_ex[(prefix+item)]/curr_denom)
+                            for item in which_classifs}
+            #
+
+            ##For main example
+            #Extract all parameters and their values
+            new_ex = {key:curr_ex[key] for key in all_params}
+            #Normalize and store probabilities for target classifs
+            new_ex.update(curr_probs)
+            #Store this example
+            itrack += 1
+            decision_tree[itrack] = new_ex
+            #
+
+            ##For passive example
+            """
+            #For general (not is_any, not set) case
+            if ((curr_ex[key_verbtype] == "is_any")):
+                #                    or (curr_ex[key_verbtype] is None)):
+                pass #No passive counterpart necessary for is_any case
+            #For set, add example+passive for each entry in set
+            #elif isinstance(curr_ex[key_verbtype], set):
+                #Iterate through set entries
+            #    for curr_val in curr_ex[key_verbtype]:
+                    #Passive with flipped subj-obj
+                    #Extract all parameters and their values
+            #        new_ex = {key:curr_ex[key] for key in all_params
+            #                if (key not in (keys_matter+[key_verbtype]))}
+                    #Add in passive term for verbtypes
+            #        tmp_vals = [curr_val, "PASSIVE"]
+            #        new_ex[key_verbtype] = tmp_vals
+                    #Flip the subject and object terms
+            #        new_ex["subjectmatter"] = curr_ex["objectmatter"]
+            #        new_ex["objectmatter"] = curr_ex["subjectmatter"]
+                    #Normalize and store probabilities for target classifs
+            #        new_ex.update(curr_probs)
+                    #Store this example
+            #        itrack += 1
+            #        decision_tree[itrack] = new_ex
+            else:
+                #Extract all parameters and their values
+                new_ex = {key:curr_ex[key] for key in all_params
+                        if (key not in (keys_matter+[key_verbtype]))}
+                #Add in passive term for verbtypes
+                tmp_vals = list(curr_ex[key_verbtype]) #+ ["PASSIVE"]
+                #Apply old data structure type to new expanded verbtype
+                new_ex[key_verbtype]=type(curr_ex[key_verbtype])(tmp_vals)
+                #Flip the subject and object terms
+                new_ex["subjectmatter"] = curr_ex["objectmatter"]
+                new_ex["objectmatter"] = curr_ex["subjectmatter"]
+                #Normalize and store probabilities for target classifs
+                new_ex.update(curr_probs)
+                #Store this example
+                itrack += 1
+                decision_tree[itrack] = new_ex
+            """
+        #
+
+        #Return the assembled decision tree
+        return decision_tree
+    #
+
+    ##Method: _assemble_decision_tree
+    ##Purpose: Assemble base of decision tree, with probabilities, that can be read from/expanded as full decision tree
+    def old_beforemattercomb_assemble_decision_tree(self, do_final_blanketrule):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        which_classifs = self._get_info("class_names")
+        dict_possible_values = config.dict_tree_possible_values
+        #dict_valid_combos = config.dict_tree_valid_value_combinations
+        keys_matter = config.nest_keys_matter
+        key_verbtype = config.nest_key_verbtype
+        all_params = list(dict_possible_values.keys())
+        prefix = "prob_"
+        strformat = "{0:02d}"
+        #
+
+
+        ##Goal: Generate matrix of probabilities based on 'true' examples
+        if True: #Just to make it easier to hide the example content display
+            dict_examples_base = {}
+            itrack = -1
+            #
+            #<know verb classes>
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
                 "subjectmatter":"is_any",
                 "objectmatter":"is_any",
                 "verbclass":{"know"},
@@ -9313,6 +10375,126 @@ class Classifier_Rules(_Classifier):
         #Load all possible values
         all_possible_values = config.dict_tree_possible_values
         solo_values = [None]
+        all_matters = [item for item in all_possible_values["allmatter"]
+                            if (item is not None)]
+        all_verbclasses = [item for item in all_possible_values["verbclass"]
+                            ] #No shallow copying!
+        solo_verbtypes = ["PAST", "PRESENT", "FUTURE", "PURPOSE"]
+        multi_verbtypes = [item for item in all_possible_values["verbtypes"]
+                            if ((item is not None)
+                                and (item not in solo_verbtypes))]
+        #
+        if do_verbose:
+            print("Done loading all possible branch parameters.")
+            print("Generating combinations of branch parameters...")
+        #
+        #Set caps for multi-parameter combinations
+        if (cap_iter is not None):
+            cap_matter = cap_iter
+            #cap_vtypes = cap_iter
+        else:
+            cap_matter = 3 #len(all_subjmatters)
+            cap_vtypes = len(multi_verbtypes)
+        #
+
+        #Generate set of all possible individual multi-parameter combinations
+        sub_allmatters = [item for ii in range(1, (cap_matter+1))
+                            for item in iterer.combinations(all_matters,ii)]
+        sub_multiverbtypes = [item for ii in range(1, (cap_vtypes+1))
+                            for item in iterer.combinations(multi_verbtypes,ii)]
+        #
+        if (cap_vtypes > 0):
+            sub_allverbtypes = [(list(item_sub)+[item_solo])
+                            for item_sub in sub_multiverbtypes
+                            for item_solo in solo_verbtypes] #Fold in verb tense
+        else:
+            sub_allverbtypes = all_possible_values["verbtypes"]
+        #
+
+        #Fold in solo and required values as needed
+        sets_verbclasses = all_verbclasses + [""]
+        sets_allmatters = (sub_allmatters) # + [None])
+        sets_allverbtypes = (sub_allverbtypes) # + [None])
+        #
+        if do_verbose:
+            print("Combinations of branch parameters complete.")
+            print(("Verb classes: {0}\nAll.matter: {1}\nVerbtypes: {2}")
+                    .format(sets_verbclasses, sets_allmatters,
+                            sets_allverbtypes))
+        #
+
+        #Generate set of all possible branches (all possible valid combos)
+        list_branches = [{"allmatter":sets_allmatters[aa],
+                        "verbclass":sets_verbclasses[cc],
+                        "verbtypes":sets_allverbtypes[dd]}
+                        for aa in range(0, len(sets_allmatters))
+                        #for bb in range(0, len(sets_objmatters))
+                        for cc in range(0, len(sets_verbclasses))
+                        for dd in range(0, len(sets_allverbtypes))
+                        if (((sets_allmatters[aa] is not None)
+                                and ("is_keyword" in sets_allmatters[aa]))
+                            ) #Must have keyword
+                        ]
+        #
+        num_branches = len(list_branches)
+        if do_verbose:
+            print("{0} branches generated across all parameter combinations."
+                    .format(num_branches))
+            print("Extracting branches not covered by decision tree...")
+        #
+
+        #Collect branches that are missing from decision tree
+        bools_is_missing = [None]*num_branches
+        for ii in range(0, num_branches):
+            curr_branch = list_branches[ii]
+            #Apply decision tree and ensure valid output
+            try:
+                tmp_res = self._apply_decision_tree(decision_tree=decision_tree,
+                                                    rule=curr_branch)
+                #
+                bools_is_missing[ii] = False #Branch is covered
+            #
+            #Record this branch as missing if invalid output
+            except NotImplementedError:
+                #Mark this branch as missing
+                bools_is_missing[ii] = True
+            #
+            #Print some notes
+            if (do_verbose and ((ii % print_freq) == 0)):
+                print("{0} of {1} branches have been checked."
+                        .format((ii+1), num_branches))
+        #
+
+        #Throw error if any branches not checked
+        if (None in bools_is_missing):
+            raise ValueError("Err: Branches not checked?")
+        #
+
+        #Gather and return missing branches
+        if do_verbose:
+            print("All branches checked.\n{0} of {1} missing."
+                    .format(np.sum(bools_is_missing), num_branches))
+            print("Run of _find_missing_branches() complete!")
+        #
+        return (np.asarray(list_branches)[np.asarray(bools_is_missing)])
+    #
+
+    ##Method: _find_missing_branches
+    ##Purpose: Determine and return missing branches in decision tree
+    def old_beforecombinedmatter_find_missing_branches(self, do_verbose=None, cap_iter=None, print_freq=100):
+        #Load global variables
+        if (do_verbose is None):
+            do_verbose = self._get_info("do_verbose")
+        decision_tree = self._get_info("decision_tree")
+        #
+        if do_verbose:
+            print("\n\n")
+            print(" > Running _find_missing_branches()!")
+            print("Loading all possible branch parameters...")
+        #
+        #Load all possible values
+        all_possible_values = config.dict_tree_possible_values
+        solo_values = [None]
         all_subjmatters = [item for item in all_possible_values["subjectmatter"]
                             if (item is not None)]
         all_objmatters = [item for item in all_possible_values["objectmatter"]
@@ -9474,6 +10656,9 @@ class Classifier_Rules(_Classifier):
         #
         sets_objmatter = list(set(sets_objmatter))
 
+        #Combine the subject and object matter
+        sets_allmatter = list(set((sets_subjmatter + sets_objmatter)))
+
         #Set verb class
         #verbclass = self._categorize_verb(verb=clause_text["verb"])
         verbclass_raw = self._categorize_verb(verb=clause_text["verb"])
@@ -9497,8 +10682,8 @@ class Classifier_Rules(_Classifier):
         #
 
         #Set rules from combinations of subj. and obj.matter
-        rules = [{"subjectmatter":sets_subjmatter,
-                            "objectmatter":sets_objmatter,
+        rules = [{"allmatter":sets_allmatter,
+                            #"objectmatter":sets_objmatter,
                             "verbclass":verbclass, "verbtypes":verbtype}]
         #
 
