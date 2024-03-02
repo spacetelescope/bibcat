@@ -25,7 +25,7 @@ import numpy as np
 import bibcat.config as config
 from bibcat.core.base import Base
 from bibcat.core.grammar import Grammar
-from bibcat.data.split_dataset import generate_directory_TVT
+from bibcat.data.partition_dataset import generate_directory_TVT
 
 
 class Operator(Base):
@@ -103,7 +103,7 @@ class Operator(Base):
         return
 
     # Fetch a keyword object that matches the given lookup
-    def _fetch_keyword_object(self, lookup, do_verbose=None, do_raise_emptyerror=True):
+    def _fetch_keyword_object(self, lookup: str, do_verbose=None, do_raise_emptyerror=True):
         """
         Method: _fetch_keyword_object
         WARNING! This method is *not* meant to be used directly by users.

@@ -1,5 +1,5 @@
 """
-:title: split_dataset.py
+:title: partition_dataset.py
 
 This module splits classified texts into directories containing training,
 validation, and testing datasets for each run for ML classifier. 

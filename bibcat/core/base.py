@@ -61,7 +61,7 @@ class Base:
         return
 
     # Retrieve specified data via given key
-    def _get_info(self, key, do_flag_hidden=False):
+    def _get_info(self, key: str, do_flag_hidden=False):
         """
         Method: _get_info
         WARNING! This method is *not* meant to be used directly by users.

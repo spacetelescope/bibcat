@@ -10,7 +10,7 @@ import os
 from nltk.corpus import wordnet
 
 # Define the name of the model directory
-name_model = "my_test_run_1"
+name_model = "my_test_run_2"
 
 # Set global user paths, which should be set outside the bibcat repo folder.
 # filepath_dataset = "/path/to/datasets/"
