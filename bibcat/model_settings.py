@@ -1,3 +1,9 @@
+"""
+:title: model_settings.py
+
+This module allows users to change the parameters required to build and train ML models.
+"""
+
 # num_papers: Set None to use all available papers in external dataset
 # Note: If set to integer, final paper count might be a little more than
 # target num_papers given

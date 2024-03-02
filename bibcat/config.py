@@ -10,11 +10,10 @@ import os
 from nltk.corpus import wordnet
 
 # Define the name of the model directory
-name_model = "my_test_run_2"
+name_model = "my_test_run_1"
 
 # Set global user paths, which should be set outside the bibcat repo folder.
-# filepath_dataset = "/path/to/datasets/"
-filepath_dataset = "/Users/jyoon/Documents/asb/bibliography_automation/bibcat_datasets"
+filepath_dataset = "/path/to/datasets/"
 # To construct the dataset, it requires the papertrack data and and the paper corpus texts from ASDS
 # papertrack data that Sarah W. created
 path_papertrack = os.path.join(filepath_dataset, "papertrack_export_2023-11-06.json")

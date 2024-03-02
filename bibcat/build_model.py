@@ -75,7 +75,7 @@ else:
     source_dataset = load_source_dataset(do_verbose=True)
 
     # streamline text dictionary
-    dict_texts = streamline_dataset(source_dataset=source_dataset, text_dicts_ML=tabby_ML, do_verbose_text_summary=True)
+    dict_texts = streamline_dataset(source_dataset=source_dataset, operator_ML=tabby_ML, do_verbose_text_summary=True)
 
     # Use the Operator instance to train an ML model
     start = time.time()

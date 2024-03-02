@@ -1,12 +1,13 @@
 """
 :title: partition_dataset.py
 
-This module splits classified texts into directories containing training,
+This module splits the streamlined dataset into training,
 validation, and testing datasets for each run for ML classifier. 
 
 """
 import collections
 import os
+from typing import Any
 
 import numpy as np
 
@@ -15,7 +16,7 @@ from bibcat.core.base import Base
 
 
 def generate_directory_TVT(
-    dir_data, fraction_TVT, dict_texts, mode_TVT="uniform", do_shuffle=True, seed=10, do_verbose=None
+    dir_data: str, fraction_TVT: list, dict_texts: Any, mode_TVT="uniform", do_shuffle=True, seed=10, do_verbose=None
 ):
     """
     Method: generate_directory_TVT

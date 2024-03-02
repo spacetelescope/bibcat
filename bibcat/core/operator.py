@@ -662,7 +662,6 @@ class Operator(Base):
                 print("Storing the data in train+validate+test directories...")
 
             # Store the modifs in new TVT directories
-            # classifier.generate_directory_TVT(
             generate_directory_TVT(
                 dir_data=dir_data,
                 fraction_TVT=fraction_TVT,

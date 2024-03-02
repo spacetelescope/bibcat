@@ -4,6 +4,7 @@ from typing import Any, Dict
 from bibcat import config
 from bibcat import model_settings as settings
 from bibcat import parameters as params
+from bibcat.core.operator import Operator
 
 
 def load_source_dataset(do_verbose: bool):
@@ -18,7 +19,7 @@ def load_source_dataset(do_verbose: bool):
     return source_dataset
 
 
-def streamline_dataset(source_dataset: Dict[str, Any], text_dicts_ML: Any, do_verbose_text_summary=False):
+def streamline_dataset(source_dataset: Dict[str, Any], operator_ML: Operator, do_verbose_text_summary=False):
     """
     Organize a new version of the data with: key:text,class,id,mission structure
     """
@@ -60,7 +61,7 @@ def streamline_dataset(source_dataset: Dict[str, Any], text_dicts_ML: Any, do_ve
                 continue
 
             # Otherwise, check if this mission is a target mission
-            fetched_kobj = text_dicts_ML._fetch_keyword_object(
+            fetched_kobj = operator_ML._fetch_keyword_object(
                 lookup=curr_key, do_verbose=False, do_raise_emptyerror=False
             )
             # Skip if not a target
