@@ -122,6 +122,10 @@ Hubble	Hubble residual	FALSE
 Hubble	Hubble stage	FALSE
 Hubble	Hubble value	FALSE
 Hubble	Hubble velocity	FALSE
+Hubble	Hubble time	FALSE
+Hubble	Hubble type	FALSE
+Hubble	Hubble tension	FALSE
+Hubble	Hubble flow	FALSE
 Hubble	t Hubble	FALSE
 Hubble	deep Hubble	TRUE
 Hubble	ESA / Hubble	TRUE
@@ -130,6 +134,7 @@ Hubble	Hubble heritage	TRUE
 Hubble	Hubble source	TRUE
 Hubble	Hubble system	TRUE
 Hubble	Hubble UDF	TRUE
+Hubble	PHANGS-HST	TRUE
 #
 #Any-Mission Phrases
 #NOTE: These should be last in database, to allow any specific-mission cases above to have precedence
@@ -155,7 +160,9 @@ AnyMission	AnyMission CCD	TRUE
 AnyMission	AnyMission curve	TRUE
 AnyMission	AnyMission data	TRUE
 AnyMission	AnyMission database	TRUE
+AnyMission	AnyMission dataset	TRUE
 AnyMission	AnyMission detection	TRUE
+AnyMission	AnyMission detector	TRUE
 AnyMission	AnyMission discovery	TRUE
 AnyMission	AnyMission documentation	TRUE
 AnyMission	AnyMission epoch	TRUE
@@ -193,4 +200,6 @@ AnyMission	AnyMission telescope	TRUE
 AnyMission	AnyMission telecscope	TRUE
 AnyMission	AnyMission timeseries	TRUE
 AnyMission	AnyMission treasury	TRUE
+AnyMission	AnyMission PSF	TRUE
+AnyMission	AnyMission user	TRUE
 #

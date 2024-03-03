@@ -6895,8 +6895,8 @@ class Classifier_Rules(_Classifier):
                 "allmatter":tuple(["is_keyword", "is_term_fig"]),
                 "verbclass":{"science", "plot"},
                 "verbtypes":{"PRESENT", "PAST"},
-                "prob_science":1.0,
-                "prob_data_influenced":0.0,
+                "prob_science":0.9,
+                "prob_data_influenced":0.1,
                 "prob_mention":0.0}
             #Their HST study presents/analyzes/presented/analyzed a trend.
             itrack += 1
@@ -7304,28 +7304,9 @@ class Classifier_Rules(_Classifier):
                 "prob_science":0.0,
                 "prob_data_influenced":0.0,
                 "prob_mention":1.0}
-            #Figure 1 analyzes/plots/analyzed/plotted HST data.
-            itrack += 1
-            dict_examples_base[strformat.format(itrack)] = {
-                "allmatter":tuple(["is_term_fig", "is_keyword"]),
-                "verbclass":{"science", "plot"},
-                "verbtypes":{"PRESENT", "PAST"},
-                "prob_science":1.0,
-                "prob_data_influenced":0.0,
-                "prob_mention":0.0}
             #
             #
             #
-            #<science/plot verb classes>, multiple matter
-            #Our HST program presents/presented/observes/observed HD 123456.
-            itrack += 1
-            dict_examples_base[strformat.format(itrack)] = {
-                "allmatter":tuple(["is_keyword", "is_pron_1st"]),
-                "verbclass":{"science", "plot"},
-                "verbtypes":{"PRESENT", "PAST"},
-                "prob_science":1.0,
-                "prob_data_influenced":0.0,
-                "prob_mention":0.0}
             #They analyze/plot/analyzed/plotted their HST data.
             itrack += 1
             dict_examples_base[strformat.format(itrack)] = {
@@ -7590,11 +7571,20 @@ class Classifier_Rules(_Classifier):
             #
             #
             #Rules with triple-matter
-            #The HST targets is/has/show/analyze in our Figure 1.
+            #The HST targets is/has in our Figure 1.
             itrack += 1
             dict_examples_base[strformat.format(itrack)] = {
                 "allmatter":tuple(["is_keyword", "is_pron_1st", "is_term_fig"]),
-                "verbclass":{"be", "has", "plot", "science"},
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.9,
+                "prob_data_influenced":0.1,
+                "prob_mention":0.0}
+            #The HST targets show/analyze in our Figure 1.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_1st", "is_term_fig"]),
+                "verbclass":{"plot", "science"},
                 "verbtypes":{"PRESENT", "PAST"},
                 "prob_science":1.0,
                 "prob_data_influenced":0.0,
@@ -7603,7 +7593,16 @@ class Classifier_Rules(_Classifier):
             itrack += 1
             dict_examples_base[strformat.format(itrack)] = {
                 "allmatter":tuple(["is_keyword", "is_pron_1st"]),
-                "verbclass":{"be", "has", "plot", "science"},
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.9,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.1}
+            #The Figure 1 HST targets is/has/show/analyze the HST data trend.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_pron_1st"]),
+                "verbclass":{"plot", "science"},
                 "verbtypes":{"PRESENT", "PAST"},
                 "prob_science":1.0,
                 "prob_data_influenced":0.0,
@@ -7612,7 +7611,16 @@ class Classifier_Rules(_Classifier):
             itrack += 1
             dict_examples_base[strformat.format(itrack)] = {
                 "allmatter":tuple(["is_keyword", "is_term_fig"]),
-                "verbclass":{"be", "has", "plot", "science"},
+                "verbclass":{"be", "has"},
+                "verbtypes":{"PRESENT", "PAST"},
+                "prob_science":0.9,
+                "prob_data_influenced":0.0,
+                "prob_mention":0.1}
+            #The Figure 1 HST targets is/has/show/analyze the HST data trend.
+            itrack += 1
+            dict_examples_base[strformat.format(itrack)] = {
+                "allmatter":tuple(["is_keyword", "is_term_fig"]),
+                "verbclass":{"plot", "science"},
                 "verbtypes":{"PRESENT", "PAST"},
                 "prob_science":1.0,
                 "prob_data_influenced":0.0,
@@ -10197,7 +10205,7 @@ class Classifier_Rules(_Classifier):
     ##Purpose: Convert set of decision tree scores into single verdict
     #def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=1.0, order_override_acceptance=["science"], "data_influenced"]):
     #If this doesn't work, revert back and use split uncertainty thresholds for rule-based classifs (e.g., more lenient for mentions)
-    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=2, thres_override_acceptance=1.0, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.85, order_override_acceptance=["science", "data_influenced"], dict_weights={"science":1.5, "data_influenced":1.5, "mention":1}): #, "data_influenced"]):
+    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=2, thres_override_acceptance=1.0, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.85, order_override_acceptance=["science", "data_influenced"], dict_weights={"science":1, "data_influenced":1, "mention":1}): #, "data_influenced"]):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         #Print some notes
@@ -10338,8 +10346,11 @@ class Classifier_Rules(_Classifier):
             #dict_uncertainties = {
             #        key:dict_results[key]["score_tot_fin"]
             #        for key in all_keys}
+            #dict_uncertainties = {
+            #        key:dict_results[key]["score_tot_weighted"]
+            #        for key in all_keys}
             dict_uncertainties = {
-                    key:dict_results[key]["score_tot_weighted"]
+                    key:dict_results[key]["count_norm"]
                     for key in all_keys}
         #
         #Otherwise, splice in fixed max. uncertainty
@@ -14132,7 +14143,12 @@ class Performance(_Base):
                         if (tmppass is not None):
                             max_verdict = max(tmppass, key=tmppass.get)
                             max_val = tmppass[max_verdict] #Uncertainty of verd.
-                            if (max_val < thresholds[ii]): #If below thres.
+                            #
+                            #Fetch current threshold
+                            curr_thres = thresholds[ii] #Same thres. for all
+                            #
+                            #Apply current threshold
+                            if (max_val < curr_thres): #If below thres.
                                 curr_measval = res_lowprob #Return low prob.
                             else:
                                 curr_measval = max_verdict #Return verdict
