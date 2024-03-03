@@ -98,7 +98,8 @@ keyword_obj_WUPPE = bibcat.Keyword(
             acronyms=["WUPPE"],
             banned_overlap=[])
 #
-all_kobjs = [keyword_obj_HST, keyword_obj_JWST, keyword_obj_TESS, keyword_obj_Kepler, keyword_obj_PanSTARRS, keyword_obj_GALEX, keyword_obj_K2, keyword_obj_HLA]
+kobjs_8set = [keyword_obj_HST, keyword_obj_JWST, keyword_obj_TESS, keyword_obj_Kepler, keyword_obj_PanSTARRS, keyword_obj_GALEX, keyword_obj_K2, keyword_obj_HLA]
+kobjs_all = [keyword_obj_BEFS, keyword_obj_Copernicus, keyword_obj_EUVE, keyword_obj_FIRST, keyword_obj_FUSE, keyword_obj_GALEX, keyword_obj_HLA, keyword_obj_HSC, keyword_obj_HST_expanded, keyword_obj_HUT, keyword_obj_IMAPS, keyword_obj_IUE, keyword_obj_JWST_expanded, keyword_obj_Kepler, keyword_obj_K2, keyword_obj_PanSTARRS, keyword_obj_Roman, keyword_obj_TESS, keyword_obj_TUES, keyword_obj_UIT, keyword_obj_WUPPE]
 #
 
 ##Classification mapping parameters
