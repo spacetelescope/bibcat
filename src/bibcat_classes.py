@@ -6994,9 +6994,9 @@ class Classifier_Rules(_Classifier):
                 "allmatter":tuple(["is_pron_1st", "is_keyword"]),
                 "verbclass":tuple([]),
                 "verbtypes":[],
-                "prob_science":1.0,
-                "prob_data_influenced":0.0,
-                "prob_mention":0.0}
+                "prob_science":0.8,
+                "prob_data_influenced":0.1,
+                "prob_mention":0.1}
             #
             #E.g.: "Our analysis considers their HST data."
             itrack += 1
@@ -7034,9 +7034,9 @@ class Classifier_Rules(_Classifier):
                 "allmatter":tuple(["is_keyword", "is_pron_1st"]),
                 "verbclass":tuple([]),
                 "verbtypes":[],
-                "prob_science":1.0,
-                "prob_data_influenced":0.0,
-                "prob_mention":0.0}
+                "prob_science":0.8,
+                "prob_data_influenced":0.1,
+                "prob_mention":0.1}
             #E.g.: "Their HST observations echo the HST trend."
             itrack += 1
             dict_examples_base[strformat.format(itrack)] = {
@@ -7062,9 +7062,9 @@ class Classifier_Rules(_Classifier):
                 "allmatter":tuple(["is_keyword", "is_pron_1st", "is_term_fig"]),
                 "verbclass":tuple([]),
                 "verbtypes":[],
-                "prob_science":1.0,
-                "prob_data_influenced":0.0,
-                "prob_mention":0.0}
+                "prob_science":0.8,
+                "prob_data_influenced":0.1,
+                "prob_mention":0.1}
             #
             #E.g.: "Their/Author's error bars are guided by the HST data rms."
             itrack += 1
@@ -7210,9 +7210,9 @@ class Classifier_Rules(_Classifier):
                 "allmatter":tuple(["is_pron_1st", "is_keyword", "is_term_fig"]),
                 "verbclass":{"be", "has"},
                 "verbtypes":{"PRESENT", "PAST"},
-                "prob_science":1.0,
-                "prob_data_influenced":0.0,
-                "prob_mention":0.0}
+                "prob_science":0.9,
+                "prob_data_influenced":0.05,
+                "prob_mention":0.05}
             #
             #They is/has/was/had our HST data.
             itrack += 1
@@ -10197,7 +10197,7 @@ class Classifier_Rules(_Classifier):
     ##Purpose: Convert set of decision tree scores into single verdict
     #def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=1.0, order_override_acceptance=["science"], "data_influenced"]):
     #If this doesn't work, revert back and use split uncertainty thresholds for rule-based classifs (e.g., more lenient for mentions)
-    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=2, thres_override_acceptance=1.0, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.85, order_override_acceptance=["science", "data_influenced"]): #, "data_influenced"]):
+    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=2, thres_override_acceptance=1.0, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.85, order_override_acceptance=["science", "data_influenced"], dict_weights={"science":1.5, "data_influenced":1.5, "mention":1}): #, "data_influenced"]):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         #Print some notes
@@ -10251,15 +10251,23 @@ class Classifier_Rules(_Classifier):
         #Normalize and store the scores
         denom = np.sum([dict_results[key]["score_tot_unnorm"]
                         for key in all_keys])
+        denom_weighted = np.sum([(dict_results[key]["score_tot_unnorm"]
+                                    * dict_weights[key])
+                                for key in all_keys])
         for curr_key in all_keys:
             #Calculate and store normalized score
             if (denom > 0):
                 tmp_score = (dict_results[curr_key]["score_tot_unnorm"] / denom)
+                tmp_score_weighted = (dict_results[curr_key]["score_tot_unnorm"]
+                                        * dict_weights[curr_key]
+                                        / denom_weighted)
             else:
                 tmp_score = 0
+                tmp_score_weighted = 0
             #
             dict_results[curr_key]["score_tot_norm"] = tmp_score
             dict_results[curr_key]["score_tot_fin"] = tmp_score
+            dict_results[curr_key]["score_tot_weighted"] = tmp_score_weighted
         #
 
         #Normalize the count of individual scores with max verdicts as well
@@ -10327,8 +10335,11 @@ class Classifier_Rules(_Classifier):
             #dict_uncertainties = {
             #        key:dict_results[key]["count_norm"]
             #        for key in all_keys}
+            #dict_uncertainties = {
+            #        key:dict_results[key]["score_tot_fin"]
+            #        for key in all_keys}
             dict_uncertainties = {
-                    key:dict_results[key]["score_tot_fin"]
+                    key:dict_results[key]["score_tot_weighted"]
                     for key in all_keys}
         #
         #Otherwise, splice in fixed max. uncertainty
