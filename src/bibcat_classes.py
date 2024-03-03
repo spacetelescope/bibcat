@@ -2676,7 +2676,7 @@ class Grammar(_Base):
             curr_dict_ids = {"verb":curr_iverb, "auxs":[], "subjects":[],
                                 "dir_objects":[], "prep_objects":[],
                                 "order":i_track, "verbtype":None,
-                                "clause_nounchunks":[]}
+                                "chain_iverbs":None, "clause_nounchunks":[]}
             #
 
             #Store these clausal containers
@@ -2876,9 +2876,10 @@ class Grammar(_Base):
             for ii in range(0, num_sents):
                 curr_clauses_ids = cluster_info[ii]["clauses"]["ids"]
                 #Sort clausal keys by verb hierarchical order
-                list_iverbs_sorted = list(curr_clauses_ids.keys())
-                list_iverbs_sorted.sort(key=lambda x
-                                            :curr_clauses_ids[x]["order"])
+                #list_iverbs_sorted = list(curr_clauses_ids.keys())
+                #list_iverbs_sorted.sort(key=lambda x
+                #                            :curr_clauses_ids[x]["order"])
+                list_iverbs_all = list(curr_clauses_ids.keys())
 
                 #Fetch ids of noun-chunks flagged as important
                 curr_flags = cluster_info[ii]["flags"]
@@ -2887,15 +2888,19 @@ class Grammar(_Base):
                                             and (curr_flags[ind]["is_any"]))]
 
                 #Fetch keys for clauses marked as important
-                list_iverbs_imp_raw = [ind for ind in list_iverbs_sorted
+                #list_iverbs_imp_raw = [ind for ind in list_iverbs_sorted
+                list_iverbs_imp_raw = [ind for ind in list_iverbs_all
                                 if any([(item in
                                     curr_clauses_ids[ind]["clause_nounchunks"])
                                     for item in curr_imp_chunkids])]
 
                 #Now add in keys that precede imp. clauses in heirarchical order
-                list_iverbs_imp = [
-                        list_iverbs_sorted[0:list_iverbs_sorted.index(item)+1]
-                        for item in list_iverbs_imp_raw]
+                #list_iverbs_imp = [
+                #        list_iverbs_sorted[0:list_iverbs_sorted.index(item)+1]
+                #        for item in list_iverbs_imp_raw]
+                list_iverbs_imp = [curr_clauses_ids[item]["chain_iverbs"]
+                                    for item in list_iverbs_imp_raw
+                                ] #Gather verbs that branch down to imp. verbs
                 list_iverbs_imp = [item2 for item1 in list_iverbs_imp
                                     for item2 in item1] #Flatten
                 list_iverbs_imp = set(list_iverbs_imp) #Take unique
@@ -2925,7 +2930,6 @@ class Grammar(_Base):
                 #Update latest text with these updates
                 tmp_res = arrcluster_NLP[ii][arrs_is_keep[ii]]
                 sents_updated[ii] = " ".join(item.text for item in tmp_res)
-
             #
             #Print some notes
             if do_verbose:
@@ -2985,32 +2989,74 @@ class Grammar(_Base):
 
         #If verb index, update latest i_verb and fetch used subj. if needed
         if (i_node in clauses_text): #Only verb ids used to build clauses
+            #Update i_verb chain with new verb
+            if (node.i == sentence_NLP.root.i): #If sentence root, no chain yet
+                clauses_ids[i_node]["chain_iverbs"] = [i_node]
+            else: #Otherwise if later verb, copy over and add to pre. chain
+                clauses_ids[i_node]["chain_iverbs"] = (
+                        clauses_ids[i_verb]["chain_iverbs"] #Prev. chain
+                        + [i_node]) #Tack on previous i_verb
+            #
+            #Update global verb id
             i_verb = i_node
             roots = list(node.ancestors)
+            #
             #If no subjects to the left, pull subject from root as able
             tmp_bool = any([self._is_pos_word(item, pos="SUBJECT")
                             for item in node.lefts])
-            if ((not tmp_bool) and (len(roots) > 0)):
-                if self._is_pos_word(roots[0], pos="NOUN"):
+            #if ((not tmp_bool) and (len(roots) > 0)):
+            #    if self._is_pos_word(roots[0], pos="NOUN"):
                     #Extract noun-chunk for this noun
-                    new_chunk = self._get_nounchunk(word=roots[0],
-                                            sentence_NLP=sentence_NLP,
-                                            ids_nounchunks=ids_nounchunks)
+            #        new_chunk = self._get_nounchunk(word=roots[0],
+            #                                sentence_NLP=sentence_NLP,
+            #                                ids_nounchunks=ids_nounchunks)
                     #
                     #Add to verb-clause
-                    clauses_text[i_verb]["subjects"].append(new_chunk["text"])
-                    clauses_ids[i_verb]["subjects"].append(new_chunk["ids"])
-                    clauses_ids[i_verb]["clause_nounchunks"].append(
-                                                        new_chunk["chunk_id"])
-                elif self._is_pos_word(roots[0], pos="VERB"): #If conjoined
+            #        clauses_text[i_verb]["subjects"].append(new_chunk["text"])
+            #        clauses_ids[i_verb]["subjects"].append(new_chunk["ids"])
+            #        clauses_ids[i_verb]["clause_nounchunks"].append(
+            #                                            new_chunk["chunk_id"])
+            #    elif self._is_pos_word(roots[0], pos="VERB"): #If conjoined
                     #Add to verb-clause
-                    clauses_text[i_verb]["subjects"] = clauses_text[
-                                            roots[0].i-i_shift]["subjects"]
-                    clauses_ids[i_verb]["subjects"] = clauses_ids[
-                                            roots[0].i-i_shift]["subjects"]
-                    tmp_list = list(set([ids_nounchunks[item[0]]
+            #        clauses_text[i_verb]["subjects"] = clauses_text[
+            #                                roots[0].i-i_shift]["subjects"]
+            #        clauses_ids[i_verb]["subjects"] = clauses_ids[
+            #                                roots[0].i-i_shift]["subjects"]
+            #        tmp_list = list(set([ids_nounchunks[item[0]]
+            #                    for item in clauses_ids[i_verb]["subjects"]]))
+            #        clauses_ids[i_verb]["clause_nounchunks"] += tmp_list
+            if ((not tmp_bool) and (len(roots) > 0)):
+                for curr_root in roots:
+                    if self._is_pos_word(curr_root, pos="NOUN"):
+                        #Extract noun-chunk for this noun
+                        new_chunk = self._get_nounchunk(word=curr_root,
+                                                sentence_NLP=sentence_NLP,
+                                                ids_nounchunks=ids_nounchunks)
+                        #
+                        #Add to verb-clause
+                        clauses_text[i_verb]["subjects"].append(
+                                                            new_chunk["text"])
+                        clauses_ids[i_verb]["subjects"].append(new_chunk["ids"])
+                        clauses_ids[i_verb]["clause_nounchunks"].append(
+                                                        new_chunk["chunk_id"])
+                        #
+                        #Stop the search
+                        break
+                    elif self._is_pos_word(curr_root, pos="VERB"): #If conjoined
+                        #Add to verb-clause
+                        clauses_text[i_verb]["subjects"] = clauses_text[
+                                                curr_root.i-i_shift]["subjects"]
+                        clauses_ids[i_verb]["subjects"] = clauses_ids[
+                                                curr_root.i-i_shift]["subjects"]
+                        tmp_list = list(set([ids_nounchunks[item[0]]
                                 for item in clauses_ids[i_verb]["subjects"]]))
-                    clauses_ids[i_verb]["clause_nounchunks"] += tmp_list
+                        clauses_ids[i_verb]["clause_nounchunks"] += tmp_list
+                        #
+                        #Stop the search
+                        break
+                    #
+                #
+            #
         #
 
         #Skip if this node has already been characterized
@@ -10246,7 +10292,7 @@ class Classifier_Rules(_Classifier):
     ##Purpose: Convert set of decision tree scores into single verdict
     #def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=1.0, order_override_acceptance=["science"], "data_influenced"]):
     #If this doesn't work, revert back and use split uncertainty thresholds for rule-based classifs (e.g., more lenient for mentions)
-    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=2, thres_override_acceptance=0.9, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.85, order_override_acceptance=["science", "data_influenced"], dict_weights={"science":1, "data_influenced":1, "mention":1}): #, "data_influenced"]):
+    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=2, thres_override_acceptance=0.95, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.85, order_override_acceptance=["science", "data_influenced"], dict_weights={"science":2, "data_influenced":2, "mention":1}): #, "data_influenced"]):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         #Print some notes
