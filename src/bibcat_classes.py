@@ -1545,7 +1545,7 @@ class Keyword(_Base):
                             for item1 in exps_k
                             if (not any([(ban1 in text.lower())
                                     for ban1 in banned_overlap_lowercase]))]
-            charspans_keywords = [(item2.start(), item2.end())
+            charspans_keywords = [(item2.start(), (item2.end()-1))
                                 for item1 in set_keywords
                                 for item2 in item1] #Char. span of matches
             check_keywords = any([(len(item) > 0)
@@ -1558,7 +1558,7 @@ class Keyword(_Base):
         if (((mode is None) or (mode.lower() == "acronym"))
                     and (exp_a is not None)):
             set_acronyms = list(re.finditer(exp_a, text, flags=re.IGNORECASE))
-            charspans_acronyms = [(item.start(), item.end())
+            charspans_acronyms = [(item.start(), (item.end()-1))
                                 for item in set_acronyms]
             check_acronyms = (len(set_acronyms) > 0)
         else:
@@ -2474,7 +2474,7 @@ class Grammar(_Base):
 
     ##Method: _assign_nounchunk_ids()
     ##Purpose: Assign ids to noun-chunks
-    def _assign_nounchunk_ids(self, sentence_NLP):
+    def _assign_nounchunk_ids(self, sentence_NLP, do_keyword_check):
         """
         Method: _assign_nounchunk_ids
         WARNING! This method is *not* meant to be used directly by users.
@@ -2482,8 +2482,10 @@ class Grammar(_Base):
         """
         #Extract global variables
         do_verbose = self._get_info("do_verbose")
+        keyword_obj = self._get_info("keyword_obj")
         num_words = len(sentence_NLP)
         i_shift = sentence_NLP.start
+        idx_shift = sentence_NLP[0].idx
 
         #Fetch all NLP-identifieid noun-chunks for this sentence
         noun_chunks = list(sentence_NLP.noun_chunks)
@@ -2546,14 +2548,52 @@ class Grammar(_Base):
             i_track += 1
         #
 
+        #Ensure that all keywords are included in noun-chunks
+        check_spans = self._check_importance(text=sentence_NLP.text,
+                                include_Ipronouns=False, include_terms=False,
+                                include_etal=False, keyword_objs=[keyword_obj],
+                                version_NLP=sentence_NLP
+                                )["charspans_keyword"]
+        #
+        #Iterate through flagged keyword spans and ensure included in noun-chunk
+        for ii in range(0, len(check_spans)):
+            #Extract current keyword span
+            curr_span = check_spans[ii]
+            #Convert keyword character span into sentence-word ids; ignore punct
+            curr_inds = [ind for ind in range(0, len(sentence_NLP))
+                        if (any([item.isalnum() #Ignore any punctuation strings
+                                for item in sentence_NLP[ind].text]) #Clunky
+                        and ((sentence_NLP[ind].idx-idx_shift) >= curr_span[0])
+                        and ((sentence_NLP[ind].idx-idx_shift) <=curr_span[1]))]
+            #Check this span has assigned noun-chunks
+            is_found = all([(ids_nounchunks[ind] is not None)
+                            for ind in curr_inds])
+            #
+            #Throw error if span not found within any noun-chunks
+            #if (not is_found):
+            #    raise ValueError(
+            #        ("Err: Keyword not in noun-chunks!!\n"
+            #            +"{0}\n{1}\n{2}\n{3}\n{4}\n{5}")
+            #                    .format(sentence_NLP, noun_chunks, check_spans,
+            #                            curr_inds, ids_nounchunks, i_shift))
+            #
+            #If the above error is ever called, could use code below
+            #But should be carefully tested first!
+            #
+            #Add/Overwrite as own noun-chunk if not fully in noun-chunk already
+            if (not is_found):
+                ids_nounchunks[min(curr_inds):(max(curr_inds)+1)] = i_track
+                i_track += 1
+        #
+
         #Print some notes
         if do_verbose:
             num_words = len(sentence_NLP)
             tmp_sets = [[sentence_NLP[ind2] for ind2 in range(0, num_words)
-                        if (ind2 == ind1)]
-                        for ind1 in ids_nounchunks if (ind1 is not None)]
-            print("The following noun-chunks have been assigned:\n{0}"
-                    .format(tmp_sets))
+                        if (ids_nounchunks[ind2] == ind1)]
+                        for ind1 in set(ids_nounchunks) if (ind1 is not None)]
+            print("The following noun-chunks have been assigned:\n{0}\nFor: {1}"
+                    .format(tmp_sets, sentence_NLP))
 
         #Return the assigned ids
         return ids_nounchunks
@@ -2577,7 +2617,8 @@ class Grammar(_Base):
         #
 
         #Assign noun-chunks for this sentence
-        ids_nounchunks = self._assign_nounchunk_ids(sentence_NLP)
+        ids_nounchunks = self._assign_nounchunk_ids(sentence_NLP,
+                                                    do_keyword_check=True)
         #
 
         #Initialize storage to hold key sentence information
@@ -10205,7 +10246,7 @@ class Classifier_Rules(_Classifier):
     ##Purpose: Convert set of decision tree scores into single verdict
     #def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=1.0, order_override_acceptance=["science"], "data_influenced"]):
     #If this doesn't work, revert back and use split uncertainty thresholds for rule-based classifs (e.g., more lenient for mentions)
-    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=2, thres_override_acceptance=1.0, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.85, order_override_acceptance=["science", "data_influenced"], dict_weights={"science":1, "data_influenced":1, "mention":1}): #, "data_influenced"]):
+    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=2, thres_override_acceptance=0.9, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.85, order_override_acceptance=["science", "data_influenced"], dict_weights={"science":1, "data_influenced":1, "mention":1}): #, "data_influenced"]):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         #Print some notes
@@ -10350,7 +10391,8 @@ class Classifier_Rules(_Classifier):
             #        key:dict_results[key]["score_tot_weighted"]
             #        for key in all_keys}
             dict_uncertainties = {
-                    key:dict_results[key]["count_norm"]
+                    key:np.mean([dict_results[key]["count_norm"],
+                                dict_results[key]["score_tot_weighted"]])
                     for key in all_keys}
         #
         #Otherwise, splice in fixed max. uncertainty

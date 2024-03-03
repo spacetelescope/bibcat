@@ -1158,7 +1158,7 @@ class TestPaper(unittest.TestCase):
         #
     #
 #"""
-"""
+#"""
 #class: TestGrammar
 #Purpose: Testing the Grammar class
 class TestGrammar(unittest.TestCase):
@@ -1469,7 +1469,7 @@ class TestGrammar(unittest.TestCase):
         #
     #
 #"""
-#"""
+"""
 #class: TestClassifierRules
 #Purpose: Testing the Classifier_Rules class
 class TestClassifierRules(unittest.TestCase):
@@ -1647,7 +1647,7 @@ class TestClassifierRules(unittest.TestCase):
         #
     #
 #"""
-#"""
+"""
 #class: TestOperator
 #Purpose: Testing the Operator class
 class TestOperator(unittest.TestCase):
