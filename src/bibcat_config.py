@@ -166,6 +166,9 @@ tag_possessive = ["POS"]
 #Punctuation
 dep_punctuation = ["punct"]
 #
+#
+dict_conv_pos = {"prep_objects":"NOUN", "dir_objects":"NOUN", "subjects":"NOUN", "auxs":"AUX"}
+#
 
 ##Set natural language processing (NLP) variables
 spacy_language_model = "en_core_web_sm" #Simpler language model

@@ -270,7 +270,7 @@ class TestData(unittest.TestCase):
         #
     #
 #"""
-"""
+#"""
 #class: TestBase
 #Purpose: Testing the Base class
 class TestBase(unittest.TestCase):
@@ -774,7 +774,7 @@ class TestBase(unittest.TestCase):
         #
     #
 #"""
-"""
+#"""
 #class: TestKeyword
 #Purpose: Testing the Keyword class
 class TestKeyword(unittest.TestCase):
@@ -941,7 +941,7 @@ class TestKeyword(unittest.TestCase):
         #
     #
 #"""
-"""
+#"""
 #class: TestPaper
 #Purpose: Testing the Paper class
 class TestPaper(unittest.TestCase):
@@ -1647,7 +1647,7 @@ class TestClassifierRules(unittest.TestCase):
         #
     #
 #"""
-"""
+#"""
 #class: TestOperator
 #Purpose: Testing the Operator class
 class TestOperator(unittest.TestCase):

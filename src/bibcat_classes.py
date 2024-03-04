@@ -2349,8 +2349,11 @@ class Grammar(_Base):
         """
         #Extract global variables
         do_verbose = self._get_info("do_verbose")
-        i_word = (word.i - sentence_NLP.start)
-        roots = word.ancestors
+        i_shift = sentence_NLP.start
+        i_word = (word.i - i_shift)
+        roots = list(word.ancestors)
+        dict_conv = config.dict_conv_pos
+        #
         #Noun-chunk for this word
         new_chunk = self._get_nounchunk(word=word,
                                 sentence_NLP=sentence_NLP,
@@ -2358,7 +2361,12 @@ class Grammar(_Base):
                                 #do_make_new_if_none=True)
         #
         #Booleans
-        is_conjoined = self._is_pos_word(word, pos="CONJOINED")
+        is_conjoined = (self._is_pos_word(word, pos="CONJOINED")
+                        and (len(roots) > 0)
+                        and ((list_pos_clause[roots[0].i-i_shift] is None)
+                            or self._is_pos_word(word,
+                            pos=dict_conv[list_pos_clause[roots[0].i-i_shift]])
+                        )) #Same p.o.s must be valid with root
         is_subject = self._is_pos_word(word, pos="SUBJECT",
                                         ids_nounchunks=ids_nounchunks)
         is_dirobject = self._is_pos_word(word, pos="DIRECT_OBJECT")
@@ -2388,7 +2396,7 @@ class Grammar(_Base):
                 #
             #
             #Store the index of the start of this chain
-            i_root_conj = (root_conj.i - sentence_NLP.start)
+            i_root_conj = (root_conj.i - i_shift)
             ids_conjoined[i_word] = i_root_conj
             #
             #Copy over traits of the conjoined root, if valid chunks
@@ -2401,8 +2409,12 @@ class Grammar(_Base):
                 if (list_pos_clause[i_word] is not None):
                     pos_clause = list_pos_clause[i_word]
                     clauses_text[i_verb][pos_clause].append(new_chunk["text"])
-                    clauses_ids[i_verb][pos_clause].append(new_chunk["ids"])
-                    clauses_ids[i_verb]["clause_nounchunks"].append(
+                    #
+                    if (pos_clause == "auxs"): #Singular entry
+                        clauses_ids[i_verb][pos_clause] += new_chunk["ids"]
+                    else: #List of entries
+                        clauses_ids[i_verb][pos_clause].append(new_chunk["ids"])
+                        clauses_ids[i_verb]["clause_nounchunks"].append(
                                                         new_chunk["chunk_id"])
             #
         #
@@ -3042,7 +3054,7 @@ class Grammar(_Base):
                         #
                         #Stop the search
                         break
-                    elif self._is_pos_word(curr_root, pos="VERB"): #If conjoined
+                    elif ((curr_root.i-i_shift) in clauses_ids): #If verb
                         #Add to verb-clause
                         clauses_text[i_verb]["subjects"] = clauses_text[
                                                 curr_root.i-i_shift]["subjects"]
@@ -10292,7 +10304,7 @@ class Classifier_Rules(_Classifier):
     ##Purpose: Convert set of decision tree scores into single verdict
     #def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=1.0, order_override_acceptance=["science"], "data_influenced"]):
     #If this doesn't work, revert back and use split uncertainty thresholds for rule-based classifs (e.g., more lenient for mentions)
-    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=2, thres_override_acceptance=0.95, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.85, order_override_acceptance=["science", "data_influenced"], dict_weights={"science":2, "data_influenced":2, "mention":1}): #, "data_influenced"]):
+    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=2, thres_override_acceptance=0.95, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.80, order_override_acceptance=["science", "data_influenced"], dict_weights={"science":1.75, "data_influenced":1.75, "mention":1}): #, "data_influenced"]):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         #Print some notes
@@ -10433,13 +10445,13 @@ class Classifier_Rules(_Classifier):
             #dict_uncertainties = {
             #        key:dict_results[key]["score_tot_fin"]
             #        for key in all_keys}
-            #dict_uncertainties = {
-            #        key:dict_results[key]["score_tot_weighted"]
-            #        for key in all_keys}
             dict_uncertainties = {
-                    key:np.mean([dict_results[key]["count_norm"],
-                                dict_results[key]["score_tot_weighted"]])
+                    key:dict_results[key]["score_tot_weighted"]
                     for key in all_keys}
+            #dict_uncertainties = {
+            #        key:np.mean([dict_results[key]["count_norm"],
+            #                    dict_results[key]["score_tot_weighted"]])
+            #        for key in all_keys}
         #
         #Otherwise, splice in fixed max. uncertainty
         else:
