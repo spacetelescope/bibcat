@@ -20,8 +20,8 @@ path_json = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Fu
 
 
 #!!!
-mode_modif = "none" #"skim_anon" #"skim_trim_anon" #None
-name_model = "testscript_run_ML_{0}".format(mode_modif)
+mode_modif = "skim_anon" #"skim_anon" #"skim_trim_anon" #None
+name_model = "perf_run_ML_{0}".format(mode_modif)
 #!!!
 
 ##Set global fixed paths

@@ -778,7 +778,7 @@ class TestBase(unittest.TestCase):
         #
     #
 #"""
-"""
+#"""
 #class: TestKeyword
 #Purpose: Testing the Keyword class
 class TestKeyword(unittest.TestCase):
@@ -789,17 +789,19 @@ class TestKeyword(unittest.TestCase):
             #Prepare text and answers for test
             kobj1 = bibcat.Keyword(
             keywords=["Long Phrase", "Phrase", "Longer Phrase", "Mid Phrase"],
-            acronyms=[])
+            acronyms=[], ambig_words=[], banned_overlap=[])
             ans1 = "Phrase"
             #
             kobj2 = bibcat.Keyword(
             keywords=["Long Phrase", "Phrase", "Longer Phrase", "Mid Phrase"],
-            acronyms=["AB....C", "A....... B...", "A.BC  D", "ABCD E", "AB C"])
+            acronyms=["AB....C", "A....... B...", "A.BC  D", "ABCD E", "AB C"],
+                    ambig_words=[], banned_overlap=[])
             ans2 = "Phrase"
             #
             kobj3 = bibcat.Keyword(
             keywords=[],
-            acronyms=["AB....C", "A....... B...", "A.BC  D", "ABCD E", "AB C"])
+            acronyms=["AB....C", "A....... B...", "A.BC  D", "ABCD E", "AB C"],
+                    ambig_words=[], banned_overlap=[])
             ans3 = "ABCDE"
             #
             list_kobj = [kobj1, kobj2, kobj3]
@@ -945,7 +947,7 @@ class TestKeyword(unittest.TestCase):
         #
     #
 #"""
-"""
+#"""
 #class: TestPaper
 #Purpose: Testing the Paper class
 class TestPaper(unittest.TestCase):
@@ -1162,7 +1164,7 @@ class TestPaper(unittest.TestCase):
         #
     #
 #"""
-"""
+#"""
 #class: TestGrammar
 #Purpose: Testing the Grammar class
 class TestGrammar(unittest.TestCase):
