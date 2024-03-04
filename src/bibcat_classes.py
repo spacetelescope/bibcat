@@ -503,9 +503,16 @@ class _Base():
                                         for item2 in lookup_ambigs])]
         #
 
+        #Extract keyword identification information for each kobj
+        dict_kobjinfo = {item._get_info("name"):item.identify_keyword(text)
+                        for item in keyword_objs}
+
         #Return status as true match if non-ambig keywords match to text
-        if any([item1.identify_keyword(text)["bool"] for item1 in keyword_objs
-                if (item1 not in keyword_objs_ambigs)]):
+        #if any([item1.identify_keyword(text)["bool"] for item1 in keyword_objs
+        #        if (item1 not in keyword_objs_ambigs)]):
+        if any([dict_kobjinfo[item1._get_info("name")]["bool"]
+                    for item1 in keyword_objs
+                    if (item1 not in keyword_objs_ambigs)]):
             #Print some notes
             if do_verbose:
                 print("Text matches unambiguous keyword. Returning true state.")
@@ -516,16 +523,52 @@ class _Base():
                         "text_wordchunk":"<Not ambig.>", "text_database":None}]}
         #
         #Return status as false match if no keywords match at all
-        elif (not any([item.identify_keyword(text)["bool"]
+        #elif (not any([item.identify_keyword(text)["bool"]
+        #                    for item in keyword_objs_ambigs])):
+        elif (not any([dict_kobjinfo[item._get_info("name")]["bool"]
                             for item in keyword_objs_ambigs])):
             #Print some notes
             if do_verbose:
                 print("Text matches no keywords at all. Returning false state.")
             #
-            #Return status as true match
+            #Return status as false match
             return {"bool":False, "info":[{"matcher":None, "text_database":None,
                             "bool":False,
                             "text_wordchunk":"<No matching keywords at all.>"}]}
+        #
+        #First two checks confirm that ambig-keyword-obj. matches to text
+        #
+        #Return status as true match if no ambig. phrases match to text
+        #elif (not any([bool(re.search((r"\b"+item2+r"\b"), text,
+        #                                flags=re.IGNORECASE))
+        #            for item1 in keyword_objs_ambigs
+        #            for item2 in item1._get_info("ambig_words")])):
+        #Return status as true match if any acronyms match
+        elif (any([dict_kobjinfo[item._get_info("name")]["bool_acronym_only"]
+                            for item in keyword_objs_ambigs])):
+            #Print some notes
+            if do_verbose:
+                print("Text matches acronym. Returning true state.")
+            #
+            #Return status as true match
+            return {"bool":True, "info":[{"matcher":None, "set":None,
+                        "bool":True,
+                        "text_wordchunk":"<Not ambig.>", "text_database":None}]}
+        #
+        #Return status as true match if any non-ambig. phrases match to text
+        elif (any([bool(re.search((r"\b"+item2+r"\b"), text,
+                                        flags=re.IGNORECASE))
+                    for item1 in keyword_objs_ambigs
+                    for item2 in item1._get_info("keywords")
+                    if (item2 not in item1._get_info("ambig_words"))])):
+            #Print some notes
+            if do_verbose:
+                print("Text matches unambiguous keyword. Returning true state.")
+            #
+            #Return status as true match
+            return {"bool":True, "info":[{"matcher":None, "set":None,
+                        "bool":True,
+                        "text_wordchunk":"<Not ambig.>", "text_database":None}]}
         #
 
         #Assemble makeshift wordchunks (not using NLP ones here)
@@ -1203,10 +1246,21 @@ class _Base():
         Purpose:
          - Process database of ambiguous keyword phrases into dictionary of keywords, regular expressions, boolean verdicts, etc.
         """
+        #Load the keywords
+        if (keyword_objs is None):
+            try:
+                keyword_objs = [self._get_info("keyword_obj",
+                                                do_flag_hidden=True)]
+            except KeyError:
+                keyword_objs = self._get_info("keyword_objs",
+                                                do_flag_hidden=True)
+        #
         #Load the ambig. phrase data
-        lookup_ambigs = [str(item).lower() for item in
-                    np.genfromtxt(config.KW_AMBIG,
-                                comments="#", dtype=str)]
+        #lookup_ambigs = [str(item).lower() for item in
+        #            np.genfromtxt(config.KW_AMBIG,
+        #                        comments="#", dtype=str)]
+        lookup_ambigs =[item._get_info("name").lower() for item in keyword_objs
+                        if (len(item._get_info("ambig_words")) > 0)]
         data_ambigs = np.genfromtxt(config.PHR_AMBIG,
                                 comments="#", dtype=str, delimiter="\t"
                                 )
@@ -1409,7 +1463,7 @@ class Keyword(_Base):
     """
     ##Method: __init__
     ##Purpose: Initialize this class instance
-    def __init__(self, keywords, acronyms=None, banned_overlap=[], do_verbose=False):
+    def __init__(self, keywords, acronyms, banned_overlap, ambig_words, do_verbose=False):
         """
         Method: __init__
         WARNING! This method is *not* meant to be used directly by users.
@@ -1419,6 +1473,7 @@ class Keyword(_Base):
         self._storage = {}
         self._store_info(do_verbose, "do_verbose")
         self._store_info(banned_overlap, "banned_overlap")
+        self._store_info(ambig_words, "ambig_words")
 
         #Cleanse keywords of extra whitespace, punctuation, etc.
         keywords_clean = sorted([self._cleanse_text(text=phrase,
@@ -1578,7 +1633,8 @@ class Keyword(_Base):
 
         #Return booleans
         return {"bool":(check_acronyms or check_keywords),
-                "charspans":(charspans_keywords + charspans_acronyms)}
+                "charspans":(charspans_keywords + charspans_acronyms),
+                "bool_acronym_only":check_acronyms}
     #
 
     ##Method: replace_keyword

@@ -40,6 +40,7 @@ test_which_modes = ["none", "skim", "trim", "anon", "skim_trim_anon"]
 #Keyword objects
 kobj_hla = params.keyword_obj_HLA
 kobj_hubble = params.keyword_obj_HST
+kobj_hubble_expanded = params.keyword_obj_HST_expanded
 kobj_kepler = params.keyword_obj_Kepler
 kobj_k2 = params.keyword_obj_K2
 #
@@ -544,7 +545,10 @@ class TestBase(unittest.TestCase):
                     "Kepler observations":{"lookup":"Kepler", "bool":True},
                     "K2 database":{"lookup":"K2", "bool":True},
                     "K2-123 star":{"lookup":"K2", "bool":False},
-                    "K2 stars":{"lookup":"K2", "bool":False}
+                    "K2 stars":{"lookup":"K2", "bool":False},
+                    "HST mosaic":{"lookup":"Hubble", "bool":True},
+                    "HST correspondence":{"lookup":"Hubble", "bool":True},
+                    "HST unknownword":{"lookup":"Hubble", "bool":True}
                     }
             #
 
@@ -774,7 +778,7 @@ class TestBase(unittest.TestCase):
         #
     #
 #"""
-#"""
+"""
 #class: TestKeyword
 #Purpose: Testing the Keyword class
 class TestKeyword(unittest.TestCase):
@@ -941,7 +945,7 @@ class TestKeyword(unittest.TestCase):
         #
     #
 #"""
-#"""
+"""
 #class: TestPaper
 #Purpose: Testing the Paper class
 class TestPaper(unittest.TestCase):
@@ -1158,7 +1162,7 @@ class TestPaper(unittest.TestCase):
         #
     #
 #"""
-#"""
+"""
 #class: TestGrammar
 #Purpose: Testing the Grammar class
 class TestGrammar(unittest.TestCase):
