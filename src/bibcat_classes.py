@@ -1132,9 +1132,10 @@ class _Base():
         #Identify conjoined words
         elif pos in ["CONJOINED"]:
             check_conj = (word_dep in config.dep_conjoined)
-            check_appos = (word_dep in config.dep_appos)
+            #check_appos = (word_dep in config.dep_appos)
             check_det = (word_tag in config.tag_determinant)
-            check_all = ((check_conj or check_appos) and (not check_det))
+            #check_all = ((check_conj or check_appos) and (not check_det))
+            check_all = (check_conj and (not check_det))
         #
         #Identify  conjunctions
         elif pos in ["CONJUNCTION"]:
@@ -13785,7 +13786,7 @@ class Performance(_Base):
         #
 
         ##Run classifier within each operator
-        dict_classifications = self._generate_classifications(
+        dict_classifications = self._generate_classifications_set(
                         operators=operators,
                         dicts_texts=dicts_texts, mappers=mappers,
                         buffers=buffers, is_text_processed=is_text_processed,
@@ -13938,7 +13939,7 @@ class Performance(_Base):
         #
 
         #Run classifier for each operator at each uncertainty level
-        dict_classifications = self._generate_classifications(
+        dict_classifications = self._generate_classifications_set(
                         operators=operators,
                         dicts_texts=dicts_texts, mappers=mappers,
                         buffers=buffers, is_text_processed=is_text_processed,
@@ -14050,9 +14051,173 @@ class Performance(_Base):
         return
     #
 
+    ##Method: _generate_classification
+    ##Purpose: Generate performance evaluation of full classification pipeline (text to rejection/verdict) for singular operator
+    def _generate_classification(self, operator, dict_texts, buffer, is_text_processed, do_verify_truematch, do_raise_innererror, do_save_evaluation, filepath_save, print_freq=25, do_verbose=False, do_verbose_deep=False):
+        """
+        Method: _generate_classification
+        Purpose:
+          - !
+        Arguments:
+          - !
+          - do_verbose [bool (default=False)]:
+            - Whether or not to print surface-level log information and tests.
+          - do_verbose_deep [bool (default=False)]:
+            - Whether or not to print inner log information and tests.
+        Returns:
+          - dict:
+            - !
+        """
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _generate_classification()!")
+            print("Operator: {0}".format(operator._get_info("name")))
+        #
+
+        ##Use operator to classify the set of texts and measure performance
+        #Unpack the classified information for this operator
+        curr_keys = list(dict_texts.keys()) #All keys for accessing texts
+        curr_actdicts = [dict_texts[curr_keys[jj]]
+                        for jj in range(0, len(curr_keys))] #Forced order
+        #Load in as either raw or preprocessed data
+        if is_text_processed: #If given text preprocessed
+            curr_texts = None
+            curr_modifs = [dict_texts[curr_keys[jj]]["text"]
+                            for jj in range(0, len(curr_keys))]
+            curr_forests = [dict_texts[curr_keys[jj]]["forest"]
+                            for jj in range(0, len(curr_keys))]
+        else: #If given text needs to be preprocessed
+            curr_texts = [dict_texts[curr_keys[jj]]["text"]
+                            for jj in range(0, len(curr_keys))]
+            curr_modifs = None
+            curr_forests = None
+        #
+
+        #Classify texts with current operator
+        curr_results = operator.classify_set(texts=curr_texts,
+                            modifs=curr_modifs, forests=curr_forests,
+                            buffer=buffer,
+                            do_check_truematch=do_verify_truematch,
+                            do_raise_innererror=do_raise_innererror,
+                            print_freq=print_freq, do_verbose=do_verbose,
+                            do_verbose_deep=do_verbose_deep)
+        #
+        #Print some notes
+        if do_verbose:
+            print("Classification complete for Operator #{0}.".format(ii))
+        #
+
+        #Store the evaluation
+        dict_evaluation = {"actual_results":curr_actdicts,
+                            "measured_results":curr_results}
+        #
+
+        ##Save the evaluation components, if so requested
+        if do_save_evaluation:
+            np.save(filepath_save, dict_evaluation)
+            #Print some notes
+            if do_verbose:
+                print("\nEvaluation saved at: {0}".format(filepath_save))
+        #
+
+        ##Return the evaluation components
+        if do_verbose:
+            print("\nRun of _generate_classification() complete!")
+        #
+        return dict_evaluation
+    #
+
+    ##Method: _generate_classifications
+    ##Purpose: Generate performance evaluation of full classification pipeline (text to rejection/verdict) for set of operators
+    def _generate_classifications_set(self, operators, dicts_texts, mappers, buffers, is_text_processed, do_verify_truematch, do_raise_innererror, do_reuse_run, do_save_evaluation=False, filepath_output=None, fileroot_evaluation=None, print_freq=25, do_verbose=False, do_verbose_deep=False):
+        """
+        Method: _generate_classifications_set
+        Purpose:
+          - !
+        Arguments:
+          - !
+          - do_verbose [bool (default=False)]:
+            - Whether or not to print surface-level log information and tests.
+          - do_verbose_deep [bool (default=False)]:
+            - Whether or not to print inner log information and tests.
+        Returns:
+          - dict:
+            - !
+        """
+        ##Fetch global variables
+        if (do_verbose is None):
+            do_verbose = self._get_info("do_verbose")
+        if (do_verbose_deep is None):
+            do_verbose_deep = self._get_info("do_verbose_deep")
+        #
+        names_ops = [item._get_info("name") for item in operators]
+        num_ops = len(operators)
+        if (do_save_evaluation or do_reuse_run):
+            list_save_filepaths = [os.path.join(filepath_output,
+                                        (fileroot_evaluation
+                                        +"_{0}.npy".format(item)))
+                                    for item in names_ops]
+        #
+
+        #Throw error if operators do not have unique names
+        if (len(set(names_ops)) !=num_ops):
+            raise ValueError("Err: Please give each operator a unique name."
+                        +"\nCurrently, the names are:\n{0}"
+                        .format([item._get_info("name") for item in operators]))
+        #
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _generate_classifications_set()!")
+            print("Iterating through Operators to classify each set of text...")
+        #
+
+        #Iterate through operators and either load or generate evaluations
+        dict_evaluations = {}
+        for ii in range(0, num_ops):
+            #Load info for current operator
+            curr_op = operators[ii] #Current operator
+            curr_name = name_ops[ii]
+            curr_data = dicts_texts[ii]
+            #
+            ##Load any pre-existing evaluation, if so requested
+            if (do_reuse_run and (os.path.exists(list_save_filepaths[ii]))):
+                #Print some notes
+                if do_verbose:
+                    print("Previous eval. exists at {0}\nLoading that eval..."
+                            .format(list_save_filepaths[ii]))
+                #
+                dict_evaluations[curr_name] = np.load(list_save_filepaths[ii],
+                                                    allow_pickle=True).item()
+                #
+            #
+            ##Otherwise, generate and store new evaluation
+            else:
+                #Print some notes
+                if do_verbose:
+                    print("Classifying with Operator #{0}: {1}..."
+                            .format(ii, curr_name))
+                #
+                dict_evaluations[curr_name] = self._generate_classification(
+                        operator=curr_op, dict_texts=curr_data,
+                        buffer=buffers[ii], is_text_processed=is_text_processed,
+                        do_verify_truematch=do_verify_truematch,
+                        do_raise_innererror=do_raise_innererror,
+                        do_save_evaluation=do_save_evaluation,
+                        filepath_save=list_save_filepaths[ii],
+                        print_freq=print_freq, do_verbose=do_verbose,
+                        do_verbose_deep=do_verbose_deep))
+        #
+
+        ##Return the evaluation components
+        if do_verbose:
+            print("\nRun of _generate_classifications_set() complete!")
+        #
+        return dict_evaluations
+    #
+
     ##Method: _generate_classifications
     ##Purpose: Generate performance evaluation of full classification pipeline (text to rejection/verdict)
-    def _generate_classifications(self, operators, dicts_texts, mappers, buffers, is_text_processed, do_verify_truematch, do_raise_innererror, do_reuse_run, do_save_evaluation=False, filepath_output=None, fileroot_evaluation=None, print_freq=25, do_verbose=False, do_verbose_deep=False):
+    def old_2024_03_04_before_split_evals_generate_classifications(self, operators, dicts_texts, mappers, buffers, is_text_processed, do_verify_truematch, do_raise_innererror, do_reuse_run, do_save_evaluation=False, filepath_output=None, fileroot_evaluation=None, print_freq=25, do_verbose=False, do_verbose_deep=False):
         """
         Method: _generate_classifications
         Purpose:
