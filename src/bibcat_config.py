@@ -15,8 +15,14 @@ from nltk.corpus import wordnet
 path_json = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Functional/Library/Bibtracking/datasets/dataset_combined_all.json") # set the path to the location of the JSON file you downloaded from Box
 #name_model = "run_full_none_uniform" #Name of model run to save or load
 #name_model = "run_full_anon_uniform" #Name of model run to save or load
-name_model = "test_run_rule" #"run_full_skim_trim_anon_uniform" #! "run_class2_full_none_uniform" #Name of model run to save or load
+#name_model = "test_run_rule" #"run_full_skim_trim_anon_uniform" #! "run_class2_full_none_uniform" #Name of model run to save or load
 #
+
+
+#!!!
+mode_modif = "trim_anon" #"skim_anon" #"skim_trim_anon" #None
+name_model = "testscript_run_ML_{0}".format(mode_modif)
+#!!!
 
 ##Set global fixed paths
 SRC_ROOT = os.path.dirname(__file__)

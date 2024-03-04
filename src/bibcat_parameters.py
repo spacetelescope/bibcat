@@ -17,10 +17,10 @@ keyword_obj_EUVE = bibcat.Keyword(
             keywords=["Extreme Ultraviolet Explorer"],
             acronyms=["EUVE"],
             banned_overlap=[])
-keyword_obj_FIRST = bibcat.Keyword(
-            keywords=[],
-            acronyms=["FIRST"],
-            banned_overlap=[])
+#keyword_obj_FIRST = bibcat.Keyword(
+#            keywords=[],
+#            acronyms=["FIRST"],
+#            banned_overlap=[])
 keyword_obj_FUSE = bibcat.Keyword(
             keywords=["Far Ultraviolet Spectroscopic Explorer"],
             acronyms=["FUSE"],
@@ -63,7 +63,7 @@ keyword_obj_JWST = bibcat.Keyword(
             banned_overlap=[])
 keyword_obj_JWST_expanded = bibcat.Keyword(
             keywords=["James Webb Space Telescope", "James Webb Telescope", "Webb Space Telescope", "Webb Telescope", "NIRCam", "NIRSpec", "JWST FGS"],
-            acronyms=["JWST", "JST", "JT", "Q3D", "TEMPLATES", "CEERS", "MIRI", "NIRISS"],
+            acronyms=["JWST", "JST", "JT", "Q3D", "CEERS", "MIRI", "NIRISS"],
             banned_overlap=[])
 keyword_obj_Kepler = bibcat.Keyword(
             keywords=["Kepler"],
@@ -99,7 +99,8 @@ keyword_obj_WUPPE = bibcat.Keyword(
             banned_overlap=[])
 #
 kobjs_8set = [keyword_obj_HST, keyword_obj_JWST, keyword_obj_TESS, keyword_obj_Kepler, keyword_obj_PanSTARRS, keyword_obj_GALEX, keyword_obj_K2, keyword_obj_HLA]
-kobjs_all = [keyword_obj_BEFS, keyword_obj_Copernicus, keyword_obj_EUVE, keyword_obj_FIRST, keyword_obj_FUSE, keyword_obj_GALEX, keyword_obj_HLA, keyword_obj_HSC, keyword_obj_HST_expanded, keyword_obj_HUT, keyword_obj_IMAPS, keyword_obj_IUE, keyword_obj_JWST_expanded, keyword_obj_Kepler, keyword_obj_K2, keyword_obj_PanSTARRS, keyword_obj_Roman, keyword_obj_TESS, keyword_obj_TUES, keyword_obj_UIT, keyword_obj_WUPPE]
+#kobjs_all = [keyword_obj_BEFS, keyword_obj_Copernicus, keyword_obj_EUVE, keyword_obj_FIRST, keyword_obj_FUSE, keyword_obj_GALEX, keyword_obj_HLA, keyword_obj_HSC, keyword_obj_HST_expanded, keyword_obj_HUT, keyword_obj_IMAPS, keyword_obj_IUE, keyword_obj_JWST_expanded, keyword_obj_Kepler, keyword_obj_K2, keyword_obj_PanSTARRS, keyword_obj_Roman, keyword_obj_TESS, keyword_obj_TUES, keyword_obj_UIT, keyword_obj_WUPPE]
+kobjs_all = [keyword_obj_BEFS, keyword_obj_Copernicus, keyword_obj_EUVE, keyword_obj_FUSE, keyword_obj_GALEX, keyword_obj_HLA, keyword_obj_HSC, keyword_obj_HST_expanded, keyword_obj_HUT, keyword_obj_IMAPS, keyword_obj_IUE, keyword_obj_JWST_expanded, keyword_obj_Kepler, keyword_obj_K2, keyword_obj_PanSTARRS, keyword_obj_Roman, keyword_obj_TESS, keyword_obj_TUES, keyword_obj_UIT, keyword_obj_WUPPE]
 #
 
 ##Classification mapping parameters
