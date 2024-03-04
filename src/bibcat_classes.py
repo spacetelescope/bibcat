@@ -3265,7 +3265,8 @@ class Grammar(_Base):
         kobj = self._get_info("keyword_obj")
 
         #Set importance flags and fetch char spans of kw. for this noun-chunk
-        tmp_res = self._check_importance(text_nounchunk, keyword_objs=[kobj])
+        tmp_res = self._check_importance(text_nounchunk, keyword_objs=[kobj],
+                                        version_NLP=sentence_NLP)
         flags = tmp_res["bools"]
         charspans_keywords = tmp_res["charspans_keyword"]
 
