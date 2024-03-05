@@ -10362,7 +10362,7 @@ class Classifier_Rules(_Classifier):
     ##Purpose: Convert set of decision tree scores into single verdict
     #def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=1.0, order_override_acceptance=["science"], "data_influenced"]):
     #If this doesn't work, revert back and use split uncertainty thresholds for rule-based classifs (e.g., more lenient for mentions)
-    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=2, thres_override_acceptance=0.95, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.80, order_override_acceptance=["science", "data_influenced"], dict_weights={"science":1.75, "data_influenced":1.75, "mention":1}): #, "data_influenced"]):
+    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=2, thres_override_acceptance=0.95, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.80, order_override_acceptance=["science", "data_influenced"], dict_weights={"science":1.5, "data_influenced":1.5, "mention":1}): #, "data_influenced"]):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         #Print some notes
@@ -14104,7 +14104,7 @@ class Performance(_Base):
         #
         #Print some notes
         if do_verbose:
-            print("Classification complete for Operator #{0}.".format(ii))
+            print("Classification complete for this operator.")
         #
 
         #Store the evaluation
@@ -14176,7 +14176,7 @@ class Performance(_Base):
         for ii in range(0, num_ops):
             #Load info for current operator
             curr_op = operators[ii] #Current operator
-            curr_name = name_ops[ii]
+            curr_name = names_ops[ii]
             curr_data = dicts_texts[ii]
             #
             ##Load any pre-existing evaluation, if so requested
@@ -14205,7 +14205,7 @@ class Performance(_Base):
                         do_save_evaluation=do_save_evaluation,
                         filepath_save=list_save_filepaths[ii],
                         print_freq=print_freq, do_verbose=do_verbose,
-                        do_verbose_deep=do_verbose_deep))
+                        do_verbose_deep=do_verbose_deep)
         #
 
         ##Return the evaluation components
