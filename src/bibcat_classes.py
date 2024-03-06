@@ -13762,8 +13762,8 @@ class Performance(_Base):
 
             #Iterate through results
             act_results = evaluations[curr_pair[0]]["actual_results"]
-            meas_results_0 = evaluations[curr_pair[0]]["measured_results"]
-            meas_results_1 = evaluations[curr_pair[1]]["measured_results"]
+            meas_results_0 = evaluations[curr_pair[0]]["measured_results_new"]
+            meas_results_1 = evaluations[curr_pair[1]]["measured_results_new"]
             for ii in range(0, len(act_results)):
                 #Iterate through missions
                 for curr_mission in act_results[ii]["missions"]:
@@ -13808,7 +13808,7 @@ class Performance(_Base):
 
     ##Method: evaluate_performance_basic
     ##Purpose: Evaluate the basic performance of the internal classifier on a test set of data
-    def evaluate_performance_basic(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_reuse_run, target_classifs=None, do_save_evaluation=False, do_save_misclassif=False, minmax_exclude_classifs=None, filename_root="performance_confmatr_basic", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), figsize_comb=(60,30), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
+    def evaluate_performance_basic(self, operators, dicts_texts, mappers, thresholds, buffers, is_text_processed, do_verify_truematch, filepath_output, do_raise_innererror, do_reuse_run, target_classifs=None, target_classifs_comb=None, do_save_evaluation=False, do_save_misclassif=False, minmax_exclude_classifs=None, filename_root="performance_confmatr_basic", fileroot_evaluation=None, fileroot_misclassif=None, figcolor="white", figsize=(20, 20), figsize_comb=(60,30), fontsize=16, hspace=None, cmap_abs=plt.cm.BuPu, cmap_norm=plt.cm.PuRd, print_freq=25, do_verbose=None, do_verbose_deep=None):
         """
         Method: evaluate_performance_basic
         Purpose:
@@ -13927,15 +13927,15 @@ class Performance(_Base):
                         which_norm="all")
             #
             #For performance calculated across target classifications
-            if (target_classifs is not None):
+            if (target_classifs_comb is not None):
                 tmp_filename = ("{0}_operator_targets_{1}.png"
                             .format(filename_root, curr_comb.replace("|","vs")))
                 target_act_classifs_comb = [
                                 "{0}_{1}".format(curr_comb.split("|")[0], item)
-                                        for item in target_classifs]
+                                        for item in target_classifs_comb]
                 target_meas_classifs_comb = [
                                 "{0}_{1}".format(curr_comb.split("|")[1], item)
-                                        for item in target_classifs]
+                                        for item in target_classifs_comb]
                 self.plot_performance_confusion_matrix(
                         list_evaluations=list_evaluations,
                         y_title=y_title, x_title=x_title,
@@ -14431,8 +14431,9 @@ class Performance(_Base):
             curr_mapper = mappers[ii]
             curr_opname = curr_op._get_info("name")
             curr_actdicts = classifications[curr_opname]["actual_results"]
-            curr_measdicts = classifications[curr_opname]["measured_results"]
-            num_texts = len(curr_measdicts)
+            curr_measdicts_orig=classifications[curr_opname]["measured_results"]
+            curr_measdicts_new = [None]*len(curr_measdicts_orig)
+            num_texts = len(curr_measdicts_orig)
             meas_classifs = curr_op._get_info("classifier"
                                                 )._get_info("class_names")
             #Print some notes
@@ -14478,10 +14479,12 @@ class Performance(_Base):
             i_misclassif = 0 #Count of misclassifications
             for jj in range(0, num_texts):
                 curr_actdict = curr_actdicts[jj]
-                curr_measdict = curr_measdicts[jj]
+                curr_measdict_orig = curr_measdicts_orig[jj]
+                curr_measdict_new = {key:None for key in curr_measdict_orig}
+                curr_measdicts_new[jj] = curr_measdict_new #For updated verdicts
                 #
                 #Iterate through missions that were considered
-                for curr_key in curr_measdict:
+                for curr_key in curr_measdict_orig:
                     lookup = curr_key
                     res_lowprob = config.dictverdict_lowprob.copy()["verdict"]
                     #
@@ -14496,7 +14499,7 @@ class Performance(_Base):
                     curr_actval = curr_actval.lower().replace("_","")
 
                     #Extract measured classif and apply any thresholds
-                    curr_measval_raw = curr_measdict[lookup]["verdict"]
+                    curr_measval_raw = curr_measdict_orig[lookup]["verdict"]
                     #curr_measval = curr_measval_raw.lower().replace("_","")
                     #If no threshold given, use original verdict
                     if ((thresholds is None) or (thresholds[ii] is None)):
@@ -14511,7 +14514,7 @@ class Performance(_Base):
                     #Otherwise, apply threshold
                     else:
                         #Fetch uncertainties (higher -> more certain)
-                        tmppass = curr_measdict[lookup]["uncertainty"]
+                        tmppass = curr_measdict_orig[lookup]["uncertainty"]
                         if (tmppass is not None):
                             max_verdict = max(tmppass, key=tmppass.get)
                             max_val = tmppass[max_verdict] #Uncertainty of verd.
@@ -14531,18 +14534,20 @@ class Performance(_Base):
                         curr_measval = curr_measval.lower().replace("_","")
                     #
 
+                    #Store the updated verdict for use later
+                    curr_measdict_new[lookup] = {"verdict":curr_measval}
+
                     #Increment current counter
                     dict_counters[curr_actval][curr_measval] += 1
 
                     #If misclassification, take note
                     if (curr_actval != curr_measval):
                         curr_info = {"act_classif":curr_actval,
-                            "meas_classif":curr_measval,
-                            "bibcode":curr_actdict["bibcode"],
-                            "mission":lookup,
-                            "id":curr_actdict["id"],
-                            "modif":curr_measdict[lookup]["modif"],
-                            "modif_none":curr_measdict[lookup]["modif_none"]}
+                        "meas_classif":curr_measval,
+                        "bibcode":curr_actdict["bibcode"],
+                        "mission":lookup, "id":curr_actdict["id"],
+                        "modif":curr_measdict_orig[lookup]["modif"],
+                        "modif_none":curr_measdict_orig[lookup]["modif_none"]}
                         #
                         dict_misclassifs[str(i_misclassif)] = curr_info
                         #Increment count of misclassifications
@@ -14610,7 +14615,8 @@ class Performance(_Base):
                 "misclassifs":dict_misclassifs, "act_classnames":act_classnames,
                 "meas_classnames":meas_classnames,
                 "actual_results":curr_actdicts,
-                "measured_results":curr_measdicts}
+                "measured_results_orig":curr_measdicts_orig,
+                "measured_results_new":curr_measdicts_new}
         #
 
         #Return the results from all operators
