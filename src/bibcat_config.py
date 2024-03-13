@@ -19,11 +19,12 @@ path_json = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Fu
 #
 
 
-#!!!
-mode_modif = "none" #"skim_anon" #"skim_trim_anon" #None
-#name_model = "perf_run_ML_{0}".format(mode_modif)
-name_model = "perf_run_MLandRB_{0}".format(mode_modif)
+#!!!HERE
+mode_modif = "none" # "none" #"skim_anon" #"skim_trim_anon" #None
+name_model = "perf_run_ML_{0}".format(mode_modif)
+#name_model = "perf_run_MLandRB_{0}".format(mode_modif)
 #name_model = "perf_run_RB_{0}".format(mode_modif)
+#name_model = "perf_run_MLlarge_{0}".format(mode_modif)
 #!!!
 
 ##Set global fixed paths
@@ -197,7 +198,7 @@ special_synsets_fig = ["table.n.01", "tab.n.04", "figure.n.01", "section.n.01", 
 ML_label_model = "categorical"
 ML_activation_dense = "softmax"
 ML_batch_size = 32
-ML_model_key = "small_bert/bert_en_uncased_L-4_H-512_A-8" #Simpler language model
+#ML_model_key = "small_bert/bert_en_uncased_L-4_H-512_A-8" #Simpler language model
 #ML_model_key = "bert_en_uncased_L-12_H-768_A-12" #Fancier language model
 ML_type_optimizer = "lamb" #"adamw"
 ML_name_optimizer = "LAMB" #"AdamWeightDecay"
@@ -346,10 +347,12 @@ dict_ml_model_preprocessors = {
 #"""
 #
 dict_ml_model_encoders = {
-"small_bert/bert_en_uncased_L-4_H-512_A-8":"https://kaggle.com/models/tensorflow/bert/frameworks/TensorFlow2/variations/bert-en-uncased-l-4-h-512-a-8/versions/1"
+"small_bert/bert_en_uncased_L-4_H-512_A-8":"https://kaggle.com/models/tensorflow/bert/frameworks/TensorFlow2/variations/bert-en-uncased-l-4-h-512-a-8/versions/1",
+"bert_en_uncased_L-12_H-768_A-12":"https://www.kaggle.com/models/tensorflow/bert/frameworks/TensorFlow2/variations/en-uncased-l-12-h-768-a-12/versions/4"
 }
 dict_ml_model_preprocessors = {
-"small_bert/bert_en_uncased_L-4_H-512_A-8":"https://kaggle.com/models/tensorflow/bert/frameworks/TensorFlow2/variations/en-uncased-preprocess/versions/3"
+"small_bert/bert_en_uncased_L-4_H-512_A-8":"https://kaggle.com/models/tensorflow/bert/frameworks/TensorFlow2/variations/en-uncased-preprocess/versions/3",
+"bert_en_uncased_L-12_H-768_A-12":"https://kaggle.com/models/tensorflow/bert/frameworks/TensorFlow2/variations/en-uncased-preprocess/versions/3"
 }
 #
 
