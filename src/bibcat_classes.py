@@ -1449,7 +1449,7 @@ class _Base():
 #
 
 
-##Class: Paper
+##Class: Keyword
 class Keyword(_Base):
     """
     Class: Keyword
