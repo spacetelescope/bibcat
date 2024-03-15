@@ -17,7 +17,7 @@ from bibcat import config
 do_verbose = True
 
 # Throw an error if any of these files already exist
-tmp_list = [config.path_input_data, config.path_not_in_papertext, config.path_not_in_papertrack]
+tmp_list = [config.path_source_data, config.path_not_in_papertext, config.path_not_in_papertrack]
 if any([os.path.isfile(item) for item in tmp_list]):
     raise ValueError(
         (
@@ -124,7 +124,7 @@ if do_verbose:
     print("NOTE: {0} papers in text data that were not in papertrack.".format(num_notin_papertrack))
 
 # Save the combined dataset
-with open(config.path_input_data, "w") as openfile:
+with open(config.path_source_data, "w") as openfile:
     json.dump(storage, openfile, indent=2)
 # Also save the papertrack classifications not found in papertext
 np.savetxt(config.path_not_in_papertext, np.asarray(bibcodes_notin_papertext).astype(str), delimiter="\n", fmt="%s")
@@ -134,6 +134,6 @@ np.savetxt(config.path_not_in_papertrack, np.asarray(bibcodes_notin_papertrack).
 # Print some notes
 if do_verbose:
     print("Dataset generation complete.\n")
-    print("Combined .json file saved to:\n{0}\n".format(config.path_input_data))
+    print("Combined .json file saved to:\n{0}\n".format(config.path_source_data))
     print("Bibcodes not in papertext saved to:\n{0}\n".format(config.path_not_in_papertext))
     print("Bibcodes not in papertrack saved to:\n{0}\n".format(config.path_not_in_papertrack))

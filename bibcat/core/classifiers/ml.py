@@ -98,7 +98,7 @@ class MachineLearningClassifier(ClassifierBase):
         return tf.keras.Model(layer_input, net)
 
     # Train and save an empty ML model
-    def train_ML(self, dir_model, name_model, seed, do_verbose=None, do_return_model=False):
+    def train_ML(self, dir_model, dir_data, name_model, seed, do_verbose=None, do_return_model=False):
         """
         Method: train_ML
         Purpose: Build an empty machine learning (ML) model and train it.
@@ -121,9 +121,9 @@ class MachineLearningClassifier(ClassifierBase):
             - 'loss': loss from model training.
         """
         # Load global variables
-        dir_train = os.path.join(dir_model, config.folders_TVT["train"])
-        dir_validation = os.path.join(dir_model, config.folders_TVT["validate"])
-        dir_test = os.path.join(dir_model, config.folders_TVT["test"])
+        dir_train = os.path.join(dir_data, config.folders_TVT["train"])
+        dir_validation = os.path.join(dir_data, config.folders_TVT["validate"])
+        dir_test = os.path.join(dir_data, config.folders_TVT["test"])
 
         savename_ML = config.tfoutput_prefix + name_model
         savename_model = name_model + ".npy"

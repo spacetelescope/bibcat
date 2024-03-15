@@ -1,20 +1,20 @@
 """
 :title: operator.py
 
-The primary purpose of this class is to direct and run the entire workflow of 'bibcat', 
-from reading in a given block of text to ultimately classifying that block of text. 
-Using its `classify` method, the Operator class internally handles all calls to 
-the other classes (Paper, Grammar, and the given classifier). 
+The primary purpose of this class is to direct and run the entire workflow of 'bibcat',
+from reading in a given block of text to ultimately classifying that block of text.
+Using its `classify` method, the Operator class internally handles all calls to
+the other classes (Paper, Grammar, and the given classifier).
 
 The primary methods and use cases of Operator are:
-* `_fetch_keyword_object`: A hidden method for fetching the stored Keyword instance 
+* `_fetch_keyword_object`: A hidden method for fetching the stored Keyword instance
    that matches a given term.
-* `classify`: A method designed for users that prepares and runs the entire 'bibcat' workflow, 
+* `classify`: A method designed for users that prepares and runs the entire 'bibcat' workflow,
    from input raw text to classified output.
-* `process`: A method designed for users that processes given text into modifs, 
-   from input raw text to output modifs. It does not include classification (for that, run `classify`); 
+* `process`: A method designed for users that processes given text into modifs,
+   from input raw text to output modifs. It does not include classification (for that, run `classify`);
    it is useful for preprocessing raw text.
-* `train_model_ML`: A method designed for users that trains a machine learning (ML) model 
+* `train_model_ML`: A method designed for users that trains a machine learning (ML) model
    on input raw text. Under the hood, this is called `process` to preprocess the raw text.
 """
 
@@ -25,6 +25,7 @@ import numpy as np
 import bibcat.config as config
 from bibcat.core.base import Base
 from bibcat.core.grammar import Grammar
+from bibcat.data.partition_dataset import generate_directory_TVT
 
 
 class Operator(Base):
@@ -102,7 +103,7 @@ class Operator(Base):
         return
 
     # Fetch a keyword object that matches the given lookup
-    def _fetch_keyword_object(self, lookup, do_verbose=None, do_raise_emptyerror=True):
+    def _fetch_keyword_object(self, lookup: str, do_verbose: str | bool = None, do_raise_emptyerror: bool = True):
         """
         Method: _fetch_keyword_object
         WARNING! This method is *not* meant to be used directly by users.
@@ -478,6 +479,7 @@ class Operator(Base):
     def train_model_ML(
         self,
         dir_model,
+        dir_data,
         name_model,
         do_reuse_run,
         dict_texts,
@@ -543,8 +545,8 @@ class Operator(Base):
 
         # Preprocess texts into modifs and store in TVT directories
         # NOTE: TVT = training, validation, testing datasets
-        is_exist = os.path.exists(os.path.join(dir_model, folders_TVT["train"])) or os.path.exists(
-            os.path.join(dir_model, folders_TVT["validate"])
+        is_exist = os.path.exists(os.path.join(dir_data, folders_TVT["train"])) or os.path.exists(
+            os.path.join(dir_data, folders_TVT["validate"])
         )
         # If TVT directories already exist, either print note or raise error
         if is_exist:
@@ -555,7 +557,7 @@ class Operator(Base):
 
             # Skip ahead if previous data should be reused
             if do_reuse_run:
-                print("Reusing the existing training/validation data in {0}.".format(dir_model))
+                print("Reusing the existing training/validation data in {0}.".format(dir_data))
                 pass
 
             # Otherwise, raise error if not to reuse previous run data
@@ -565,7 +567,7 @@ class Operator(Base):
                         "Err: Training/validation data already exists"
                         + " in {0}. Either delete it, or rerun method"
                         + " with do_reuse_run=True."
-                    ).format(dir_model)
+                    ).format(dir_data)
                 )
 
         # Otherwise, preprocess the text and store in TVT directories
@@ -660,8 +662,8 @@ class Operator(Base):
                 print("Storing the data in train+validate+test directories...")
 
             # Store the modifs in new TVT directories
-            classifier.generate_directory_TVT(
-                dir_model=dir_model,
+            generate_directory_TVT(
+                dir_data=dir_data,
                 fraction_TVT=fraction_TVT,
                 mode_TVT=mode_TVT,
                 dict_texts=dict_modifs,
@@ -708,7 +710,12 @@ class Operator(Base):
 
             # Train new ML model
             model = classifier.train_ML(
-                dir_model=dir_model, name_model=name_model, seed=seed_ML, do_verbose=do_verbose, do_return_model=True
+                dir_model=dir_model,
+                dir_data=dir_data,
+                name_model=name_model,
+                seed=seed_ML,
+                do_verbose=do_verbose,
+                do_return_model=True,
             )
 
             # Print some notes

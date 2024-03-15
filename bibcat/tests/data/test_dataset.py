@@ -25,7 +25,7 @@ class TestData(unittest.TestCase):
             print("Running test__combined_dataset.")
             # Load each of the datasets
             # For the combined dataset
-            with open(config.path_input_data, "r") as openfile:
+            with open(config.path_source_data, "r") as openfile:
                 data_combined = json.load(openfile)
 
             # For the original text data
@@ -148,7 +148,7 @@ class TestData(unittest.TestCase):
             dict_info = np.load(config.path_TVTinfo, allow_pickle=True).item()
             dict_errors = np.load(config.path_modiferrors, allow_pickle=True).item()
             # Dataset of text and classification information
-            with open(config.path_input_data, "r") as openfile:
+            with open(config.path_source_data, "r") as openfile:
                 dataset = json.load(openfile)
 
             list_bibcodes_dataset = [item["bibcode"] for item in dataset]

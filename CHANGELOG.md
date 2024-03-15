@@ -2,9 +2,12 @@
 
 ## [Unreleased]
 
-Refactoring bibcat has started.
-- Refactoring create_model.py and classify_papers.py
+Bibcat to do list
+- Refactor create_model.py 
+- Refactor classify_papers.py
+    -  modify the `output` directory to show the output from multiple model
 - Adding tutorial notebooks back
+
 
 ### Removed
 - [PR #9]
@@ -16,7 +19,14 @@ Refactoring bibcat has started.
 
 ### Changed
 
-- PR #11
+- PR #12
+    - Refactoring build_model.py has started, the first part includes to 
+        - extract generate_direcotry_TVT() from `core/classifiers/textdata.py` to create a stand-alone module, `split_dataset.py`
+        - modify to store the training, validation, and test (TVT) data set directories under the `data/partitioned_datasets` directory
+    - The second part in refactoring required some relevant changes to implement the new modules and updating build_module.py accordingly.
+        - `build_model.py`,`base.py`, `operator.py`, `config.py`, etc.
+
+- [PR #11]
     - Renamed create_model.py to build_model.py
     - Updated README.md
     - Updated config.py to create variables to support the new script, build_dataset.py
@@ -45,7 +55,13 @@ Refactoring bibcat has started.
     - updated formatting and styling
 
 ### Added 
-- PR # 11
+
+- PR #12
+    - The second part of refactoring `build_model.py` includes
+        - create a new module, `model_settings.py` to set up various model related variables. This eventually will relocating other model related variables in `config.py` to this module in the near future.
+        - Created `streamline_dataset.py` to streamline the source data equipped to be ML input dataset. It does load the source dataset and streamline the dataset. 
+        - Created `partition_dataset.py` to split the streamlined dataset into the train, validation, and test dataset for DL models. 
+- [PR # 11]
     - Create a new script to build the input dataset. It's called build_dataset.py
     - Added some information about the data folder in README.rst
     - Added __init__.py
