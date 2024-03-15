@@ -6,9 +6,9 @@ This module creates a new training ML model.
 - The input full text JSON file (papertrack + ADS full texts) is called via
   `config.path_source_data` configured in `bibcat/config.py` and is used for training,
   validating, and testing the trained model.
-  
+
 - Once the model is trained, the `models` folder and its subdirectories for T/V/T
-  are created along with various model related files. 
+  are created along with various model related files.
 
 :Run example: python build_model.py
 """

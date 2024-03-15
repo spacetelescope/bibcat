@@ -1,20 +1,20 @@
 """
 :title: operator.py
 
-The primary purpose of this class is to direct and run the entire workflow of 'bibcat', 
-from reading in a given block of text to ultimately classifying that block of text. 
-Using its `classify` method, the Operator class internally handles all calls to 
-the other classes (Paper, Grammar, and the given classifier). 
+The primary purpose of this class is to direct and run the entire workflow of 'bibcat',
+from reading in a given block of text to ultimately classifying that block of text.
+Using its `classify` method, the Operator class internally handles all calls to
+the other classes (Paper, Grammar, and the given classifier).
 
 The primary methods and use cases of Operator are:
-* `_fetch_keyword_object`: A hidden method for fetching the stored Keyword instance 
+* `_fetch_keyword_object`: A hidden method for fetching the stored Keyword instance
    that matches a given term.
-* `classify`: A method designed for users that prepares and runs the entire 'bibcat' workflow, 
+* `classify`: A method designed for users that prepares and runs the entire 'bibcat' workflow,
    from input raw text to classified output.
-* `process`: A method designed for users that processes given text into modifs, 
-   from input raw text to output modifs. It does not include classification (for that, run `classify`); 
+* `process`: A method designed for users that processes given text into modifs,
+   from input raw text to output modifs. It does not include classification (for that, run `classify`);
    it is useful for preprocessing raw text.
-* `train_model_ML`: A method designed for users that trains a machine learning (ML) model 
+* `train_model_ML`: A method designed for users that trains a machine learning (ML) model
    on input raw text. Under the hood, this is called `process` to preprocess the raw text.
 """
 
@@ -103,7 +103,7 @@ class Operator(Base):
         return
 
     # Fetch a keyword object that matches the given lookup
-    def _fetch_keyword_object(self, lookup: str, do_verbose=None, do_raise_emptyerror=True):
+    def _fetch_keyword_object(self, lookup: str, do_verbose: str | bool = None, do_raise_emptyerror: bool = True):
         """
         Method: _fetch_keyword_object
         WARNING! This method is *not* meant to be used directly by users.

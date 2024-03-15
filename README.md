@@ -9,6 +9,24 @@ There are two main branches for bibcat work:
 - The **main** branch contains the latest stable release of `bibcat`. 
 
 ## Installation
+### Required packages and versions
+- Python 3.10
+- spacy
+- nltk
+- tensorflow
+- tf-models-official
+
+### Conda env installation
+Change `env_name` below with whatever you want to name the environment. 
+- Download conda installation yml file [here](envs/bibcat_py310.yml).
+- In the terminal, run these commands.
+```
+- conda env create -n `env_name` -f bibcat_py310.yml 
+- conda activate `env_name`
+- pip install -U "tensorflow-text"
+- python -m spacy download en_core_web_sm
+```
+### Bibcat installation
 The `bibcat` directory contains the python package itself, installable via pip.
 ```shell
 pip install -e .

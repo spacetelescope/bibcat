@@ -40,26 +40,15 @@ PATH_DOCS = os.path.join(_parent, "docs")
 
 # Path to the models folder
 PATH_MODELS = os.path.join(SRC_ROOT, "models")
-if not os.path.isdir(PATH_MODELS):
-    os.makedirs(PATH_MODELS)
-    print("created folder : ", PATH_MODELS)
-else:
-    print(PATH_MODELS, "folder already exists.")
+os.makedirs(PATH_MODELS, exist_ok=True)
+
 # Path to the output folder
 PATH_OUTPUT = os.path.join(_parent, "output")
-if not os.path.isdir(PATH_OUTPUT):
-    os.makedirs(PATH_OUTPUT)
-    print("created folder : ", PATH_OUTPUT)
-else:
-    print(PATH_OUTPUT, "folder already exists.")
+os.makedirs(PATH_OUTPUT, exist_ok=True)
 
 # path to partitioned datasets
 path_partitioned_data = os.path.join(SRC_ROOT, "data", "partitioned_datasets")
-if not os.path.isdir(path_partitioned_data):
-    os.makedirs(path_partitioned_data)
-    print("created folder : ", path_partitioned_data)
-else:
-    print(path_partitioned_data, "folder already exists.")
+os.makedirs(path_partitioned_data, exist_ok=True)
 
 KW_AMBIG = os.path.join(PATH_CONFIG, "keywords_ambig.txt")
 PHR_AMBIG = os.path.join(PATH_CONFIG, "phrases_ambig.txt")

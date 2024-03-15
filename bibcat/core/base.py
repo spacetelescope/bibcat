@@ -4,24 +4,24 @@
 The class module is a collection of methods that other classes often use.
 
 The primary methods and use cases of _Base include:
-* `_get_info`, `_store_info`: Store and retrieve information (values, booleans, etc.) 
+* `_get_info`, `_store_info`: Store and retrieve information (values, booleans, etc.)
    for a given class instance.
-* `_assemble_keyword_wordchunks`: Build noun chunks containing target mission keywords 
+* `_assemble_keyword_wordchunks`: Build noun chunks containing target mission keywords
    from the text.
-* `_check_importance`: Check if some given text contains any important terms 
-   (where important terms include mission keywords, 1st-person and 3rd-person pronouns, 
+* `_check_importance`: Check if some given text contains any important terms
+   (where important terms include mission keywords, 1st-person and 3rd-person pronouns,
    a paper citation, etc.).
-* `_check_truematch`: Check if some given ambiguous text relates to a given mission 
+* `_check_truematch`: Check if some given ambiguous text relates to a given mission
    (e.g., Hubble observations) or is instead likely a false match (e.g., Edwin Hubble).
-* `_cleanse_text`: Cleanse some given text, e.g., excessive whitespace and punctuation. 
+* `_cleanse_text`: Cleanse some given text, e.g., excessive whitespace and punctuation.
    Can also, e.g., replace citations with an 'Authoretal' placeholder of sorts.
 * `_extract_core_from_phrase`: Formulate a core representative 'meaning' for some given text.
 * `_is_pos_word`: Check if some given word (of the NLP type) has a particular part of speech.
-* `_process_database_ambig`: Load, process, and store an external table of 
+* `_process_database_ambig`: Load, process, and store an external table of
    ambiguous mission-related phrases.
-* `_search_text`: Search some given text for mission keywords/acronyms 
+* `_search_text`: Search some given text for mission keywords/acronyms
    (e.g., search for "HST").
-* `_streamline_phrase`: Run _cleanse_text(), and also streamline, e.g., 
+* `_streamline_phrase`: Run _cleanse_text(), and also streamline, e.g.,
    websites by replacing them with uniform placeholders.
 """
 
@@ -1410,7 +1410,8 @@ class Base:
         return text
 
     # Write given text to given filepath
-    def _write_text(text, filepath):
+    @staticmethod
+    def _write_text(text: str, filepath: str) -> None:
         """
         Method: _write_text
         WARNING! This method is *not* meant to be used directly by users.

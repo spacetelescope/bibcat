@@ -6,16 +6,17 @@ into three categories; science, mention, data-influenced. Finally, it produces
 performance results such as a confusion matrix.
 
 - Context: the input full text JSON file (papertrack + ADS full texts) is
-  called via config.path_source_data configured in bibcat/config.py and is used for 
+  called via config.path_source_data configured in bibcat/config.py and is used for
   training, validating, and testing the trained model.
 
 - Classfication data: this text data is used for prediction (classification),
   for now, it is fetched from the `bibcat/model/dir_test` folder via
-  the `folder_test` variable below. However, we will need to modify the 
+  the `folder_test` variable below. However, we will need to modify the
   codebase to  set up a designated folder for operational papers.
 
 - Run example: python classify_papers.py
 """
+
 import json
 import os
 
@@ -170,7 +171,7 @@ fileloc_ML = os.path.join(dir_model, (config.tfoutput_prefix + name_model))
 classifier_ML = ml.MachineLearningClassifier(filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True)
 
 # Load a rule-based classifier
-rules = rules.RuleBasedClassifier()
+classifier_RB = rules.RuleBasedClassifier()
 
 
 # Initialize operators by loading models into instances of the Operator class
@@ -187,7 +188,7 @@ operator_ML = operator.Operator(
 )
 # The rule-based operator
 operator_RB = operator.Operator(
-    classifier=rules,
+    classifier=classifier_RB,
     name="Operator_RB",
     mode=mode_modif,
     keyword_objs=all_kobjs,
