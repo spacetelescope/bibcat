@@ -722,7 +722,7 @@ class _Base():
 
     ##Method: _cleanse_text()
     ##Purpose: Cleanse given (any length) string of extra whitespace, dashes, etc.
-    def _cleanse_text(self, text, do_streamline_etal):
+    def _cleanse_text_old_2024_03_25_beforeetalupdates(self, text, do_streamline_etal):
         """
         Method: _cleanse_text
         WARNING! This method is *not* meant to be used directly by users.
@@ -804,7 +804,114 @@ class _Base():
             text = re.sub(exp_cites_nobrackets, config.placeholder_author, text)
             #
             #Replace singular et al. (e.g. SingleAuthor et al.) wordage as well
-            text = re.sub(r" et al\b\.?", "etal", text)
+            #text = re.sub(r" et al\b\.?", "etal", text)
+            text = re.sub(r"([A-Z][A-Z|a-z]+) et al\b\.?",
+                            config.placeholder_author, text)
+        #
+
+        #Remove starting+ending whitespace
+        text = text.lstrip().rstrip()
+
+        #Return cleansed text
+        return text
+    #
+
+    ##Method: _cleanse_text()
+    ##Purpose: Cleanse given (any length) string of extra whitespace, dashes, etc.
+    def _cleanse_text(self, text, do_streamline_etal):
+        """
+        Method: _cleanse_text
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose:
+         - Cleanse text of extra whitespace, punctuation, etc.
+         - Replace paper citations (e.g. 'et al.') with uniform placeholder.
+        """
+        #Extract global punctuation expressions
+        set_apostrophe = config.set_apostrophe
+        set_punctuation = config.set_punctuation
+        exp_punctuation = config.exp_punctuation
+        set_openbrackets = config.set_openbrackets
+        set_closebrackets = config.set_closebrackets
+
+        #Remove any starting punctuation
+        text = re.sub(((r"^("+"|".join(exp_punctuation)+r")")),
+                        "", text) #Remove starting punct.
+
+        #Remove extra whitespace in general
+        text = re.sub("  +", " ", text) #Removes spaces > length=1
+
+        #Remove excessive whitespace around punctuation
+        #For opening brackets
+        tmp_exp_inner = ("\\" + "|\\".join(set_openbrackets))
+        text = re.sub(("("+tmp_exp_inner+") ?"), r"\1", text)
+        #For closing brackets and punctuation
+        tmp_exp_inner = ("\\" + "|\\"
+                            .join((set_closebrackets+set_punctuation)))
+        text = re.sub((" ?("+tmp_exp_inner+")"), r"\1", text)
+        #For apostrophes
+        tmp_exp_inner = ("\\" + "|\\".join(set_apostrophe))
+        text = re.sub((" ?("+tmp_exp_inner+") ?"), r"\1", text)
+        #
+
+        #Remove empty brackets and doubled-up punctuation
+        #Extract ids of empty brackets and doubled-up punctuation
+        ids_rem = [ii for ii in range(0, (len(text)-1))
+                    if (((text[ii] in set_openbrackets)
+                        and (text[ii+1] in set_closebrackets)) #Empty brackets
+                    or ((text[ii] in set_punctuation)
+                        and (text[ii+1] in set_punctuation)))] #Double punct.
+        #Remove the characters (in reverse order!) at the identified ids
+        for ii in sorted(ids_rem)[::-1]: #Reverse-sorted
+            text = text[0:ii] + text[(ii+1):len(text)]
+        #
+
+        #Replace pesky "Author & Author (date)", et al., etc., wordage
+        if do_streamline_etal:
+            #Adapted from:
+            # https://regex101.com/r/xssPEs/1
+            # https://stackoverflow.com/questions/63632861/
+            #                           python-regex-to-get-citations-in-a-paper
+            bit_author = r"(?:(\b[A-Z]\. )*[A-Z][A-Za-z'`-]+)"
+            #x bit_author = r"(?:[A-Z][A-Za-z'`-]+)"
+            bit_etal = r"(?:et al\.?)"
+            #x bit_additional = f"(?:,? (?:(?:and |& )?{bit_author}|{bit_etal}))"
+            #x bit_additional = f"(?: (?:(?:and |& )?{bit_author}|{bit_etal}))"
+            bit_additional = f"(?: (?:(?:and |& ){bit_author}|{bit_etal}))"
+            #Regular expressions for years (with or without brackets)
+            exp_year_yesbrackets = (
+                        r"( (\(|\[|\{)"
+                        + r"([0-9]{4,4}|[0-9]{2,2})"
+                        + r"((,|;) ?([0-9]{4,4}|[0-9]{2,2}))*"
+                        + r"(\)|\]|\}))")
+            exp_year_nobrackets = (
+                        r" "
+                        + r"([0-9]{4,4}|[0-9]{2,2})"
+                        + r"((,|;) ?([0-9]{4,4}|[0-9]{2,2}))*")
+            #Regular expressions for citations (with or without brackets)
+            exp_cites_yesbrackets = (
+                    r"(\(|\[|\{)"
+                    +fr"{bit_author}{bit_additional}*{exp_year_nobrackets}"
+                    +(r"((,|;) "
+                        +fr"{bit_author}{bit_additional}*{exp_year_nobrackets}"
+                    +r")*")
+                    +r"(\)|\]|\})")
+            exp_cites_nobrackets = (
+                    fr"{bit_author}{bit_additional}*{exp_year_yesbrackets}")
+            #
+            #Replace not-bracketed citations or remove bracketed citations
+            text = re.sub(exp_cites_yesbrackets, "", text)
+            text = re.sub(exp_cites_nobrackets, config.placeholder_author, text)
+            #
+            #Replace singular et al. (e.g. SingleAuthor et al.) wordage as well
+            #text = re.sub(r" et al\b\.?", "etal", text)
+            text = re.sub(r"\b([A-Z]\. )*(\b[A-Z][A-Z|a-z]+) et al\b\.?",
+                            config.placeholder_author, text)
+            #
+
+            #Collapse adjacent author terms
+            text = re.sub(r"{0}((,|;|(,? and))( )+{0})+"
+                                            .format(config.placeholder_author),
+                            config.placeholder_author, text)
         #
 
         #Remove starting+ending whitespace
@@ -1417,11 +1524,13 @@ class _Base():
         text = self._cleanse_text(text=text,
                                 do_streamline_etal=do_streamline_etal)
 
+        """BLOCKED: 2024-03-25: Unnecessary initial text modification.
         #Replace annoying websites with placeholder
         text = re.sub(config.exp_website, config.placeholder_website, text)
 
         #Replace annoying <> inserts (e.g. html)
         text = re.sub(r"<[A-Z|a-z|/]+>", "", text)
+        #"""
 
         #Replace annoying abbreviations that confuse NLP sentence parser
         for key1 in dict_exp_abbrev:

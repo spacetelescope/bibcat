@@ -41,13 +41,15 @@ test_which_modes = ["none", "skim", "trim", "anon", "skim_trim_anon"]
 kobj_hla = params.keyword_obj_HLA
 kobj_hubble = params.keyword_obj_HST
 kobj_hubble_expanded = params.keyword_obj_HST_expanded
+kobj_hut = params.keyword_obj_HUT
 kobj_jwst = params.keyword_obj_JWST
 kobj_kepler = params.keyword_obj_Kepler
 kobj_k2 = params.keyword_obj_K2
+kobj_uit = params.keyword_obj_UIT
 #
 #Keyword-object lookups
 list_lookup_kobj = [kobj_hubble, kobj_kepler, kobj_k2]
-dict_lookup_kobj = {"Hubble":kobj_hubble, "Kepler":kobj_kepler, "K2":kobj_k2, "HLA":kobj_hla, "JWST":kobj_jwst}
+dict_lookup_kobj = {"Hubble":kobj_hubble, "Kepler":kobj_kepler, "K2":kobj_k2, "HLA":kobj_hla, "JWST":kobj_jwst, "HUT":kobj_hut, "UIT":kobj_uit}
 #
 
 ##Placeholders
@@ -714,37 +716,48 @@ class TestBase(unittest.TestCase):
         #
         #Test streamlining for text with citations
         def test_streamline_phrase__citations(self):
+            #2024-03-25: Modified+Removed some tests; code no longer collapses citations with > 2 names, since did not distinguish e.g. 'For Hubble, Names et al. (2024) was ...' which was a false-negative
+
             #Prepare text and answers for test
             dict_tests = {
             "Somename (2013) published  in SJ.":
                 "{0} published in SJ.".format(placeholder_author),
             "Hubble (1953) was a landmark paper (for that subfield).":
                 "{0} was a landmark paper (for that subfield).".format(placeholder_author),
+            "The Hubble 2023 celebration was neat.":
+                "The Hubble 2023 celebration was neat.".format(placeholder_author),
             "Hubble (launched 1234) has been a landmark mission.":
                 "Hubble (launched 1234) has been a landmark mission.".format(placeholder_author),
-            "See also: Kepler [2023], Hubble & Author (2020), Author, Somename, and Kepler et al. [1990];":
-                "See also: {0}, {0}, {0};".format(placeholder_author),
+            "See also: Kepler [2023], Hubble & Author (2020), Author and Kepler et al. [1990];":
+                "See also: {0};".format(placeholder_author),
             "Also Author papers (Author et al. 1997, 2023),":
                 "Also Author papers,",
-            "(Someone, Author, Somename et al. 1511; 1612)":
+            "(Someone & Somename et al. 1511; 1612)":
                 "",
-            "(Someone, Author, and Somename et al. 1913,15)":
+            "(Someone and Somename et al. 1913,15)":
                 "",
             "(Author et al. 80; Somename & Author 2012)":
                 "",
-            "McThatname, Kepler, & Othername [1993] (see our paper)":
+            "McThatname & Othername [1993] (see our paper)":
                 "{0} (see our paper)".format(placeholder_author),
             "{Othername et al. 1991} (see Hubble observations)":
                 "(see Hubble observations)",
+            "For Hubble Somename (2013) published  in SJ.":
+                "For Hubble {0} published in SJ.".format(placeholder_author),
             "For Hubble, Somename (2013) published  in SJ.":
+                "For Hubble, {0} published in SJ.".format(placeholder_author),
+            "For Hubble, Somename & Others (2013) published  in SJ.":
+                "For Hubble, {0} published in SJ.".format(placeholder_author),
+            "For Hubble, Somename et al (2013) published  in SJ.":
                 "For Hubble, {0} published in SJ.".format(placeholder_author),
             "Then with Hubble, Hubble (1953) was a landmark paper (for that subfield).":
                 "Then with Hubble, {0} was a landmark paper (for that subfield).".format(placeholder_author),
-            "See also: Data from Kepler in Kepler [2023], E. Hubble & Author (2020), A.A. Author, T. J. Somename, and Kepler et al. [1990];":
-                "See also: Data from Kepler in {0}, {0}, {0};".format(placeholder_author),
+            #"See also: Data from Kepler in Kepler [2023], E. Hubble & Author (2020), A.A. Author, T. J. Somename, and Kepler et al. [1990];"
+            "See also: Data from Kepler in Kepler [2023], E. Hubble & Author (2020), A. A. Author and Kepler et al. [1990];":
+                "See also: Data from Kepler in {0};".format(placeholder_author),
             "Observations like with Hubble (Someone 2020) and Kepler (SomeoneElse 2018) were helpful.":
                 "Observations like with Hubble and Kepler were helpful.",
-            "While E. Hubble et al. 1960 discuss Hubble, E. Hubble & J. Kepler 1970 do not.":
+            "While E. Hubble et al. (1960) discuss Hubble, E. Hubble & J. Kepler (1970) do not.":
                 "While {0} discuss Hubble, {0} do not.".format(placeholder_author)
             }
 
@@ -770,6 +783,7 @@ class TestBase(unittest.TestCase):
             #
         #
         #Test streamlining for text with numerics
+        """BLOCKED: 2024-03-25: This codebase functionality was commented out.
         def test_streamline_phrase__numerics(self):
             #Prepare text and answers for test
             dict_tests = {
@@ -803,8 +817,9 @@ class TestBase(unittest.TestCase):
                     #
                     self.assertEqual(test_res, answer)
             #
-        #
+        #"""
         #Test streamlining for text with websites
+        """BLOCKED: 2024-03-25: This codebase functionality was commented out.
         def test_streamline_phrase__websites(self):
             #Prepare text and answers for test
             dict_tests = {
@@ -838,7 +853,7 @@ class TestBase(unittest.TestCase):
                     #
                     self.assertEqual(test_res, answer)
             #
-        #
+        #"""
     #
     #For tests of _is_pos_word:
     if True:
@@ -1261,7 +1276,7 @@ class TestBase(unittest.TestCase):
         #
     #
 #"""
-"""
+#"""
 #class: TestKeyword
 #Purpose: Testing the Keyword class
 class TestKeyword(unittest.TestCase):
@@ -1385,14 +1400,14 @@ class TestKeyword(unittest.TestCase):
             "The GOODS-north stars":{"kobj":kobj_hubble_expanded, "bool":True},
             "Kepler K2 data":{"kobj":kobj_kepler, "bool":False},
             "Kepler K2 data":{"kobj":kobj_k2, "bool":True},
-            "stellar templates":{"kobj":kobj_JWST, "bool":False},
-            "the TEMPLATES project":{"kobj":kobj_JWST, "bool":True},
-            "a hut of straw":{"kobj":kobj_HUT, "bool":False},
-            "an HUT observation":{"kobj":kobj_HUT, "bool":True},
-            "an H.U.T observation":{"kobj":kobj_HUT, "bool":True},
-            "an H.U.T. observation":{"kobj":kobj_HUT, "bool":True},
-            "using the astrosat uit camera":{"kobj":kobj_UIT, "bool":False},
-            "using the uit camera":{"kobj":kobj_UIT, "bool":True}
+            "stellar templates":{"kobj":kobj_jwst, "bool":False},
+            "the TEMPLATES project":{"kobj":kobj_jwst, "bool":True},
+            "a hut of straw":{"kobj":kobj_hut, "bool":False},
+            "an HUT observation":{"kobj":kobj_hut, "bool":True},
+            "an H.U.T observation":{"kobj":kobj_hut, "bool":True},
+            "an H.U.T. observation":{"kobj":kobj_hut, "bool":True},
+            "using the astrosat uit camera":{"kobj":kobj_uit, "bool":False},
+            "using the uit camera":{"kobj":kobj_uit, "bool":True}
             }
             #
 
