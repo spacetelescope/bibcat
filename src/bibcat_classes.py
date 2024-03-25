@@ -985,9 +985,23 @@ class _Base():
                     .format(list(word.lefts), list(word.rights)))
         #
 
+        ##Measure conjoined status ahead of time
+        is_conjoined = False
+        if (pos != "CONJOINED"):
+            is_conjoined = self._is_pos_word(word=word, pos="CONJOINED")
+        #
+
         ##Check if given word is of given part-of-speech
+        #Handle conjoined cases
+        if is_conjoined:
+            #Return pos check on previous node
+            return self._is_pos_word(word=word_ancestors[0], pos=pos,
+                    keyword_objs=keyword_objs, ids_nounchunks=ids_nounchunks,
+                    do_verbose=do_verbose,
+                    do_exclude_nounverbs=do_exclude_nounverbs)
+        #
         #Identify roots
-        if pos in ["ROOT"]:
+        elif pos in ["ROOT"]:
             check_all = (word_dep in config.dep_root)
         #
         #Identify verbs
@@ -1082,14 +1096,18 @@ class _Base():
             #is_conjprepobj = self._is_pos_conjoined(word, pos=pos)
             #Check if this word follows preposition
             check_objprep = False
+            check_subjprep = False
             for pre_node in word_ancestors:
                 #If preceding preposition found first
                 if self._is_pos_word(word=pre_node, pos="PREPOSITION"):
+                    check_hasof = (pre_node.text.lower() == "of")
                     pre_pre_node = list(pre_node.ancestors)[0]
-                    #Ensure prepositional object instead of prep. subject
-                    check_objprep = (not self._is_pos_word(word=pre_pre_node,
+                    #Ensure prepositional object instead of prep. 'of' subject
+                    check_aftersubj = self._is_pos_word(word=pre_pre_node,
                                             pos="SUBJECT",
-                                            ids_nounchunks=ids_nounchunks))
+                                            ids_nounchunks=ids_nounchunks)
+                    check_subjprep = (check_hasof and check_aftersubj)
+                    check_objprep = (not check_subjprep)
                     break
                 #If preceding verb found first
                 elif self._is_pos_word(word=pre_node, pos="VERB"):
@@ -1097,7 +1115,8 @@ class _Base():
                     break
             #
             #check_all = (is_conjprepobj or (check_baseobj and check_objprep))
-            check_all = ((check_baseobj and (not check_objprep) and check_noun))
+            check_all = ((check_baseobj and (not check_objprep)
+                            and (not check_subjprep) and check_noun))
         #
         #Identify prepositional objects
         elif pos in ["PREPOSITIONAL_OBJECT"]:
@@ -1382,7 +1401,7 @@ class _Base():
 
     ##Method: _streamline_phrase()
     ##Purpose: Cleanse given (short) string of extra whitespace, dashes, etc, and replace websites, etc, with uniform placeholders.
-    def _streamline_phrase(self, text):
+    def _streamline_phrase(self, text, do_streamline_etal):
         """
         Method: _streamline_phrase
         WARNING! This method is *not* meant to be used directly by users.
@@ -1395,7 +1414,8 @@ class _Base():
         dict_exp_abbrev = config.dict_exp_abbrev
 
         #Remove any initial excessive whitespace
-        text = self._cleanse_text(text=text, do_streamline_etal=True)
+        text = self._cleanse_text(text=text,
+                                do_streamline_etal=do_streamline_etal)
 
         #Replace annoying websites with placeholder
         text = re.sub(config.exp_website, config.placeholder_website, text)
@@ -1409,6 +1429,7 @@ class _Base():
         #
 
         #Replace annoying object numerical name notations
+        """BLOCKED: 2024-03-25: Unnecessary initial text modification.
         #E.g.: HD 123456, 2MASS123-456
         text = re.sub(r"([A-Z]+) ?[0-9][0-9]+[A-Z|a-z]*((\+|-)[0-9][0-9]+)*",
                         r"\g<1>"+config.placeholder_number, text)
@@ -1423,9 +1444,12 @@ class _Base():
         #Remove spaces between capital+numeric names
         text = re.sub(r"([A-Z]+) ([0-9]+)([0-9]|[a-z])+",
                         r"\1\2\3".format(config.placeholder_numeric), text)
+        #
+        #"""
 
         #Remove any new excessive whitespace and punctuation spaces
-        text = self._cleanse_text(text=text, do_streamline_etal=True)
+        text = self._cleanse_text(text=text,
+                                    do_streamline_etal=do_streamline_etal)
         #
 
         #Return streamlined text
@@ -1741,7 +1765,8 @@ class Paper(_Base):
 
         #Preprocess the data
         #Cleanse extra whitespace, strange chars, etc.
-        text_clean = self._streamline_phrase(text=text_original)
+        text_clean = self._streamline_phrase(text=text_original,
+                                        do_streamline_etal=False)
         #Split cleansed text into naive sentences
         text_clean_split = self._split_text(text=text_clean)
 
@@ -3018,6 +3043,9 @@ class Grammar(_Base):
                 sents_updated[ii] = keyword_obj.replace_keyword(
                                                 text=sents_updated[ii],
                                                 placeholder=placeholder_anon)
+                sents_updated[ii] = self._streamline_phrase(
+                                            text=sents_updated[ii],
+                                            do_streamline_etal=True)
             #
             #Print some notes
             if do_verbose:
@@ -3028,7 +3056,8 @@ class Grammar(_Base):
 
         #Join and cleanse the text to finalize it
         text_updated = " ".join(sents_updated)
-        text_updated = self._streamline_phrase(text=text_updated)
+        text_updated = self._streamline_phrase(text=text_updated,
+                                            do_streamline_etal=False)
         #
 
         #Return dictionary containing the updated grammar structures
@@ -4218,7 +4247,7 @@ class Classifier_ML(_Classifier):
         #
 
         #Cleanse the text
-        text_clean = self._streamline_phrase(text)
+        text_clean = self._streamline_phrase(text, do_streamline_etal=False)
 
         #Fetch and use stored model
         model = self._get_info("model")

@@ -41,12 +41,13 @@ test_which_modes = ["none", "skim", "trim", "anon", "skim_trim_anon"]
 kobj_hla = params.keyword_obj_HLA
 kobj_hubble = params.keyword_obj_HST
 kobj_hubble_expanded = params.keyword_obj_HST_expanded
+kobj_jwst = params.keyword_obj_JWST
 kobj_kepler = params.keyword_obj_Kepler
 kobj_k2 = params.keyword_obj_K2
 #
 #Keyword-object lookups
 list_lookup_kobj = [kobj_hubble, kobj_kepler, kobj_k2]
-dict_lookup_kobj = {"Hubble":kobj_hubble, "Kepler":kobj_kepler, "K2":kobj_k2, "HLA":kobj_hla}
+dict_lookup_kobj = {"Hubble":kobj_hubble, "Kepler":kobj_kepler, "K2":kobj_k2, "HLA":kobj_hla, "JWST":kobj_jwst}
 #
 
 ##Placeholders
@@ -651,7 +652,8 @@ class TestBase(unittest.TestCase):
             for key1 in dict_tests:
                 try:
                     answer = dict_tests[key1]
-                    test_res = testbase._streamline_phrase(text=key1)
+                    test_res = testbase._streamline_phrase(text=key1,
+                                                        do_streamline_etal=True)
                     self.assertEqual(test_res, answer)
                 except AssertionError:
                     print("")
@@ -753,7 +755,8 @@ class TestBase(unittest.TestCase):
             for key1 in dict_tests:
                 try:
                     answer = dict_tests[key1]
-                    test_res = testbase._streamline_phrase(text=key1)
+                    test_res = testbase._streamline_phrase(text=key1,
+                                                        do_streamline_etal=True)
                     self.assertEqual(test_res, answer)
                 except AssertionError:
                     print("")
@@ -787,7 +790,8 @@ class TestBase(unittest.TestCase):
             for key1 in dict_tests:
                 try:
                     answer = dict_tests[key1]
-                    test_res = testbase._streamline_phrase(text=key1)
+                    test_res = testbase._streamline_phrase(text=key1,
+                                                        do_streamline_etal=True)
                     self.assertEqual(test_res, answer)
                 except AssertionError:
                     print("")
@@ -821,7 +825,8 @@ class TestBase(unittest.TestCase):
             for key1 in dict_tests:
                 try:
                     answer = dict_tests[key1]
-                    test_res = testbase._streamline_phrase(text=key1)
+                    test_res = testbase._streamline_phrase(text=key1,
+                                                        do_streamline_etal=True)
                     self.assertEqual(test_res, answer)
                 except AssertionError:
                     print("")
@@ -843,7 +848,7 @@ class TestBase(unittest.TestCase):
             #Prepare text and answers for test
             dict_tests = {
                     "Hubble's calibrated data is in the database.":["calibrated"],
-                    "She went to the clean store.":["clean"],
+                    "She went to the clean, new, and pretty store.":["clean", "new", "pretty"],
                     "Hubble has observed many stars.":["many"],
                     "That is one hideous dog.":["hideous"],
                     "The flying pig forms their sigil.":["flying"],
@@ -1003,7 +1008,7 @@ class TestBase(unittest.TestCase):
                     "The door of the cage is open.":["of"],
                     "We wanted to know the name of the movie.":["of"],
                     "She took a turn on the road along the left lane.":["on", "along"],
-                    "She gave a treat to the cat.":["to"],
+                    "She gave a treat to the cat and for the dog.":["to", "for"],
                     "She tried to take a picture.":[],
                     "She tried to send the picture to the agent.":["to"],
                     "The book was written by her.":["by"]
@@ -1049,7 +1054,7 @@ class TestBase(unittest.TestCase):
                     "Hubble has observed many stars.":[],
                     "There are only so many entries in the database.":["database"],
                     "That is one hideous dog.":[],
-                    "Hubble is short for the Hubble Space Telescope.":["Telescope"],
+                    "Hubble is short for the Hubble Space Telescope.":["Hubble", "Space", "Telescope"],
                     "She treats them like her own plants.":["plants"],
                     "We went there on vacation.":["vacation"],
                     "The door of the cage is open.":[],
@@ -1057,7 +1062,7 @@ class TestBase(unittest.TestCase):
                     "The name of the movie is long.":[],
                     "She took a turn on the road along the left lane.":["road", "lane"],
                     "She tried to take a picture.":[],
-                    "She tried to send the picture to the agent.":["agent"],
+                    "She tried to send the picture to the agent and to the officer.":["agent", "officer"],
                     "She gave a treat to the cat.":["cat"],
                     "She gave a treat to the cat and the dog.":["cat", "dog"]
                     }
@@ -1256,7 +1261,7 @@ class TestBase(unittest.TestCase):
         #
     #
 #"""
-#"""
+"""
 #class: TestKeyword
 #Purpose: Testing the Keyword class
 class TestKeyword(unittest.TestCase):
@@ -1468,7 +1473,7 @@ class TestKeyword(unittest.TestCase):
         #
     #
 #"""
-#"""
+"""
 #class: TestPaper
 #Purpose: Testing the Paper class
 class TestPaper(unittest.TestCase):
@@ -1685,7 +1690,7 @@ class TestPaper(unittest.TestCase):
         #
     #
 #"""
-#"""
+"""
 #class: TestGrammar
 #Purpose: Testing the Grammar class
 class TestGrammar(unittest.TestCase):
@@ -2252,7 +2257,7 @@ class TestGrammar(unittest.TestCase):
         #
     #
 #"""
-#"""
+"""
 #class: TestOperator
 #Purpose: Testing the Operator class
 class TestOperator(unittest.TestCase):
