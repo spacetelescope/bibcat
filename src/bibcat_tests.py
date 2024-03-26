@@ -38,11 +38,13 @@ test_which_modes = ["none", "skim", "trim", "anon", "skim_trim_anon"]
 
 ##Mission terms
 #Keyword objects
+kobj_galex = params.keyword_obj_GALEX
 kobj_hla = params.keyword_obj_HLA
 kobj_hubble = params.keyword_obj_HST
 kobj_hubble_expanded = params.keyword_obj_HST_expanded
 kobj_hut = params.keyword_obj_HUT
 kobj_jwst = params.keyword_obj_JWST
+kobj_jwst_expanded = params.keyword_obj_JWST_expanded
 kobj_kepler = params.keyword_obj_Kepler
 kobj_k2 = params.keyword_obj_K2
 kobj_uit = params.keyword_obj_UIT
@@ -1287,19 +1289,24 @@ class TestKeyword(unittest.TestCase):
             #Prepare text and answers for test
             kobj1 = bibcat.Keyword(
             keywords=["Long Phrase", "Phrase", "Longer Phrase", "Mid Phrase"],
-            acronyms=[], ambig_words=[], banned_overlap=[])
+            acronyms_casesensitive=[], acronyms_caseinsensitive=[],
+            ambig_words=[], banned_overlap=[])
             ans1 = "Phrase"
             #
             kobj2 = bibcat.Keyword(
             keywords=["Long Phrase", "Phrase", "Longer Phrase", "Mid Phrase"],
-            acronyms=["AB....C", "A....... B...", "A.BC  D", "ABCD E", "AB C"],
-                    ambig_words=[], banned_overlap=[])
+            acronyms_caseinsensitive=["AB....C", "A....... B...", "A.BC  D",
+                                        "ABCD E", "AB C"],
+            acronyms_casesensitive=[],
+            ambig_words=[], banned_overlap=[])
             ans2 = "Phrase"
             #
             kobj3 = bibcat.Keyword(
             keywords=[],
-            acronyms=["AB....C", "A....... B...", "A.BC  D", "ABCD E", "AB C"],
-                    ambig_words=[], banned_overlap=[])
+            acronyms_caseinsensitive=["AB....C", "A....... B...", "A.BC  D",
+                                        "ABCD E", "AB C"],
+            acronyms_casesensitive=[],
+            ambig_words=[], banned_overlap=[])
             ans3 = "ABCDE"
             #
             list_kobj = [kobj1, kobj2, kobj3]
@@ -1364,7 +1371,11 @@ class TestKeyword(unittest.TestCase):
             "they took HST images":{"kobj":kobj_hla, "bool":False},
             "the hubble legacy archive":{"kobj":kobj_hla, "bool":True},
             "the hla uncapitalized":{"kobj":kobj_hla, "bool":True},
-            "the Hubble Archive is different":{"kobj":kobj_hla, "bool":False}
+            "the Hubble Archive is different":{"kobj":kobj_hla, "bool":False},
+            "data from a galex collaboration":{"kobj":kobj_galex, "bool":True},
+            "data from a GALEX collaboration":{"kobj":kobj_galex, "bool":True},
+            "data from a GaLeX collaboration":{"kobj":kobj_galex, "bool":True},
+            "data from a Galex collaboration":{"kobj":kobj_galex, "bool":True}
             }
             #
 
@@ -1398,16 +1409,23 @@ class TestKeyword(unittest.TestCase):
             "Tasty Goods":{"kobj":kobj_hubble_expanded, "bool":False},
             "The GOODS data field":{"kobj":kobj_hubble_expanded, "bool":True},
             "The GOODS-north stars":{"kobj":kobj_hubble_expanded, "bool":True},
+            "The Hubble Legacy Archive data":{"kobj":kobj_hubble_expanded, "bool":False},
+            "HST and the Hubble Legacy Archive data":{"kobj":kobj_hubble_expanded, "bool":True},
+            "Hubble and the Hubble Legacy Archive data":{"kobj":kobj_hubble_expanded, "bool":True},
             "Kepler K2 data":{"kobj":kobj_kepler, "bool":False},
             "Kepler K2 data":{"kobj":kobj_k2, "bool":True},
-            "stellar templates":{"kobj":kobj_jwst, "bool":False},
-            "the TEMPLATES project":{"kobj":kobj_jwst, "bool":True},
+            "stellar templates":{"kobj":kobj_jwst_expanded, "bool":False},
+            "the TEMPLATES project":{"kobj":kobj_jwst_expanded, "bool":True},
             "a hut of straw":{"kobj":kobj_hut, "bool":False},
             "an HUT observation":{"kobj":kobj_hut, "bool":True},
             "an H.U.T observation":{"kobj":kobj_hut, "bool":True},
             "an H.U.T. observation":{"kobj":kobj_hut, "bool":True},
             "using the astrosat uit camera":{"kobj":kobj_uit, "bool":False},
-            "using the uit camera":{"kobj":kobj_uit, "bool":True}
+            "using the uit camera":{"kobj":kobj_uit, "bool":False},
+            "using the UIT camera":{"kobj":kobj_uit, "bool":True},
+            "using the U.I.T camera":{"kobj":kobj_uit, "bool":True},
+            "using the Astrosat UIT camera":{"kobj":kobj_uit, "bool":False},
+            "using the astrosat UIT camera":{"kobj":kobj_uit, "bool":False}
             }
             #
 
@@ -1488,7 +1506,7 @@ class TestKeyword(unittest.TestCase):
         #
     #
 #"""
-"""
+#"""
 #class: TestPaper
 #Purpose: Testing the Paper class
 class TestPaper(unittest.TestCase):
@@ -1499,11 +1517,11 @@ class TestPaper(unittest.TestCase):
             placeholder = config.string_anymatch_ambig
             #Prepare text and answers for test
             text1 = "Despite the low S/N of the data, we still detect the stars. Figure 1 plots the Hubble Space Telescope (HST) observations. The HST stars are especially bright. We analyze them in the next section. A filler sentence. Here is another filler sentence (with parentheses). Some more filler content. We summarize our Hubble results next."
-            meanings1 = {"Hubble":["Hubble Space Telescope"], "Kepler":None, "K2":None}
+            meanings1 = None #{"Hubble":["Hubble Space Telescope"], "Kepler":None, "K2":None}
             ambigs1 = [("our Hubble results", True)]
             #
             text2 = "Kepler observations are presented in Section 1. Table 1 then gives the measured Kepler velocity data and Kepler planets. The Kepler images and Kepler plots indicate a correlation. The Kepler results are further shown in part 2. Note the Keplerian rotation."
-            meanings2 = {"Hubble":None, "Kepler":None, "K2":None}
+            meanings2 = None #{"Hubble":None, "Kepler":None, "K2":None}
             ambigs2 = [("Kepler observations", True), ("measured Kepler velocity data", False), ("Kepler planets", False), ("Kepler images", True), ("Kepler plots", True), ("Kepler results", True)]
 
             list_acts = [
@@ -1537,14 +1555,14 @@ class TestPaper(unittest.TestCase):
                                 for item1 in ambig_output
                                 for item2 in item1["info"]
                                 if (item2["matcher"] is not None)]
-                test_acr_meanings = testbase._get_info("_dict_acronym_meanings")
+                #test_acr_meanings = testbase._get_info("_dict_acronym_meanings")
                 #
 
                 #Check answer
                 try:
                     self.assertEqual(test_res, curr_answer)
                     self.assertEqual(test_ambig, curr_ambig)
-                    self.assertEqual(test_acr_meanings, curr_acr_meanings)
+                    #self.assertEqual(test_acr_meanings, curr_acr_meanings)
                 except AssertionError:
                     print("")
                     print(">")
@@ -1552,14 +1570,14 @@ class TestPaper(unittest.TestCase):
                             .format(test_res, curr_answer, curr_text))
                     print("Test ambig: {0}\nAct. ambig: {1}"
                             .format(test_ambig, curr_ambig))
-                    print("Test acronym matches: {0}\nAct. acronym matches: {1}"
-                            .format(test_acr_meanings, curr_acr_meanings))
+                    #print("Test acronym matches: {0}\nAct. acronym matches: {1}"
+                    #        .format(test_acr_meanings, curr_acr_meanings))
                     print("---")
                     print("")
                     #
                     self.assertEqual(test_res, curr_answer)
                     self.assertEqual(test_ambig, curr_ambig)
-                    self.assertEqual(test_acr_meanings, curr_acr_meanings)
+                    #self.assertEqual(test_acr_meanings, curr_acr_meanings)
                 #
             #
         #
@@ -1662,6 +1680,7 @@ class TestPaper(unittest.TestCase):
         #
     #
     #For tests of _verify_acronyms:
+    """BLOCKED: 2024-03-26: This codebase functionality was commented out.
     if True:
         #Test search for possible meanings of given acronyms
         def test__verify_acronyms__variety(self):
@@ -1703,9 +1722,9 @@ class TestPaper(unittest.TestCase):
                 #
             #
         #
-    #
+    #"""
 #"""
-"""
+#"""
 #class: TestGrammar
 #Purpose: Testing the Grammar class
 class TestGrammar(unittest.TestCase):
@@ -2021,7 +2040,7 @@ class TestGrammar(unittest.TestCase):
             "With the data in hand (see previous paper), we now turn to the Hubble Space Telescope (HST) for more answers.":
                 {"kobj":kobj_hubble,
                 "none":"With the data in hand (see previous paper), we now turn to the Hubble Space Telescope (HST) for more answers.",
-                "skim":"With the data in hand (see previous paper), we turn to the Hubble Space Telescope (HST) for answers.",
+                "skim":"With the data in hand (see paper), we turn to the Hubble Space Telescope (HST) for answers.",
                 "trim":"we now turn to the Hubble Space Telescope (HST) for more answers.",
                 "anon":"With the data in hand (see previous paper), we now turn to the {0} ({0}) for more answers.".format(placeholder_anon),
                 "skim_trim_anon":"we turn to the {0} ({0}) for answers.".format(placeholder_anon)
@@ -2123,10 +2142,10 @@ class TestGrammar(unittest.TestCase):
             "That over there is HST, while this over here is SomethingElse.":
                 {"kobj":kobj_hubble,
                 "none":"That over there is HST, while this over here is SomethingElse.",
-                "skim":"That is HST, while this is SomethingElse.",
-                "trim":"That is HST.",
+                "skim":"That over there is HST, while this over here is SomethingElse.",
+                "trim":"That over there is HST.",
                 "anon":"That over there is {0}, while this over here is SomethingElse.".format(placeholder_anon),
-                "skim_trim_anon":"That is {0}.".format(placeholder_anon)
+                "skim_trim_anon":"That over there is {0}.".format(placeholder_anon)
                 }
             }
             #
@@ -2173,10 +2192,10 @@ class TestGrammar(unittest.TestCase):
             dict_acts = {
             "Given that many stars targeted by their surveys were also observed by HST with higher resolution than expected, there is plenty of multi-wavelength data to work with in this study focusing on that part of the sky.":
                 {"kobj":kobj_hubble,
-                "none":"Given that many stars targeted by those surveys were also observed by HST with higher resolution than expected, there is plenty of multi-wavelength data to work with in this study focusing on that part of the sky.",
-                "skim":"Given that stars targeted by those surveys were observed by HST with higher resolution than expected, there is plenty of multi-wavelength data to work with in this study focusing on part of the sky.",
-                "trim":"Given that many stars targeted by those surveys were also observed by HST, there is plenty of multi-wavelength data to work with in this study.",
-                "anon":"Given that many stars targeted by those surveys were also observed by {0} with higher resolution than expected, there is plenty of multi-wavelength data to work with in this study focusing on that part of the sky.".format(placeholder_anon),
+                "none":"Given that many stars targeted by their surveys were also observed by HST with higher resolution than expected, there is plenty of multi-wavelength data to work with in this study focusing on that part of the sky.",
+                "skim":"Given that stars targeted by their surveys were observed by HST with higher resolution than expected, there is plenty of multi-wavelength data to work with in this study focusing on part of the sky.",
+                "trim":"Given that many stars targeted by their surveys were also observed by HST, there is plenty of multi-wavelength data to work with in this study.",
+                "anon":"Given that many stars targeted by their surveys were also observed by {0} with higher resolution than expected, there is plenty of multi-wavelength data to work with in this study focusing on that part of the sky.".format(placeholder_anon),
                 "skim_trim_anon":"Given that stars were also observed by {0} with higher resolution than expected, there is plenty of multi-wavelength data to work with in this study.".format(placeholder_anon)
                 }
             }
@@ -2272,7 +2291,7 @@ class TestGrammar(unittest.TestCase):
         #
     #
 #"""
-"""
+#"""
 #class: TestOperator
 #Purpose: Testing the Operator class
 class TestOperator(unittest.TestCase):

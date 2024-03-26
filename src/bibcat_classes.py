@@ -632,7 +632,8 @@ class _Base():
                                 == item2.lower())
                             for item1 in keyword_objs
                             for item2 in (item1._get_info("keywords")
-                                            +item1._get_info("acronyms"))
+                                +item1._get_info("acronyms_casesensitive")
+                                +item1._get_info("acronyms_caseinsensitive"))
                             if (item2.lower() not in lookup_ambigs_lower)]
                             ) #Check if wordchunk matches to any non-ambig terms
             if is_exact:
@@ -1494,7 +1495,8 @@ class _Base():
                         for item2 in item1._get_info("keywords")]
             acronyms = [item2
                         for item1 in keyword_objs
-                        for item2 in item1._get_info("acronyms")]
+                        for item2 in (item1._get_info("acronyms_casesensitive")
+                                +item1._get_info("acronyms_caseinsensitive"))]
             #
             print("Completed _search_text().")
             print("Keywords={0}\nAcronyms={1}".format(keywords, acronyms))
@@ -1597,7 +1599,7 @@ class Keyword(_Base):
     """
     ##Method: __init__
     ##Purpose: Initialize this class instance
-    def __init__(self, keywords, acronyms, banned_overlap, ambig_words, do_verbose=False):
+    def __init__(self, keywords, acronyms_caseinsensitive, acronyms_casesensitive, banned_overlap, ambig_words, do_verbose=False):
         """
         Method: __init__
         WARNING! This method is *not* meant to be used directly by users.
@@ -1626,39 +1628,76 @@ class Keyword(_Base):
                         key="banned_overlap_lowercase")
 
         #Also cleanse+store acronyms, if given
-        if (acronyms is not None):
+        #For case-insensitive acronyms
+        if (acronyms_caseinsensitive is not None):
             acronyms_mid = [re.sub(config.exp_nopunct, "", item,
-                                flags=re.IGNORECASE) for item in acronyms]
+                                flags=re.IGNORECASE)
+                                for item in acronyms_caseinsensitive]
             #Remove all whitespace
             acronyms_mid = [re.sub(" ", "", item) for item in acronyms_mid]
             acronyms_clean = sorted(acronyms_mid,
                             key=(lambda w:len(w)))[::-1]#Sort by desc. length
-            self._store_info(acronyms_clean, key="acronyms")
+            self._store_info(acronyms_clean, key="acronyms_caseinsensitive")
         else:
-            self._store_info([], key="acronyms")
+            self._store_info([], key="acronyms_caseinsensitive")
+        #
+        #For case-sensitive acronyms
+        if (acronyms_casesensitive is not None):
+            acronyms_mid = [re.sub(config.exp_nopunct, "", item,
+                                flags=re.IGNORECASE)
+                                for item in acronyms_casesensitive]
+            #Remove all whitespace
+            acronyms_mid = [re.sub(" ", "", item) for item in acronyms_mid]
+            acronyms_clean = sorted(acronyms_mid,
+                            key=(lambda w:len(w)))[::-1]#Sort by desc. length
+            self._store_info(acronyms_clean, key="acronyms_casesensitive")
+        else:
+            self._store_info([], key="acronyms_casesensitive")
         #
 
         #Store representative name for this keyword object
-        repr_name = (self._get_info("keywords")[::-1]+self._get_info("acronyms")
+        repr_name = (self._get_info("keywords")[::-1]
+                                +self._get_info("acronyms_casesensitive")
+                                +self._get_info("acronyms_caseinsensitive")
                     )[0] #Take shortest keyword or longest acronym as repr. name
         self._store_info(repr_name, key="name")
         #
 
         #Store regular expressions for keywords and acronyms
         exps_k = [(r"\b"+phrase+r"\b") for phrase in self._get_info("keywords")]
-        if (acronyms is not None) and (len(acronyms) > 0):
+        #For case-insensitive acronyms
+        if ((acronyms_caseinsensitive is not None)
+                            and (len(acronyms_caseinsensitive) > 0)):
             #Update acronyms to allow optional spaces
             acronyms_upd = [(r"(\.?)( ?)".join(item))
-                            for item in self._get_info("acronyms")]
+                        for item in self._get_info("acronyms_caseinsensitive")]
             #Build regular expression to recognize acronyms
-            exp_a = (r"(^|[^\.])((\b"
+            exp_a_caseinsensitive = (
+                        r"(^|[^\.])((\b"
                         + r"\b)|(\b".join([phrase for phrase in acronyms_upd])
                         + r"\b)(\.?))($|[^A-Z|a-z])") #Matches any acronym
         else:
-            exp_a = None
+            exp_a_caseinsensitive = None
+        #
+        #For case-sensitive acronyms
+        if ((acronyms_casesensitive is not None)
+                                        and (len(acronyms_casesensitive) > 0)):
+            #Update acronyms to allow optional spaces
+            acronyms_upd = [(r"(\.?)( ?)".join(item))
+                        for item in self._get_info("acronyms_casesensitive")]
+            #Build regular expression to recognize acronyms
+            exp_a_casesensitive = (
+                        r"(^|[^\.])((\b"
+                        + r"\b)|(\b".join([phrase for phrase in acronyms_upd])
+                        + r"\b)(\.?))($|[^A-Z|a-z])") #Matches any acronym
+        else:
+            exp_a_casesensitive = None
         #
         self._store_info(exps_k, key="exps_keywords")
-        self._store_info(exp_a, key="exp_acronyms")
+        self._store_info(exp_a_caseinsensitive,
+                        key="exp_acronyms_caseinsensitive")
+        self._store_info(exp_a_casesensitive,
+                        key="exp_acronyms_casesensitive")
         #
 
         #Close method
@@ -1677,7 +1716,10 @@ class Keyword(_Base):
         print_str = ("Keyword Object:\n"
                     + "Name: {0}\n".format(self.get_name())
                     + "Keywords: {0}\n".format(self._get_info("keywords"))
-                    + "Acronyms: {0}\n".format(self._get_info("acronyms"))
+                    + ("Acronyms (Case-Insensitive): {0}\n"
+                            .format(self._get_info("acronyms_caseinsensitive")))
+                    + ("Acronyms (Case-Sensitive): {0}\n"
+                            .format(self._get_info("acronyms_casesensitive")))
                     + "Banned Overlap: {0}\n"
                                     .format(self._get_info("banned_overlap"))
                     )
@@ -1702,7 +1744,7 @@ class Keyword(_Base):
 
     ##Method: identify_keyword
     ##Purpose: Check if text matches to this keyword object; return match inds
-    def identify_keyword(self, text, mode=None):
+    def identify_keyword_old_2024_03_26_beforeupdatestobannedoverlaphandling(self, text, mode=None):
         """
         Method: identify_keyword
         Purpose: Return whether or not the given text contains terms (keywords, acronyms) matching this instance.
@@ -1716,7 +1758,8 @@ class Keyword(_Base):
         #Fetch global variables
         exps_k = self._get_info("exps_keywords")
         keywords = self._get_info("keywords")
-        exp_a = self._get_info("exp_acronyms")
+        exp_a_yescase = self._get_info("exp_acronyms_casesensitive")
+        exp_a_nocase = self._get_info("exp_acronyms_caseinsensitive")
         banned_overlap_lowercase = self._get_info("banned_overlap_lowercase")
         do_verbose = self._get_info("do_verbose")
         allowed_modes = [None, "keyword", "acronym"]
@@ -1734,6 +1777,13 @@ class Keyword(_Base):
                             for item1 in exps_k
                             if (not any([(ban1 in text.lower())
                                     for ban1 in banned_overlap_lowercase]))]
+            #set_keywords = [list(re.finditer(item1, text, flags=re.IGNORECASE))
+            #                for item1 in exps_k
+            #                if (not any([
+            #                        (bool(re.finditer(item1, ban1,
+            #                                            flags=re.IGNORECASE))
+            #                            and (ban1 in text.lower()))
+            #                        for ban1 in banned_overlap_lowercase]))]
             charspans_keywords = [(item2.start(), (item2.end()-1))
                                 for item1 in set_keywords
                                 for item2 in item1] #Char. span of matches
@@ -1743,32 +1793,201 @@ class Keyword(_Base):
             charspans_keywords = []
             check_keywords = False
         #
-        #Check if this text contains acronyms
+        #Check if this text contains case-sensitive acronyms
         if (((mode is None) or (mode.lower() == "acronym"))
-                    and (exp_a is not None)):
-            set_acronyms = list(re.finditer(exp_a, text, flags=re.IGNORECASE))
-            charspans_acronyms = [(item.start(), (item.end()-1))
-                                for item in set_acronyms]
-            check_acronyms = (len(set_acronyms) > 0)
+                    and (exp_a_yescase is not None)):
+            set_acronyms_yescase = list(re.finditer(exp_a_yescase, text))
+            #set_acronyms_yescase_raw = [list(re.finditer(item1, text))
+            #                for item1 in exp_a_yescase
+            #                if (not any([
+            #                    (bool(re.finditer(item1, ban1,
+            #                                            flags=re.IGNORECASE))
+            #                            and (ban1 in text.lower()))
+            #                        for ban1 in banned_overlap_lowercase]))]
+            #set_acronyms_yescase = [item2 for item1 in set_acronyms_yescase_raw
+            #                        for item2 in item1]
+            #
+            charspans_acronyms_yescase = [(item.start(), (item.end()-1))
+                                        for item in set_acronyms_yescase]
+            check_acronyms_yescase = (len(set_acronyms_yescase) > 0)
         else:
-            charspans_acronyms = []
-            check_acronyms = False
+            charspans_acronyms_yescase = []
+            check_acronyms_yescase = False
+        #
+        #Check if this text contains case-insensitive acronyms
+        if (((mode is None) or (mode.lower() == "acronym"))
+                    and (exp_a_nocase is not None)):
+            set_acronyms_nocase = list(re.finditer(exp_a_nocase, text,
+                                                    flags=re.IGNORECASE))
+            #set_acronyms_nocase_raw = [list(re.finditer(item1, text,
+            #                                        flags=re.IGNORECASE))
+            #                for item1 in exp_a_nocase
+            #                if (not any([
+            #                    (bool(re.finditer(item1, ban1,
+            #                                            flags=re.IGNORECASE))
+            #                            and (ban1 in text.lower()))
+            #                        for ban1 in banned_overlap_lowercase]))]
+            #set_acronyms_nocase = [item2 for item1 in set_acronyms_nocase_raw
+            #                        for item2 in item1]
+            #
+            charspans_acronyms_nocase = [(item.start(), (item.end()-1))
+                                        for item in set_acronyms_nocase]
+            check_acronyms_nocase = (len(set_acronyms_nocase) > 0)
+        else:
+            charspans_acronyms_nocase = []
+            check_acronyms_nocase = False
+        #
+        #Combine acronym results
+        check_acronyms_all = (check_acronyms_nocase or check_acronyms_yescase)
+        charspans_acronyms_all = (charspans_acronyms_nocase
+                                    + charspans_acronyms_yescase)
         #
 
         #Print some notes
         if do_verbose:
             print("Keywords: {0}\nKeyword regex:\n{1}".format(keywords, exps_k))
-            print("Acronyms: {0}\nAcronym regex:\n{1}".format(acronyms, exp_a))
+            print("Acronyms (Case-Sensitive): {0}\nAcronym regex:\n{1}"
+                    .format(acronyms_yescase, exp_a_yescase))
+            print("Acronyms (Case-Insensitive): {0}\nAcronym regex:\n{1}"
+                    .format(acronyms_nocase, exp_a_nocase))
             print("Keyword bool: {0}\nAcronym bool: {1}"
-                    .format(check_keywords, check_acronyms))
+                    .format(check_keywords, check_acronyms_all))
             print("Keyword char. spans: {0}\nAcronym char. spans: {1}"
-                    .format(charspans_keywords, charspans_acronyms))
+                    .format(charspans_keywords, charspans_acronyms_all))
         #
 
         #Return booleans
-        return {"bool":(check_acronyms or check_keywords),
-                "charspans":(charspans_keywords + charspans_acronyms),
-                "bool_acronym_only":check_acronyms}
+        return {"bool":(check_acronyms_all or check_keywords),
+                "charspans":(charspans_keywords + charspans_acronyms_all),
+                "bool_acronym_only":check_acronyms_all}
+    #
+
+    ##Method: identify_keyword
+    ##Purpose: Check if text matches to this keyword object; return match inds
+    def identify_keyword(self, text, mode=None):
+        """
+        Method: identify_keyword
+        Purpose: Return whether or not the given text contains terms (keywords, acronyms) matching this instance.
+        Arguments:
+          - "text" [str]: The text to search within for terms
+        Returns:
+          - [dict] containing:
+            - "bool":[bool] - if any matches
+            - "span":[tuple of 2 ints] - character span of matches
+        """
+        #Fetch global variables
+        exps_k = self._get_info("exps_keywords")
+        keywords = self._get_info("keywords")
+        exp_a_yescase = self._get_info("exp_acronyms_casesensitive")
+        exp_a_nocase = self._get_info("exp_acronyms_caseinsensitive")
+        banned_overlap_lowercase = self._get_info("banned_overlap_lowercase")
+        do_verbose = self._get_info("do_verbose")
+        allowed_modes = [None, "keyword", "acronym"]
+        #
+
+        #Throw error is specified mode not recognized
+        if ((mode is not None) and (mode.lower() not in allowed_modes)):
+            raise ValueError("Err: Invalid mode '{0}'.\nAllowed modes: {1}"
+                            .format(mode, allowed_modes))
+        #
+
+        #Modify text (locally only) to block banned overlap
+        text_mod = text
+        for curr_ban in banned_overlap_lowercase:
+            #Below replaces banned phrases with mask '#' string of custom length
+            text_mod = re.sub(curr_ban, (lambda x: ("#" * len(x.group()))),
+                                text_mod, flags=re.IGNORECASE)
+        #
+
+        #Check if this text contains keywords
+        if ((mode is None) or (mode.lower() == "keyword")):
+            set_keywords = [list(re.finditer(item1, text_mod,
+                            flags=re.IGNORECASE)) for item1 in exps_k]
+                            #if (not any([(ban1 in text.lower())
+                            #        for ban1 in banned_overlap_lowercase]))]
+            #set_keywords = [list(re.finditer(item1, text, flags=re.IGNORECASE))
+            #                for item1 in exps_k
+            #                if (not any([
+            #                        (bool(re.finditer(item1, ban1,
+            #                                            flags=re.IGNORECASE))
+            #                            and (ban1 in text.lower()))
+            #                        for ban1 in banned_overlap_lowercase]))]
+            charspans_keywords = [(item2.start(), (item2.end()-1))
+                                for item1 in set_keywords
+                                for item2 in item1] #Char. span of matches
+            check_keywords = any([(len(item) > 0)
+                                for item in set_keywords]) #If any matches
+        else:
+            charspans_keywords = []
+            check_keywords = False
+        #
+        #Check if this text contains case-sensitive acronyms
+        if (((mode is None) or (mode.lower() == "acronym"))
+                    and (exp_a_yescase is not None)):
+            set_acronyms_yescase = list(re.finditer(exp_a_yescase, text_mod))
+            #set_acronyms_yescase_raw = [list(re.finditer(item1, text))
+            #                for item1 in exp_a_yescase
+            #                if (not any([
+            #                    (bool(re.finditer(item1, ban1,
+            #                                            flags=re.IGNORECASE))
+            #                            and (ban1 in text.lower()))
+            #                        for ban1 in banned_overlap_lowercase]))]
+            #set_acronyms_yescase = [item2 for item1 in set_acronyms_yescase_raw
+            #                        for item2 in item1]
+            #
+            charspans_acronyms_yescase = [(item.start(), (item.end()-1))
+                                        for item in set_acronyms_yescase]
+            check_acronyms_yescase = (len(set_acronyms_yescase) > 0)
+        else:
+            charspans_acronyms_yescase = []
+            check_acronyms_yescase = False
+        #
+        #Check if this text contains case-insensitive acronyms
+        if (((mode is None) or (mode.lower() == "acronym"))
+                    and (exp_a_nocase is not None)):
+            set_acronyms_nocase = list(re.finditer(exp_a_nocase, text_mod,
+                                                    flags=re.IGNORECASE))
+            #set_acronyms_nocase_raw = [list(re.finditer(item1, text,
+            #                                        flags=re.IGNORECASE))
+            #                for item1 in exp_a_nocase
+            #                if (not any([
+            #                    (bool(re.finditer(item1, ban1,
+            #                                            flags=re.IGNORECASE))
+            #                            and (ban1 in text.lower()))
+            #                        for ban1 in banned_overlap_lowercase]))]
+            #set_acronyms_nocase = [item2 for item1 in set_acronyms_nocase_raw
+            #                        for item2 in item1]
+            #
+            charspans_acronyms_nocase = [(item.start(), (item.end()-1))
+                                        for item in set_acronyms_nocase]
+            check_acronyms_nocase = (len(set_acronyms_nocase) > 0)
+        else:
+            charspans_acronyms_nocase = []
+            check_acronyms_nocase = False
+        #
+        #Combine acronym results
+        check_acronyms_all = (check_acronyms_nocase or check_acronyms_yescase)
+        charspans_acronyms_all = (charspans_acronyms_nocase
+                                    + charspans_acronyms_yescase)
+        #
+
+        #Print some notes
+        if do_verbose:
+            print("Keywords: {0}\nKeyword regex:\n{1}".format(keywords, exps_k))
+            print("Acronyms (Case-Sensitive): {0}\nAcronym regex:\n{1}"
+                    .format(acronyms_yescase, exp_a_yescase))
+            print("Acronyms (Case-Insensitive): {0}\nAcronym regex:\n{1}"
+                    .format(acronyms_nocase, exp_a_nocase))
+            print("Keyword bool: {0}\nAcronym bool: {1}"
+                    .format(check_keywords, check_acronyms_all))
+            print("Keyword char. spans: {0}\nAcronym char. spans: {1}"
+                    .format(charspans_keywords, charspans_acronyms_all))
+        #
+
+        #Return booleans
+        return {"bool":(check_acronyms_all or check_keywords),
+                "charspans":(charspans_keywords + charspans_acronyms_all),
+                "bool_acronym_only":check_acronyms_all}
     #
 
     ##Method: replace_keyword
@@ -1785,11 +2004,18 @@ class Keyword(_Base):
         """
         #Fetch global variables
         exps_k = self._get_info("exps_keywords")
-        exp_a = self._get_info("exp_acronyms")
-        if (exp_a is not None):
-            exps_a = [exp_a]
+        exp_a_yescase = self._get_info("exp_acronyms_casesensitive")
+        exp_a_nocase = self._get_info("exp_acronyms_caseinsensitive")
+        #
+        if (exp_a_yescase is not None):
+            exps_a_yescase = [exp_a_yescase]
         else:
-            exps_a = []
+            exps_a_yescase = []
+        #
+        if (exp_a_nocase is not None):
+            exps_a_nocase = [exp_a_nocase]
+        else:
+            exps_a_nocase = []
         #
         do_verbose = self._get_info("do_verbose")
         text_new = text
@@ -1800,8 +2026,16 @@ class Keyword(_Base):
         for curr_exp in exps_k:
             text_new = re.sub(curr_exp, placeholder, text_new,
                             flags=re.IGNORECASE)
+        #
         #For acronyms: avoids matches to acronyms in larger acronyms
-        for curr_exp in exps_a:
+        #For case-sensitive acronyms
+        for curr_exp in exps_a_yescase:
+            #Group processing below prevents substitution of spaces around acr.
+            str_tot = str(re.compile(curr_exp).groups) #Get # of last group
+            text_new = re.sub(curr_exp, (r"\1"+placeholder+("\\"+str_tot)),
+                            text_new)
+        #For case-insensitive acronyms
+        for curr_exp in exps_a_nocase:
             #Group processing below prevents substitution of spaces around acr.
             str_tot = str(re.compile(curr_exp).groups) #Get # of last group
             text_new = re.sub(curr_exp, (r"\1"+placeholder+("\\"+str_tot)),
@@ -1810,8 +2044,9 @@ class Keyword(_Base):
 
         #Print some notes
         if do_verbose:
-            print("Keywords: {0}\nKeyword regex:\n{1}".format(keywords, exps_k))
-            print("Acronyms: {0}\nAcronym regex:\n{1}".format(acronyms, exp_a))
+            print("Keyword regex:\n{0}".format(exps_k))
+            print("Acronyms (Case-Sensitive) regex: {0}".format(exp_a_yescase))
+            print("Acronyms (Case-Insensitive) regex: {0}".format(exp_a_nocase))
             print("Updated text: {0}".format(text_new))
         #
 
@@ -1967,8 +2202,8 @@ class Paper(_Base):
         dict_setup = {"keyword_objs":keyword_objs, "buffer":buffer} #Parameters
         dict_results_ambig = {item.get_name():None
                                 for item in keyword_objs} #To hold ambig. output
-        dict_acronym_meanings = {item.get_name():None
-                                for item in keyword_objs} #False acr. meanings
+        #dict_acronym_meanings = {item.get_name():None
+        #                        for item in keyword_objs} #False acr. meanings
         for ii in range(0, len(keyword_objs)):
             #Extract all paragraphs containing keywords/verified acronyms
             tmp_res = self._extract_paragraph(keyword_obj=keyword_objs[ii],
@@ -1976,8 +2211,8 @@ class Paper(_Base):
             paragraphs = tmp_res["paragraph"]
             dict_results_ambig[keyword_objs[ii].get_name()
                                 ] = tmp_res["ambig_matches"]
-            dict_acronym_meanings[keyword_objs[ii].get_name()
-                                ] = tmp_res["acronym_meanings"]
+            #dict_acronym_meanings[keyword_objs[ii].get_name()
+            #                    ] = tmp_res["acronym_meanings"]
             #
 
             #Store the paragraphs under name of first given keyword
@@ -1988,7 +2223,7 @@ class Paper(_Base):
         self._store_info(dict_paragraphs, "_paragraphs")
         self._store_info(dict_setup, "_paragraphs_setup")
         self._store_info(dict_results_ambig, "_results_ambig")
-        self._store_info(dict_acronym_meanings, "_dict_acronym_meanings")
+        #self._store_info(dict_acronym_meanings, "_dict_acronym_meanings")
 
         #Close this method
         return
@@ -2098,11 +2333,11 @@ class Paper(_Base):
         #
 
         #If only acronym terms found, run a check of possible false meanings
-        if (len(inds_with_acronyms) > 0):
-            acronym_meanings = self._verify_acronyms(keyword_obj=keyword_obj)
+        #if (len(inds_with_acronyms) > 0):
+        #    acronym_meanings = self._verify_acronyms(keyword_obj=keyword_obj)
         #Otherwise, set empty
-        else:
-            acronym_meanings = None
+        #else:
+        #    acronym_meanings = None
         #
 
         #If requested, run a check for ambiguous phrases if any ambig. keywords
@@ -2179,7 +2414,7 @@ class Paper(_Base):
 
         #Return outputs
         return {"paragraph":sentences_buffered, "ambig_matches":ambig_matches,
-                "acronym_meanings":acronym_meanings,
+                #"acronym_meanings":acronym_meanings,
                 "has_matches":dict_has_matches}
     #
 
@@ -2209,9 +2444,10 @@ class Paper(_Base):
         return text_flat
     #
 
+    #BLOCKED: 2024-03-26: Passive feature of code; output not actually used.
     ##Method: _verify_acronyms()
     ##Purpose: Find possible meanings of acronyms in text
-    def _verify_acronyms(self, keyword_obj):
+    def _verify_acronyms_old_2024_03_26_passivefeatureofcodewhereoutputnotactuallyused(self, keyword_obj):
         """
         Method: _verify_acronyms
         WARNING! This method is *not* meant to be used directly by users.
