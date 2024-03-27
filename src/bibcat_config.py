@@ -375,7 +375,7 @@ dictverdict_rejection = {
 dictverdict_error = {
         "verdict":verdict_error, "scores_comb":None,
         "scores_indiv":None, "uncertainty":None}
-dictverdict_error = {
+dictverdict_donotclassify = {
         "verdict":verdict_donotclassify, "scores_comb":None,
         "scores_indiv":None, "uncertainty":None}
 #

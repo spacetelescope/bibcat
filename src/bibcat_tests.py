@@ -1290,7 +1290,7 @@ class TestKeyword(unittest.TestCase):
             kobj1 = bibcat.Keyword(
             keywords=["Long Phrase", "Phrase", "Longer Phrase", "Mid Phrase"],
             acronyms_casesensitive=[], acronyms_caseinsensitive=[],
-            ambig_words=[], banned_overlap=[])
+            ambig_words=[], banned_overlap=[], do_not_classify=False)
             ans1 = "Phrase"
             #
             kobj2 = bibcat.Keyword(
@@ -1298,7 +1298,7 @@ class TestKeyword(unittest.TestCase):
             acronyms_caseinsensitive=["AB....C", "A....... B...", "A.BC  D",
                                         "ABCD E", "AB C"],
             acronyms_casesensitive=[],
-            ambig_words=[], banned_overlap=[])
+            ambig_words=[], banned_overlap=[], do_not_classify=False)
             ans2 = "Phrase"
             #
             kobj3 = bibcat.Keyword(
@@ -1306,7 +1306,7 @@ class TestKeyword(unittest.TestCase):
             acronyms_caseinsensitive=["AB....C", "A....... B...", "A.BC  D",
                                         "ABCD E", "AB C"],
             acronyms_casesensitive=[],
-            ambig_words=[], banned_overlap=[])
+            ambig_words=[], banned_overlap=[], do_not_classify=False)
             ans3 = "ABCDE"
             #
             list_kobj = [kobj1, kobj2, kobj3]
