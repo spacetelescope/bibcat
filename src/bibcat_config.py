@@ -21,7 +21,8 @@ path_json = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Fu
 
 #!!!HERE
 mode_modif = "none" # "none" #"skim_anon" #"skim_trim_anon" #None
-name_model = "perf_run_ML_{0}".format(mode_modif)
+name_model = "perf_run_ML_testfalsepos1_{0}".format(mode_modif)
+#name_model = "perf_run_ML_{0}".format(mode_modif)
 #name_model = "perf_run_MLandRB_{0}".format(mode_modif)
 #name_model = "perf_run_RB_{0}".format(mode_modif)
 #name_model = "perf_run_MLlarge_{0}".format(mode_modif)
@@ -361,7 +362,8 @@ dict_ml_model_preprocessors = {
 verdict_error = "z_error"
 verdict_lowprob = "z_lowprob"
 verdict_rejection = "z_notmatch"
-list_other_verdicts = [verdict_error, verdict_lowprob, verdict_rejection]
+verdict_donotclassify = "z_modifonly"
+list_other_verdicts = [verdict_error, verdict_lowprob, verdict_rejection, verdict_donotclassify]
 #
 #For preset custom verdict outputs
 dictverdict_lowprob = {
@@ -372,6 +374,9 @@ dictverdict_rejection = {
         "scores_indiv":None, "uncertainty":None}
 dictverdict_error = {
         "verdict":verdict_error, "scores_comb":None,
+        "scores_indiv":None, "uncertainty":None}
+dictverdict_error = {
+        "verdict":verdict_donotclassify, "scores_comb":None,
         "scores_indiv":None, "uncertainty":None}
 #
 #For rule-based classification

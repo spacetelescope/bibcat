@@ -866,6 +866,10 @@ class _Base():
             text = text[0:ii] + text[(ii+1):len(text)]
         #
 
+        #Remove 'et al.' period phrasing (can mess up sentence splitter later)
+        text = re.sub(r"\bet al\b\.", "et al", text)
+        #
+
         #Replace pesky "Author & Author (date)", et al., etc., wordage
         if do_streamline_etal:
             #Adapted from:
@@ -1081,6 +1085,7 @@ class _Base():
         word_tag = word.tag_ #tag label
         word_text = word.text #Text version of word
         word_ancestors = list(word.ancestors)#All previous nodes leading to word
+        word_conjoins = list(word.conjuncts)#All previous nodes leading to word
         #
         #Print some notes
         if do_verbose:
@@ -1095,18 +1100,51 @@ class _Base():
 
         ##Measure conjoined status ahead of time
         is_conjoined = False
-        if (pos != "CONJOINED"):
+        if (pos not in ["CONJOINED", "NOUN"]):
             is_conjoined = self._is_pos_word(word=word, pos="CONJOINED")
         #
 
         ##Check if given word is of given part-of-speech
         #Handle conjoined cases
         if is_conjoined:
-            #Return pos check on previous node
-            return self._is_pos_word(word=word_ancestors[0], pos=pos,
+            #Check if noun first and if root is noun (standard tree structure)
+            isnoun = self._is_pos_word(word=word, pos="NOUN",
                     keyword_objs=keyword_objs, ids_nounchunks=ids_nounchunks,
                     do_verbose=do_verbose,
                     do_exclude_nounverbs=do_exclude_nounverbs)
+            isprenoun = self._is_pos_word(word=word_conjoins[0], pos="NOUN",
+                    keyword_objs=keyword_objs, ids_nounchunks=ids_nounchunks,
+                    do_verbose=do_verbose,
+                    do_exclude_nounverbs=do_exclude_nounverbs)
+            #
+            #Point pos check to nearby node, if bad pairing from bad tree
+            if (isnoun and (not isprenoun)):
+                word_neighbors = list(word_conjoins[0].rights) #Right of root
+                #Scroll through neighbors until another noun found
+                for curr_neighbor in word_neighbors:
+                    #Check if current neighbor is a noun
+                    isprenoun = self._is_pos_word(word=curr_neighbor,pos="NOUN",
+                            keyword_objs=keyword_objs,
+                            ids_nounchunks=ids_nounchunks,do_verbose=do_verbose,
+                            do_exclude_nounverbs=do_exclude_nounverbs)
+                    #If noun, set this as root of conjoined set
+                    if isprenoun:
+                        conj_rootword = curr_neighbor
+                        #Break out of loop early
+                        break
+                    #
+                #
+            #
+            #Point pos check to previous node, otherwise
+            else:
+                conj_rootword = word_conjoins[0]
+            #
+            #Call pos check on noted root of conjoining
+            return self._is_pos_word(word=conj_rootword, pos=pos,
+                        keyword_objs=keyword_objs,
+                        ids_nounchunks=ids_nounchunks, do_verbose=do_verbose,
+                        do_exclude_nounverbs=do_exclude_nounverbs)
+            #
         #
         #Identify roots
         elif pos in ["ROOT"]:
@@ -1599,7 +1637,7 @@ class Keyword(_Base):
     """
     ##Method: __init__
     ##Purpose: Initialize this class instance
-    def __init__(self, keywords, acronyms_caseinsensitive, acronyms_casesensitive, banned_overlap, ambig_words, do_verbose=False):
+    def __init__(self, keywords, acronyms_caseinsensitive, acronyms_casesensitive, banned_overlap, ambig_words, do_not_classify, do_verbose=False):
         """
         Method: __init__
         WARNING! This method is *not* meant to be used directly by users.
@@ -1610,6 +1648,7 @@ class Keyword(_Base):
         self._store_info(do_verbose, "do_verbose")
         self._store_info(banned_overlap, "banned_overlap")
         self._store_info(ambig_words, "ambig_words")
+        self._store_info(do_not_classify, "do_not_classify")
 
         #Cleanse keywords of extra whitespace, punctuation, etc.
         keywords_clean = sorted([self._cleanse_text(text=phrase,
@@ -2297,6 +2336,7 @@ class Paper(_Base):
         do_verbose_deep = self._get_info("do_verbose_deep")
         do_check_truematch = self._get_info("do_check_truematch")
         sentences = np.asarray(self._get_info("text_clean_split"))
+        do_not_classify = keyword_obj._get_info("do_not_classify")
         num_sentences = len(sentences)
         #
         #Load ambiguous phrases, if necessary
@@ -2341,7 +2381,7 @@ class Paper(_Base):
         #
 
         #If requested, run a check for ambiguous phrases if any ambig. keywords
-        if (do_check_truematch and any([
+        if ((not do_not_classify) and do_check_truematch and any([
                                     keyword_obj.identify_keyword(item)["bool"]
                                         for item in lookup_ambigs])):
             #Print some notes
@@ -3714,9 +3754,10 @@ class Grammar(_Base):
                 tense = "PURPOSE"
             else: #Raise error if tense not recognized
                 raise ValueError(("Err: Tag {4} of word {0} unknown!\n{1}"
-                                +"\ndep={2}, pos={3}, tag={4}")
+                                +"\ndep={2}, pos={3}, tag={4}\nRoots: {5}")
                             .format(curr_word, sentence_NLP, word_dep,
-                                    curr_word.pos_, word_tag))
+                                    curr_word.pos_, word_tag,
+                                    list(curr_word.ancestors)))
 
             #Store current tense
             type_verbs.append(tense)
@@ -13594,8 +13635,12 @@ class Operator(_Base):
             pass
         #
 
+        #Set not-classified verdict if flagged for no classification
+        if (keyobj._get_info("do_not_classify")):
+            dict_verdicts = config.dictverdict_donotclassify.copy()
+        #
         #Set rejected verdict if empty text
-        if (modif.strip() == ""):
+        elif (modif.strip() == ""):
             if do_verbose:
                 print("No text found matching keyword object.")
                 print("Returning rejection verdict.")

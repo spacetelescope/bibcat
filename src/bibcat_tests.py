@@ -1412,7 +1412,7 @@ class TestKeyword(unittest.TestCase):
             "The Hubble Legacy Archive data":{"kobj":kobj_hubble_expanded, "bool":False},
             "HST and the Hubble Legacy Archive data":{"kobj":kobj_hubble_expanded, "bool":True},
             "Hubble and the Hubble Legacy Archive data":{"kobj":kobj_hubble_expanded, "bool":True},
-            "Kepler K2 data":{"kobj":kobj_kepler, "bool":False},
+            "The Kepler K2 data":{"kobj":kobj_kepler, "bool":False},
             "Kepler K2 data":{"kobj":kobj_k2, "bool":True},
             "stellar templates":{"kobj":kobj_jwst_expanded, "bool":False},
             "the TEMPLATES project":{"kobj":kobj_jwst_expanded, "bool":True},
