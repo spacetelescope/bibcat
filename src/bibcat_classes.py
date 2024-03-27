@@ -1085,7 +1085,7 @@ class _Base():
         word_tag = word.tag_ #tag label
         word_text = word.text #Text version of word
         word_ancestors = list(word.ancestors)#All previous nodes leading to word
-        word_conjoins = list(word.conjuncts)#All previous nodes leading to word
+        #word_conjoins = list(word.conjuncts)#All previous nodes leading to word
         #
         #Print some notes
         if do_verbose:
@@ -1100,40 +1100,42 @@ class _Base():
 
         ##Measure conjoined status ahead of time
         is_conjoined = False
-        if (pos not in ["CONJOINED", "NOUN"]):
+        if (pos not in ["CONJOINED", "VERB", "ROOT"]):
             is_conjoined = self._is_pos_word(word=word, pos="CONJOINED")
         #
 
+        """BLOCKED: 2024-03-27: Bad attempt at handling conjoined words.
         ##Check if given word is of given part-of-speech
         #Handle conjoined cases
         if is_conjoined:
-            #Check if noun first and if root is noun (standard tree structure)
-            isnoun = self._is_pos_word(word=word, pos="NOUN",
+            #Check if verb first and if root is verb (standard tree structure)
+            isverb = self._is_pos_word(word=word, pos="VERB",
                     keyword_objs=keyword_objs, ids_nounchunks=ids_nounchunks,
                     do_verbose=do_verbose,
                     do_exclude_nounverbs=do_exclude_nounverbs)
-            isprenoun = self._is_pos_word(word=word_conjoins[0], pos="NOUN",
+            ispreverb = self._is_pos_word(word=word_conjoins[0], pos="VERB",
                     keyword_objs=keyword_objs, ids_nounchunks=ids_nounchunks,
                     do_verbose=do_verbose,
                     do_exclude_nounverbs=do_exclude_nounverbs)
             #
             #Point pos check to nearby node, if bad pairing from bad tree
-            if (isnoun and (not isprenoun)):
+            if ((not isverb) and ispreverb):
                 word_neighbors = list(word_conjoins[0].rights) #Right of root
                 #Scroll through neighbors until another noun found
-                for curr_neighbor in word_neighbors:
+                #for curr_neighbor in word_neighbors:
                     #Check if current neighbor is a noun
-                    isprenoun = self._is_pos_word(word=curr_neighbor,pos="NOUN",
-                            keyword_objs=keyword_objs,
-                            ids_nounchunks=ids_nounchunks,do_verbose=do_verbose,
-                            do_exclude_nounverbs=do_exclude_nounverbs)
+                #    isprenoun = self._is_pos_word(word=curr_neighbor,pos="NOUN",
+                #            keyword_objs=keyword_objs,
+                #            ids_nounchunks=ids_nounchunks,do_verbose=do_verbose,
+                #            do_exclude_nounverbs=do_exclude_nounverbs)
                     #If noun, set this as root of conjoined set
-                    if isprenoun:
-                        conj_rootword = curr_neighbor
+                #    if isprenoun:
+                #        conj_rootword = curr_neighbor
                         #Break out of loop early
-                        break
+                #        break
                     #
                 #
+                conj_rootword = word_neighbors[0]
             #
             #Point pos check to previous node, otherwise
             else:
@@ -1145,9 +1147,31 @@ class _Base():
                         ids_nounchunks=ids_nounchunks, do_verbose=do_verbose,
                         do_exclude_nounverbs=do_exclude_nounverbs)
             #
+        #"""
+
+        ##Check if given word is of given part-of-speech
+        #Handle sufficiently clear-cut conjoined cases
+        if is_conjoined:
+            #Check if verb first and if root is verb (standard tree structure)
+            isverb = self._is_pos_word(word=word, pos="VERB",
+                    keyword_objs=keyword_objs, ids_nounchunks=ids_nounchunks,
+                    do_verbose=do_verbose,
+                    do_exclude_nounverbs=do_exclude_nounverbs)
+            ispreverb = self._is_pos_word(word=word_ancestors[0], pos="VERB",
+                    keyword_objs=keyword_objs, ids_nounchunks=ids_nounchunks,
+                    do_verbose=do_verbose,
+                    do_exclude_nounverbs=do_exclude_nounverbs)
+            #
+            #Point pos check for root node, if clear-cut conjoined case
+            if ((isverb and ispreverb) or ((not isverb) and (not ispreverb))):
+                return self._is_pos_word(word=word_ancestors[0], pos=pos,
+                        keyword_objs=keyword_objs,
+                        ids_nounchunks=ids_nounchunks, do_verbose=do_verbose,
+                        do_exclude_nounverbs=do_exclude_nounverbs)
+            #
         #
         #Identify roots
-        elif pos in ["ROOT"]:
+        if pos in ["ROOT"]:
             check_all = (word_dep in config.dep_root)
         #
         #Identify verbs
@@ -1567,10 +1591,10 @@ class _Base():
         """BLOCKED: 2024-03-25: Unnecessary initial text modification.
         #Replace annoying websites with placeholder
         text = re.sub(config.exp_website, config.placeholder_website, text)
+        #"""
 
         #Replace annoying <> inserts (e.g. html)
         text = re.sub(r"<[A-Z|a-z|/]+>", "", text)
-        #"""
 
         #Replace annoying abbreviations that confuse NLP sentence parser
         for key1 in dict_exp_abbrev:
