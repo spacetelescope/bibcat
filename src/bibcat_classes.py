@@ -489,6 +489,9 @@ class _Base():
         text_orig = text
         placeholder_number = config.placeholder_number
         text = re.sub(r"\(?\b[0-9]+\b\)?", placeholder_number, text_orig)
+        #Replace any hyphen-word dashes
+        text = re.sub("([A-Z|a-z])-([A-Z|a-z|0-9])", r"\1 \2", text)
+
 
         #Print some notes
         if do_verbose:
@@ -13659,17 +13662,17 @@ class Operator(_Base):
             pass
         #
 
-        #Set not-classified verdict if flagged for no classification
-        if (keyobj._get_info("do_not_classify")):
-            dict_verdicts = config.dictverdict_donotclassify.copy()
-        #
         #Set rejected verdict if empty text
-        elif (modif.strip() == ""):
+        if (modif.strip() == ""):
             if do_verbose:
                 print("No text found matching keyword object.")
                 print("Returning rejection verdict.")
             #
             dict_verdicts = config.dictverdict_rejection.copy()
+        #
+        #Set not-classified verdict if flagged for no classification
+        elif (keyobj._get_info("do_not_classify")):
+            dict_verdicts = config.dictverdict_donotclassify.copy()
         #
         #Classify the text using stored classifier with raised error
         elif do_raise_innererror: #If True, allow raising of inner errors

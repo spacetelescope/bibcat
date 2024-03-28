@@ -548,6 +548,7 @@ class TestBase(unittest.TestCase):
                     "Keplerian orbits":{"lookup":"Kepler", "bool":False},
                     "Kepler's law":{"lookup":"Kepler", "bool":False},
                     "Kepler observations":{"lookup":"Kepler", "bool":True},
+                    "Observations of Kepler-123":{"lookup":"Kepler", "bool":False},
                     "K2 database":{"lookup":"K2", "bool":True},
                     "K2-123 star":{"lookup":"K2", "bool":False},
                     "K2 stars":{"lookup":"K2", "bool":False},
