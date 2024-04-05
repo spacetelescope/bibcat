@@ -3,7 +3,7 @@
 
 This module creates a new training ML model.
 
-- It builds a model and train the model using the partitioned and streamlined dataset.
+- It builds a model and trains the model using the partitioned and streamlined dataset.
 
 - Once the model is trained, the `models` folder and its subdirectories for T/V/T
   are created along with various model related files.
