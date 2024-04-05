@@ -5,7 +5,7 @@
 Bibcat to do list
 - Refactor create_model.py 
 - Refactor classify_papers.py
-    -  modify the `output` directory to show the output from multiple model
+    -  modify the `output` directory to show the output from multiple models
 - Adding tutorial notebooks back
 
 
@@ -18,8 +18,10 @@ Bibcat to do list
     - Deleted all previous codes and files for a fresh start
 
 ### Changed
-
-- PR #12
+- PR #13 
+    - Enabling build_model.py to be both a module and a main script. 
+    
+- [PR #12]
     - Refactoring build_model.py has started, the first part includes to 
         - extract generate_direcotry_TVT() from `core/classifiers/textdata.py` to create a stand-alone module, `split_dataset.py`
         - modify to store the training, validation, and test (TVT) data set directories under the `data/partitioned_datasets` directory

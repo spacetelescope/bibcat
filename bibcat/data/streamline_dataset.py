@@ -31,7 +31,7 @@ def streamline_dataset(source_dataset: Dict[str, Any], operator_ML: Operator, do
     dict_texts = {}
     for ii, curr_data in enumerate(source_dataset):
         # Extract mission classifications for current text
-        curr_data = source_dataset[ii]
+        # curr_data = source_dataset[ii]
 
         # Skip if no valid text at all for this text
         if "body" not in curr_data:
