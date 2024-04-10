@@ -2,6 +2,7 @@
 bibcat/models
 bibcat/data/partitioned_datasets
 output
+*.log
 
 # Compiled files
 *.py[cod]
