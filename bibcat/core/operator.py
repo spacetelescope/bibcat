@@ -103,7 +103,7 @@ class Operator(Base):
         return
 
     # Fetch a keyword object that matches the given lookup
-    def _fetch_keyword_object(self, lookup: str, do_verbose: str | bool = None, do_raise_emptyerror: bool = True):
+    def _fetch_keyword_object(self, lookup: str, do_verbose: None | bool = None, do_raise_emptyerror: bool = True):
         """
         Method: _fetch_keyword_object
         WARNING! This method is *not* meant to be used directly by users.
