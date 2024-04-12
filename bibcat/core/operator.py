@@ -709,7 +709,7 @@ class Operator(Base):
                 print("Training new ML model on training data in {0}...".format(dir_model))
 
             # Train new ML model
-            model = classifier.train_ML(
+            classifier.train_ML(
                 dir_model=dir_model,
                 dir_data=dir_data,
                 name_model=name_model,

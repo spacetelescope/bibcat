@@ -10,14 +10,12 @@ performance results such as a confusion matrix.
   training, validating, and testing the trained model.
 
 - Classfication data: this text data is used for prediction (classification),
-  for now, it is fetched from the `bibcat/model/dir_test` folder via
-  the `folder_test` variable below. However, we will need to modify the
+  for now, it is fetched from the `bibcat/data/partitioned_datasets/model_name/dir_test` folder via `config.folders_TVT["test"]` below. However, we will need to modify the
   codebase to  set up a designated folder for operational papers.
 
 - Run example: python classify_papers.py
 """
 
-import json
 import os
 
 import numpy as np
@@ -26,15 +24,15 @@ from bibcat import config
 from bibcat import parameters as params
 from bibcat.core import operator, performance
 from bibcat.core.classifiers import ml, rules
+from bibcat.fetch_papers import fetch_papers
 
 # Fetch filepath for model
 name_model = config.name_model
 dir_model = os.path.join(config.PATH_MODELS, name_model)
 
 # Set directories for fetching test text
-dir_info = dir_model
-folder_test = config.folders_TVT["test"]
-dir_test = os.path.join(dir_model, folder_test)
+dir_datasets = os.path.join(config.path_partitioned_data, name_model)
+dir_test = os.path.join(dir_datasets, config.folders_TVT["test"])
 
 # Set parameters for each operator and its internal classifier
 
@@ -48,8 +46,7 @@ do_verbose_text_summary = False  # print input text data summary
 
 # For uncertainty test
 list_threshold_arrays = [np.linspace(0.5, 0.95, 20)] * 2
-# Mapper for class types; None for no mapper
-class_mapper = params.map_papertypes
+
 
 # Set some overarching global variables
 
@@ -69,7 +66,6 @@ max_tests = 30
 # possible modes: any combination from "skim", "trim", and "anon" or "none"
 mode_modif = "anon"
 # Prepare some Keyword objects
-all_kobjs = params.all_kobjs
 lookup = "HST"
 
 
@@ -80,12 +76,12 @@ lookup = "HST"
 # - mapper : Mapper to mask classifications; None if no masking
 
 # For operator ML
-mapper_ML = class_mapper
+mapper_ML = params.map_papertypes
 threshold_ML = 0.70
 buffer_ML = 0
 
 # For operator RL
-mapper_RB = class_mapper
+mapper_RB = params.map_papertypes
 threshold_RB = 0.70
 buffer_RB = 0
 
@@ -94,67 +90,14 @@ list_mappers = [mapper_ML, mapper_RB]
 list_thresholds = [threshold_ML, threshold_RB]
 list_buffers = [buffer_ML, buffer_RB]
 
-# perpare papers to test on
-# For use of real papers from test dataset to test on
 if do_real_testdata:
-    # Load information for processed bibcodes reserved for testing
-    dict_TVTinfo = np.load(os.path.join(dir_info, "dict_TVTinfo.npy"), allow_pickle=True).item()
-    list_test_bibcodes = [key for key in dict_TVTinfo if (dict_TVTinfo[key]["folder_TVT"] == folder_test)]
-
-    # Load the original data
-    with open(config.path_source_data, "r") as openfile:
-        dataset = json.load(openfile)
-    # Extract text information for the bibcodes reserved for testing
-    # Data for test set
-    list_test_indanddata_raw = [
-        (ii, dataset[ii]) for ii in range(0, len(dataset)) if (dataset[ii]["bibcode"] in list_test_bibcodes)
-    ]
-    # Shuffle, if requested
-    if do_shuffle:
-        np.random.shuffle(list_test_indanddata_raw)
-
-    # Extract target number of test papers from the test bibcodes
-    if max_tests is not None:  # Fetch subset of tests
-        list_test_indanddata = list_test_indanddata_raw[0:max_tests]
-    else:  # Use all tests
-        list_test_indanddata = list_test_indanddata_raw
-    # Process the text input into dictionary format for inputting into the codebase
-    dict_texts = {}  # To hold formatted text entries
-    for ii in range(0, len(list_test_indanddata)):
-        curr_ind = list_test_indanddata[ii][0]
-        curr_data = list_test_indanddata[ii][1]
-        # Convert this data entry into dictionary with: key:text,id,bibcode,
-        # mission structure
-        curr_info = {"text": curr_data["body"], "id": str(curr_ind), "bibcode": curr_data["bibcode"], "missions": {}}
-        # Iterate through missions for this paper
-        for curr_mission in curr_data["class_missions"]:
-            # Iterate through declared Keyword objects
-            for curr_kobj in all_kobjs:
-                curr_name = curr_kobj.get_name()
-                # Store mission data under keyword name, if applicable
-                if curr_kobj.is_keyword(curr_mission):
-                    curr_info["missions"][curr_name] = {
-                        "mission": curr_name,
-                        "class": curr_data["class_missions"][curr_mission]["papertype"],
-                    }
-                # Otherwise, store that this mission was not detected for this text
-                else:
-                    curr_info["missions"][curr_name] = {"mission": curr_name, "class": config.verdict_rejection}
-        # Store this data entry
-        dict_texts[str(curr_ind)] = curr_info
-
-    # Print some notes about the testing data
-    print(f"Number of texts in text set: {dict_texts}")
-    print("")
-    if do_verbose_text_summary:
-        for key in dict_texts:
-            print(f"Entry: {key}")
-            print(f"ID: {dict_texts[key]['id']}")
-            print(f"Bibcode: {dict_texts[key]['bibcode']}")
-            print(f"Missions: {dict_texts[key]['missions']}")
-            print(f"Start of text:\n{dict_texts[key]['text'][0:500]}")
-            print("-\n")
-
+    # Fetching text blurbs to classify
+    dict_texts = fetch_papers(
+        do_real_testdata=do_real_testdata,
+        do_shuffle=do_shuffle,
+        do_verbose_text_summary=do_verbose_text_summary,
+        max_tests=max_tests,
+    )
 # Store texts for each operator and its internal classifier
 # For operator ML, Dictionary of texts to classify
 dict_texts_ML = dict_texts
@@ -180,7 +123,7 @@ classifier_RB = rules.RuleBasedClassifier()
 operator_ML = operator.Operator(
     classifier=classifier_ML,
     mode=mode_modif,
-    keyword_objs=all_kobjs,
+    keyword_objs=params.all_kobjs,
     name="Operator_ML",
     do_verbose=True,
     load_check_truematch=True,
@@ -191,7 +134,7 @@ operator_RB = operator.Operator(
     classifier=classifier_RB,
     name="Operator_RB",
     mode=mode_modif,
-    keyword_objs=all_kobjs,
+    keyword_objs=params.all_kobjs,
     do_verbose=True,
     do_verbose_deep=False,
 )
