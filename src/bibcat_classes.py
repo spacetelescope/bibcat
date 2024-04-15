@@ -1072,6 +1072,55 @@ class _Base():
                 "str_meaning":str_meaning}
     #
 
+    ##Method: _fetch_keyword_object
+    ##Purpose: Fetch a keyword object that matches the given lookup
+    def _fetch_keyword_object(self, lookup, keyword_objs=None, do_verbose=None, do_raise_emptyerror=True):
+        """
+        Method: _fetch_keyword_object
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Finds stored Keyword instance that matches to given lookup term.
+        """
+        #Load Global variables
+        if (do_verbose is None):
+            do_verbose = self._get_info("do_verbose")
+        if (keyword_objs is None):
+            keyword_objs = self._get_info("keyword_objs")
+        num_keyobjs = len(keyword_objs)
+        #Print some notes
+        if do_verbose:
+            print("> Running _fetch_keyword_object() for lookup term {0}."
+                    .format(lookup))
+        #
+
+        #Find keyword object that matches to given lookup term
+        match = None
+        for ii in range(0, num_keyobjs):
+            #If current keyword object matches, record and stop loop
+            if (keyword_objs[ii].identify_keyword(lookup)["bool"]):
+                match = keyword_objs[ii]
+                break
+            #
+        #
+
+        #Throw error if no matching keyword object found
+        if (match is None):
+            errstr = "No matching keyword object for {0}.\n".format(lookup)
+            errstr += "Available keyword objects are:\n"
+            for ii in range(0, num_keyobjs):
+                errstr += "{0}\n".format(keyword_objs[ii])
+            #
+            #Raise error if so requested
+            if do_raise_emptyerror:
+                raise ValueError(errstr)
+            #Otherwise, return None
+            else:
+                return None
+        #
+
+        #Return the matching keyword object
+        return match
+    #
+
     ##Method: _is_pos_word()
     ##Purpose: Return boolean for if given word (NLP type word) is of given part of speech
     def _is_pos_word(self, word, pos, keyword_objs=None, ids_nounchunks=None, do_verbose=False, do_exclude_nounverbs=False):
@@ -3846,7 +3895,7 @@ class _Classifier(_Base):
 
     ##Method: generate_directory_TVT
     ##Purpose: Split a given dictionary of classified texts into directories containing training, validation, and testing datasets
-    def generate_directory_TVT(self, dir_model, fraction_TVT, dict_texts, mode_TVT="uniform", do_shuffle=True, seed=10, do_verbose=None):
+    def generate_directory_TVT(self, dir_model, fraction_TVT, dict_texts, mode_TVT="uniform", do_shuffle=True, do_write_directory_TVT=True, seed=10, do_verbose=None):
         """
         Method: generate_directory_TVT
         Purpose: !!!
@@ -4083,29 +4132,31 @@ class _Classifier(_Base):
         #
 
         ##Build new directories to hold TVT (or throw error if exists)
-        #Build model directory, if does not already exist
-        if (not os.path.exists(dir_model)):
-            os.mkdir(dir_model)
-        #
-        #Verify TVT directories do not already exist
-        if any([os.path.exists(os.path.join(dir_model, item))
-                    for item in name_folderTVT]):
-            raise ValueError("Err: TVT directories exist in model directory"
+        if do_write_directory_TVT:
+            #Verify TVT directories do not already exist
+            if any([os.path.exists(os.path.join(dir_model, item))
+                        for item in name_folderTVT]):
+                raise ValueError("Err: TVT directories exist in model directory"
                             +" and will not be overwritten. Please remove or"
                             +" change the given model directory (dir_model)."
                             +"\nCurrent dir_model: {0}".format(dir_model))
+            #
+            #Otherwise, make the directories
+            for curr_folder in name_folderTVT:
+                os.mkdir(os.path.join(dir_model, curr_folder))
+                #Iterate through classes and create subfolder per class
+                for curr_key in unique_classes:
+                    os.mkdir(os.path.join(dir_model, curr_folder, curr_key))
+            #
+            #Print some notes
+            if do_verbose:
+                print("Created new directories for TVT files.\nStored in: {0}"
+                        .format(dir_model))
         #
-        #Otherwise, make the directories
-        for curr_folder in name_folderTVT:
-            os.mkdir(os.path.join(dir_model, curr_folder))
-            #Iterate through classes and create subfolder per class
-            for curr_key in unique_classes:
-                os.mkdir(os.path.join(dir_model, curr_folder, curr_key))
-        #
-        #Print some notes
-        if do_verbose:
-            print("Created new directories for TVT files.\nStored in: {0}"
-                    .format(dir_model))
+        else:
+            #Print some notes
+            if do_verbose:
+                print("Working in partition-only mode. No TVT dir. created.")
         #
 
         ##Save texts to .txt files within class directories
@@ -4156,10 +4207,11 @@ class _Classifier(_Base):
                                             .format(curr_filename))
                         #
                         #Write this text to new file
-                        curr_filebase = os.path.join(dir_model,
+                        if do_write_directory_TVT:
+                            curr_filebase = os.path.join(dir_model,
                                             name_folderTVT[ind_TVT],
                                             act_key)#TVT path; use actual class!
-                        self._write_text(text=curr_data["text"],
+                            self._write_text(text=curr_data["text"],
                                         filepath=os.path.join(curr_filebase,
                                                         (curr_filename+".txt")))
                         #
@@ -4240,7 +4292,7 @@ class _Classifier(_Base):
         if do_verbose:
             print("\nRun of generate_directory_TVT() complete.\n---\n")
         #
-        return
+        return dict_info
     #
 
     ##Method: _process_text
@@ -4389,7 +4441,8 @@ class Classifier_ML(_Classifier):
         dir_test = os.path.join(dir_model, config.folders_TVT["test"])
         #
         savename_ML = (config.tfoutput_prefix + name_model)
-        savename_model = (name_model + ".npy")
+        ext_ML = config.name_model_extension_ML
+        savename_model = (name_model + ext_ML + ".npy")
         #
         if (do_verbose is None):
             do_verbose = self._get_info("do_verbose")
@@ -7270,6 +7323,255 @@ class Classifier_Rules(_Classifier):
 
         ##Nothing to see here
         return
+    #
+
+    ##Method: train_Rules
+    ##Purpose: Train and save an empty Rule model
+    def train_Rules(self, dir_model, name_model, keyword_objs, do_check_truematch, dict_grammar_train=None, dict_text_train=None, do_verbose=None, do_verbose_deep=None, do_return_model=False):
+        """
+        Method: train_Rules
+        Purpose: Train the weights of a rule-based model.
+        Arguments:
+          - do_verbose [bool (default=False)]:
+            - Whether or not to print surface-level log information and tests.
+        Returns:
+          - dict:
+            - 'model': the model itself.
+        """
+        ##Load global variables
+        ext_Rule = config.name_model_extension_Rule
+        savename_model = (name_model + ext_Rule + ".npy")
+        filename_model = os.path.join(dir_model, savename_model)
+        thres_rarity = config.thres_rarity
+        #
+        if (do_verbose is None):
+            do_verbose = self._get_info("do_verbose")
+        if (do_verbose_deep is None):
+            do_verbose_deep = self._get_info("do_verbose_deep")
+        #
+
+        ##Throw error if model already exists
+        if os.path.exists(filename_model):
+            raise ValueError("Err: Model already exists, will not overwrite."
+                            +"\n{0}, at {1}."
+                            .format(savename_model, dir_model))
+        #
+        ##Throw error if invalid inputs given
+        if ((dict_grammar_train is not None) and (dict_text_train is not None)):
+            raise ValueError("Err: Please pass in only one training format "
+                            +"(pre-processed OR text).")
+        #
+        elif ((dict_grammar_train is None) and (dict_text_train is None)):
+            raise ValueError("Err: Please pass in one training format "
+                            +"(pre-processed OR text).")
+        #
+
+        ##Process training dataset, if given in text format
+        if (dict_text_train is not None):
+            dict_errors = {}
+            dict_forest = {}
+            dict_cached_kobjs = {}
+            str_err = ""
+            i_skipped = 0
+            #Print some notes
+            if do_verbose:
+                print("Processing training dataset of text...")
+            #
+            #Extract forests from all texts
+            for curr_id in dict_text_train:
+                curr_dict = dict_text_train[curr_id]
+                curr_mission = curr_dict["mission"]
+                masked_class = curr_dict["class"]
+                #
+                #Fetch keyword object for this mission
+                if (curr_mission not in dict_cached_kobjs):
+                    curr_kobj = self._fetch_keyword_object(lookup=curr_mission,
+                                keyword_objs=keyword_objs,
+                                do_verbose=do_verbose_deep,
+                                do_raise_emptyerror=True)
+                    dict_cached_kobjs[curr_mission] = curr_kobj #Cache for later
+                else:
+                    curr_kobj = dict_cached_kobjs[curr_mission]
+                #
+
+                #Extract modif for current text
+                if do_check_truematch: #Catch and print unknown ambig. phrases
+                    try:
+                        curr_res = self._process_text(text=curr_dict["text"],
+                                        do_check_truematch=do_check_truematch,
+                                        keyword_obj=curr_kobj,
+                                        do_verbose=do_verbose_deep,
+                                        buffer=0, which_mode="none"
+                                        )["forest"]
+                    except NotImplementedError as err:
+                        curr_str = (("\n-\n"
+                                +"Printing Error:\nID: {0}\nBibcode: {1}\n"
+                                +"Mission: {2}\nMasked class: {3}\n")
+                                .format(curr_dict["id"],curr_dict["bibcode"],
+                                        curr_dict["mission"], masked_class))
+                        curr_str += ("The following err. was encountered"
+                                    +" in train_model_Rule:\n")
+                        curr_str += repr(err)
+                        curr_str += "\nError was noted. Skipping this paper.\n-"
+                        print(curr_str) #Print current error
+                        #
+                        #Store this error-modif
+                        err_dict = {"text":curr_str,
+                            "class":masked_class, #Mask class
+                            "id":curr_dict["id"],"mission":curr_dict["mission"],
+                            "forest":None, "bibcode":curr_dict["bibcode"]}
+                        if (curr_dict["bibcode"] not in dict_errors):
+                            dict_errors[curr_dict["bibcode"]] = {}
+                        dict_errors[curr_dict["bibcode"]][curr_id] = err_dict
+                        #
+                        str_err += curr_str #Tack this error onto full string
+                        i_skipped += 1 #Increment count of skipped papers
+                        continue
+                #
+                else: #Otherwise, run without ambig. phrase check
+                    curr_res = self._process_text(text=curr_dict["text"],
+                                        do_check_truematch=do_check_truematch,
+                                        keyword_obj=curr_kobj,
+                                        do_verbose=do_verbose_deep,
+                                        buffer=0, which_mode="none"
+                                        )["forest"]
+                #
+
+                #Generate+Store forest for current text+mission combination
+                dict_forest[curr_id] = {"forest":curr_res, "class":masked_class}
+            #
+        #
+        ##Otherwise if given in pre-processed format, extract information
+        elif (dict_grammar_train is not None):
+            #Print some notes
+            if do_verbose:
+                print("Using pre-processed training dataset...")
+            print(woo)
+        #
+        ##Otherwise, throw serious error
+        else:
+            raise ValueError("Err: This error should not have been reached.")
+        #
+        #Print some notes
+        if do_verbose:
+            print("Training dataset has been processed.")
+            print("Converting grammar structures into rules...")
+        #
+
+        ##Fetch all unique class names
+        class_names = list(set([dict_forest[key]["class"]
+                                for key in dict_forest]))
+        #
+
+        ##Convert the grammar forests into rules and count them up
+        dict_rules = {key:[] for key in dict_forest}
+        dict_stats = {}
+        i_track = 0
+        num_forests = len(dict_forest)
+        for curr_key in dict_forest:
+            curr_forest = dict_forest[curr_key]["forest"]
+            curr_class = dict_forest[curr_key]["class"]
+            for ii in range(0, len(curr_forest)):
+                for jj in range(0, len(curr_forest[ii])):
+                    curr_info = curr_forest[ii][jj]
+                    #Convert current clause into rule set
+                    curr_rules_raw = [item
+                                for key in curr_info["clauses"]["text"]
+                                for item in
+                                self._convert_clause_into_rule(
+                                clause_text=curr_info["clauses"]["text"][key],
+                                clause_ids=curr_info["clauses"]["ids"][key],
+                                flags_nounchunks=curr_info["flags"],
+                                ids_nounchunks=curr_info["ids_nounchunk"])]
+                    curr_ruleset = self._merge_rules(curr_rules_raw)
+                    curr_ruleset_repr = self._convert_rule_to_str(curr_ruleset)
+                    #
+                    #Store the converted rule set
+                    dict_rules[curr_key].append(curr_ruleset_repr)
+                    #Accumulate counter of the converted rule set
+                    if (curr_ruleset_repr not in dict_stats):
+                        dict_stats[curr_ruleset_repr] = {key:0
+                                            for key in (class_names+["total"])}
+                    dict_stats[curr_ruleset_repr]["total"] += 1
+                    #
+                    #Accumulate counter of current class
+                    dict_stats[curr_ruleset_repr][curr_class] += 1
+                #
+            #
+            #Print some notes
+            if do_verbose:
+                print("Processed {0} of {1} forests."
+                        .format((i_track+1), num_forests))
+            #
+            i_track += 1
+        #
+
+        ##Convert rule stats into uncertainties
+        val_baseline = (1.0 / len(class_names))
+        for curr_key in dict_stats:
+            curr_tot = dict_stats[curr_key]["total"]
+            for curr_verdict in class_names:
+                #Compute occurrence fraction for this verdict
+                curr_count = dict_stats[curr_key][curr_verdict]
+                curr_ratio = (curr_count / curr_tot)
+                #Establish rarity fraction for this verdict
+                curr_rarity = min([(curr_tot / thres_rarity), 1])
+                curr_prob = (((curr_ratio - val_baseline)*curr_rarity)
+                            + val_baseline #min([curr_ratio, val_baseline])
+                            ) #Scaled between freq. and rarity
+                #Store final uncertainty
+                dict_stats[curr_key]["prob_"+curr_verdict] = curr_prob
+            #
+        #
+
+        ##Gather rules and their uncertainties into decision tree
+        dict_tree = {}
+        i_track = 0
+        for curr_str in dict_stats:
+            #Convert current string representation of rule into dict. rule
+            curr_rule = self._convert_str_to_rule(curr_str)
+            curr_tot = sum([dict_stats[curr_str]["prob_"+key]
+                            for key in class_names])
+            #Fully normalize and store uncertainties
+            for curr_key in class_names:
+                curr_lookup = ("prob_"+curr_key)
+                curr_rule[curr_lookup] = (dict_stats[curr_str][curr_lookup]
+                                            / curr_tot)
+            #
+            #Store current rule and increment tracker
+            dict_tree[i_track] = curr_rule
+            i_track += 1
+        #
+
+        ##Print some notes
+        if do_verbose:
+            print("\n---\n> Rules:")
+            for curr_key in dict_stats:
+                print("Rule (str. repr.):\n{0}\nCounts: {1}\n-"
+                        .format(curr_key, dict_stats[curr_key]))
+            print("\n---\n> Tree:")
+            for curr_key1 in dict_tree:
+                for curr_key2 in dict_tree[curr_key1]:
+                    print("{0}: {1}"
+                            .format(curr_key2, dict_tree[curr_key1][curr_key2]))
+                print("-")
+            print("\n---\n")
+        #
+
+        ##Save the model
+        np.save(filename_model, dict_tree)
+        #
+
+        ##Below Section: Exit the method
+        if do_verbose:
+            print("\nTraining complete.\nTrained rule-based model saved at: {0}"
+                    .format(filename_model))
+        #
+        return str_err
+        #if do_return_model:
+        #    return dict_tree
+        #else:
+        #    return
     #
 
     ##Method: _apply_decision_tree
@@ -10512,7 +10814,7 @@ class Classifier_Rules(_Classifier):
     ##Purpose: Categorize topic of given verb
     def _categorize_verb(self, verb):
         ##Extract global variables
-        do_verbose = self._get_info("do_verbose")
+        do_verbose = self._get_info("do_verbose_deep")
         list_category_names = config.list_category_names
         list_category_synsets = config.list_category_synsets
         list_category_threses = config.list_category_threses
@@ -10690,6 +10992,60 @@ class Classifier_Rules(_Classifier):
 
         #Return final verdicts
         return dict_results #dict_verdicts
+    #
+
+    ##Method: _convert_rule_to_str
+    ##Purpose: Convert single rule to string representation
+    def _convert_rule_to_str(self, rule):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose_deep")
+        #Print some notes
+        if do_verbose:
+            print("\n> Converting rule to string representation.")
+        #
+
+        #Build string representation of the given rule
+        str_rule = "" #"Rule:"
+        for curr_key in sorted(list(rule.keys())):
+            str_rule += "\n"
+            str_rule += " - {0}: ".format(curr_key)
+            str_rule += " + ".join(sorted(rule[curr_key]))
+        #
+
+        #Return the completed string representation
+        if do_verbose:
+            print("Rule converted.\nOriginal rule: {0}\nConversion: {1}"
+                    .format(rule, str_rule))
+        #
+        return str_rule
+    #
+
+    ##Method: _convert_str_to_rule
+    ##Purpose: Convert string representation of rule to proper rule form
+    def _convert_str_to_rule(self, str_rule):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose_deep")
+        #Print some notes
+        if do_verbose:
+            print("\n> Converting str. representation of rule into orig. rule.")
+        #
+
+        #Split string representation into rule components
+        components_raw = str_rule.replace(" - ","").split("\n")
+        components = [item for item in components_raw if (item != "")]
+        dict_rule = {}
+        for curr_line in components:
+            curr_split = curr_line.split(":")
+            dict_rule[curr_split[0]] = set([item.strip()
+                                        for item in curr_split[1].split(" + ")])
+        #
+
+        #Return the assembled original rule
+        if do_verbose:
+            print("Rule recovered.\nString representation: {0}\nOrig. rule: {1}"
+                    .format(str_rule, dict_rule))
+        #
+        return dict_rule
     #
 
     ##Method: _convert_scorestoverdict
@@ -11544,7 +11900,7 @@ class Classifier_Rules(_Classifier):
         Purpose: Process text into modifs using Grammar class.
         """
         #Set global variables
-        do_verbose = self._get_info("do_verbose")
+        do_verbose = self._get_info("do_verbose_deep")
 
         #Fetch all sets of subject flags via their ids
         num_subj = len(clause_text["subjects"])
@@ -13518,54 +13874,6 @@ class Operator(_Base):
         return
     #
 
-    ##Method: _fetch_keyword_object
-    ##Purpose: Fetch a keyword object that matches the given lookup
-    def _fetch_keyword_object(self, lookup, do_verbose=None, do_raise_emptyerror=True):
-        """
-        Method: _fetch_keyword_object
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Finds stored Keyword instance that matches to given lookup term.
-        """
-        #Load Global variables
-        if (do_verbose is None):
-            do_verbose = self._get_info("do_verbose")
-        keyword_objs = self._get_info("keyword_objs")
-        num_keyobjs = len(keyword_objs)
-        #Print some notes
-        if do_verbose:
-            print("> Running _fetch_keyword_object() for lookup term {0}."
-                    .format(lookup))
-        #
-
-        #Find keyword object that matches to given lookup term
-        match = None
-        for ii in range(0, num_keyobjs):
-            #If current keyword object matches, record and stop loop
-            if (keyword_objs[ii].identify_keyword(lookup)["bool"]):
-                match = keyword_objs[ii]
-                break
-            #
-        #
-
-        #Throw error if no matching keyword object found
-        if (match is None):
-            errstr = "No matching keyword object for {0}.\n".format(lookup)
-            errstr += "Available keyword objects are:\n"
-            for ii in range(0, num_keyobjs):
-                errstr += "{0}\n".format(keyword_objs[ii])
-            #
-            #Raise error if so requested
-            if do_raise_emptyerror:
-                raise ValueError(errstr)
-            #Otherwise, return None
-            else:
-                return None
-        #
-
-        #Return the matching keyword object
-        return match
-    #
-
     ##Method: classify
     ##Purpose: Inspect text and either reject as false target or give classifications
     def classify(self, text, lookup, do_check_truematch, do_raise_innererror, modif=None, forest=None, buffer=0, do_verbose=None, do_verbose_deep=None):
@@ -13907,7 +14215,8 @@ class Operator(_Base):
         classifier = self._get_info("classifier")
         folders_TVT = config.folders_TVT
         savename_ML = (config.tfoutput_prefix + name_model)
-        savename_model = (name_model + ".npy")
+        ext_ML = config.name_model_extension_ML
+        savename_model = (name_model + ext_ML + ".npy")
         filepath_dicterrors = config.path_modiferrors
         #
         #Print some notes
@@ -13920,6 +14229,11 @@ class Operator(_Base):
         if (type(classifier).__name__ not in allowed_types):
             raise ValueError("Err: Classifier ({0}) not allowed type ({1})"
                             .format(type(classifier), allowed_types))
+        #
+
+        #Build model directory, if does not already exist
+        if (not os.path.exists(dir_model)):
+            os.mkdir(dir_model)
         #
 
         #Preprocess texts into modifs and store in TVT directories
@@ -14034,7 +14348,8 @@ class Operator(_Base):
             #
 
             #Store the modifs in new TVT directories
-            classifier.generate_directory_TVT(dir_model=dir_model,
+            dict_dirinfo = classifier.generate_directory_TVT(
+                            dir_model=dir_model,
                             fraction_TVT=fraction_TVT, mode_TVT=mode_TVT,
                             dict_texts=dict_modifs, do_shuffle=do_shuffle,
                             seed=seed_TVT, do_verbose=do_verbose)
@@ -14093,6 +14408,102 @@ class Operator(_Base):
         #Print some notes
         if do_verbose:
             print("Run of train_model_ML() complete!\nError string returned.")
+        #
+        return str_err
+    #
+
+    ##Method: train_model_Rule
+    ##Purpose: Process text into modifs and then train ML model on the modifs
+    def train_model_Rule(self, dir_model, name_model, keyword_objs, do_reuse_run, do_check_truematch, mode_TVT="uniform", fraction_TVT=[0.8, 0.1, 0.1], do_shuffle=True, seed_TVT=10, dict_grammars=None, dict_texts=None, do_verbose=None, do_verbose_deep=None):
+        """
+        Method: train_model_Rule
+        Purpose:
+          - !
+        Arguments:
+          - do_verbose [bool (default=False)]:
+            - Whether or not to print surface-level log information and tests.
+          - do_verbose_deep [bool (default=False)]:
+            - Whether or not to print inner log information and tests.
+        Returns:
+          - dict:
+            - !: !
+        """
+        #Fetch global variables
+        classifier = self._get_info("classifier")
+        ext_Rule = config.name_model_extension_Rule
+        savename_model = (name_model + ext_Rule + ".npy")
+        dict_grammars = None
+        if (do_verbose is None):
+            do_verbose = self._get_info("do_verbose")
+        if (do_verbose_deep is None):
+            do_verbose_deep = self._get_info("do_verbose_deep")
+        #
+        #Print some notes
+        if do_verbose:
+            print("\n> Running train_model_Rule()!")
+        #
+
+        #Build model directory, if does not already exist
+        if (not os.path.exists(dir_model)):
+            os.mkdir(dir_model)
+        #
+
+        #Partition the texts into TVT bins
+        dict_dirinfo = classifier.generate_directory_TVT(
+                        dir_model=dir_model,
+                        fraction_TVT=fraction_TVT, mode_TVT=mode_TVT,
+                        dict_texts=dict_texts, do_shuffle=do_shuffle,
+                        seed=seed_TVT, do_verbose=do_verbose)
+
+        #Train a new rule-based model
+        is_exist = os.path.exists(os.path.join(dir_model, savename_model))
+        #If ML model or output already exists, either print note or raise error
+        if is_exist:
+            str_err = None
+            #Print some notes
+            if do_verbose:
+                print("Rule model already exists for {0} in {1}."
+                        .format(name_model, dir_model))
+            #
+            #Skip ahead if previous data should be reused
+            if do_reuse_run:
+                print("Reusing the existing Rule model in {0}."
+                        .format(dir_model))
+                pass
+            #
+            #Otherwise, raise error if not to reuse previous run data
+            else:
+                raise ValueError(("Err: Rule model/output already exists"
+                                +" in {0}. Either delete it, or rerun method"
+                                +" with do_reuse_run=True.").format(dir_model))
+            #
+        #
+        #Otherwise, train new ML model on the TVT directories
+        else:
+            #Print some notes
+            if do_verbose:
+                print("Training new Rule model on training data in {0}..."
+                        .format(dir_model))
+            #
+            #Train new Rule model
+            str_err = classifier.train_Rules(dir_model=dir_model,
+                            name_model=name_model,
+                            do_check_truematch=do_check_truematch,
+                            dict_grammar_train=dict_grammars,
+                            dict_text_train=dict_texts, do_verbose=do_verbose,
+                            keyword_objs=keyword_objs) #, do_return_model=True)
+            #
+            #Print some notes
+            if do_verbose:
+                print("New Rule model trained and stored in {0}."
+                        .format(dir_model))
+            #
+        #
+
+        #Exit the method with error string
+        #Print some notes
+        if do_verbose:
+            print("Run of train_model_Rule() complete!\nError string returned.")
         #
         return str_err
     #

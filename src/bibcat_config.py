@@ -19,14 +19,18 @@ path_json = os.path.join(os.path.expanduser("~"), "Documents/STScI_Fellowship/Fu
 #
 
 
-#!!!HERE
+"""#!!!HERE
 mode_modif = "none" # "none" #"skim_anon" #"skim_trim_anon" #None
 name_model = "perf_run_ML_testfalsepos1_{0}".format(mode_modif)
 #name_model = "perf_run_ML_{0}".format(mode_modif)
 #name_model = "perf_run_MLandRB_{0}".format(mode_modif)
 #name_model = "perf_run_RB_{0}".format(mode_modif)
 #name_model = "perf_run_MLlarge_{0}".format(mode_modif)
-#!!!
+#!!!"""
+name_model = "test_train_rule_op"
+mode_modif = "none"
+name_model_extension_ML = "_ML"
+name_model_extension_Rule = "_Rule"
 
 ##Set global fixed paths
 SRC_ROOT = os.path.dirname(__file__)
@@ -391,6 +395,7 @@ dict_tree_possible_values = {"allmatter":["is_pron_1st", "is_etal", "is_keyword"
 thres_category_fracdiff = 0.1
 thres_verbsimilaritymain = 0.75 #25 #Threshold of similarity to say two verbs are similar
 thres_verbsimilarityhigh = 0.75 #Threshold of similarity to say two verbs are similar
+thres_rarity = 5 #Number of occurrences of a rule before deemed a statistically significant number of occurrences
 #
 #Grammar nest generation
 conv_pos_fromtreetonest = {"PREPOSITION_SUBJECT":"subjectmatter", "SUBJECT":"subjectmatter", "DIRECT_OBJECT":"objectmatter", "PREPOSITION_OBJECT":"objectmatter"} #Convert from tree to nest terminology
