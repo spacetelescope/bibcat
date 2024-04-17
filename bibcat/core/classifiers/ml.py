@@ -2,14 +2,15 @@
 :title: ml.py
 
 """
+
 import os
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
-import tensorflow as tf
-import tensorflow_hub as tfhub
-import tensorflow_text as tftext
-from official.nlp import optimization as tf_opt
+import tensorflow as tf  # type: ignore
+import tensorflow_hub as tfhub  # type: ignore
+import tensorflow_text as tftext  # type: ignore
+from official.nlp import optimization as tf_opt  # type: ignore
 
 import bibcat.config as config
 from bibcat.core.classifiers.textdata import ClassifierBase

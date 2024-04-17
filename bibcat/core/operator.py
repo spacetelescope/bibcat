@@ -19,6 +19,7 @@ The primary methods and use cases of Operator are:
 """
 
 import os
+from typing import Any
 
 import numpy as np
 
@@ -103,7 +104,9 @@ class Operator(Base):
         return
 
     # Fetch a keyword object that matches the given lookup
-    def _fetch_keyword_object(self, lookup: str, do_verbose: None | bool = None, do_raise_emptyerror: bool = True):
+    def _fetch_keyword_object(
+        self, lookup: str, do_verbose: None | bool = None, do_raise_emptyerror: bool = True
+    ) -> Any | None:
         """
         Method: _fetch_keyword_object
         WARNING! This method is *not* meant to be used directly by users.
@@ -146,17 +149,17 @@ class Operator(Base):
     # Inspect text and either reject as false target or give classifications
     def classify(
         self,
-        text,
-        lookup,
-        threshold,
-        do_check_truematch,
-        do_raise_innererror,
-        modif=None,
-        forest=None,
-        buffer=0,
-        do_verbose=None,
-        do_verbose_deep=None,
-    ):
+        text: str | None,
+        lookup: str,
+        threshold: float,
+        do_check_truematch: bool,
+        do_raise_innererror: bool,
+        modif: str | None = None,
+        forest: str | None = None,
+        buffer: int = 0,
+        do_verbose: bool | None = None,
+        do_verbose_deep: bool | None = None,
+    ) -> dict[str, Any] | Any:
         """
         Method: classify
         Purpose:
@@ -302,17 +305,17 @@ class Operator(Base):
     # Classify set of texts as false target or give classifications
     def classify_set(
         self,
-        texts,
-        threshold,
-        do_check_truematch,
-        do_raise_innererror,
-        modifs=None,
-        forests=None,
-        buffer=0,
-        print_freq=25,
-        do_verbose=None,
-        do_verbose_deep=None,
-    ):
+        texts: list[str] | None,
+        threshold: float,
+        do_check_truematch: bool,
+        do_raise_innererror: bool,
+        modifs: list[str] | None = None,
+        forests: list[str] | None = None,
+        buffer: int = 0,
+        print_freq: int = 25,
+        do_verbose: bool | None = None,
+        do_verbose_deep: bool | None = None,
+    ) -> list[dict[str, Any] | Any]:
         """
         Method: classify_set
         Purpose:
@@ -355,18 +358,17 @@ class Operator(Base):
             print("\n> Running classify_set()!")
 
         # Classify every text against every mission
-        list_results = [None] * num_texts
-        curr_text = None
-        curr_modif = None
-        curr_forest = None
+        list_results: list[dict[str, Any] | Any] = [{} for _ in range(num_texts)]
+        curr_text: str | None = None
+        curr_modif: str | None = None
+        curr_forest: str | None = None
         # Iterate through texts
         for ii in range(0, num_texts):
-            curr_dict = {}  # Dictionary to hold set of results for this text
+            curr_dict: dict[str, Any] | Any = {}  # Dictionary to hold set of results
             list_results[ii] = curr_dict  # Store this dictionary
-
             # Extract current text if given in raw (not processed) form
             if texts is not None:
-                curr_text = texts[ii]  # Current text to classify
+                curr_text = texts[ii]  # Current text dict to classify
 
             # Extract current modifs and forests if already processed text
             if modifs is not None:

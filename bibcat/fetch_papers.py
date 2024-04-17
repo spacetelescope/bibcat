@@ -88,9 +88,9 @@ def fetch_papers(
         dict_texts[str(curr_ind)] = curr_info
 
     # Print some notes about the testing data
-    print(f"Number of texts in text set: {dict_texts}")
-    print("")
+    # print(f"Number of texts in text set: {dict_texts}")
     if do_verbose_text_summary:
+        print("Text Summary\n")
         for key in dict_texts:
             print(f"Entry: {key}")
             print(f"ID: {dict_texts[key]['id']}")
@@ -105,5 +105,5 @@ def fetch_papers(
 # This section checks if the script is the main program
 if __name__ == "__main__":
     # Code here will only execute if the script is run directly, not if it's imported as a module
-    print("The script is running as a standalone script\n Fetching papers!")
+    print("The script is running as a standalone script though I don't see yet a purpose for it.\n Fetching papers!")
     fetch_papers()

@@ -1,16 +1,16 @@
 """
 :title: performance.py
 
-The `Performance` class contains user-friendly methods for estimating the performance 
-of given classifiers and outputting that performance as, e.g., confusion matrices. 
-This class can be used after creating the model, training, and saving 
+The `Performance` class contains user-friendly methods for estimating the performance
+of given classifiers and outputting that performance as, e.g., confusion matrices.
+This class can be used after creating the model, training, and saving
 a machine learning model.
 
 """
 
 import os
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
 
 import bibcat.config as config
