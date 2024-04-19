@@ -35,8 +35,10 @@ name_model = config.name_model
 dir_model = os.path.join(config.PATH_MODELS, name_model)
 
 # Set directories for fetching test text
+
+# `partitioned_datasets/name_model/` folder
 dir_datasets = os.path.join(config.path_partitioned_data, name_model)
-dir_test = os.path.join(dir_datasets, config.folders_TVT["test"])
+dir_test = config.folders_TVT["test"]  # the directory name "dir_test" in the partitioned_datasets/name_model/ folder
 
 # Set parameters for each operator and its internal classifier
 
@@ -80,15 +82,15 @@ buffer = 0
 # For uncertainty test
 threshold_array = np.linspace(0.5, 0.95, 20)
 
-# Fetching papers or fake texts
-if do_real_testdata:
-    # Fetching text blurbs to classify
-    dict_texts = fetch_papers(
-        do_real_testdata=do_real_testdata,
-        do_shuffle=do_shuffle,
-        do_verbose_text_summary=do_verbose_text_summary,
-        max_tests=max_tests,
-    )
+# Fetching real JSON paper text
+dict_texts = fetch_papers(
+    dir_datasets=dir_datasets,
+    dir_test=dir_test,
+    do_shuffle=do_shuffle,
+    do_verbose_text_summary=do_verbose_text_summary,
+    max_tests=max_tests,
+)
+
 # initialize classifiers
 
 filepath_model = os.path.join(dir_model, (name_model + ".npy"))
@@ -156,6 +158,7 @@ generate_performance_evaluation_output(
 # Operation: classifying paper(s)
 # Currently it pulls the papers from in test folder (`bibcat/data/partitioned_datasets/model_name/dir_test`)
 # but we will have to change a new text feed directory for operation.
+
 operate_classifier(
     classifier_name=classifier_name,
     classifier=classifier,

@@ -19,15 +19,11 @@ import numpy as np
 from bibcat import config
 from bibcat import parameters as params
 
-# Fetch filepath for model
-name_model = config.name_model
 
-# Set directories for fetching test text
-dir_datasets = os.path.join(config.path_partitioned_data, name_model)
-
-
+# Fetch papers of
 def fetch_papers(
-    do_real_testdata: bool = True,
+    dir_datasets: str,
+    dir_test: str,
     do_shuffle: bool = True,
     do_verbose_text_summary: bool = True,
     max_tests: None | int = None,
@@ -36,9 +32,7 @@ def fetch_papers(
     # For use of real papers from test dataset to test on
     # Load information for processed bibcodes reserved for testing
     dict_TVTinfo = np.load(os.path.join(dir_datasets, "dict_TVTinfo.npy"), allow_pickle=True).item()
-    list_test_bibcodes = [
-        key for key in dict_TVTinfo if (dict_TVTinfo[key]["folder_TVT"] == config.folders_TVT["test"])
-    ]
+    list_test_bibcodes = [key for key in dict_TVTinfo if (dict_TVTinfo[key]["folder_TVT"] == dir_test)]
 
     # Load the original data
     with open(config.path_source_data, "r") as openfile:
@@ -102,8 +96,10 @@ def fetch_papers(
     return dict_texts
 
 
-# This section checks if the script is the main program
-if __name__ == "__main__":
-    # Code here will only execute if the script is run directly, not if it's imported as a module
-    print("The script is running as a standalone script though I don't see yet a purpose for it.\n Fetching papers!")
-    fetch_papers()
+# # This section checks if the script is the main program
+# if __name__ == "__main__":
+#     # Code here will only execute if the script is run directly, not if it's imported as a module
+#     print("The script is running as a standalone script though I don't see yet a purpose for it.\n Fetching papers!")
+#     fetch_papers(
+#         dir_datasets=os.path.join(config.path_partitioned_data, config.name_model), dir_texts=config.folders_TVT["test"]
+#     )
