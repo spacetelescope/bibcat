@@ -1,13 +1,22 @@
+"""
+:title: operate_classifier.py
+
+This module applies a given classifier method on the input data for classification.
+
+- Context: once the input dict texts of papers returned from fetch_papers.py are fed into this script, this will classify the input text(s) into the paper classification.
+
+"""
+
 from bibcat.core import operator
 
 # Store texts for each operator and its internal classifier
 # For operator ML, Dictionary of texts to classify
 
 
-def operate_classifiers(
+def operate_classifier(
     classifier_name: str,
     classifier: object,
-    dicts_texts: dict,  # this dict is very complex so a proper type annotation can be determined later
+    dict_texts: dict,  # this dict is very complex so a proper type annotation can be determined later
     keyword_objs: list,
     mode_modif: str,
     buffer: int,
@@ -26,7 +35,7 @@ def operate_classifiers(
     Arguments:
     - classifier_name: the name of the classifier such as 'ML' for a machine learning classifier or 'RB' for a rule based classifier.
     - classifier: instance object of an classifier
-    - dicts_texts: a nested dictionary of dictionary of input texts to classify
+    - dict_texts: a nested dictionary of dictionary of input texts to classify
     - keyword_obj [<Keyword object> or None]: Target Keyword instance. If None, the input variable lookup will be used to look up the Keyword instance.
     - buffer [int (default=0)]: Number of +/- sentences around a sentence containing a target mission to include in the paragraph.
     - threshold:
@@ -56,11 +65,11 @@ def operate_classifiers(
     # Load in as either raw or preprocessed data
     if is_text_processed:  # If given text preprocessed
         curr_texts = None
-        curr_modifs = [dicts_texts[key]["text"] for key in dicts_texts]
-        curr_forests = [dicts_texts[key]["forest"] for key in dicts_texts]
+        curr_modifs = [dict_texts[key]["text"] for key in dict_texts]
+        curr_forests = [dict_texts[key]["forest"] for key in dict_texts]
     else:  # If raw text given, text needs to be preprocessed
-        # curr_texts = [dicts_texts[keys[jj]]["text"] for jj in range(0, len(keys))]
-        curr_texts = [dicts_texts[key]["text"] for key in dicts_texts]
+        # curr_texts = [dict_texts[keys[jj]]["text"] for jj in range(0, len(keys))]
+        curr_texts = [dict_texts[key]["text"] for key in dict_texts]
         curr_modifs = None
         curr_forests = None
 
