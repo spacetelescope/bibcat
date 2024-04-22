@@ -488,7 +488,7 @@ class Performance(Base):
                 str_misclassif = "\n-----\n".join(list_str)  # Combined string
 
                 # Save the full string of misclassifications
-                tmp_filename = "{0}_{1}.txt".format(fileroot_misclassif, curr_name)
+                tmp_filename = f"{fileroot_misclassif}.txt"
                 tmp_filepath = os.path.join(filepath_output, tmp_filename)
                 self._write_text(text=str_misclassif, filepath=tmp_filepath)
 

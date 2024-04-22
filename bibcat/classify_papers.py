@@ -33,22 +33,24 @@ from bibcat.operate_classifier import operate_classifier
 # Fetch filepath for model
 name_model = config.name_model
 dir_model = os.path.join(config.PATH_MODELS, name_model)
+dir_output = os.path.join(config.PATH_OUTPUT, name_model)
+os.makedirs(dir_output, exist_ok=True)
+
 
 # Set directories for fetching test text
 
 # `partitioned_datasets/name_model/` folder
 dir_datasets = os.path.join(config.path_partitioned_data, name_model)
-dir_test = config.folders_TVT["test"]  # the directory name "dir_test" in the partitioned_datasets/name_model/ folder
+dir_test = config.folders_TVT[
+    "test"
+]  # the directory name "dir_test" in the partitioned_datasets/name_model/ folder # can be an CLI option
 
 # Set parameters for each operator and its internal classifier
 
-# Global parameters
-do_verify_truematch = True  # used in Performance class
-
 # do_raise_innererror: if True, will stop if exception encountered;
 # if False, will print error and continue
-do_raise_innererror = False
-do_verbose_text_summary = True  # print input text data summary
+do_raise_innererror = False  # CLI option
+do_verbose_text_summary = True  # print input text data summary ; CLI option
 
 
 # Set some overarching global variables
@@ -61,10 +63,10 @@ do_shuffle = True
 # do_real_testdata: If True, will use real papers to test performance;
 # if False, will use fake texts but we will implement the fake data
 # if we need. For now, we keep this variable and only the real text.
-do_real_testdata = True
+do_real_testdata = True  # can an CLI option
 
 # Number of text entries to test the performance for; None for all tests
-max_tests = 2
+max_tests = 1
 # mode_modif: Mode to use for text processing and generating
 # possible modes: any combination from "skim", "trim", and "anon" or "none"
 mode_modif = "anon"
@@ -72,12 +74,9 @@ mode_modif = "anon"
 lookup = "HST"
 
 
-# Set two operators: machine learning (ML) and rule-based (RB)
-# - buffer: the number of sentences to include within paragraph around
-#           each sentence with target terms
-# - threshold: Uncertainty threshold
-
+# threshold: Uncertainty threshold
 threshold = 0.70
+# buffer: the number of sentences to include within paragraph around each sentence with target terms
 buffer = 0
 # For uncertainty test
 threshold_array = np.linspace(0.5, 0.95, 20)
@@ -91,22 +90,25 @@ dict_texts = fetch_papers(
     max_tests=max_tests,
 )
 
-# initialize classifiers
+# We will choose which operator/method to classify the papers and evaluate performance below.
 
-filepath_model = os.path.join(dir_model, (name_model + ".npy"))
-fileloc_ML = os.path.join(dir_model, (config.tfoutput_prefix + name_model))
-
-# Machine-Learning Classifier
-classifier_ML = ml.MachineLearningClassifier(filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True)
+# The classifier_name could eventually be chosen in a user run setting or as a CLI option
+# in the future refactoring.
+classifier: ClassifierBase
+classifier_name = "RB"  # CLI option
 
 # Rule-Based Classifier
 classifier_RB = rules.RuleBasedClassifier(which_classifs=None, do_verbose=True, do_verbose_deep=False)
 
-# We will choose which operator/method to classify the papers below .
-# The classifier_name could eventually be chosen in a user run setting or as a cli option
-# in the future refactoring.
-classifier: ClassifierBase
-classifier_name = "RB"
+
+# ML model file location
+filepath_model = os.path.join(dir_model, (name_model + ".npy"))
+fileloc_ML = os.path.join(dir_model, (config.tfoutput_prefix + name_model))
+
+# initialize classifiers
+# Machine-Learning Classifier
+classifier_ML = ml.MachineLearningClassifier(filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True)
+
 
 if classifier_name == "ML":
     classifier = classifier_ML
@@ -117,16 +119,18 @@ else:
         "An invalid value! Choose either 'ML' for the machine learning classifier or 'RB' for the rule-based classifier!"
     )
 
-# Performance tests:
-
+# Performance tests: This can be an CLI option.
 # Create an instance of the Performance class
 performer = performance.Performance()
 
 # Parameters for this evaluation
 # Root name of the file within which to store the performance evaluation output
-fileroot_evaluation = "test_eval_basic"
+fileroot_evaluation = f"test_eval_basic_{classifier_name}"
 # Root name of the file within which to store misclassified text information
-fileroot_misclassif = "test_misclassif_basic"
+fileroot_misclassif = f"test_misclassif_basic_{classifier_name}"
+# Root name of the file within which to store classified result information
+fileroot_class_results = f"classification_results_{classifier_name}"
+
 figsize = (20, 12)
 
 # Run the pipeline for a basic evaluation and an evaluation of model performance as a function of uncertainty
@@ -142,9 +146,11 @@ generate_performance_evaluation_output(
     threshold=threshold,
     threshold_array=threshold_array,
     print_freq=1,
-    filepath_output=config.PATH_OUTPUT,
+    filepath_output=dir_output,
     fileroot_evaluation=fileroot_evaluation,
     fileroot_misclassif=fileroot_misclassif,
+    fileroot_confusion_matrix_plot=f"performance_confmatr_basic_{classifier_name}.png",
+    fileroot_uncertainty_plot=f"performance_grid_uncertainty_{classifier_name}.png",
     figsize=figsize,
     load_check_truematch=True,
     do_save_evaluation=True,
@@ -168,6 +174,8 @@ operate_classifier(
     buffer=buffer,
     threshold=threshold,
     print_freq=25,
+    filepath_output=dir_output,
+    fileroot_class_results=fileroot_class_results,
     is_text_processed=False,
     load_check_truematch=True,
     do_verbose=True,

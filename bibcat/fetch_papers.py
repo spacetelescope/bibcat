@@ -96,10 +96,11 @@ def fetch_papers(
     return dict_texts
 
 
-# # This section checks if the script is the main program
-# if __name__ == "__main__":
-#     # Code here will only execute if the script is run directly, not if it's imported as a module
-#     print("The script is running as a standalone script though I don't see yet a purpose for it.\n Fetching papers!")
-#     fetch_papers(
-#         dir_datasets=os.path.join(config.path_partitioned_data, config.name_model), dir_texts=config.folders_TVT["test"]
-#     )
+# This section checks if the script is the main program
+if __name__ == "__main__":
+    # Code here will only execute if the script is run directly, not if it's imported as a module
+    # Currently, text data is fed from the TVT test folder but this can be changed when a need arises.
+    print("The script is running as a standalone script though I don't see yet a purpose for it.\n Fetching papers!")
+    fetch_papers(
+        dir_datasets=os.path.join(config.path_partitioned_data, config.name_model), dir_test=config.folders_TVT["test"]
+    )

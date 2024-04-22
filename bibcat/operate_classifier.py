@@ -7,7 +7,11 @@ This module applies a given classifier method on the input data for classificati
 
 """
 
+import json
+import os
+
 from bibcat.core import operator
+from bibcat.utils.utils import convert_sets
 
 # Store texts for each operator and its internal classifier
 # For operator ML, Dictionary of texts to classify
@@ -22,6 +26,8 @@ def operate_classifier(
     buffer: int,
     threshold: float,
     print_freq: int,
+    filepath_output: str,
+    fileroot_class_results: str,
     is_text_processed: bool = False,
     load_check_truematch: bool = True,
     do_verbose: bool = True,
@@ -92,13 +98,31 @@ def operate_classifier(
         print(f"Classification complete for Operator {classifier_name}...")
         print("Generating the performance counter...")
 
-    print(f"{classifier_name} results: \n")
-    # print(f"Results: {results}")
-    for index, dict_content in enumerate(results):
-        print(f"\ntext {index}: \n")
+    # We want to prepend the text ID and its bibcode to the results.
+    text_ids = [{"id": dict_texts[index]["id"]} for index in dict_texts]
+    text_bibcodes = [{"bibcode": dict_texts[index]["bibcode"]} for index in dict_texts]
 
-        for key in dict_content:
-            print(f"Mission: {key}")
-            print(f"Verdict: {dict_content[key]['verdict']}")
-            print(f"Probability: {dict_content[key]['uncertainty']}")
-            print(f"Supporting texts:\n'\n{dict_content[key]['modif']}\n' ")
+    if do_verbose:
+        print(f"{classifier_name} results: \n")
+        for index, dict_content in enumerate(results):
+            print(f"\nText {index+1}: \n")
+            print(f"Text id: {text_ids[index].get('id')}")
+            print(f"Text bibcode: {text_bibcodes[index].get('bibcode')}")
+            for key in dict_content:
+                print(f"Mission: {key}")
+                print(f"Verdict: {dict_content[key]['verdict']}")
+                print(f"Probability: {dict_content[key]['uncertainty']}")
+                print(f"Supporting texts:\n'\n{dict_content[key]['modif']}\n' ")
+
+    # Save the classification results into a JSON file
+    classification_results = [
+        {**text_ids[index], **text_bibcodes[index], **dict_content} for index, dict_content in enumerate(results)
+    ]
+
+    # set file save location and filename
+    tmp_filepath = os.path.join(filepath_output, f"{fileroot_class_results}.json")
+    if do_verbose:
+        print(f"Saving '{fileroot_class_results}.json' under '{filepath_output}/'!")
+    json_dump = convert_sets(classification_results)  # converts any sets in the results to lists
+    with open(tmp_filepath, "w") as f:
+        json.dump(json_dump, f)

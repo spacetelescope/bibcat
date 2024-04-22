@@ -394,7 +394,7 @@ class MachineLearningClassifier(ClassifierBase):
         # Fetch and use stored model
         model = self._get_info("model")
         probs = np.asarray(model.predict([text_clean]))[0]  # Uncertainties
-        dict_uncertainty = {list_classes[ii]: probs[ii] for ii in range(0, len(list_classes))}  # Dict. version
+        dict_uncertainty = {list_classes[ii]: float(probs[ii]) for ii in range(0, len(list_classes))}  # Dict. version
 
         # Determine best verdict
         max_ind = np.argmax(probs)
