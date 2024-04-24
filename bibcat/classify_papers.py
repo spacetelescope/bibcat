@@ -49,8 +49,8 @@ dir_test = config.folders_TVT[
 
 # do_raise_innererror: if True, will stop if exception encountered;
 # if False, will print error and continue
-do_raise_innererror = False  # CLI option
-do_verbose_text_summary = True  # print input text data summary ; CLI option
+do_raise_innererror = False  # CLI option?
+do_verbose_text_summary = True  # print input text data summary ; CLI option?
 
 
 # Set some overarching global variables
@@ -63,7 +63,7 @@ do_shuffle = True
 # do_real_testdata: If True, will use real papers to test performance;
 # if False, will use fake texts but we will implement the fake data
 # if we need. For now, we keep this variable and only the real text.
-do_real_testdata = True  # can an CLI option
+do_real_testdata = True  # can an CLI option?
 
 # Number of text entries to test the performance for; None for all tests
 max_tests = 1
@@ -95,7 +95,7 @@ dict_texts = fetch_papers(
 # The classifier_name could eventually be chosen in a user run setting or as a CLI option
 # in the future refactoring.
 classifier: ClassifierBase
-classifier_name = "RB"  # CLI option
+classifier_name = "ML"  # CLI option
 
 # Rule-Based Classifier
 classifier_RB = rules.RuleBasedClassifier(which_classifs=None, do_verbose=True, do_verbose_deep=False)
