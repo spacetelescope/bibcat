@@ -1,0 +1,41 @@
+{
+    "science": [
+        "We present HST observations in Figure 4.",
+        "The HST stars are listed in Table 3b.",
+        "Despite our efforts to smooth the data, there are still rings in the HST images.",
+        "See Section 8c for more discussion of the Hubble images.",
+        "The supernovae detected with HST tend to be brighter than initially predicted.",
+        "Our spectra from HST fit well to the standard trend first published in Someone et al. 1990.",
+        "We use the Hubble Space Telescope to build an ultraviolet database of the target stars.",
+        "The blue points (HST) exhibit more scatter than the red points (JWST).",
+        "The benefit, then, is the far higher S/N we achieved in our HST observations.",
+        "Here we employ the Hubble Telescope to observe the edge of the photon-dominated region.",
+        "The black line shows that the region targeted with Hubble has an extreme UV signature."
+    ],
+    "datainfluenced": [
+        "The simulated Hubble data is plotted in Figure 4.",
+        "Compared to the HST observations in Someone et al., our JWST follow-up reached higher S/N.",
+        "We were able to reproduce the luminosities from Hubble using our latest models.",
+        "We overplot Hubble-observed stars from Someone et al. in Figure 3b.",
+        "We built the spectral templates using UV data in the Hubble archive.",
+        "We simulate what our future HST observations will look like to predict the S/N.",
+        "Our work here with JWST is inspired by our earlier HST study published in 2010.",
+        "We therefore use the Hubble statistics from Author et al. to guide our stellar predictions.",
+        "The stars in Figure 3 were plotted based on the HST-fitted trend line in Person et al.",
+        "The final step is to use the HST exposure tool to put our modeled images in context."
+    ],
+    "mention": [
+        "Person et al. used HST to measure the Hubble constant.",
+        "We will present new HST observations in a future work.",
+        "HST is a fantastic instrument that has revolutionized our view of space.",
+        "The Hubble Space Telescope (HST) has its mission center at the STScI.",
+        "We can use HST to power a variety of science in the ultraviolet regime.",
+        "It is not clear when the star will be observable with HST.",
+        "More data can be found and downloaded from the Hubble archive.",
+        "We note that HST can be used to observe the stars as well, at higher S/N.",
+        "However, we ended up using the JWST rather than HST observations in this work.",
+        "We push the analysis of the Hubble component of the dataset to a future study.",
+        "We expect the HST observations to be released in the fall.",
+        "We look forward to any follow-up studies with, e.g., the Hubble Telescope."
+    ]
+}

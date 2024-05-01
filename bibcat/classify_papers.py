@@ -1,55 +1,57 @@
 """
 :title: classify_papers.py
 
-This module fetches test input data for classification, classifies the texts
-into three categories; science, mention, data-influenced. Finally, it produces
-performance results such as a confusion matrix.
+This module fetches test input data for classification, and produces
+performance results such as a confusion matrix (if ML method) and result numpy save files.
+It also can classify streamlined JSON paper text(s) with a given classfier.
 
 - Context: the input full text JSON file (papertrack + ADS full texts) is
   called via config.path_source_data configured in bibcat/config.py and is used for
   training, validating, and testing the trained model.
 
 - Classfication data: this text data is used for prediction (classification),
-  for now, it is fetched from the `bibcat/model/dir_test` folder via
-  the `folder_test` variable below. However, we will need to modify the
-  codebase to  set up a designated folder for operational papers.
+  for now, it is fetched from the `bibcat/data/partitioned_datasets/model_name/dir_test`
+  folder via `config.folders_TVT["test"]` below. However, we will need to modify the
+  codebase to  set up a designated folder of operational papers.
 
 - Run example: python classify_papers.py
 """
 
-import json
 import os
 
 import numpy as np
 
 from bibcat import config
 from bibcat import parameters as params
-from bibcat.core import operator, performance
+from bibcat.core import performance
 from bibcat.core.classifiers import ml, rules
+from bibcat.core.classifiers.textdata import ClassifierBase
+from bibcat.evaluate_basic_performance import generate_performance_evaluation_output
+from bibcat.fetch_papers import fetch_papers
+from bibcat.operate_classifier import operate_classifier
 
 # Fetch filepath for model
 name_model = config.name_model
 dir_model = os.path.join(config.PATH_MODELS, name_model)
+dir_output = os.path.join(config.PATH_OUTPUT, name_model)
+os.makedirs(dir_output, exist_ok=True)
+
 
 # Set directories for fetching test text
-dir_info = dir_model
-folder_test = config.folders_TVT["test"]
-dir_test = os.path.join(dir_model, folder_test)
+
+# `partitioned_datasets/name_model/` folder
+dir_datasets = os.path.join(config.path_partitioned_data, name_model)
+dir_test = config.folders_TVT[
+    "test"
+]  # the directory name "dir_test" in the partitioned_datasets/name_model/ folder # can be an CLI option
 
 # Set parameters for each operator and its internal classifier
 
-# Global parameters
-do_verify_truematch = True  # used in Performance class
-
 # do_raise_innererror: if True, will stop if exception encountered;
 # if False, will print error and continue
-do_raise_innererror = False
-do_verbose_text_summary = False  # print input text data summary
+do_raise_innererror = False  # CLI option?
+do_verbose_text_summary = True  # print input text data summary ; CLI option?
 
-# For uncertainty test
-list_threshold_arrays = [np.linspace(0.5, 0.95, 20)] * 2
-# Mapper for class types; None for no mapper
-class_mapper = params.map_papertypes
 
 # Set some overarching global variables
 
@@ -61,251 +63,122 @@ do_shuffle = True
 # do_real_testdata: If True, will use real papers to test performance;
 # if False, will use fake texts but we will implement the fake data
 # if we need. For now, we keep this variable and only the real text.
-do_real_testdata = True
+do_real_testdata = True  # can an CLI option?
 
 # Number of text entries to test the performance for; None for all tests
-max_tests = 30
+max_tests = 1
 # mode_modif: Mode to use for text processing and generating
 # possible modes: any combination from "skim", "trim", and "anon" or "none"
 mode_modif = "anon"
 # Prepare some Keyword objects
-all_kobjs = params.all_kobjs
 lookup = "HST"
 
 
-# Set two operators: machine learning (ML) and rule-based (RB)
-# - buffer: the number of sentences to include within paragraph around
-#           each sentence with target terms
-# - threshold: Uncertainty threshold
-# - mapper : Mapper to mask classifications; None if no masking
+# threshold: Uncertainty threshold
+threshold = 0.70
+# buffer: the number of sentences to include within paragraph around each sentence with target terms
+buffer = 0
+# For uncertainty test
+threshold_array = np.linspace(0.5, 0.95, 20)
 
-# For operator ML
-mapper_ML = class_mapper
-threshold_ML = 0.70
-buffer_ML = 0
+# Fetching real JSON paper text
+dict_texts = fetch_papers(
+    dir_datasets=dir_datasets,
+    dir_test=dir_test,
+    do_shuffle=do_shuffle,
+    do_verbose_text_summary=do_verbose_text_summary,
+    max_tests=max_tests,
+)
 
-# For operator RL
-mapper_RB = class_mapper
-threshold_RB = 0.70
-buffer_RB = 0
+# We will choose which operator/method to classify the papers and evaluate performance below.
 
-# Gather parameters into lists
-list_mappers = [mapper_ML, mapper_RB]
-list_thresholds = [threshold_ML, threshold_RB]
-list_buffers = [buffer_ML, buffer_RB]
+# The classifier_name could eventually be chosen in a user run setting or as a CLI option
+# in the future refactoring.
+classifier: ClassifierBase
+classifier_name = "ML"  # CLI option
 
-# perpare papers to test on
-# For use of real papers from test dataset to test on
-if do_real_testdata:
-    # Load information for processed bibcodes reserved for testing
-    dict_TVTinfo = np.load(os.path.join(dir_info, "dict_TVTinfo.npy"), allow_pickle=True).item()
-    list_test_bibcodes = [key for key in dict_TVTinfo if (dict_TVTinfo[key]["folder_TVT"] == folder_test)]
+# Rule-Based Classifier
+classifier_RB = rules.RuleBasedClassifier(which_classifs=None, do_verbose=True, do_verbose_deep=False)
 
-    # Load the original data
-    with open(config.path_source_data, "r") as openfile:
-        dataset = json.load(openfile)
-    # Extract text information for the bibcodes reserved for testing
-    # Data for test set
-    list_test_indanddata_raw = [
-        (ii, dataset[ii]) for ii in range(0, len(dataset)) if (dataset[ii]["bibcode"] in list_test_bibcodes)
-    ]
-    # Shuffle, if requested
-    if do_shuffle:
-        np.random.shuffle(list_test_indanddata_raw)
 
-    # Extract target number of test papers from the test bibcodes
-    if max_tests is not None:  # Fetch subset of tests
-        list_test_indanddata = list_test_indanddata_raw[0:max_tests]
-    else:  # Use all tests
-        list_test_indanddata = list_test_indanddata_raw
-    # Process the text input into dictionary format for inputting into the codebase
-    dict_texts = {}  # To hold formatted text entries
-    for ii in range(0, len(list_test_indanddata)):
-        curr_ind = list_test_indanddata[ii][0]
-        curr_data = list_test_indanddata[ii][1]
-        # Convert this data entry into dictionary with: key:text,id,bibcode,
-        # mission structure
-        curr_info = {"text": curr_data["body"], "id": str(curr_ind), "bibcode": curr_data["bibcode"], "missions": {}}
-        # Iterate through missions for this paper
-        for curr_mission in curr_data["class_missions"]:
-            # Iterate through declared Keyword objects
-            for curr_kobj in all_kobjs:
-                curr_name = curr_kobj.get_name()
-                # Store mission data under keyword name, if applicable
-                if curr_kobj.is_keyword(curr_mission):
-                    curr_info["missions"][curr_name] = {
-                        "mission": curr_name,
-                        "class": curr_data["class_missions"][curr_mission]["papertype"],
-                    }
-                # Otherwise, store that this mission was not detected for this text
-                else:
-                    curr_info["missions"][curr_name] = {"mission": curr_name, "class": config.verdict_rejection}
-        # Store this data entry
-        dict_texts[str(curr_ind)] = curr_info
-
-    # Print some notes about the testing data
-    print(f"Number of texts in text set: {dict_texts}")
-    print("")
-    if do_verbose_text_summary:
-        for key in dict_texts:
-            print(f"Entry: {key}")
-            print(f"ID: {dict_texts[key]['id']}")
-            print(f"Bibcode: {dict_texts[key]['bibcode']}")
-            print(f"Missions: {dict_texts[key]['missions']}")
-            print(f"Start of text:\n{dict_texts[key]['text'][0:500]}")
-            print("-\n")
-
-# Store texts for each operator and its internal classifier
-# For operator ML, Dictionary of texts to classify
-dict_texts_ML = dict_texts
-# For operator RL, Dictionary of texts to classify
-dict_texts_RB = dict_texts
-# Gather into list
-list_dict_texts = [dict_texts_ML, dict_texts_RB]
-
-# Create a list of classifiers
-# This can be modified to use whatever classifiers you'd like.
-# initialize classifiers by loading a previously trained ML model
+# ML model file location
 filepath_model = os.path.join(dir_model, (name_model + ".npy"))
 fileloc_ML = os.path.join(dir_model, (config.tfoutput_prefix + name_model))
+
+# initialize classifiers
+# Machine-Learning Classifier
 classifier_ML = ml.MachineLearningClassifier(filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True)
 
-# Load a rule-based classifier
-classifier_RB = rules.RuleBasedClassifier()
 
+if classifier_name == "ML":
+    classifier = classifier_ML
+elif classifier_name == "RB":
+    classifier = classifier_RB
+else:
+    raise ValueError(
+        "An invalid value! Choose either 'ML' for the machine learning classifier or 'RB' for the rule-based classifier!"
+    )
 
-# Initialize operators by loading models into instances of the Operator class
-
-# The machine learning operator
-operator_ML = operator.Operator(
-    classifier=classifier_ML,
-    mode=mode_modif,
-    keyword_objs=all_kobjs,
-    name="Operator_ML",
-    do_verbose=True,
-    load_check_truematch=True,
-    do_verbose_deep=False,
-)
-# The rule-based operator
-operator_RB = operator.Operator(
-    classifier=classifier_RB,
-    name="Operator_RB",
-    mode=mode_modif,
-    keyword_objs=all_kobjs,
-    do_verbose=True,
-    do_verbose_deep=False,
-)
-# Feel free to add more/less operators here.
-list_operators = [operator_ML, operator_RB]
-
-
-# Run the operators
-# The machine learning operator
-results_ML = operator_ML.classify(
-    text=dict_texts_ML,
-    lookup=lookup,
-    buffer=buffer_ML,
-    modif=mode_modif,
-    threshold=threshold_ML,
-    do_raise_innererror=False,
-    do_check_truematch=True,
-    do_verbose_deep=False,
-)
-
-# The rule-based operator
-results_RB = operator_RB.classify(
-    text=dict_texts_RB,
-    lookup=lookup,
-    buffer=buffer_RB,
-    modif=mode_modif,
-    threshold=threshold_RB,
-    do_raise_innererror=False,
-    do_check_truematch=True,
-    do_verbose_deep=False,
-)
-
-# Print the results
-# Print the text and classes as a reminder
-# print("Text:\n\"\n{0}\n\"\n".format(dict_texts))
-print(f"Lookup: {lookup}\n")
-
-# The machine learning results
-print("> Machine learning results:")
-print(f'Paragraph:\n"\n{results_ML["modif"]}\n"')
-print(f"Verdict: {results_ML['verdict']}")
-print(f"Probabilities: {results_ML['uncertainty']}")
-print("-\n")
-
-# The rule-based results
-print("> Rule-based results:")
-print(f'Paragraph:\n"\n{results_RB["modif"]}\n"')
-print(f"Verdict: {results_RB['verdict']}")
-print(f"Probabilities: {results_RB['uncertainty']}")
-print("-\n")
-
-
-# Performance tests:
-# - Basic: We generate confusion matrices for the set of Operators
-#          (containing the different classifiers).
-# - Uncertainty: We plot performance as a function of uncertainty level
-#                for the set of Operators.
-
+# Performance tests: This can be an CLI option.
 # Create an instance of the Performance class
 performer = performance.Performance()
 
 # Parameters for this evaluation
 # Root name of the file within which to store the performance evaluation output
-fileroot_evaluation = "test_eval_basic"
+fileroot_evaluation = f"test_eval_basic_{classifier_name}"
 # Root name of the file within which to store misclassified text information
-fileroot_misclassif = "test_misclassif_basic"
+fileroot_misclassif = f"test_misclassif_basic_{classifier_name}"
+# Root name of the file within which to store classified result information
+fileroot_class_results = f"classification_results_{classifier_name}"
+
 figsize = (20, 12)
 
-# Run the pipeline for a basic evaluation of model performance
-performer.evaluate_performance_basic(
-    operators=list_operators,
-    dicts_texts=list_dict_texts,
-    mappers=list_mappers,
-    thresholds=list_thresholds,
-    buffers=list_buffers,
+# Run the pipeline for a basic evaluation and an evaluation of model performance as a function of uncertainty
+generate_performance_evaluation_output(
+    classifier_name=classifier_name,
+    classifier=classifier,
+    dict_texts=dict_texts,
     is_text_processed=False,
-    do_verify_truematch=do_verify_truematch,
-    do_raise_innererror=do_raise_innererror,
-    do_save_evaluation=True,
-    do_save_misclassif=True,
-    filepath_output=config.PATH_OUTPUT,
+    mapper=params.map_papertypes,
+    keyword_objs=params.all_kobjs,
+    mode_modif=mode_modif,
+    buffer=buffer,
+    threshold=threshold,
+    threshold_array=threshold_array,
+    print_freq=1,
+    filepath_output=dir_output,
     fileroot_evaluation=fileroot_evaluation,
     fileroot_misclassif=fileroot_misclassif,
-    print_freq=1,
+    fileroot_confusion_matrix_plot=f"performance_confmatr_basic_{classifier_name}.png",
+    fileroot_uncertainty_plot=f"performance_grid_uncertainty_{classifier_name}.png",
+    figsize=figsize,
+    load_check_truematch=True,
+    do_save_evaluation=True,
+    do_save_misclassif=True,
+    do_raise_innererror=False,
     do_verbose=True,
     do_verbose_deep=False,
-    figsize=figsize,
 )
 
-# Parameters for this evaluation
-# Root name of the file within which to store the performance evaluation output
-fileroot_evaluation = "test_eval_uncertainty"
-# Root name of the file within which to store misclassified text information
-fileroot_misclassif = "test_misclassif_uncertainty"
-figsize = (40, 12)
 
-# Run the pipeline for an evaluation of model performance
-# as a function of uncertainty
-performer.evaluate_performance_uncertainty(
-    operators=list_operators,
-    dicts_texts=list_dict_texts,
-    mappers=list_mappers,
-    threshold_arrays=list_threshold_arrays,
-    buffers=list_buffers,
-    is_text_processed=False,
-    do_verify_truematch=do_verify_truematch,
-    do_raise_innererror=do_raise_innererror,
-    do_save_evaluation=True,
-    do_save_misclassif=True,
-    filepath_output=config.PATH_OUTPUT,
-    fileroot_evaluation=fileroot_evaluation,
-    fileroot_misclassif=fileroot_misclassif,
+# Operation: classifying paper(s)
+# Currently it pulls the papers from in test folder (`bibcat/data/partitioned_datasets/model_name/dir_test`)
+# but we will have to change a new text feed directory for operation.
+
+operate_classifier(
+    classifier_name=classifier_name,
+    classifier=classifier,
+    dict_texts=dict_texts,
+    keyword_objs=params.all_kobjs,
+    mode_modif=mode_modif,
+    buffer=buffer,
+    threshold=threshold,
     print_freq=25,
+    filepath_output=dir_output,
+    fileroot_class_results=fileroot_class_results,
+    is_text_processed=False,
+    load_check_truematch=True,
     do_verbose=True,
     do_verbose_deep=False,
-    figsize=figsize,
+    do_raise_innererror=False,
 )

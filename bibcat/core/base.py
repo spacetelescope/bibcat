@@ -27,11 +27,11 @@ The primary methods and use cases of _Base include:
 
 import re
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
 import spacy
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from nltk.corpus import wordnet
+from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore
+from nltk.corpus import wordnet  # type: ignore
 
 import bibcat.config as config
 
@@ -112,6 +112,7 @@ class Base:
         WARNING! This method is *not* meant to be used directly by users.
         Purpose: Assembles noun chunks around any keyword terms within given text.
         """
+
         # dict_ambigs = self._process_database_ambig(keyword_objs=keyword_objs)
         # lookup_ambigs = dict_ambigs["lookup_ambigs"]
 
@@ -175,7 +176,7 @@ class Base:
                     # Keep word if relevant p.o.s.
                     if any(tmp_list):
                         curr_wordtext.insert(0, curr_sent[ii].text)
-                        first_ind = ii  # Update latest index
+                        # first_ind = ii  # Update latest index
                     #
                     # Otherwise, break and end this makeshift wordchunk
                     else:
@@ -548,8 +549,7 @@ class Base:
         tmp_sents = list(nlp(str(text)).sents)
         if len(list_wordchunks) == 0:
             errstr = (
-                "No final wordchunks!: {0}\n{1}\nText: '{2}'".format(list_wordchunks, list_wordchunks_raw, text)
-                + "\nAll words and p.o.s.:\n"
+                "No final wordchunks!: {0}\nText: '{1}'".format(list_wordchunks, text) + "\nAll words and p.o.s.:\n"
             )
             for aa in range(0, len(tmp_sents)):
                 for bb in range(0, len(tmp_sents[aa])):
@@ -1401,7 +1401,7 @@ class Base:
         )
 
         # Remove spaces between capital+numeric names
-        text = re.sub(r"([A-Z]+) ([0-9]+)([0-9]|[a-z])+", r"\1\2\3".format(config.placeholder_numeric), text)
+        text = re.sub(r"([A-Z]+) ([0-9]+)([0-9]|[a-z])+", r"\1\2\3{}".format(config.placeholder_numeric), text)
 
         # Remove any new excessive whitespace and punctuation spaces
         text = self._cleanse_text(text=text, do_streamline_etal=True)
