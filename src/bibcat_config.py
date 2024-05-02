@@ -396,8 +396,8 @@ dict_tree_possible_values = {"allmatter":["is_pron_1st", "is_etal", "is_keyword"
 thres_category_fracdiff = 0.1
 thres_verbsimilaritymain = 0.75 #25 #Threshold of similarity to say two verbs are similar
 thres_verbsimilarityhigh = 0.75 #Threshold of similarity to say two verbs are similar
-thres_rarity = 2 #2 #3 #None #5 #Number of occurrences of a rule before deemed a statistically significant number of occurrences
-thres_purity = 0.7 #0.0 #Rule must have probability entry of at least this value to be considered a proper rule
+thres_rarity = 0 #2 #2 #3 #None #5 #Number of occurrences of a rule before deemed a statistically significant number of occurrences
+thres_purity = 0 #0.7 #0.0 #Rule must have probability entry of at least this value to be considered a proper rule
 #
 #Grammar nest generation
 conv_pos_fromtreetonest = {"PREPOSITION_SUBJECT":"subjectmatter", "SUBJECT":"subjectmatter", "DIRECT_OBJECT":"objectmatter", "PREPOSITION_OBJECT":"objectmatter"} #Convert from tree to nest terminology

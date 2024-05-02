@@ -549,6 +549,7 @@ class TestBase(unittest.TestCase):
                     "Kepler's law":{"lookup":"Kepler", "bool":False},
                     "Kepler observations":{"lookup":"Kepler", "bool":True},
                     "Observations of Kepler-123":{"lookup":"Kepler", "bool":False},
+                    "We used the Kepler satellite":{"lookup":"Kepler", "bool":True},
                     "We observed with Hubble 2 days ago.":{"lookup":"Hubble", "bool":True},
                     "K2 database":{"lookup":"K2", "bool":True},
                     "K2-123 star":{"lookup":"K2", "bool":False},
@@ -674,52 +675,6 @@ class TestBase(unittest.TestCase):
             #
         #
         #Test streamlining for text with citations
-        """
-        def old_2024_03_13_beforecitationallowedformatupdates_test_streamline_phrase__citations(self):
-            #Prepare text and answers for test
-            dict_tests = {
-            "Somename (2013) published  in SJ.":
-                "{0} published in SJ.".format(placeholder_author),
-            "Hubble (1953) was a landmark paper (for that subfield).":
-                "{0} was a landmark paper (for that subfield).".format(placeholder_author),
-            "See also: Kepler [2023], Hubble & Author (2020), Author, Somename, and Kepler et al. [1990];":
-                "See also: {0}, {0}, {0};".format(placeholder_author),
-            "Also Author papers (Author et al. 1997, 2023),":
-                "Also Author papers,",
-            "(Someone, Author, Somename et al. 1511; 1612)":
-                "",
-            "(Someone, Author, and Somename et al. 1913,15)":
-                "",
-            "(Author et al. 80; Somename & Author 2012)":
-                "",
-            "McThatname, Kepler, & Othername [1993] (see our paper)":
-                "{0} (see our paper)".format(placeholder_author),
-            "{Othername et al. 1991} (see Hubble observations)":
-                "(see Hubble observations)"
-            }
-
-            #Prepare and run tests for bibcat class instance
-            testbase = bibcat._Base()
-            #
-            #Check answers
-            for key1 in dict_tests:
-                try:
-                    answer = dict_tests[key1]
-                    test_res = testbase._streamline_phrase(text=key1)
-                    self.assertEqual(test_res, answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n"
-                            .format(test_res, answer, key1))
-                    print("---")
-                    print("")
-                    #
-                    self.assertEqual(test_res, answer)
-            #
-        #"""
-        #
-        #Test streamlining for text with citations
         def test_streamline_phrase__citations(self):
             #2024-03-25: Modified+Removed some tests; code no longer collapses citations with > 2 names, since did not distinguish e.g. 'For Hubble, Names et al. (2024) was ...' which was a false-negative
 
@@ -787,78 +742,6 @@ class TestBase(unittest.TestCase):
                     self.assertEqual(test_res, answer)
             #
         #
-        #Test streamlining for text with numerics
-        """BLOCKED: 2024-03-25: This codebase functionality was commented out.
-        def test_streamline_phrase__numerics(self):
-            #Prepare text and answers for test
-            dict_tests = {
-            "There were 200-300 observations done of star AB100+300.":
-                "There were {1} observations done of star AB{0}.".format(placeholder_number, placeholder_numeric),
-            "Consider planet J9385-193 and 2MASS293-04-331+101.":
-                "Consider planet J{0} and 2MASS{0}.".format(placeholder_number),
-            "Disk HD 193283-10, Kepler-234c, and Planet 312b as well.":
-                "Disk HD{0}, Kepler {0}, and Planet {0} as well.".format(placeholder_number),
-            "The latter had ~450 - 650 data points in total.":
-                "The latter had {1} data points in total.".format(placeholder_number, placeholder_numeric)
-            }
-
-            #Prepare and run tests for bibcat class instance
-            testbase = bibcat._Base()
-            #
-            #Check answers
-            for key1 in dict_tests:
-                try:
-                    answer = dict_tests[key1]
-                    test_res = testbase._streamline_phrase(text=key1,
-                                                        do_streamline_etal=True)
-                    self.assertEqual(test_res, answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n"
-                            .format(test_res, answer, key1))
-                    print("---")
-                    print("")
-                    #
-                    self.assertEqual(test_res, answer)
-            #
-        #"""
-        #Test streamlining for text with websites
-        """BLOCKED: 2024-03-25: This codebase functionality was commented out.
-        def test_streamline_phrase__websites(self):
-            #Prepare text and answers for test
-            dict_tests = {
-            "Please check out: www.stsci.edu/home for more info.":
-                "Please check out: {0} for more info.".format(placeholder_website),
-            "Consider also https://jwst.edu/,":
-                "Consider also {0},".format(placeholder_website),
-            "http:hst.edu/lookup=wow?; public.stsci.edu,":
-                "{0}; {0},".format(placeholder_website),
-            "   www.roman-telescope.stsci.edu/main/about/. ":
-                "{0}.".format(placeholder_website)
-            }
-
-            #Prepare and run tests for bibcat class instance
-            testbase = bibcat._Base()
-            #
-            #Check answers
-            for key1 in dict_tests:
-                try:
-                    answer = dict_tests[key1]
-                    test_res = testbase._streamline_phrase(text=key1,
-                                                        do_streamline_etal=True)
-                    self.assertEqual(test_res, answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n"
-                            .format(test_res, answer, key1))
-                    print("---")
-                    print("")
-                    #
-                    self.assertEqual(test_res, answer)
-            #
-        #"""
     #
     #For tests of _is_pos_word:
     if True:
@@ -1281,7 +1164,7 @@ class TestBase(unittest.TestCase):
         #
     #
 #"""
-#"""
+"""
 #class: TestKeyword
 #Purpose: Testing the Keyword class
 class TestKeyword(unittest.TestCase):
@@ -1509,7 +1392,7 @@ class TestKeyword(unittest.TestCase):
         #
     #
 #"""
-#"""
+"""
 #class: TestPaper
 #Purpose: Testing the Paper class
 class TestPaper(unittest.TestCase):
@@ -1683,50 +1566,6 @@ class TestPaper(unittest.TestCase):
         #
     #
 #"""
-#For tests of _verify_acronyms:
-"""BLOCKED: 2024-03-26: This codebase functionality was commented out.
-if True:
-    #Test search for possible meanings of given acronyms
-    def test__verify_acronyms__variety(self):
-        #Prepare text and answers for test
-        dict_acts = {
-        "The Hubble Space Telescope is a telescope often referred to as H.S.T. or HST.":{"kobj":kobj_hubble, "matches":["Hubble Space Telescope"]},
-        "The Heralding of the Swan Trumphets will be showing in the Healing Song Theatre Plaza next week.":{"kobj":kobj_hubble, "matches":["Heralding of the Swan Trumphets", "Healing Song Theatre"]},
-        "Hello. Space Tyrants is showing in the theatre next door.":{"kobj":kobj_hubble, "matches":[]},
-        "H. Space Tyrants is showing in the theatre next door.":{"kobj":kobj_hubble, "matches":[]},
-        "H S T is showing in the theatre next door.":{"kobj":kobj_hubble, "matches":[]},
-        "Hijinks of Space Tyrants is showing in the theatre next door.":{"kobj":kobj_hubble, "matches":["Hijinks of Space Tyrants"]},
-        "Hidden space tyrants is showing in the theatre next door. H. S. TheName will be seeing it.":{"kobj":kobj_hubble, "matches":[]}
-        }
-        #
-
-        #Determine and check answers
-        for phrase in dict_acts:
-            curr_kobj = dict_acts[phrase]["kobj"]
-            curr_answer = dict_acts[phrase]["matches"]
-
-            #Prepare and run test for bibcat class instance
-            testbase = bibcat.Paper(text=phrase, keyword_objs=[kobj_hubble],
-                                    do_check_truematch=False)
-            test_res = testbase._verify_acronyms(keyword_obj=curr_kobj)
-            #
-
-            #Check answer
-            try:
-                self.assertEqual(test_res, curr_answer)
-            except AssertionError:
-                print("")
-                print(">")
-                print("Text: {2}\nTest answer: {0}\nAct. answer: {1}"
-                        .format(test_res, curr_answer, phrase))
-                print("---")
-                print("")
-                #
-                self.assertEqual(test_res, curr_answer)
-            #
-        #
-    #
-#"""
 #"""
 #"""
 #class: TestGrammar
@@ -1734,6 +1573,7 @@ if True:
 class TestGrammar(unittest.TestCase):
     #For tests of generating and fetching modifs:
     if True:
+        """
         #Test modif generation for basic example text
         def test__modifs__basic(self):
             #Prepare text and answers for test
@@ -1754,7 +1594,7 @@ class TestGrammar(unittest.TestCase):
                 curr_kobj = dict_acts[phrase]["kobj"]
 
                 #Prepare and run test for bibcat class instance
-                testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
+                testbase = bibcat.Grammar(text=phrase, keyword_obj=curr_kobj,
                                         do_check_truematch=True)
                 testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
@@ -1804,7 +1644,7 @@ class TestGrammar(unittest.TestCase):
                 curr_kobj = dict_acts[phrase]["kobj"]
 
                 #Prepare and run test for bibcat class instance
-                testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
+                testbase = bibcat.Grammar(text=phrase, keyword_obj=curr_kobj,
                                         do_check_truematch=True,
                                         do_verbose=False)
                 testbase.run_modifications(which_modes=test_which_modes)
@@ -1855,7 +1695,7 @@ class TestGrammar(unittest.TestCase):
                 curr_kobj = dict_acts[phrase]["kobj"]
 
                 #Prepare and run test for bibcat class instance
-                testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
+                testbase = bibcat.Grammar(text=phrase, keyword_obj=curr_kobj,
                                         do_check_truematch=True)
                 testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
@@ -1905,7 +1745,7 @@ class TestGrammar(unittest.TestCase):
                 curr_kobj = dict_acts[phrase]["kobj"]
 
                 #Prepare and run test for bibcat class instance
-                testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
+                testbase = bibcat.Grammar(text=phrase, keyword_obj=curr_kobj,
                                         do_check_truematch=True,
                                         do_verbose=False)
                 testbase.run_modifications(which_modes=test_which_modes)
@@ -1956,7 +1796,7 @@ class TestGrammar(unittest.TestCase):
                 curr_kobj = dict_acts[phrase]["kobj"]
 
                 #Prepare and run test for bibcat class instance
-                testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
+                testbase = bibcat.Grammar(text=phrase, keyword_obj=curr_kobj,
                                         do_check_truematch=True)
                 testbase.run_modifications(which_modes=test_which_modes)
                 #Iterate through modes
@@ -2006,7 +1846,7 @@ class TestGrammar(unittest.TestCase):
                 curr_kobj = dict_acts[phrase]["kobj"]
 
                 #Prepare and run test for bibcat class instance
-                testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
+                testbase = bibcat.Grammar(text=phrase, keyword_obj=curr_kobj,
                                         do_check_truematch=True,
                                         do_verbose=False)
                 testbase.run_modifications(which_modes=test_which_modes)
@@ -2057,7 +1897,7 @@ class TestGrammar(unittest.TestCase):
                 curr_kobj = dict_acts[phrase]["kobj"]
 
                 #Prepare and run test for bibcat class instance
-                testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
+                testbase = bibcat.Grammar(text=phrase, keyword_obj=curr_kobj,
                                         do_check_truematch=True,
                                         do_verbose=False)
                 testbase.run_modifications(which_modes=test_which_modes)
@@ -2108,7 +1948,7 @@ class TestGrammar(unittest.TestCase):
                 curr_kobj = dict_acts[phrase]["kobj"]
 
                 #Prepare and run test for bibcat class instance
-                testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
+                testbase = bibcat.Grammar(text=phrase, keyword_obj=curr_kobj,
                                         do_check_truematch=True,
                                         do_verbose=False)
                 testbase.run_modifications(which_modes=test_which_modes)
@@ -2159,7 +1999,7 @@ class TestGrammar(unittest.TestCase):
                 curr_kobj = dict_acts[phrase]["kobj"]
 
                 #Prepare and run test for bibcat class instance
-                testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
+                testbase = bibcat.Grammar(text=phrase, keyword_obj=curr_kobj,
                                         do_check_truematch=True,
                                         do_verbose=False)
                 testbase.run_modifications(which_modes=test_which_modes)
@@ -2210,7 +2050,7 @@ class TestGrammar(unittest.TestCase):
                 curr_kobj = dict_acts[phrase]["kobj"]
 
                 #Prepare and run test for bibcat class instance
-                testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
+                testbase = bibcat.Grammar(text=phrase, keyword_obj=curr_kobj,
                                         do_check_truematch=True,
                                         do_verbose=False)
                 testbase.run_modifications(which_modes=test_which_modes)
@@ -2240,8 +2080,60 @@ class TestGrammar(unittest.TestCase):
                     #
                 #
             #
-        #
+        #"""
+        #"""
+        #Test modif generation for example text with critical punctuation
+        def test__modifs__CUSTOM(self):
+            quicktext = (
+                "!"
+                )
+            #Prepare text and answers for test
+            dict_acts = {
+            quicktext:
+                {"kobj":kobj_kepler,
+                "none":"!"
+                }
+            }
+            #
+
+            #Determine and check answers
+            for phrase in dict_acts:
+                curr_kobj = dict_acts[phrase]["kobj"]
+
+                #Prepare and run test for bibcat class instance
+                testbase = bibcat.Grammar(text=phrase, keyword_obj=curr_kobj,
+                                        do_check_truematch=True,
+                                        do_verbose=False)
+                testbase.run_modifications(which_modes=test_which_modes)
+                #Iterate through modes
+                for key1 in dict_acts[phrase]:
+                    #Skip over non-mode keys
+                    if (key1 in ["kobj"]):
+                        continue
+                    #Otherwise, check generated modif
+                    test_res = testbase.get_modifs()[key1]
+                    curr_answer = dict_acts[phrase][key1]
+                    #
+
+                    #Check answer
+                    try:
+                        self.assertEqual(test_res, curr_answer)
+                    except AssertionError:
+                        print("")
+                        print(">")
+                        print(("Text: {2}\nMode: {3}\n\nTest answer: {0}\n"
+                                +"\nAct. answer: {1}\n")
+                                .format(test_res, curr_answer, phrase, key1))
+                        print("---")
+                        print("")
+                        #
+                        self.assertEqual(test_res, curr_answer)
+                    #
+                #
+            #
+        #"""
     #
+    """
     #For tests of clausal generation
     if True:
         #Test clausal generation for a variety of example text
@@ -2269,7 +2161,7 @@ class TestGrammar(unittest.TestCase):
             #Determine and check answers
             for phrase in dict_acts:
                 #Prepare and run test for bibcat class instance
-                testbase = bibcat.Grammar(text=phrase, keyword_obj=kobj_hubble,
+                testbase = bibcat.Grammar(text=phrase, keyword_obj=curr_kobj,
                                         do_check_truematch=True)
                 testbase.run_modifications(which_modes=["none"])
                 forest = testbase._get_info("forest")
@@ -2293,9 +2185,9 @@ class TestGrammar(unittest.TestCase):
                 #
             #
         #
-    #
+    #"""
 #"""
-#"""
+"""
 #class: TestOperator
 #Purpose: Testing the Operator class
 class TestOperator(unittest.TestCase):

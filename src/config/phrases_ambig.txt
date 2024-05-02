@@ -40,7 +40,7 @@ Kepler	Kepler size	FALSE
 Kepler	Kepler SNe	FALSE
 Kepler	Kepler subgiant	FALSE
 Kepler	Kepler superflare	FALSE
-Kepler	Kepler system	FALSE
+Kepler	Kepler system	TRUE
 Kepler	Kepler transit	FALSE
 Kepler	Kepler velocity	FALSE
 Kepler	Koester Kepler	FALSE

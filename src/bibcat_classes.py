@@ -476,7 +476,8 @@ class _Base():
 
         #Extract info from ambig. database
         list_kw_ambigs = dict_ambigs["all_kw_ambigs"]
-        list_exp_ambigs = dict_ambigs["all_exp_ambigs"]
+        list_exp_exact_ambigs = dict_ambigs["all_exp_exact_ambigs"]
+        list_exp_meaning_ambigs = dict_ambigs["all_exp_meaning_ambigs"]
         list_bool_ambigs = dict_ambigs["all_bool_ambigs"]
         list_text_ambigs = dict_ambigs["all_text_ambigs"]
         lookup_ambigs = dict_ambigs["lookup_ambigs"]
@@ -666,11 +667,11 @@ class _Base():
             curr_inner_kw = tmp_res["keywords"] #Matched keywords
             #
 
-            #Extract all ambig. phrases+substrings that match to this meaning
+            #Extract all ambig. phrases+substrings that match to this *wording*
             set_matches_raw = [{"ind":jj, "text_database":list_text_ambigs[jj],
                                 "text_wordchunk":curr_chunk_text,
-                                "exp":list_exp_ambigs[jj],
-                                "matcher":re.search(list_exp_ambigs[jj],
+                                "exp":list_exp_exact_ambigs[jj],
+                                "matcher":re.search(list_exp_exact_ambigs[jj],
                                             curr_meaning, flags=re.IGNORECASE),
                                 "bool":list_bool_ambigs[jj]}
                                 for jj in range(0, num_ambigs)
@@ -680,9 +681,30 @@ class _Base():
             #
             #Print some notes
             if do_verbose_deep:
-                print("Set of matches assembled from ambig. database:")
+                print("Set of exact matches assembled from ambig. database:")
                 for item1 in set_matches_raw:
                     print(item1)
+            #
+
+            #Extract all ambig. phrases+substrings that match to this *meaning*
+            if (len(set_matches) == 0): #If no direct matches
+                set_matches_raw = [
+                                {"ind":jj, "text_database":list_text_ambigs[jj],
+                                "text_wordchunk":curr_chunk_text,
+                                "exp":list_exp_meaning_ambigs[jj],
+                                "matcher":re.search(list_exp_meaning_ambigs[jj],
+                                            curr_meaning, flags=re.IGNORECASE),
+                                "bool":list_bool_ambigs[jj]}
+                                for jj in range(0, num_ambigs)
+                                if (list_kw_ambigs[jj] in curr_inner_kw)]
+                set_matches = [item for item in set_matches_raw
+                                if (item["matcher"] is not None)]
+                #
+                #Print some notes
+                if do_verbose_deep:
+                    print("Set of meanings assembled from ambig. database:")
+                    for item1 in set_matches_raw:
+                        print(item1)
             #
 
             #Throw error if no match found
@@ -1538,7 +1560,8 @@ class _Base():
 
         #Initialize containers for processed ambig. data
         list_kw_ambigs = []
-        list_exp_ambigs = []
+        list_exp_exact_ambigs = []
+        list_exp_meaning_ambigs = []
         list_bool_ambigs = []
         list_text_ambigs = []
 
@@ -1561,15 +1584,17 @@ class _Base():
             #
 
             #Formulate current regular expression
-            curr_roots = self._extract_core_from_phrase(phrase_NLP=curr_NLP,
+            curr_extraction =self._extract_core_from_phrase(phrase_NLP=curr_NLP,
                                 do_verbose=do_verbose, do_skip_useless=False,
-                                keyword_objs=keyword_objs)["roots"]
+                                keyword_objs=keyword_objs)
+            curr_roots = curr_extraction["roots"]
             #This regex version can be very slow... replaced with version below
             #curr_exp = (r"("
             #            + r")( .*)* (".join([(r"(\b"+r"\b|\b".join(item)+r"\b)")
             #                            for item in curr_roots])
             #            + r")") #Convert to reg. exp. for substring search later
-            curr_exp = (r"("
+            curr_exp_exact = r"\b("+re.escape(curr_text)+r")\b"
+            curr_exp_meaning = (r"("
                         + r") (\w+ )*(".join([(r"\b("+r"|".join(item)+r")\b")
                                         for item in curr_roots])
                         + r")") #Convert to reg. exp. for substring search later
@@ -1586,9 +1611,12 @@ class _Base():
             #Store the extracted data for each keyword
             tmp_num = len(curr_kw)
             list_kw_ambigs += curr_kw
-            list_exp_ambigs += [re.sub(str_anymatch_ambig, curr_kw[jj],
-                                        curr_exp, flags=re.IGNORECASE)
-                                for jj in range(0, tmp_num)]
+            list_exp_exact_ambigs += [re.sub(str_anymatch_ambig, curr_kw[jj],
+                                        curr_exp_exact, flags=re.IGNORECASE)
+                                        for jj in range(0, tmp_num)]
+            list_exp_meaning_ambigs += [re.sub(str_anymatch_ambig, curr_kw[jj],
+                                        curr_exp_meaning, flags=re.IGNORECASE)
+                                        for jj in range(0, tmp_num)]
             list_bool_ambigs += [curr_bool]*tmp_num
             list_text_ambigs += [curr_text]*tmp_num
         #
@@ -1596,7 +1624,8 @@ class _Base():
         #Gather all of the results into a dictionary
         dict_ambigs = {"lookup_ambigs":lookup_ambigs,
                         "all_kw_ambigs":list_kw_ambigs,
-                        "all_exp_ambigs":list_exp_ambigs,
+                        "all_exp_exact_ambigs":list_exp_exact_ambigs,
+                        "all_exp_meaning_ambigs":list_exp_meaning_ambigs,
                         "all_bool_ambigs":list_bool_ambigs,
                         "all_text_ambigs":list_text_ambigs}
         #
@@ -7564,12 +7593,12 @@ class Classifier_Rules(_Classifier):
                 #
                 #Establish rarity fraction for this verdict
                 if (thres_rarity is not None):
-                    curr_rarity = min([(curr_tot / thres_rarity), 1])
-                    curr_prob = (((curr_prob - val_baseline)*curr_rarity)
-                                + val_baseline #min([curr_prob, val_baseline])
-                                ) #Scaled between freq. and rarity
-                    #if (curr_tot < thres_rarity):
-                    #    curr_prob = 0
+                    #curr_rarity = min([(curr_tot / thres_rarity), 1])
+                    #curr_prob = (((curr_prob - val_baseline)*curr_rarity)
+                    #            + val_baseline #min([curr_prob, val_baseline])
+                    #            ) #Scaled between freq. and rarity
+                    if (curr_tot < thres_rarity):
+                        curr_prob = 0
                 #
                 #Store final uncertainty
                 dict_stats[curr_key]["prob_"+curr_verdict] = curr_prob
