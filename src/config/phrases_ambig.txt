@@ -2,8 +2,8 @@
 #Kepler Phrases
 Kepler	Campos Kepler	FALSE
 Kepler	Castanheira Kepler	FALSE
-#Kepler	Kepler-000	FALSE
-Kepler	Kepler 000	FALSE
+Kepler	Kepler-000	FALSE
+#Kepler	Kepler 000	FALSE
 Kepler	Kepler C000	FALSE
 Kepler	Kepler type	FALSE
 Kepler	Kepler activity	FALSE
@@ -73,8 +73,8 @@ K2	−K2 −	FALSE
 K2	iso−K2 −	FALSE
 K2	k2fov	FALSE
 K2	k2phot	FALSE
-#K2	K2-000	FALSE
-K2	K2 000	FALSE
+K2	K2-000	FALSE
+#K2	K2 000	FALSE
 K2	K2 C000	FALSE
 K2	K2 C0	FALSE
 K2	K2 C3 star	FALSE
@@ -113,8 +113,8 @@ K2	Kepler / K2	TRUE
 #Hubble Phrases
 Hubble	Edwin Hubble	FALSE
 Hubble	generalised Hubble	FALSE
-#Hubble	Hubble-000	FALSE
-Hubble	Hubble 000	FALSE
+Hubble	Hubble-000	FALSE
+#Hubble	Hubble 000	FALSE
 Hubble	Hubble classification	FALSE
 Hubble	Hubble constant	FALSE
 Hubble	Hubble horizon	FALSE

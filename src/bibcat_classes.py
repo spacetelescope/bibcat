@@ -486,12 +486,16 @@ class _Base():
         #
 
         #Replace numerics and citation numerics with placeholders
+        #text_orig = text
+        #placeholder_number = config.placeholder_number
+        #text = re.sub(r"\(?\b[0-9]+\b\)?", placeholder_number, text_orig)
+        #Replace any hyphen-word dashes
+        #text = re.sub("([A-Z|a-z])-([A-Z|a-z|0-9])", r"\1 \2", text)
+
+        #Replace hyphenated numerics with placeholders
         text_orig = text
         placeholder_number = config.placeholder_number
-        text = re.sub(r"\(?\b[0-9]+\b\)?", placeholder_number, text_orig)
-        #Replace any hyphen-word dashes
-        text = re.sub("([A-Z|a-z])-([A-Z|a-z|0-9])", r"\1 \2", text)
-
+        text = re.sub(r"-\b[0-9]+\b", ("-"+placeholder_number), text_orig)
 
         #Print some notes
         if do_verbose:
@@ -939,6 +943,7 @@ class _Base():
          - Extract representative "meaning" (i.e., synsets) of given phrase.
         """
         #Set global variables
+        exp_punctall = config.exp_punctuation_all
         num_words = len(phrase_NLP)
         if (do_verbose is None):
             do_verbose = self._get_info("do_verbose")
@@ -984,16 +989,30 @@ class _Base():
             matched_kobjs = [item for item in keyword_objs
                             if (item.identify_keyword(curr_word.text)["bool"])]
             if (len(matched_kobjs) > 0): #If word is a keyword
-                name_kobj = matched_kobjs[0].get_name() #Fetch name for kobj
-                core_keywords.append(name_kobj.lower())
-                core_synsets.append([name_kobj.lower()])
-                #
-                #Print some notes
-                if do_verbose:
-                    print("Word itself is keyword. Stored synset: {0}"
-                            .format(core_synsets))
-                #
-                continue
+                #If word contains hyphen-esque|punct., keep whole word as synset
+                if bool(re.search(r"(?:[^\w\s]|_)", curr_word.text)):
+                    name_kobj = matched_kobjs[0].get_name() #Fetch name for kobj
+                    core_keywords.append(name_kobj.lower())
+                    core_synsets.append([curr_word.text.lower()])
+                    #
+                    #Print some notes
+                    if do_verbose:
+                        print("Word itself is keyword. Stored synset: {0}"
+                                .format(core_synsets))
+                    #
+                    continue
+                #Otherwise, store keyword itself
+                else:
+                    name_kobj = matched_kobjs[0].get_name() #Fetch name for kobj
+                    core_keywords.append(name_kobj.lower())
+                    core_synsets.append([name_kobj.lower()])
+                    #
+                    #Print some notes
+                    if do_verbose:
+                        print("Word itself is keyword. Stored synset: {0}"
+                                .format(core_synsets))
+                    #
+                    continue
             #
 
             #Store a representative synset and skip ahead if word is a numeral
@@ -4274,17 +4293,21 @@ class _Classifier(_Base):
         #
 
         ##Verify that count of saved .txt files adds up to original data count
-        for curr_key in unique_classes:
-            #Count items in this class across TVT directories
-            curr_count = sum([len([item2 for item2 in
-                        os.listdir(os.path.join(dir_model, item1, curr_key))
-                        if (item2.endswith(".txt"))])
-                        for item1 in name_folderTVT])
-            #
-            #Verify count
-            if (curr_count != count_classes[curr_key]):
-                raise ValueError("Err: Unequal class count in {0}!\n{1} vs {2}"
-                        .format(curr_key, curr_count, count_classes[curr_key]))
+        if do_write_directory_TVT:
+            for curr_key in unique_classes:
+                #Count items in this class across TVT directories
+                curr_count = sum([len([item2 for item2 in
+                            os.listdir(os.path.join(dir_model, item1, curr_key))
+                            if (item2.endswith(".txt"))])
+                            for item1 in name_folderTVT])
+                #
+                #Verify count
+                if (curr_count != count_classes[curr_key]):
+                    raise ValueError(
+                            "Err: Unequal class count in {0}!\n{1} vs {2}"
+                            .format(curr_key, curr_count,
+                                    count_classes[curr_key]))
+                #
             #
         #
 
@@ -7299,7 +7322,7 @@ class Classifier_Rules(_Classifier):
     """
     ##Method: __init__
     ##Purpose: Initialize this class instance
-    def __init__(self, do_final_blanketrule=True, which_classifs=None, do_verbose=False, do_verbose_deep=False):
+    def __init__(self, do_final_blanketrule=True, filepath_model=None, which_classifs=None, do_verbose=False, do_verbose_deep=False):
         ##Initialize storage
         self._storage = {}
         #Store global variables
@@ -7308,10 +7331,18 @@ class Classifier_Rules(_Classifier):
         if (which_classifs is None):
             which_classifs = config.list_default_verdicts_decisiontree
         self._store_info(which_classifs, "class_names")
+        self._store_info(filepath_model, "filepath_model")
 
         ##Assemble the fixed decision tree
-        decision_tree = self._assemble_decision_tree(do_final_blanketrule)
+        if (filepath_model is not None):
+            decision_tree = self._assemble_decision_tree_loaded(
+                                                        do_final_blanketrule)
+        #
+        else:
+            decision_tree = None
+        #
         self._store_info(decision_tree, "decision_tree")
+        #
 
         ##Print some notes
         if do_verbose:
@@ -7327,7 +7358,7 @@ class Classifier_Rules(_Classifier):
 
     ##Method: train_Rules
     ##Purpose: Train and save an empty Rule model
-    def train_Rules(self, dir_model, name_model, keyword_objs, do_check_truematch, dict_grammar_train=None, dict_text_train=None, do_verbose=None, do_verbose_deep=None, do_return_model=False):
+    def train_Rules(self, dir_model, name_model, keyword_objs, mapper, do_check_truematch, dict_grammar_train=None, dict_text_train=None, do_verbose=None, do_verbose_deep=None, do_return_model=False):
         """
         Method: train_Rules
         Purpose: Train the weights of a rule-based model.
@@ -7372,7 +7403,9 @@ class Classifier_Rules(_Classifier):
             dict_forest = {}
             dict_cached_kobjs = {}
             str_err = ""
+            i_track = 0
             i_skipped = 0
+            num_text_train = len(dict_text_train)
             #Print some notes
             if do_verbose:
                 print("Processing training dataset of text...")
@@ -7381,7 +7414,7 @@ class Classifier_Rules(_Classifier):
             for curr_id in dict_text_train:
                 curr_dict = dict_text_train[curr_id]
                 curr_mission = curr_dict["mission"]
-                masked_class = curr_dict["class"]
+                masked_class = mapper[curr_dict["class"].lower()]
                 #
                 #Fetch keyword object for this mission
                 if (curr_mission not in dict_cached_kobjs):
@@ -7439,6 +7472,12 @@ class Classifier_Rules(_Classifier):
 
                 #Generate+Store forest for current text+mission combination
                 dict_forest[curr_id] = {"forest":curr_res, "class":masked_class}
+                i_track += 1
+                #Print some notes
+                if do_verbose:
+                    print("{0} of {1} training texts have been processed."
+                            .format(i_track, num_text_train))
+                #
             #
         #
         ##Otherwise if given in pre-processed format, extract information
@@ -7505,20 +7544,33 @@ class Classifier_Rules(_Classifier):
             #
             i_track += 1
         #
+        #Print some notes
+        if do_verbose:
+            print("Grammar -> rule conversion complete.")
+            print("Measuring stats across rules...")
+        #
 
         ##Convert rule stats into uncertainties
         val_baseline = (1.0 / len(class_names))
         for curr_key in dict_stats:
             curr_tot = dict_stats[curr_key]["total"]
+            #curr_max = max([(dict_stats[curr_key][item] / curr_tot)
+            #                for item in class_names]) #Max norm. prob.
+            #
             for curr_verdict in class_names:
                 #Compute occurrence fraction for this verdict
                 curr_count = dict_stats[curr_key][curr_verdict]
-                curr_ratio = (curr_count / curr_tot)
+                curr_prob = (curr_count / curr_tot)
+                #
                 #Establish rarity fraction for this verdict
-                curr_rarity = min([(curr_tot / thres_rarity), 1])
-                curr_prob = (((curr_ratio - val_baseline)*curr_rarity)
-                            + val_baseline #min([curr_ratio, val_baseline])
-                            ) #Scaled between freq. and rarity
+                if (thres_rarity is not None):
+                    curr_rarity = min([(curr_tot / thres_rarity), 1])
+                    curr_prob = (((curr_prob - val_baseline)*curr_rarity)
+                                + val_baseline #min([curr_prob, val_baseline])
+                                ) #Scaled between freq. and rarity
+                    #if (curr_tot < thres_rarity):
+                    #    curr_prob = 0
+                #
                 #Store final uncertainty
                 dict_stats[curr_key]["prob_"+curr_verdict] = curr_prob
             #
@@ -7535,8 +7587,11 @@ class Classifier_Rules(_Classifier):
             #Fully normalize and store uncertainties
             for curr_key in class_names:
                 curr_lookup = ("prob_"+curr_key)
-                curr_rule[curr_lookup] = (dict_stats[curr_str][curr_lookup]
-                                            / curr_tot)
+                if (curr_tot == 0): #Avoid division by zero
+                    curr_rule[curr_lookup] = 0
+                else:
+                    curr_rule[curr_lookup] = (dict_stats[curr_str][curr_lookup]
+                                                / curr_tot)
             #
             #Store current rule and increment tracker
             dict_tree[i_track] = curr_rule
@@ -7544,7 +7599,7 @@ class Classifier_Rules(_Classifier):
         #
 
         ##Print some notes
-        if do_verbose:
+        if do_verbose_deep:
             print("\n---\n> Rules:")
             for curr_key in dict_stats:
                 print("Rule (str. repr.):\n{0}\nCounts: {1}\n-"
@@ -7847,9 +7902,9 @@ class Classifier_Rules(_Classifier):
         return decision_tree
     #
 
-    ##Method: _assemble_decision_tree
+    ##Method: _assemble_decision_tree_hardcoded
     ##Purpose: Assemble base of decision tree, with probabilities, that can be read from/expanded as full decision tree
-    def _assemble_decision_tree(self, do_final_blanketrule):
+    def _assemble_decision_tree_hardcoded(self, do_final_blanketrule):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         which_classifs = self._get_info("class_names")
@@ -7859,7 +7914,7 @@ class Classifier_Rules(_Classifier):
         key_verbtype = config.nest_key_verbtype
         all_params = list(dict_possible_values.keys())
         prefix = "prob_"
-        strformat = "{0:02d}"
+        strformat = "{0:05d}"
         #
 
 
@@ -8817,6 +8872,62 @@ class Classifier_Rules(_Classifier):
                 itrack += 1
                 decision_tree[itrack] = new_ex
             """
+        #
+
+        #Return the assembled decision tree
+        return decision_tree
+    #
+
+    ##Method: _assemble_decision_tree_hardcoded
+    ##Purpose: Assemble base of decision tree, with probabilities, that can be read from/expanded as full decision tree
+    def _assemble_decision_tree_loaded(self, do_final_blanketrule):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        which_classifs = self._get_info("class_names")
+        filepath_model = self._get_info("filepath_model")
+        dict_possible_values = config.dict_tree_possible_values
+        #dict_valid_combos = config.dict_tree_valid_value_combinations
+        keys_matter = config.nest_keys_matter
+        key_verbtype = config.nest_key_verbtype
+        all_params = list(dict_possible_values.keys())
+        prefix = "prob_"
+        strformat = "{0:05d}"
+        #
+
+        ##Load pre-trained model containing base decision tree
+        decision_tree_raw = np.load(filepath_model, allow_pickle=True).item()
+        #Add catch-all rule if so requested
+        if do_final_blanketrule:
+            #Fetch index for catch-all (place after all previous indices)
+            i_last = max([int(item) for item in decision_tree_raw.keys()])
+            i_catchall = i_last + 1
+            #Generate a catch-all rule
+            rule_catchall = {key:"is_any" for key in dict_possible_values}
+            rule_catchall.update({(prefix+item):0 for item in which_classifs})
+            #Store the catch-all rule
+            decision_tree_raw[strformat.format(i_catchall)] = rule_catchall
+        #
+
+        ##Generate final base tree with only target classifs and norm. probs.
+        decision_tree = {}
+        itrack = -1
+        #Iterate through base examples
+        for key_ex in decision_tree_raw:
+            curr_ex = decision_tree_raw[key_ex]
+            curr_denom = np.sum([curr_ex[(prefix+item)]
+                                for item in which_classifs]) #Prob. normalizer
+            curr_probs = {(prefix+item):(curr_ex[(prefix+item)]/curr_denom)
+                            for item in which_classifs}
+            #
+
+            ##For main example
+            #Extract all parameters and their values
+            new_ex = {key:curr_ex[key] for key in all_params}
+            #Normalize and store probabilities for target classifs
+            new_ex.update(curr_probs)
+            #Store this example
+            itrack += 1
+            decision_tree[itrack] = new_ex
         #
 
         #Return the assembled decision tree
@@ -11210,9 +11321,10 @@ class Classifier_Rules(_Classifier):
     ##Purpose: Convert set of decision tree scores into single verdict
     #def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=1.0, order_override_acceptance=["science"], "data_influenced"]):
     #If this doesn't work, revert back and use split uncertainty thresholds for rule-based classifs (e.g., more lenient for mentions)
-    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=1, thres_override_acceptance=1.0, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.80, order_override_acceptance=["science", "data_influenced"], dict_weights={"science":1, "data_influenced":1, "mention":1}): #, "data_influenced"]):
+    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=np.inf, thres_override_acceptance=1.0, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.80, order_override_acceptance=["science", "data_influenced"], dict_weights={"science":1, "data_influenced":1, "mention":1}): #, "data_influenced"]):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
+        thres_purity = config.thres_purity
         #Print some notes
         if do_verbose:
             print("\n> Running _convert_scorestoverdict.")
@@ -11248,11 +11360,19 @@ class Classifier_Rules(_Classifier):
         #Iterate through individual scores and accumulate them
         for ii in range(0, num_indiv):
             curr_scores = dict_scores_indiv[ii]
-            #Iterate through classif scores and accumulate total score
-            for curr_key in all_keys:
-                tmp_unnorm = curr_scores[curr_key]
-                #Increment unnorm. score count
-                dict_results[curr_key]["score_tot_unnorm"] += tmp_unnorm
+            curr_tot = sum([curr_scores[key] for key in all_keys])
+            if (curr_tot == 0): #Avoid division by zero
+                curr_max = 0
+            else:
+                curr_max = max([(curr_scores[key] / curr_tot)
+                                for key in all_keys]) #Max norm. prob.
+            #Establish purity fraction for this verdict
+            if ((thres_purity is None) or (curr_max >= thres_purity)):
+                #Iterate through classif scores and accumulate total score
+                for curr_key in all_keys:
+                    tmp_unnorm = curr_scores[curr_key]
+                    #Increment unnorm. score count
+                    dict_results[curr_key]["score_tot_unnorm"] += tmp_unnorm
             #
             #Determine and store classif with max-score, if above threshold
             curr_maxkey = max(curr_scores, key=curr_scores.get) #Max of indiv.
@@ -14414,7 +14534,7 @@ class Operator(_Base):
 
     ##Method: train_model_Rule
     ##Purpose: Process text into modifs and then train ML model on the modifs
-    def train_model_Rule(self, dir_model, name_model, keyword_objs, do_reuse_run, do_check_truematch, mode_TVT="uniform", fraction_TVT=[0.8, 0.1, 0.1], do_shuffle=True, seed_TVT=10, dict_grammars=None, dict_texts=None, do_verbose=None, do_verbose_deep=None):
+    def train_model_Rule(self, dir_model, name_model, keyword_objs, mapper, do_reuse_run, do_check_truematch, mode_TVT="uniform", fraction_TVT=[0.8, 0.1, 0.1], do_shuffle=True, seed_TVT=10, dict_grammars=None, dict_texts=None, do_verbose=None, do_verbose_deep=None):
         """
         Method: train_model_Rule
         Purpose:
@@ -14432,6 +14552,8 @@ class Operator(_Base):
         classifier = self._get_info("classifier")
         ext_Rule = config.name_model_extension_Rule
         savename_model = (name_model + ext_Rule + ".npy")
+        folders_TVT = config.folders_TVT
+        folder_train = folders_TVT["train"]
         dict_grammars = None
         if (do_verbose is None):
             do_verbose = self._get_info("do_verbose")
@@ -14453,11 +14575,28 @@ class Operator(_Base):
                         dir_model=dir_model,
                         fraction_TVT=fraction_TVT, mode_TVT=mode_TVT,
                         dict_texts=dict_texts, do_shuffle=do_shuffle,
-                        seed=seed_TVT, do_verbose=do_verbose)
+                        seed=seed_TVT, do_verbose=do_verbose,
+                        do_write_directory_TVT=False)
+        #Print some notes
+        if do_verbose:
+            print("Partitioned dataset into TVT bins.")
+        #
+
+        #Extract texts for training from original set
+        dict_text_train = {key:dict_texts[key] for key in dict_texts
+                if (dict_dirinfo[dict_texts[key]["bibcode"]]["folder_TVT"]
+                    == folder_train)
+                }
+        #
+        if do_verbose:
+            print("Extracted partitioned texts for training.")
+            print("{0} of {1} entries will be used for training."
+                    .format(len(dict_text_train), len(dict_texts)))
+        #
 
         #Train a new rule-based model
         is_exist = os.path.exists(os.path.join(dir_model, savename_model))
-        #If ML model or output already exists, either print note or raise error
+        #If model or output already exists, either print note or raise error
         if is_exist:
             str_err = None
             #Print some notes
@@ -14487,10 +14626,11 @@ class Operator(_Base):
             #
             #Train new Rule model
             str_err = classifier.train_Rules(dir_model=dir_model,
-                            name_model=name_model,
+                            name_model=name_model, mapper=mapper,
                             do_check_truematch=do_check_truematch,
                             dict_grammar_train=dict_grammars,
-                            dict_text_train=dict_texts, do_verbose=do_verbose,
+                            dict_text_train=dict_text_train,
+                            do_verbose=do_verbose,
                             keyword_objs=keyword_objs) #, do_return_model=True)
             #
             #Print some notes

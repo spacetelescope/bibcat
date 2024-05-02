@@ -524,8 +524,8 @@ class TestBase(unittest.TestCase):
                     "small Hubble constant":{"lookup":"Kepler", "bool":False},
                     "small Hubble's constant":{"lookup":"Kepler", "bool":False},
                     "Edwin Hubble's papers":{"lookup":"Hubble", "bool":False},
-                    "Hubble 1970":{"lookup":"Hubble", "bool":False},
-                    "Hubble (2000)":{"lookup":"Hubble", "bool":False},
+                    #"Hubble 1970":{"lookup":"Hubble", "bool":False}, - not realistic since would be cleaned beforehand normally
+                    #"Hubble (2000)":{"lookup":"Hubble", "bool":False}, - not realistic since would be cleaned beforehand normally
                     "high S/N Hubble image":{"lookup":"Hubble", "bool":True},
                     "HST observatory":{"lookup":"Hubble", "bool":True},
                     "H.S.T. observatory":{"lookup":"Hubble", "bool":True},
@@ -549,6 +549,7 @@ class TestBase(unittest.TestCase):
                     "Kepler's law":{"lookup":"Kepler", "bool":False},
                     "Kepler observations":{"lookup":"Kepler", "bool":True},
                     "Observations of Kepler-123":{"lookup":"Kepler", "bool":False},
+                    "We observed with Hubble 2 days ago.":{"lookup":"Hubble", "bool":True},
                     "K2 database":{"lookup":"K2", "bool":True},
                     "K2-123 star":{"lookup":"K2", "bool":False},
                     "K2 stars":{"lookup":"K2", "bool":False},
@@ -564,6 +565,7 @@ class TestBase(unittest.TestCase):
                                                 do_verbose=False,
                                                 keyword_objs=list_lookup_kobj)
             #
+
             #Check answers
             for key1 in dict_tests:
                 try:
@@ -1680,50 +1682,51 @@ class TestPaper(unittest.TestCase):
             #
         #
     #
-    #For tests of _verify_acronyms:
-    """BLOCKED: 2024-03-26: This codebase functionality was commented out.
-    if True:
-        #Test search for possible meanings of given acronyms
-        def test__verify_acronyms__variety(self):
-            #Prepare text and answers for test
-            dict_acts = {
-            "The Hubble Space Telescope is a telescope often referred to as H.S.T. or HST.":{"kobj":kobj_hubble, "matches":["Hubble Space Telescope"]},
-            "The Heralding of the Swan Trumphets will be showing in the Healing Song Theatre Plaza next week.":{"kobj":kobj_hubble, "matches":["Heralding of the Swan Trumphets", "Healing Song Theatre"]},
-            "Hello. Space Tyrants is showing in the theatre next door.":{"kobj":kobj_hubble, "matches":[]},
-            "H. Space Tyrants is showing in the theatre next door.":{"kobj":kobj_hubble, "matches":[]},
-            "H S T is showing in the theatre next door.":{"kobj":kobj_hubble, "matches":[]},
-            "Hijinks of Space Tyrants is showing in the theatre next door.":{"kobj":kobj_hubble, "matches":["Hijinks of Space Tyrants"]},
-            "Hidden space tyrants is showing in the theatre next door. H. S. TheName will be seeing it.":{"kobj":kobj_hubble, "matches":[]}
-            }
+#"""
+#For tests of _verify_acronyms:
+"""BLOCKED: 2024-03-26: This codebase functionality was commented out.
+if True:
+    #Test search for possible meanings of given acronyms
+    def test__verify_acronyms__variety(self):
+        #Prepare text and answers for test
+        dict_acts = {
+        "The Hubble Space Telescope is a telescope often referred to as H.S.T. or HST.":{"kobj":kobj_hubble, "matches":["Hubble Space Telescope"]},
+        "The Heralding of the Swan Trumphets will be showing in the Healing Song Theatre Plaza next week.":{"kobj":kobj_hubble, "matches":["Heralding of the Swan Trumphets", "Healing Song Theatre"]},
+        "Hello. Space Tyrants is showing in the theatre next door.":{"kobj":kobj_hubble, "matches":[]},
+        "H. Space Tyrants is showing in the theatre next door.":{"kobj":kobj_hubble, "matches":[]},
+        "H S T is showing in the theatre next door.":{"kobj":kobj_hubble, "matches":[]},
+        "Hijinks of Space Tyrants is showing in the theatre next door.":{"kobj":kobj_hubble, "matches":["Hijinks of Space Tyrants"]},
+        "Hidden space tyrants is showing in the theatre next door. H. S. TheName will be seeing it.":{"kobj":kobj_hubble, "matches":[]}
+        }
+        #
+
+        #Determine and check answers
+        for phrase in dict_acts:
+            curr_kobj = dict_acts[phrase]["kobj"]
+            curr_answer = dict_acts[phrase]["matches"]
+
+            #Prepare and run test for bibcat class instance
+            testbase = bibcat.Paper(text=phrase, keyword_objs=[kobj_hubble],
+                                    do_check_truematch=False)
+            test_res = testbase._verify_acronyms(keyword_obj=curr_kobj)
             #
 
-            #Determine and check answers
-            for phrase in dict_acts:
-                curr_kobj = dict_acts[phrase]["kobj"]
-                curr_answer = dict_acts[phrase]["matches"]
-
-                #Prepare and run test for bibcat class instance
-                testbase = bibcat.Paper(text=phrase, keyword_objs=[kobj_hubble],
-                                        do_check_truematch=False)
-                test_res = testbase._verify_acronyms(keyword_obj=curr_kobj)
+            #Check answer
+            try:
+                self.assertEqual(test_res, curr_answer)
+            except AssertionError:
+                print("")
+                print(">")
+                print("Text: {2}\nTest answer: {0}\nAct. answer: {1}"
+                        .format(test_res, curr_answer, phrase))
+                print("---")
+                print("")
                 #
-
-                #Check answer
-                try:
-                    self.assertEqual(test_res, curr_answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("Text: {2}\nTest answer: {0}\nAct. answer: {1}"
-                            .format(test_res, curr_answer, phrase))
-                    print("---")
-                    print("")
-                    #
-                    self.assertEqual(test_res, curr_answer)
-                #
+                self.assertEqual(test_res, curr_answer)
             #
         #
-    #"""
+    #
+#"""
 #"""
 #"""
 #class: TestGrammar
