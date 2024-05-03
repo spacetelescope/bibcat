@@ -31,11 +31,11 @@ Kepler	Kepler Neptune	FALSE
 Kepler	Kepler Object of Interest	FALSE
 Kepler	Kepler occurrence rate	FALSE
 Kepler	Kepler period	FALSE
-Kepler	Kepler planet	FALSE
-Kepler	Kepler population	FALSE
+#Kepler	Kepler planet	FALSE
+#Kepler	Kepler population	FALSE
 Kepler	Kepler progenitor	FALSE
 Kepler	Kepler rotator	FALSE
-Kepler	Kepler star	FALSE
+#Kepler	Kepler star	TRUE
 Kepler	Kepler size	FALSE
 Kepler	Kepler SNe	FALSE
 Kepler	Kepler subgiant	FALSE

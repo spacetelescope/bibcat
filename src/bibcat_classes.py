@@ -7400,9 +7400,10 @@ class Classifier_Rules(_Classifier):
         """
         ##Load global variables
         ext_Rule = config.name_model_extension_Rule
+        key_count = config.tree_trainedbranchcount_variable
         savename_model = (name_model + ext_Rule + ".npy")
         filename_model = os.path.join(dir_model, savename_model)
-        thres_rarity = config.thres_rarity
+        #thres_rarity = config.thres_rarity
         #
         if (do_verbose is None):
             do_verbose = self._get_info("do_verbose")
@@ -7592,16 +7593,18 @@ class Classifier_Rules(_Classifier):
                 curr_prob = (curr_count / curr_tot)
                 #
                 #Establish rarity fraction for this verdict
-                if (thres_rarity is not None):
+                #if (thres_rarity is not None):
                     #curr_rarity = min([(curr_tot / thres_rarity), 1])
                     #curr_prob = (((curr_prob - val_baseline)*curr_rarity)
                     #            + val_baseline #min([curr_prob, val_baseline])
                     #            ) #Scaled between freq. and rarity
-                    if (curr_tot < thres_rarity):
-                        curr_prob = 0
+                #    if (curr_tot < thres_rarity):
+                #        curr_prob = 0
                 #
                 #Store final uncertainty
                 dict_stats[curr_key]["prob_"+curr_verdict] = curr_prob
+            #
+            dict_stats[curr_key]["count"] = curr_tot
             #
         #
 
@@ -7622,6 +7625,8 @@ class Classifier_Rules(_Classifier):
                     curr_rule[curr_lookup] = (dict_stats[curr_str][curr_lookup]
                                                 / curr_tot)
             #
+            #Store rule count
+            curr_rule[key_count] = dict_stats[curr_str]["count"]
             #Store current rule and increment tracker
             dict_tree[i_track] = curr_rule
             i_track += 1
@@ -7666,6 +7671,7 @@ class Classifier_Rules(_Classifier):
         which_classifs = self._get_info("class_names")
         keys_main = config.nest_keys_main
         keys_matter = [item for item in keys_main if (item.endswith("matter"))]
+        key_count = config.tree_trainedbranchcount_variable
         bool_keyword = "is_keyword"
         prefix = "prob_"
         #
@@ -7776,7 +7782,8 @@ class Classifier_Rules(_Classifier):
                     .format(rule_mod, dict_scores, best_branch))
         #
         return {"scores":dict_scores, "components":best_branch,
-                "id_branch":best_id}
+                "id_branch":best_id,
+                key_count:best_branch[key_count]}
     #
 
     ##Method: _assemble_decision_tree
@@ -8918,6 +8925,7 @@ class Classifier_Rules(_Classifier):
         #dict_valid_combos = config.dict_tree_valid_value_combinations
         keys_matter = config.nest_keys_matter
         key_verbtype = config.nest_key_verbtype
+        key_count = config.tree_trainedbranchcount_variable
         all_params = list(dict_possible_values.keys())
         prefix = "prob_"
         strformat = "{0:05d}"
@@ -8932,6 +8940,7 @@ class Classifier_Rules(_Classifier):
             i_catchall = i_last + 1
             #Generate a catch-all rule
             rule_catchall = {key:"is_any" for key in dict_possible_values}
+            rule_catchall[key_count] = np.inf
             rule_catchall.update({(prefix+item):0 for item in which_classifs})
             #Store the catch-all rule
             decision_tree_raw[strformat.format(i_catchall)] = rule_catchall
@@ -8952,6 +8961,7 @@ class Classifier_Rules(_Classifier):
             ##For main example
             #Extract all parameters and their values
             new_ex = {key:curr_ex[key] for key in all_params}
+            new_ex[key_count] = curr_ex[key_count]
             #Normalize and store probabilities for target classifs
             new_ex.update(curr_probs)
             #Store this example
@@ -11052,6 +11062,8 @@ class Classifier_Rules(_Classifier):
             self._store_info(do_verbose, "do_verbose")
         #Load the fixed decision tree
         decision_tree = self._get_info("decision_tree")
+        key_count = config.tree_trainedbranchcount_variable
+        thres_rarity = config.thres_rarity
         #Print some notes
         if do_verbose:
             print("\n> Running _classify_statements.")
@@ -11084,10 +11096,35 @@ class Classifier_Rules(_Classifier):
                 tmp_res = [self._apply_decision_tree(rule=item,
                                                 decision_tree=decision_tree)
                                 for item in curr_rules]
-                list_scores[ii] += [item["scores"] for item in tmp_res
-                                    if (item is not None)]
-                list_components[ii] += [item["components"] for item in tmp_res
-                                    if (item is not None)]
+                curr_scores = []
+                curr_comps = []
+                for kk in range(0, len(tmp_res)):
+                    #Skip if current score nonexistent
+                    if (tmp_res[kk] is None):
+                        continue
+                    #
+
+                    #Extract current scores and components
+                    tmp_score = tmp_res[kk]["scores"]
+                    tmp_comp = tmp_res[kk]["components"]
+
+                    #Skip if current trained rule-count below rarity threshold
+                    tmp_c = tmp_res[kk][key_count] #Rule count from training
+                    if ((thres_rarity is not None) and (tmp_c < thres_rarity)):
+                        continue
+                    #
+
+                    #Otherwise, store current scores and components
+                    curr_scores.append(tmp_score)
+                    curr_comps.append(tmp_comp)
+                #
+                #Tack on latest score information
+                list_scores[ii] += curr_scores
+                list_components[ii] += curr_comps
+                #list_scores[ii] += [item["scores"] for item in tmp_res
+                #                    if (item is not None)]
+                #list_components[ii] += [item["components"] for item in tmp_res
+                #                    if (item is not None)]
         #
 
         #Combine scores across clauses
@@ -11350,7 +11387,7 @@ class Classifier_Rules(_Classifier):
     ##Purpose: Convert set of decision tree scores into single verdict
     #def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=1.0, order_override_acceptance=["science"], "data_influenced"]):
     #If this doesn't work, revert back and use split uncertainty thresholds for rule-based classifs (e.g., more lenient for mentions)
-    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=np.inf, thres_override_acceptance=1.0, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.80, order_override_acceptance=["science", "data_influenced"], dict_weights={"science":1, "data_influenced":1, "mention":1}): #, "data_influenced"]):
+    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=1, thres_override_acceptance=0.6, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.80, order_override_acceptance=["science", "data_influenced"], dict_weights={"science":1, "data_influenced":1, "mention":1}, dict_minprob={"science":0.7, "data_influenced":0.7, "mention":0.4}, order_minprob=["data_influenced", "science", "mention"]): #, "data_influenced"]):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         thres_purity = config.thres_purity
@@ -11444,6 +11481,7 @@ class Classifier_Rules(_Classifier):
         #
 
         #Override combined scores with absolutes if requested
+        #"""
         tmp_max_key = None
         if ((thres_override_acceptance is not None)
                             and (order_override_acceptance is not None)):
@@ -11454,7 +11492,20 @@ class Classifier_Rules(_Classifier):
                     #Override scores
                     tmp_max_key = curr_key
                     break
-        #
+        #"""
+
+        #Override combined scores with values above prob. threshold if requested
+        """
+        tmp_max_key = None
+        if (dict_minprob is not None):
+            for curr_key in order_minprob:
+                if (dict_results[curr_key]["score_tot_norm"] >= dict_minprob[curr_key]):
+                    #Override scores
+                    tmp_max_key = curr_key
+                    break
+        #"""
+
+        #Update total score
         if (tmp_max_key is not None):
             for curr_key in all_keys:
                 if (curr_key == tmp_max_key):

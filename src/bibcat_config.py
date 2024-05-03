@@ -27,7 +27,7 @@ name_model = "perf_run_ML_testfalsepos1_{0}".format(mode_modif)
 #name_model = "perf_run_RB_{0}".format(mode_modif)
 #name_model = "perf_run_MLlarge_{0}".format(mode_modif)
 #!!!"""
-name_model = "test_train_rule_op"
+name_model = "test_train_rule_op" #perf_run_ML_testfalsepos1_none
 mode_modif = "none"
 name_model_extension_ML = "_ML"
 name_model_extension_Rule = "_Rule"
@@ -389,6 +389,7 @@ list_default_verdicts_decisiontree = ["science", "data_influenced", "mention"]
 #dict_tree_possible_values = {"subjectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "objectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "verbclass":["be", "has", "know", "plot", "root_nonverb", "science", "datainfluenced"], "verbtypes":["FUTURE", "PASSIVE", "PAST", "POTENTIAL", "PURPOSE", "PRESENT"]}
 #dict_tree_possible_values = {"subjectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "objectmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "verbclass":["be", "has", "know", "plot", "science", "datainfluenced"], "verbtypes":["FUTURE", "PAST", "PURPOSE", "PRESENT"]}
 dict_tree_possible_values = {"allmatter":["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"], "verbclass":["be", "has", "know", "plot", "science", "datainfluenced"], "verbtypes":["FUTURE", "PAST", "PURPOSE", "PRESENT"]}
+tree_trainedbranchcount_variable = "count_training"
 #
 
 ##Set rule-based processing variables
