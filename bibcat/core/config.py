@@ -12,6 +12,8 @@ from deepmerge import always_merger # type: ignore
 def read_yaml(filename: str) -> dict:
     """ Read a yaml configuration file
 
+    Expands any environment variables in the yaml file
+
     Parameters
     ----------
     filename : str
@@ -23,7 +25,7 @@ def read_yaml(filename: str) -> dict:
         the yaml configuration
     """
     with open(filename, 'r') as f:
-        data = yaml.load(f.read(), Loader=yaml.SafeLoader)
+        data = yaml.load(os.path.expandvars(f.read()), Loader=yaml.SafeLoader)
         return data
 
 
