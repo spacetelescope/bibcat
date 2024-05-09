@@ -5,15 +5,29 @@ try:
 except PackageNotFoundError:
     pass
 
+from bibcat.core.config import get_config
 
-# check for BIBCAT_DATA_DIR
-if "BIBCAT_DATA_DIR" not in os.environ:
-    print('User environment variable BIBCAT_DATA_DIR not found. Setting to user home directory.')
-    os.environ['BIBCAT_DATA_DIR'] = os.path.expanduser('~')
+
+def check_env(name: str):
+    """ Check for a user environment variable existence
+
+    Parameters
+    ----------
+    name : str
+        the name of the environment variable
+    """
+    name = name.upper()
+    # check for user environment variables
+    if name not in os.environ:
+        print(f'User environment variable {name} not found. Setting to user home directory.')
+        os.environ[name] = os.path.expanduser('~')
+
+# check for envvars
+check_env("BIBCAT_DATA_DIR")
+check_env("BIBCAT_OUTPUT_DIR")
 
 
 # create the bibcat configuration object
-from bibcat.core.config import get_config
 config = get_config()
 
 
@@ -24,9 +38,10 @@ def setup_paths(config: dict) -> dict:
     config.paths.parent = os.path.dirname(config.paths.root)
     config.paths.config = os.path.join(config.paths.root, "config")
     config.paths.docs = os.path.join(config.paths.parent, "docs")
-    config.paths.models = os.path.join(config.paths.root, "models")
-    config.paths.output = os.path.join(config.paths.parent, "output")
-    config.paths.partitioned = os.path.join(config.paths.root, "data", "partitioned_datasets")
+    # set up output
+    config.paths.models = os.path.join(config.output.root_path, "models")
+    config.paths.output = os.path.join(config.output.root_path, "output")
+    config.paths.partitioned = os.path.join(config.output.root_path, "partitioned_datasets")
     config.paths.modiferrors = os.path.join(config.paths.partitioned, config.output.name_model, "dict_modiferrors.npy")
     config.paths.TVTinfo = os.path.join(config.paths.partitioned, config.output.name_model, "dict_TVTinfo.npy")
 
