@@ -25,6 +25,7 @@ dependencies = [
   "nltk >= 3.7 ",
   "tensorflow >=2.13.0",
   "tf-models-official >= 2.7.0",
+  "deepmerge >= 1.1.0"
 ]
 dynamic = ["version"]
 
