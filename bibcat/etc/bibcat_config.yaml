@@ -34,6 +34,21 @@ model:
   mode_modif: skim_anon  # Mode to use for text processing and generating possible modes: any combination from "skim", "trim", and "anon" or "none"
   buffer: 0  # the number of sentences to include within paragraph around each sentence with target terms
 
+classify:
+  do_verify_truematch: true  # used in Performance class
+  do_raise_innererror: false  # raise error or print and continue
+  do_verbose_text_summary: false  # print input text data summary
+  shuffle_seed: 10 # Random seed for shuffling text dataset
+  do_shuffle: true  # whether or not to shuffle the text dataset
+  do_real_testdata: true  # If True, will use real papers to test performance; if False, will use fake texts but we will implement the fake data if we need.
+  max_tests: 30  # Number of text entries to test the performance for; None for all tests
+  mode_modif: anon  # Mode to use for text processing and generating possible modes: any combination from "skim", "trim", and "anon" or "none
+  lookup: HST  # Prepare some Keyword objects
+  threshold_ML: 0.70  # For operator ML
+  buffer_ML: 0  # For operator ML
+  threshold_RB: 0.70  # For operator RL
+  buffer_RB: 0  # For operator RL
+
 papertrack:
   placeholder_anon: "OBJ"
   placeholder_numeric: "numeric"
