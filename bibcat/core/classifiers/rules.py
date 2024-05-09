@@ -2,10 +2,11 @@
 :title: rules.py
 
 """
+
 import itertools as iterer
 
 import numpy as np
-from nltk.corpus import wordnet
+from nltk.corpus import wordnet  # type: ignore
 
 from bibcat import config
 from bibcat.core.classifiers.textdata import ClassifierBase
@@ -41,7 +42,7 @@ class RuleBasedClassifier(ClassifierBase):
         self._store_info(decision_tree, "decision_tree")
 
         # Print some notes
-        if do_verbose:
+        if do_verbose_deep:
             print("> Initialized instance of RuleBasedClassifier class.")
             print("Internal decision tree has been assembled.")
             print("NOTE: Decision tree probabilities:\n{0}\n".format(decision_tree))

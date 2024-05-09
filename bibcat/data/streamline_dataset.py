@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict
+from typing import Dict
 
 #from bibcat import config
 #from bibcat import model_settings as settings
@@ -25,7 +25,7 @@ def load_source_dataset(do_verbose: bool):
     return source_dataset
 
 
-def streamline_dataset(source_dataset: Dict[str, Any], operator_ML: Operator, do_verbose_text_summary=False):
+def streamline_dataset(source_dataset: Dict, operator_ML: Operator, do_verbose_text_summary=False):
     """
     Organize a new version of the data with: key:text,class,id,mission structure
     """

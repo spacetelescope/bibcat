@@ -107,5 +107,5 @@ def build_model() -> None:
 # This section checks if the script is the main program
 if __name__ == "__main__":
     # Code here will only execute if the script is run directly, not if it's imported as a module
-    print("The script is running as a standalone script")
+    print("The script is running as a standalone script! \n Building and Training ML model!")
     build_model()

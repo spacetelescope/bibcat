@@ -9,9 +9,7 @@
 
 
 Bibcat to do list
-- Refactor create_model.py
-- Refactor classify_papers.py
-    -  modify the `output` directory to show the output from multiple models
+- Refactor performance.py
 - Adding tutorial notebooks back
 
 
@@ -24,7 +22,12 @@ Bibcat to do list
     - Deleted all previous codes and files for a fresh start
 
 ### Changed
-- PR #13
+- PR #14
+    - fixed various type annotation errors while refactoring `classify_papers.py` and other related modules such as `performance.py` or `operator.py`.
+    - all output results will be saved under a subdirectory of the given model run in the `output` directory.
+    - classify_papers.py will produce both evaluation results and classification results per method, rather than combined results of both the RB and ML methods. This way will allow users to choose a classification method using CLI once CLI is enabled.
+
+- [PR #13]
     - Enabling build_model.py to be both a module and a main script.
 
 - [PR #12]
@@ -64,7 +67,16 @@ Bibcat to do list
 
 ### Added
 
-- PR #12
+- PR #14
+    - Refactored `classify_papers.py` and created a few modules, which are called in `classify_papers.py`. These modules could be executed based on CLI options once they are employed.
+        - `fetch_papers.py` : fetching papers from the `dir_test` data directory to the bibcat pipeline. This needs an update to fetch operational data using the `dir_datasets` argument in this module.
+        - `operate_classifier.py`: the main purpose of this module is to use only one method, classify the input papers, and output classification results as a JSON file for operation.
+        - `evaluate_basic_performance.py` : this module employes two performance functions to evaluate test paper classification and produce relevant files and a confusion matrix if a ML method is used.
+    - created `fakedata.txt` in `/bibcat/data/operational_data/` to test operational classification with simple ascii text
+    - created `fake_testdata.json`, which has paper classification with its associated simple text, for testing and performance evaluation.
+    - included additional VS code ruff setting to `pyproject.toml`
+
+- [PR #12]
     - The second part of refactoring `build_model.py` includes
         - create a new module, `model_settings.py` to set up various model related variables. This eventually will relocating other model related variables in `config.py` to this module in the near future.
         - Created `streamline_dataset.py` to streamline the source data equipped to be ML input dataset. It does load the source dataset and streamline the dataset.

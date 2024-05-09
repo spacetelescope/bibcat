@@ -2,14 +2,15 @@
 :title: ml.py
 
 """
+
 import os
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
-import tensorflow as tf
-import tensorflow_hub as tfhub
-import tensorflow_text as tftext
-from official.nlp import optimization as tf_opt
+import tensorflow as tf  # type: ignore
+import tensorflow_hub as tfhub  # type: ignore
+import tensorflow_text as tftext  # type: ignore
+from official.nlp import optimization as tf_opt  # type: ignore
 
 from bibcat import config
 from bibcat.core.classifiers.textdata import ClassifierBase
@@ -396,7 +397,7 @@ class MachineLearningClassifier(ClassifierBase):
         # Fetch and use stored model
         model = self._get_info("model")
         probs = np.asarray(model.predict([text_clean]))[0]  # Uncertainties
-        dict_uncertainty = {list_classes[ii]: probs[ii] for ii in range(0, len(list_classes))}  # Dict. version
+        dict_uncertainty = {list_classes[ii]: float(probs[ii]) for ii in range(0, len(list_classes))}  # Dict. version
 
         # Determine best verdict
         max_ind = np.argmax(probs)
