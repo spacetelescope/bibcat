@@ -6,12 +6,12 @@ performance results such as a confusion matrix (if ML method) and result numpy s
 It also can classify streamlined JSON paper text(s) with a given classfier.
 
 - Context: the input full text JSON file (papertrack + ADS full texts) is
-  called via config.path_source_data configured in bibcat/config.py and is used for
+  called via config.inputs.path_source_data configured in bibcat/config.py and is used for
   training, validating, and testing the trained model.
 
 - Classfication data: this text data is used for prediction (classification),
   for now, it is fetched from the `bibcat/data/partitioned_datasets/model_name/dir_test`
-  folder via `config.folders_TVT["test"]` below. However, we will need to modify the
+  folder via `config.output.folders_TVT["test"]` below. However, we will need to modify the
   codebase to  set up a designated folder of operational papers.
 
 - Run example: python classify_papers.py
@@ -30,19 +30,18 @@ from bibcat.evaluate_basic_performance import generate_performance_evaluation_ou
 from bibcat.fetch_papers import fetch_papers
 from bibcat.operate_classifier import operate_classifier
 
-
 # Fetch filepath for model
-name_model = config.name_model
-dir_model = os.path.join(config.PATH_MODELS, name_model)
-dir_output = os.path.join(config.PATH_OUTPUT, name_model)
+name_model = config.output.name_model
+dir_model = os.path.join(config.paths.models, name_model)
+dir_output = os.path.join(config.paths.output, name_model)
 os.makedirs(dir_output, exist_ok=True)
 
 
 # Set directories for fetching test text
 
 # `partitioned_datasets/name_model/` folder
-dir_datasets = os.path.join(config.path_partitioned_data, name_model)
-dir_test = config.folders_TVT[
+dir_datasets = os.path.join(config.paths.partitioned, name_model)
+dir_test = config.output.folders_TVT[
     "test"
 ]  # the directory name "dir_test" in the partitioned_datasets/name_model/ folder # can be an CLI option
 
@@ -51,8 +50,8 @@ dir_test = config.folders_TVT[
 
 # do_raise_innererror: if True, will stop if exception encountered;
 # if False, will print error and continue
-do_raise_innererror = False  # CLI option?
-do_verbose_text_summary = True  # print input text data summary ; CLI option?
+do_raise_innererror = config.classify.do_raise_innererror  # CLI option?
+do_verbose_text_summary = config.classify.do_verbose_text_summary  # print input text data summary ; CLI option?
 
 
 # Set some overarching global variables
@@ -65,21 +64,21 @@ do_shuffle = config.classify.do_shuffle
 # do_real_testdata: If True, will use real papers to test performance;
 # if False, will use fake texts but we will implement the fake data
 # if we need. For now, we keep this variable and only the real text.
-do_real_testdata = True  # can an CLI option?
+do_real_testdata = config.classify.do_real_testdata  # can an CLI option?
 
 # Number of text entries to test the performance for; None for all tests
-max_tests = 1
+max_tests = config.classify.max_tests
 # mode_modif: Mode to use for text processing and generating
 # possible modes: any combination from "skim", "trim", and "anon" or "none"
 mode_modif = config.classify.mode_modif
 # Prepare some Keyword objects
-lookup = "HST"
+lookup = config.classify.lookup
 
 
 # threshold: Uncertainty threshold
-threshold = 0.70
+threshold = config.classify.threshold
 # buffer: the number of sentences to include within paragraph around each sentence with target terms
-buffer = 0
+buffer = config.classify.buffer
 # For uncertainty test
 threshold_array = np.linspace(0.5, 0.95, 20)
 
@@ -100,16 +99,20 @@ classifier: ClassifierBase
 classifier_name = "ML"  # CLI option
 
 # Rule-Based Classifier
-classifier_RB = rules.RuleBasedClassifier(which_classifs=None, do_verbose=True, do_verbose_deep=False)
+classifier_RB = rules.RuleBasedClassifier(
+    which_classifs=None, do_verbose=True, do_verbose_deep=False
+)
 
 
 # ML model file location
 filepath_model = os.path.join(dir_model, (name_model + ".npy"))
-fileloc_ML = os.path.join(dir_model, (config.tfoutput_prefix + name_model))
+fileloc_ML = os.path.join(dir_model, (config.output.tfoutput_prefix + name_model))
 
 # initialize classifiers
 # Machine-Learning Classifier
-classifier_ML = ml.MachineLearningClassifier(filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True)
+classifier_ML = ml.MachineLearningClassifier(
+    filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True
+)
 
 
 if classifier_name == "ML":
