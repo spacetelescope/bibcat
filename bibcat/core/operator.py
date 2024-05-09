@@ -22,7 +22,7 @@ import os
 
 import numpy as np
 
-import bibcat.config as config
+from bibcat import config
 from bibcat.core.base import Base
 from bibcat.core.grammar import Grammar
 from bibcat.data.partition_dataset import generate_directory_TVT
@@ -229,7 +229,7 @@ class Operator(Base):
 
                 # Catch any exceptions and force-print some notes
                 except Exception as err:
-                    dict_verdicts = config.dictverdict_error.copy()
+                    dict_verdicts = config.ml.dictverdict_error.copy()
                     print("-\nThe following err. was encountered in operate:")
                     print(repr(err))
                     print("Error was noted. Returning error as verdict.\n-")
@@ -261,7 +261,7 @@ class Operator(Base):
                 print("No text found matching keyword object.")
                 print("Returning rejection verdict.")
 
-            dict_verdicts = config.dictverdict_rejection.copy()
+            dict_verdicts = config.ml.dictverdict_rejection.copy()
 
         # Classify the text using stored classifier with raised error
         elif do_raise_innererror:  # If True, allow raising of inner errors
@@ -289,7 +289,7 @@ class Operator(Base):
 
             # Catch certain exceptions and force-print some notes
             except Exception as err:
-                dict_verdicts = config.dictverdict_error.copy()
+                dict_verdicts = config.ml.dictverdict_error.copy()
                 print("-\nThe following err. was encountered in operate:")
                 print(repr(err))
                 print("Error was noted. Continuing.\n-")
@@ -529,10 +529,10 @@ class Operator(Base):
 
         dataset = dict_texts
         classifier = self._get_info("classifier")
-        folders_TVT = config.folders_TVT
-        savename_ML = config.tfoutput_prefix + name_model
+        folders_TVT = config.output.folders_TVT
+        savename_ML = config.output.tfoutput_prefix + name_model
         savename_model = name_model + ".npy"
-        filepath_dicterrors = config.path_modiferrors
+        filepath_dicterrors = config.paths.modiferrors
 
         # Print some notes
         if do_verbose:

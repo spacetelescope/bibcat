@@ -18,11 +18,11 @@ There are different modes for modifying a given paragraph (thus producing differ
 import numpy as np
 import spacy
 
-import bibcat.config as config
+from bibcat import config
 from bibcat.core.base import Base
 from bibcat.core.paper import Paper
 
-nlp = spacy.load(config.spacy_language_model)
+nlp = spacy.load(config.grammar.spacy_language_model)
 
 
 class Grammar(Base):
@@ -293,11 +293,11 @@ class Grammar(Base):
         word_dep = word.dep_
 
         # Part-of-speech (pos) tag markers for tense of aux word
-        tags_past = config.tag_verb_past
-        tags_present = config.tag_verb_present
-        tags_future = config.tag_verb_future
-        tags_purpose = config.tag_verb_purpose
-        deps_passive = config.dep_verb_passive
+        tags_past = config.grammar.speech.tag_verb_past
+        tags_present = config.grammar.speech.tag_verb_present
+        tags_future = config.grammar.speech.tag_verb_future
+        tags_purpose = config.grammar.speech.tag_verb_purpose
+        deps_passive = config.grammar.speech.dep_verb_passive
 
         # Print some notes
         if do_verbose:
@@ -383,11 +383,11 @@ class Grammar(Base):
         }
 
         # Determine tense, etc. as types of this verb
-        if tag_verb in config.tag_verb_present:
+        if tag_verb in config.grammar.speech.tag_verb_present:
             dict_verb["verbtype"].append("PRESENT")
-        elif tag_verb in config.tag_verb_past:
+        elif tag_verb in config.grammar.speech.tag_verb_past:
             dict_verb["verbtype"].append("PAST")
-        elif tag_verb in config.tag_verb_future:
+        elif tag_verb in config.grammar.speech.tag_verb_future:
             dict_verb["verbtype"].append("FUTURE")
         else:
             raise ValueError(
@@ -412,9 +412,9 @@ class Grammar(Base):
         text_wordchunk = self._get_wordchunk(node.i, i_sentence=i_sentence, i_cluster=i_cluster, do_text=True)  # Text
         NLP_wordchunk = self._get_wordchunk(node.i, i_sentence=i_sentence, i_cluster=i_cluster, do_text=False)  # NLP
         i_wordchunk = np.array([word.i for word in NLP_wordchunk])  # Just ids
-        all_pos_mains = config.special_pos_main
-        trail_pos_main = config.trail_pos_main
-        ignore_pos_main = config.ignore_pos_main
+        all_pos_mains = config.grammar.special_pos_main
+        trail_pos_main = config.grammar.trail_pos_main
+        ignore_pos_main = config.grammar.ignore_pos_main
 
         # Print some notes
         if do_verbose:
@@ -776,7 +776,7 @@ class Grammar(Base):
             if do_verbose:
                 print("> Applying anon modifications...")
 
-            placeholder_anon = config.placeholder_anon
+            placeholder_anon = config.papertrack.placeholder_anon
             # Update latest text with these updates
             text_updated = keyword_obj.replace_keyword(text=text_updated, placeholder=placeholder_anon)
 

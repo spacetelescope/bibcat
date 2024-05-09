@@ -1,7 +1,7 @@
 """
 :title: build_dataset.py
 
-This module will produce the input corpus data in JSON format by 
+This module will produce the input corpus data in JSON format by
 combining the MAST papertrack JSON file and the ADS full text JSON file.
 
 """
@@ -17,7 +17,7 @@ from bibcat import config
 do_verbose = True
 
 # Throw an error if any of these files already exist
-tmp_list = [config.path_source_data, config.path_not_in_papertext, config.path_not_in_papertrack]
+tmp_list = [config.inputs.path_source_data, config.inputs.path_not_in_papertext, config.inputs.path_not_in_papertrack]
 if any([os.path.isfile(item) for item in tmp_list]):
     raise ValueError(
         (
@@ -27,9 +27,9 @@ if any([os.path.isfile(item) for item in tmp_list]):
     )
 
 # Load paper texts and papertrack classes
-with open(config.path_papertext) as openfile:
+with open(config.inputs.path_papertext) as openfile:
     dataset_papers_orig = json.load(openfile)
-with open(config.path_papertrack) as openfile:
+with open(config.inputs.path_papertrack) as openfile:
     dataset_classes_orig = json.load(openfile)
 
 # Extract information from the paper text dataset
@@ -60,12 +60,12 @@ if do_verbose:
 # Trim papertrack dictionary down to only columns to include
 try:
     storage = [
-        {key: value for key, value in thisdict.items() if (key in config.keys_papertext)}.copy()
+        {key: value for key, value in thisdict.items() if (key in config.inputs.keys_papertext)}.copy()
         for thisdict in dataset_papers_orig
     ]
 except AttributeError:  # If this error raised, probably earlier Python vers.
     storage = [
-        {key: value for key, value in thisdict.iteritems() if (key in config.keys_papertext)}.copy()
+        {key: value for key, value in thisdict.iteritems() if (key in config.inputs.keys_papertext)}.copy()
         for thisdict in dataset_papers_orig
     ]
 
@@ -124,16 +124,16 @@ if do_verbose:
     print("NOTE: {0} papers in text data that were not in papertrack.".format(num_notin_papertrack))
 
 # Save the combined dataset
-with open(config.path_source_data, "w") as openfile:
+with open(config.inputs.path_source_data, "w") as openfile:
     json.dump(storage, openfile, indent=2)
 # Also save the papertrack classifications not found in papertext
-np.savetxt(config.path_not_in_papertext, np.asarray(bibcodes_notin_papertext).astype(str), delimiter="\n", fmt="%s")
+np.savetxt(config.inputs.path_not_in_papertext, np.asarray(bibcodes_notin_papertext).astype(str), delimiter="\n", fmt="%s")
 # Also save the paper-texts not found in papertrack
-np.savetxt(config.path_not_in_papertrack, np.asarray(bibcodes_notin_papertrack).astype(str), delimiter="\n", fmt="%s")
+np.savetxt(config.inputs.path_not_in_papertrack, np.asarray(bibcodes_notin_papertrack).astype(str), delimiter="\n", fmt="%s")
 
 # Print some notes
 if do_verbose:
     print("Dataset generation complete.\n")
-    print("Combined .json file saved to:\n{0}\n".format(config.path_source_data))
-    print("Bibcodes not in papertext saved to:\n{0}\n".format(config.path_not_in_papertext))
-    print("Bibcodes not in papertrack saved to:\n{0}\n".format(config.path_not_in_papertrack))
+    print("Combined .json file saved to:\n{0}\n".format(config.inputs.path_source_data))
+    print("Bibcodes not in papertext saved to:\n{0}\n".format(config.inputs.path_not_in_papertext))
+    print("Bibcodes not in papertrack saved to:\n{0}\n".format(config.inputs.path_not_in_papertrack))

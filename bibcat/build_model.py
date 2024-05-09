@@ -15,16 +15,18 @@ import os
 import time
 
 from bibcat import config
-from bibcat import model_settings as settings
+#from bibcat import model_settings as settings
 from bibcat import parameters as params
 from bibcat.core import operator
 from bibcat.core.classifiers import ml
 from bibcat.data.streamline_dataset import load_source_dataset, streamline_dataset
 
+settings = config.model
+
 # Fetch filepath for model
-name_model = config.name_model
-dir_data = os.path.join(config.path_partitioned_data, name_model)
-dir_model = os.path.join(config.PATH_MODELS, name_model)
+name_model = config.output.name_model
+dir_data = os.path.join(config.paths.partitioned, name_model)
+dir_model = os.path.join(config.paths.models, name_model)
 
 
 def build_model() -> None:

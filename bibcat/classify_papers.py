@@ -27,24 +27,26 @@ from bibcat import parameters as params
 from bibcat.core import operator, performance
 from bibcat.core.classifiers import ml, rules
 
+
 # Fetch filepath for model
-name_model = config.name_model
-dir_model = os.path.join(config.PATH_MODELS, name_model)
+name_model = config.output.name_model
+dir_model = os.path.join(config.paths.partitioned, name_model)
 
 # Set directories for fetching test text
 dir_info = dir_model
-folder_test = config.folders_TVT["test"]
+folder_test = config.output.folders_TVT["test"]
 dir_test = os.path.join(dir_model, folder_test)
+
 
 # Set parameters for each operator and its internal classifier
 
 # Global parameters
-do_verify_truematch = True  # used in Performance class
+do_verify_truematch = config.classify.do_verify_truematch  # used in Performance class
 
 # do_raise_innererror: if True, will stop if exception encountered;
 # if False, will print error and continue
-do_raise_innererror = False
-do_verbose_text_summary = False  # print input text data summary
+do_raise_innererror = config.classify.do_raise_innererror
+do_verbose_text_summary = config.classify.do_verbose_text_summary  # print input text data summary
 
 # For uncertainty test
 list_threshold_arrays = [np.linspace(0.5, 0.95, 20)] * 2
@@ -54,23 +56,23 @@ class_mapper = params.map_papertypes
 # Set some overarching global variables
 
 # Random seed for shuffling text dataset
-np.random.seed(10)
+np.random.seed(config.classify.shuffle_seed)
 # Whether or not to shuffle the text dataset
-do_shuffle = True
+do_shuffle = config.classify.do_shuffle
 
 # do_real_testdata: If True, will use real papers to test performance;
 # if False, will use fake texts but we will implement the fake data
 # if we need. For now, we keep this variable and only the real text.
-do_real_testdata = True
+do_real_testdata = config.classify.do_real_testdata
 
 # Number of text entries to test the performance for; None for all tests
-max_tests = 30
+max_tests = config.classify.max_tests
 # mode_modif: Mode to use for text processing and generating
 # possible modes: any combination from "skim", "trim", and "anon" or "none"
-mode_modif = "anon"
+mode_modif = config.classify.mode_modif
 # Prepare some Keyword objects
 all_kobjs = params.all_kobjs
-lookup = "HST"
+lookup = config.classify.lookup
 
 
 # Set two operators: machine learning (ML) and rule-based (RB)
@@ -81,13 +83,13 @@ lookup = "HST"
 
 # For operator ML
 mapper_ML = class_mapper
-threshold_ML = 0.70
-buffer_ML = 0
+threshold_ML = config.classify.threshold_ML
+buffer_ML = config.classify.buffer_ML
 
 # For operator RL
 mapper_RB = class_mapper
-threshold_RB = 0.70
-buffer_RB = 0
+threshold_RB = config.classify.threshold_RB
+buffer_RB = config.classify.buffer_RB
 
 # Gather parameters into lists
 list_mappers = [mapper_ML, mapper_RB]
@@ -102,7 +104,7 @@ if do_real_testdata:
     list_test_bibcodes = [key for key in dict_TVTinfo if (dict_TVTinfo[key]["folder_TVT"] == folder_test)]
 
     # Load the original data
-    with open(config.path_source_data, "r") as openfile:
+    with open(config.inputs.path_source_data, "r") as openfile:
         dataset = json.load(openfile)
     # Extract text information for the bibcodes reserved for testing
     # Data for test set
@@ -139,7 +141,7 @@ if do_real_testdata:
                     }
                 # Otherwise, store that this mission was not detected for this text
                 else:
-                    curr_info["missions"][curr_name] = {"mission": curr_name, "class": config.verdict_rejection}
+                    curr_info["missions"][curr_name] = {"mission": curr_name, "class": config.ml.verdict_rejection}
         # Store this data entry
         dict_texts[str(curr_ind)] = curr_info
 
@@ -167,7 +169,7 @@ list_dict_texts = [dict_texts_ML, dict_texts_RB]
 # This can be modified to use whatever classifiers you'd like.
 # initialize classifiers by loading a previously trained ML model
 filepath_model = os.path.join(dir_model, (name_model + ".npy"))
-fileloc_ML = os.path.join(dir_model, (config.tfoutput_prefix + name_model))
+fileloc_ML = os.path.join(dir_model, (config.output.tfoutput_prefix + name_model))
 classifier_ML = ml.MachineLearningClassifier(filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True)
 
 # Load a rule-based classifier
@@ -253,13 +255,6 @@ print("-\n")
 # Create an instance of the Performance class
 performer = performance.Performance()
 
-# Parameters for this evaluation
-# Root name of the file within which to store the performance evaluation output
-fileroot_evaluation = "test_eval_basic"
-# Root name of the file within which to store misclassified text information
-fileroot_misclassif = "test_misclassif_basic"
-figsize = (20, 12)
-
 # Run the pipeline for a basic evaluation of model performance
 performer.evaluate_performance_basic(
     operators=list_operators,
@@ -272,21 +267,14 @@ performer.evaluate_performance_basic(
     do_raise_innererror=do_raise_innererror,
     do_save_evaluation=True,
     do_save_misclassif=True,
-    filepath_output=config.PATH_OUTPUT,
-    fileroot_evaluation=fileroot_evaluation,
-    fileroot_misclassif=fileroot_misclassif,
+    filepath_output=config.paths.output,
+    fileroot_evaluation="test_eval_basic",
+    fileroot_misclassif="test_misclassif_basic",
     print_freq=1,
     do_verbose=True,
     do_verbose_deep=False,
-    figsize=figsize,
+    figsize=(20, 12),
 )
-
-# Parameters for this evaluation
-# Root name of the file within which to store the performance evaluation output
-fileroot_evaluation = "test_eval_uncertainty"
-# Root name of the file within which to store misclassified text information
-fileroot_misclassif = "test_misclassif_uncertainty"
-figsize = (40, 12)
 
 # Run the pipeline for an evaluation of model performance
 # as a function of uncertainty
@@ -301,11 +289,11 @@ performer.evaluate_performance_uncertainty(
     do_raise_innererror=do_raise_innererror,
     do_save_evaluation=True,
     do_save_misclassif=True,
-    filepath_output=config.PATH_OUTPUT,
-    fileroot_evaluation=fileroot_evaluation,
-    fileroot_misclassif=fileroot_misclassif,
+    filepath_output=config.paths.output,
+    fileroot_evaluation="test_eval_uncertainty",
+    fileroot_misclassif="test_misclassif_uncertainty",
     print_freq=25,
     do_verbose=True,
     do_verbose_deep=False,
-    figsize=figsize,
+    figsize=(40, 12),
 )

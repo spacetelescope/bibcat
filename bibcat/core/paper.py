@@ -1,11 +1,11 @@
 """
 :title: paper.py
 
-The primary purpose is to extract all sentences within a larger text block 
-that refers to a given mission(s).  This collection of sentences for each mission, 
-denoted from here on as a 'paragraph,' is created to focus on the portions of 
-the original text related to the target mission.  Using paragraphs for classification 
-instead of the full text allows us to remove much of the 'noise' inherent to 
+The primary purpose is to extract all sentences within a larger text block
+that refers to a given mission(s).  This collection of sentences for each mission,
+denoted from here on as a 'paragraph,' is created to focus on the portions of
+the original text related to the target mission.  Using paragraphs for classification
+instead of the full text allows us to remove much of the 'noise' inherent to
 the rest of the text.
 
 """
@@ -13,7 +13,7 @@ import re
 
 import numpy as np
 
-import bibcat.config as config
+from bibcat import config
 from bibcat.core.base import Base
 
 
@@ -368,11 +368,11 @@ class Paper(Base):
         # Split by line breaks first
         text_lines = text.split("\n")
         # Split by sentences starting with brackets
-        text_flat = [item for phrase in text_lines for item in re.split(config.exp_splitbracketstarts, phrase)]
+        text_flat = [item for phrase in text_lines for item in re.split(config.grammar.regex.exp_splitbracketstarts, phrase)]
         # Split by sentences ending with brackets
-        text_flat = [item for phrase in text_flat for item in re.split(config.exp_splitbracketends, phrase)]
+        text_flat = [item for phrase in text_flat for item in re.split(config.grammar.regex.exp_splitbracketends, phrase)]
         # Then split by assumed sentence structure
-        text_flat = [item for phrase in text_flat for item in re.split(config.exp_splittext, phrase)]
+        text_flat = [item for phrase in text_flat for item in re.split(config.grammar.regex.exp_splittext, phrase)]
         # Return the split text
         return text_flat
 
@@ -391,7 +391,7 @@ class Paper(Base):
 
         # Build regular expression for all acronyms
         list_exp = [
-            (r"\b" + (r"[a-z]+\b" + config.exp_acronym_midwords).join(letterset) + r"[a-z]+\b")
+            (r"\b" + (r"[a-z]+\b" + config.grammar.regex.exp_acronym_midwords).join(letterset) + r"[a-z]+\b")
             for letterset in acronyms
         ]
         combined_exp = r"(?:" + (r")|(?:".join(list_exp)) + r")"

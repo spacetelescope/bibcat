@@ -11,7 +11,7 @@ import tensorflow_hub as tfhub
 import tensorflow_text as tftext
 from official.nlp import optimization as tf_opt
 
-import bibcat.config as config
+from bibcat import config
 from bibcat.core.classifiers.textdata import ClassifierBase
 
 
@@ -53,7 +53,7 @@ class MachineLearningClassifier(ClassifierBase):
                 num_warmup_steps=load_dict["num_steps_warmup"],
                 optimizer_type=load_dict["type_optimizer"],
             )
-            model = tf.keras.models.load_model(fileloc_ML, custom_objects={config.ML_name_optimizer: optimizer})
+            model = tf.keras.models.load_model(fileloc_ML, custom_objects={config.ml.ML_name_optimizer: optimizer})
 
         # Otherwise, store empty placeholder
         else:
@@ -121,26 +121,26 @@ class MachineLearningClassifier(ClassifierBase):
             - 'loss': loss from model training.
         """
         # Load global variables
-        dir_train = os.path.join(dir_data, config.folders_TVT["train"])
-        dir_validation = os.path.join(dir_data, config.folders_TVT["validate"])
-        dir_test = os.path.join(dir_data, config.folders_TVT["test"])
+        dir_train = os.path.join(dir_data, config.output.folders_TVT["train"])
+        dir_validation = os.path.join(dir_data, config.output.folders_TVT["validate"])
+        dir_test = os.path.join(dir_data, config.output.folders_TVT["test"])
 
-        savename_ML = config.tfoutput_prefix + name_model
+        savename_ML = config.output.tfoutput_prefix + name_model
         savename_model = name_model + ".npy"
 
         if do_verbose is None:
             do_verbose = self._get_info("do_verbose")
 
         # Load in ML values
-        label_mode = config.ML_label_model
-        batch_size = config.ML_batch_size
-        type_optimizer = config.ML_type_optimizer
-        ml_model_key = config.ML_model_key
-        frac_dropout = config.ML_frac_dropout
-        frac_steps_warmup = config.ML_frac_steps_warmup
-        num_epochs = config.ML_num_epochs
-        init_lr = config.ML_init_lr
-        activation_dense = config.ML_activation_dense
+        label_mode = config.ml.ML_label_model
+        batch_size = config.ml.ML_batch_size
+        type_optimizer = config.ml.ML_type_optimizer
+        ml_model_key = config.ml.ML_model_key
+        frac_dropout = config.ml.ML_frac_dropout
+        frac_steps_warmup = config.ml.ML_frac_steps_warmup
+        num_epochs = config.ml.ML_num_epochs
+        init_lr = config.ml.ML_init_lr
+        activation_dense = config.ml.ML_activation_dense
 
         # Throw error if model already exists
         if os.path.exists(os.path.join(dir_model, savename_model)):
@@ -157,6 +157,9 @@ class MachineLearningClassifier(ClassifierBase):
         if do_verbose:
             print("Loading datasets...")
             print("Loading training data...")
+
+        # TODO - move all tf.keras stuff to self-contained function / method
+        # TODO - generalize this method
 
         # For training
         dataset_train_raw = tf.keras.preprocessing.text_dataset_from_directory(
@@ -197,12 +200,12 @@ class MachineLearningClassifier(ClassifierBase):
             print("Loading ML model components...")
 
         # Load the preprocessor
-        ml_handle_preprocessor = config.dict_ml_model_preprocessors[ml_model_key]
+        ml_handle_preprocessor = config.ml.dict_ml_model_preprocessors[ml_model_key]
         ml_preprocessor = tfhub.KerasLayer(ml_handle_preprocessor)
         if do_verbose:
             print("Loaded ML preprocessor: {0}".format(ml_handle_preprocessor))
 
-        ml_handle_encoder = config.dict_ml_model_encoders[ml_model_key]
+        ml_handle_encoder = config.ml.dict_ml_model_encoders[ml_model_key]
         ml_encoder = tfhub.KerasLayer(ml_handle_encoder, trainable=True)
         if do_verbose:
             print("Loaded ML encoder: {0}".format(ml_handle_encoder))
@@ -401,7 +404,7 @@ class MachineLearningClassifier(ClassifierBase):
 
         # Return low-uncertainty verdict if below given threshold
         if (threshold is not None) and (probs[max_ind] < threshold):
-            dict_results = config.dictverdict_lowprob.copy()
+            dict_results = config.ml.dictverdict_lowprob.copy()
             dict_results["uncertainty"] = dict_uncertainty
 
         # Otherwise, generate dictionary of results

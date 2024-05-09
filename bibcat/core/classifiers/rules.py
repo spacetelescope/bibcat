@@ -7,7 +7,7 @@ import itertools as iterer
 import numpy as np
 from nltk.corpus import wordnet
 
-import bibcat.config as config
+from bibcat import config
 from bibcat.core.classifiers.textdata import ClassifierBase
 
 
@@ -33,7 +33,7 @@ class RuleBasedClassifier(ClassifierBase):
         self._store_info(do_verbose, "do_verbose")
         self._store_info(do_verbose_deep, "do_verbose_deep")
         if which_classifs is None:
-            which_classifs = config.list_default_verdicts_decisiontree
+            which_classifs = config.grammar.list_default_verdicts_decisiontree
         self._store_info(which_classifs, "class_names")
 
         # Assemble the fixed decision tree
@@ -53,7 +53,7 @@ class RuleBasedClassifier(ClassifierBase):
         # Extract global variables
         do_verbose = self._get_info("do_verbose")
         which_classifs = self._get_info("class_names")
-        keys_main = config.nest_keys_main
+        keys_main = config.grammar.rules.nest_keys_main
         keys_matter = [item for item in keys_main if (item.endswith("matter"))]
         bool_keyword = "is_keyword"
         prefix = "prob_"
@@ -160,10 +160,10 @@ class RuleBasedClassifier(ClassifierBase):
         # Extract global variables
         do_verbose = self._get_info("do_verbose")
         which_classifs = self._get_info("class_names")
-        dict_possible_values = config.dict_tree_possible_values
+        dict_possible_values = config.grammar.dict_tree_possible_values
         # dict_valid_combos = config.dict_tree_valid_value_combinations
-        keys_matter = config.nest_keys_matter
-        key_verbtype = config.nest_key_verbtype
+        keys_matter = config.grammar.rules.nest_keys_matter
+        key_verbtype = config.grammar.rules.nest_key_verbtype
         all_params = list(dict_possible_values.keys())
         prefix = "prob_"
 
@@ -1121,10 +1121,10 @@ class RuleBasedClassifier(ClassifierBase):
         verb_dep = struct_words[i_verb]["_dep"]
         verb_pos = struct_words[i_verb]["_pos"]
         do_verbose = self._get_info("do_verbose")
-        list_category_names = config.list_category_names
-        list_category_synsets = config.list_category_synsets
-        list_category_threses = config.list_category_threses
-        max_hyp = config.max_num_hypernyms
+        list_category_names = config.grammar.rules.list_category_names
+        list_category_synsets = config.grammar.rules.list_category_synsets
+        list_category_threses = config.grammar.rules.list_category_threses
+        max_hyp = config.grammar.rules.max_num_hypernyms
         # root_hypernyms = wordnet.synsets(verb, pos=wordnet.VERB)
         if max_hyp is None:
             root_hypernyms = wordnet.synsets(verb, pos=wordnet.VERB)
@@ -1146,14 +1146,14 @@ class RuleBasedClassifier(ClassifierBase):
             if do_verbose:
                 print("Verb {0} is a root noun. Marking as such.")
 
-            return config.category_nonverb_root
+            return config.grammar.rules.category_nonverb_root
 
         # Handle specialty verbs
         # For 'be' verbs
-        if any([(roothyp in config.synsets_verbs_be) for roothyp in root_hypernyms]):
+        if any([(roothyp in config.grammar.rules.synsets_verbs_be) for roothyp in root_hypernyms]):
             return "be"
         # For 'has' verbs
-        elif any([(roothyp in config.synsets_verbs_has) for roothyp in root_hypernyms]):
+        elif any([(roothyp in config.grammar.rules.synsets_verbs_has) for roothyp in root_hypernyms]):
             return "has"
 
         # Determine likely topical category for this verb
@@ -1182,7 +1182,7 @@ class RuleBasedClassifier(ClassifierBase):
             return None
 
         # Throw an error if this verb gives very similar top scores
-        thres = config.thres_category_fracdiff
+        thres = config.grammar.rules.thres_category_fracdiff
         metric_close_raw = np.abs(np.diff(np.sort(score_fins)[::-1])) / max(score_fins)
         metric_close = metric_close_raw[0]
         if metric_close < thres:
@@ -1362,7 +1362,7 @@ class RuleBasedClassifier(ClassifierBase):
         # Return empty verdict if empty scores
         # For completely empty scores
         if len(dict_scores_indiv) == 0:
-            tmp_res = config.dictverdict_error.copy()
+            tmp_res = config.ml.dictverdict_error.copy()
             # Print some notes
             if do_verbose:
                 print("\n-Empty scores; verdict: {0}".format(tmp_res))
@@ -1452,7 +1452,7 @@ class RuleBasedClassifier(ClassifierBase):
 
             # Return verdict only if above given threshold probability
             if (threshold is not None) and (max_score < threshold):
-                tmp_res = config.dictverdict_lowprob.copy()
+                tmp_res = config.ml.dictverdict_lowprob.copy()
                 tmp_res["scores_indiv"] = dict_scores_indiv
                 tmp_res["uncertainty"] = dict_uncertainties
                 tmp_res["components"] = components
@@ -1465,7 +1465,7 @@ class RuleBasedClassifier(ClassifierBase):
 
             # Return low-prob verdict if multiple equal top probabilities
             elif list_scores_comb.count(max_score) > 1:
-                tmp_res = config.dictverdict_lowprob.copy()
+                tmp_res = config.ml.dictverdict_lowprob.copy()
                 tmp_res["scores_indiv"] = dict_scores_indiv
                 tmp_res["uncertainty"] = dict_uncertainties
                 tmp_res["components"] = components
@@ -1503,7 +1503,7 @@ class RuleBasedClassifier(ClassifierBase):
             print("Loading all possible branch parameters...")
 
         # Load all possible values
-        all_possible_values = config.dict_tree_possible_values
+        all_possible_values = config.grammar.dict_tree_possible_values
         solo_values = [None]
         all_subjmatters = [item for item in all_possible_values["subjectmatter"] if (item is not None)]
         all_objmatters = [item for item in all_possible_values["objectmatter"] if (item is not None)]
@@ -1670,9 +1670,9 @@ class RuleBasedClassifier(ClassifierBase):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         branch_verb = struct_verbs[i_verb]
-        lookup_pos = config.conv_pos_fromtreetonest
-        ignore_pos = config.nest_unimportant_pos
-        target_bools = config.nest_important_treebools
+        lookup_pos = config.grammar.rules.conv_pos_fromtreetonest
+        ignore_pos = config.grammar.rules.nest_unimportant_pos
+        target_bools = config.grammar.rules.nest_important_treebools
         # Print some notes
         if do_verbose:
             print("\n> Running _make_nest_verbclause.")
@@ -1820,12 +1820,12 @@ class RuleBasedClassifier(ClassifierBase):
     def _unlink_nest(self, nest):
         # Extract global variables
         do_verbose = self._get_info("do_verbose")
-        keys_main = config.nest_keys_main
+        keys_main = config.grammar.rules.nest_keys_main
         keys_matter = [item for item in keys_main if (item.endswith("matter"))]
         keys_nonmatter = [item for item in keys_main if (not item.endswith("matter"))]
         key_matter_obj = "objectmatter"
-        prefix_link = config.nest_prefix_link
-        terms_superior = config.nest_important_treebools_superior
+        prefix_link = config.grammar.rules.nest_prefix_link
+        terms_superior = config.grammar.rules.nest_important_treebools_superior
         keys_linked_main = [(prefix_link + key) for key in keys_main]
         keys_linked_matter = [(prefix_link + key) for key in keys_matter]
         num_links = len(nest[keys_linked_matter[0]])
