@@ -1403,7 +1403,7 @@ class Base:
         )
 
         # Remove spaces between capital+numeric names
-        text = re.sub(r"([A-Z]+) ([0-9]+)([0-9]|[a-z])+", r"\1\2\3{}".format(config.placeholder_numeric), text)
+        text = re.sub(r"([A-Z]+) ([0-9]+)([0-9]|[a-z])+", r"\1\2\3{}".format(config.papertrack.placeholder_numeric), text)
 
         # Remove any new excessive whitespace and punctuation spaces
         text = self._cleanse_text(text=text, do_streamline_etal=True)

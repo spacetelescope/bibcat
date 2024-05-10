@@ -44,10 +44,9 @@ classify:
   max_tests: 30  # Number of text entries to test the performance for; None for all tests
   mode_modif: anon  # Mode to use for text processing and generating possible modes: any combination from "skim", "trim", and "anon" or "none
   lookup: HST  # Prepare some Keyword objects
-  threshold_ML: 0.70  # For operator ML
-  buffer_ML: 0  # For operator ML
-  threshold_RB: 0.70  # For operator RL
-  buffer_RB: 0  # For operator RL
+  threshold: 0.70
+  buffer: 0
+
 
 papertrack:
   placeholder_anon: "OBJ"
