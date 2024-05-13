@@ -26,6 +26,14 @@ conda activate `env_name`
 pip install -U "tensorflow-text"
 python -m spacy download en_core_web_sm
 ```
+
+To utilize your GPU, you need to install `tensorflow-metal`.  You can run `pip install tensorflow-metal`.  To verify if tensorflow is set up to utilize your GPU, do the following:
+```
+import tensorflow as tf
+tf.config.list_physical_devices('GPU')
+```
+You should the following output: `[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]`.  If the output is an empty list, you are not setup for GPU use.
+
 ### Bibcat installation
 The `bibcat` directory contains the python package itself, installable via pip.
 ```shell
@@ -50,9 +58,14 @@ There are three user environment variables to set:
 - **BIBCAT_DATA_DIR**: a local path to the directory of input data, e.g the input JSON files and full text
 - **BIBCAT_OUTPUT_DIR**: a local path to a directory where the output of bibcat will be written, e.g. the output model and QA plots
 
-If not set, all envvars will default to the user's home directory.
+If not set, all envvars will default to the user's home directory.  You can set these environment variables in your shell terminal, or in your shell config file, i.e. `.bashrc` or `.zshrc` file. For example,
+```bash
+export BIBCAT_CONFIG_DIR=/my/local/path/to/custom/config
+export BIBCAT_DATA_DIR=/my/local/path/to/input/data/dir
+export BIBCAT_OUTPUT_DIR=/my/local/path/to/bibcat/output
+```
 
-All `bibcat` configuration is contained in a YAML configuration file, `bibcat_config.yaml` .  The default settings are located in `etc/bibcat_config.yaml`.  To modify any of the settings, you do so through a custom user configuration file of the same name, placed in `$BIBCAT_CONFIG_DIR` or your home directory, mirroring the same default structure.  All user custom settings override the defaults.
+All `bibcat` configuration is contained in a YAML configuration file, `bibcat_config.yaml` .  The default settings are located in `etc/bibcat_config.yaml`.  You don't modify this file directly.  To modify any of the settings, you do so through a custom user configuration file of the same name, placed in `$BIBCAT_CONFIG_DIR` or your home directory, mirroring the same default structure.  All user custom settings override the defaults.
 
 For example, to change the name of the output model saved, within your user `$BIBCAT_CONFIG_DIR/bibcat_config.yaml`, set
 ```yaml
