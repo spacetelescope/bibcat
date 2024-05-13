@@ -48,6 +48,7 @@ kobj_jwst_expanded = params.keyword_obj_JWST_expanded
 kobj_kepler = params.keyword_obj_Kepler
 kobj_k2 = params.keyword_obj_K2
 kobj_uit = params.keyword_obj_UIT
+kobj_panstarrs = params.keyword_obj_PanSTARRS
 #
 #Keyword-object lookups
 list_lookup_kobj = [kobj_hubble, kobj_kepler, kobj_k2]
@@ -276,7 +277,7 @@ class TestData(unittest.TestCase):
         #
     #
 #"""
-#"""
+"""
 #class: TestBase
 #Purpose: Testing the Base class
 class TestBase(unittest.TestCase):
@@ -2085,12 +2086,12 @@ class TestGrammar(unittest.TestCase):
         #Test modif generation for example text with critical punctuation
         def test__modifs__CUSTOM(self):
             quicktext = (
-                "!"
+                "Synthetic photometry is first adjusted to Pan–STARRS grizy photometry (Chambers et al. 2016 ), which yields a first estimate of T eff and the solid angle π R 2 / D 2 ."
                 )
             #Prepare text and answers for test
             dict_acts = {
             quicktext:
-                {"kobj":kobj_kepler,
+                {"kobj":kobj_panstarrs,
                 "none":"!"
                 }
             }

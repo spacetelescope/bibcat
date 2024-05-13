@@ -10,6 +10,7 @@
 #External packages
 import re
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' #Gets rid of tensorflow debug output
 import numpy as np
 import itertools as iterer
 import collections
@@ -24,8 +25,9 @@ nlp = spacy.load(config.spacy_language_model)
 import nltk
 from nltk.corpus import wordnet
 #
+
 import tensorflow as tf
-from official.nlp import optimization as tf_opt
+#from official.nlp import optimization as tf_opt
 import tensorflow_hub as tfhub
 import tensorflow_text as tftext
 #
@@ -4408,10 +4410,11 @@ class Classifier_ML(_Classifier):
             load_dict = np.load(filepath_model, allow_pickle=True).item()
             #
             class_names = load_dict["class_names"]
-            optimizer = tf_opt.create_optimizer(init_lr=load_dict["init_lr"],
-                                num_train_steps=load_dict["num_steps_train"],
-                                num_warmup_steps=load_dict["num_steps_warmup"],
-                                optimizer_type=load_dict["type_optimizer"])
+            optimizer = tf.keras.optimizers.Adam(init_lr=load_dict["init_lr"])
+            #optimizer = tf_opt.create_optimizer(init_lr=load_dict["init_lr"],
+            #                    num_train_steps=load_dict["num_steps_train"],
+            #                    num_warmup_steps=load_dict["num_steps_warmup"],
+            #                    optimizer_type=load_dict["type_optimizer"])
             model = tf.keras.models.load_model(fileloc_ML,
                                     custom_objects={config.ML_name_optimizer:
                                                     optimizer})
@@ -4444,11 +4447,25 @@ class Classifier_ML(_Classifier):
         #NOTE: Structure is:
         #=Text Input -> Preprocessor -> Encoder -> Dropout layer -> Dense layer
         #Text input
+        #layer_input =tf.keras.layers.Input(shape=(),dtype=tf.string,name="text")
+        #Preprocessor
+        #layer_preprocessor=tfhub.KerasLayer(ml_preprocessor,name="preprocessor")
+        #Encoder
+        #inputs_encoder = layer_preprocessor(layer_input)
+        #layer_encoder = tfhub.KerasLayer(ml_encoder, trainable=True, name="encoder")
+        #outputs_encoder = layer_encoder(inputs_encoder)
+        #
+
+        #ml_handle = config.ML_model_handle
         layer_input =tf.keras.layers.Input(shape=(),dtype=tf.string,name="text")
         #Preprocessor
+        #layer_preprocessor = keras_nlp.models.BertPreprocessor.from_preset(
+        #                            ml_handle, name="preprocessor")
         layer_preprocessor=tfhub.KerasLayer(ml_preprocessor,name="preprocessor")
         #Encoder
         inputs_encoder = layer_preprocessor(layer_input)
+        #layer_encoder = keras_nlp.models.BertPreprocessor.from_preset(
+        #                            ml_handle, trainable=True, name="encoder")
         layer_encoder = tfhub.KerasLayer(ml_encoder, trainable=True, name="encoder")
         outputs_encoder = layer_encoder(inputs_encoder)
 
@@ -4581,8 +4598,9 @@ class Classifier_ML(_Classifier):
             print("Dropout fraction: {0}".format(frac_dropout))
             print("Number of Dense layers: {0}".format(num_dense))
         #
-        model = self._build_ML(ml_preprocessor=ml_preprocessor,
-                        ml_encoder=ml_encoder, frac_dropout=frac_dropout,
+        model = self._build_ML(frac_dropout=frac_dropout,
+                        ml_preprocessor=ml_preprocessor,
+                        ml_encoder=ml_encoder,
                         num_dense=num_dense, activation_dense=activation_dense)
         #
         #Print some notes
@@ -4598,20 +4616,22 @@ class Classifier_ML(_Classifier):
         metrics = [tf.keras.metrics.CategoricalAccuracy("accuracy")]
         stepsize_epoch = tf.data.experimental.cardinality(dataset_train).numpy()
         #
-        num_steps_train = stepsize_epoch*num_epochs
-        num_steps_warmup = int(frac_steps_warmup * num_steps_train)
+        #num_steps_train = stepsize_epoch*num_epochs
+        #num_steps_warmup = int(frac_steps_warmup * num_steps_train)
         #
-        optimizer = tf_opt.create_optimizer(init_lr=init_lr,
-                                            num_train_steps=num_steps_train,
-                                            num_warmup_steps=num_steps_warmup,
-                                            optimizer_type=type_optimizer)
+        #optimizer = tf_opt.create_optimizer(init_lr=init_lr,
+        #                                    num_train_steps=num_steps_train,
+        #                                    num_warmup_steps=num_steps_warmup,
+        #                                    optimizer_type=type_optimizer)
+        optimizer = tf.keras.optimizers.Adam(learning_rate=init_lr)
         #
         #Print some notes
         if do_verbose:
-            print("# of training steps: {0}\n# of warmup steps: {1}"
-                    .format(num_steps_train, num_steps_warmup))
-            print("Type of optimizer and initial lr: {0}, {1}"
-                    .format(type_optimizer, init_lr))
+            print("Optimizer created.")
+        #    print("# of training steps: {0}\n# of warmup steps: {1}"
+        #            .format(num_steps_train, num_steps_warmup))
+        #    print("Type of optimizer and initial lr: {0}, {1}"
+        #            .format(type_optimizer, init_lr))
         #
 
         ##Compile the model with the loss, metric, and optimization functions
@@ -11387,10 +11407,14 @@ class Classifier_Rules(_Classifier):
     ##Purpose: Convert set of decision tree scores into single verdict
     #def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=1.0, order_override_acceptance=["science"], "data_influenced"]):
     #If this doesn't work, revert back and use split uncertainty thresholds for rule-based classifs (e.g., more lenient for mentions)
-    def _convert_score_to_verdict(self, dict_scores_indiv, count_for_override=1, thres_override_acceptance=0.6, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.80, order_override_acceptance=["science", "data_influenced"], dict_weights={"science":1, "data_influenced":1, "mention":1}, dict_minprob={"science":0.7, "data_influenced":0.7, "mention":0.4}, order_minprob=["data_influenced", "science", "mention"]): #, "data_influenced"]):
+    def _convert_score_to_verdict_old_2024_05_06_testingnewminprobstuff(self, dict_scores_indiv, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.80, order_override_acceptance=["science", "data_influenced"], dict_weights={"science":1, "data_influenced":1, "mention":1}): #, "data_influenced"]):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         thres_purity = config.thres_purity
+        count_for_override = config.count_override
+        thres_override_acceptance = config.thres_override_acceptance
+        thres_dict_minprob = config.thres_dict_minprob
+        order_minprob = config.order_minprob
         #Print some notes
         if do_verbose:
             print("\n> Running _convert_scorestoverdict.")
@@ -11495,11 +11519,12 @@ class Classifier_Rules(_Classifier):
         #"""
 
         #Override combined scores with values above prob. threshold if requested
-        """
-        tmp_max_key = None
-        if (dict_minprob is not None):
+        #"""
+        #tmp_max_key = None
+        if (thres_dict_minprob is not None):
+            tmp_max_key = None
             for curr_key in order_minprob:
-                if (dict_results[curr_key]["score_tot_norm"] >= dict_minprob[curr_key]):
+                if (dict_results[curr_key]["score_tot_norm"] >= thres_dict_minprob[curr_key]):
                     #Override scores
                     tmp_max_key = curr_key
                     break
@@ -11539,6 +11564,14 @@ class Classifier_Rules(_Classifier):
         #Uncertainty component 1: normalized count
         #Uncertainty component 2: normalized total score
         #
+        dict_uncertainties = {key:dict_results[key]["score_tot_weighted"]
+                            for key in all_keys}
+        if (tmp_max_key is not None):
+            for curr_key in all_keys:
+                if (curr_key == tmp_max_key):
+                    continue
+                dict_uncertainties[curr_key] = 0.0
+        """
         if (tmp_max_key is None):
             #Average for the overall uncertainty, if no override
             #dict_uncertainties = {
@@ -11577,7 +11610,7 @@ class Classifier_Rules(_Classifier):
             else: #If zero denominator, just set to 0
                 tmp_dict = {key:0 for key in all_keys if (key != tmp_max_key)}
             dict_uncertainties.update(tmp_dict)
-        #
+        #"""
         #
         #Block: 2024-03-02a
         #Weight the score metric more if absolute override was applied
@@ -11620,7 +11653,7 @@ class Classifier_Rules(_Classifier):
         if (list_scores_comb.count(list_scores_comb[max_ind]) > 1):
             tmp_res = config.dictverdict_lowprob.copy()
             tmp_res["scores_indiv"] = dict_scores_indiv
-            tmp_res["uncertainty"] = dict_uncertainties
+            tmp_res["uncertainty"] = None #dict_uncertainties
             #tmp_res["components"] = components
             #Print some notes
             if do_verbose:
@@ -11632,6 +11665,517 @@ class Classifier_Rules(_Classifier):
 
         ##Establish uncertainty for max verdict from scores
         #dict_uncertainties[max_verdict] = max_score
+        #
+
+        ##Assemble and return final verdict
+        fin_res = {"verdict":max_verdict, "scores_indiv":dict_scores_indiv,
+                "uncertainty":dict_uncertainties, #"components":components,
+                "norm_error":dict_error}
+        #
+        #Print some notes
+        if do_verbose:
+            print("-Returning final verdict dictionary:\n{0}".format(fin_res))
+        #
+        return fin_res
+    #
+
+    ##Method: _convert_scorestoverdict
+    ##Purpose: Convert set of decision tree scores into single verdict
+    #def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=1.0, order_override_acceptance=["science"], "data_influenced"]):
+    #If this doesn't work, revert back and use split uncertainty thresholds for rule-based classifs (e.g., more lenient for mentions)
+    def _convert_score_to_verdict_old_2024_05_08_beforenewweightingscheme(self, dict_scores_indiv, thres_indiv_score=0.7, weight_for_override=0.75, uncertainty_for_override=0.80, order_override_acceptance=["science", "data_influenced"], dict_weights={"science":1, "data_influenced":1, "mention":1}): #, "data_influenced"]):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        thres_purity = config.thres_purity
+        #count_for_override = config.count_override
+        #thres_override_acceptance = config.thres_override_acceptance
+        #thres_dict_minprob = config.thres_dict_minprob
+        order_minprob = config.order_minprob
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _convert_scorestoverdict.")
+            print("Individual components and score sets:")
+            for ii in range(0, len(dict_scores_indiv)):
+                print("{0}\n-".format(#components[ii],
+                                            dict_scores_indiv[ii]))
+            #
+        #
+
+        ##Return empty verdict if empty scores
+        #For completely empty scores
+        if len(dict_scores_indiv) == 0:
+            tmp_res = config.dictverdict_error.copy()
+            #Print some notes
+            if do_verbose:
+                print("\n-Empty scores; verdict: {0}".format(tmp_res))
+            #
+            return tmp_res
+        #
+        #Otherwise, remove Nones
+        dict_scores_indiv = [item for item in dict_scores_indiv
+                            if (item is not None)]
+        all_keys = list(dict_scores_indiv[0].keys())
+        #
+
+        ##Calculate and store verdict value statistics from indiv. entries
+        num_indiv = len(dict_scores_indiv)
+        #Initialize container for accumulated scores
+        dict_results = {key:{"score_list":[], "count_thiskey":0}
+                        for key in all_keys}
+        #
+        #Iterate through individual scores and accumulate them
+        for ii in range(0, num_indiv):
+            curr_scores = dict_scores_indiv[ii]
+            #curr_tot = sum([curr_scores[key] for key in all_keys])
+            #if (curr_tot == 0): #Avoid division by zero
+            #    curr_max = 0
+            #else:
+            #    curr_max = max([(curr_scores[key] / curr_tot)
+            #                    for key in all_keys]) #Max norm. prob.
+            #Establish purity fraction for this verdict
+            if (thres_purity is not None):
+                #Iterate through classif scores and accumulate total score
+                for curr_key in order_minprob:
+                    tmp_unnorm = curr_scores[curr_key]
+                    if (tmp_unnorm >= thres_purity[curr_key]):
+                        #Increment unnorm. score count
+                        dict_results[curr_key]["score_list"].append(tmp_unnorm)
+                        dict_results[curr_key]["count_thiskey"] += 1
+                        break
+            #
+            #Determine and store classif with max-score, if above threshold
+            #curr_maxkey = max(curr_scores, key=curr_scores.get) #Max of indiv.
+            #if (curr_scores[curr_maxkey] >= thres_indiv_score): #If above thres.
+            #    dict_results[curr_maxkey]["count_thiskey"] += 1
+            #
+        #
+
+        for curr_key in all_keys:
+            if (dict_results[curr_key]["count_thiskey"] == 0):
+                #dict_results[curr_key]["count_thiskey"] += 1
+                dict_results[curr_key]["score_list"] = [0]
+        #
+        dict_uncertainties = {key:np.mean(dict_results[key]["score_list"])
+                                for key in all_keys}
+        #
+        tmp_thres_science = 1.0
+        if (dict_results["science"]["count_thiskey"] > tmp_thres_science):
+            max_verdict = "science"
+        elif (dict_results["mention"]["count_thiskey"] > 0):
+            max_verdict = "mention"
+        else:
+            max_verdict = max(dict_uncertainties, key=dict_uncertainties.get)
+        #
+
+        tmp_previous = dict_uncertainties["mention"]
+        if (max_verdict == "mention"):
+            tmp_count = dict_results["science"]["count_thiskey"]
+            tmpval1 = np.min([1.0, (1.0-(tmp_count/5))])
+            tmpval2 = np.max([0.0, tmpval1])
+            #
+            dict_uncertainties[max_verdict] = float(tmpval2)
+        #
+
+        if (max(dict_uncertainties.values()) == 0):
+            max_verdict = config.verdict_lowprob
+        #
+
+        for curr_key in all_keys:
+            if (curr_key == max_verdict):
+                continue
+            dict_uncertainties[curr_key] = 0
+            #dict_uncertainties["data_influenced"] = 0
+        #
+
+        dict_error = None
+        #dict_scores_indiv = dict_results
+        #
+
+        ##Assemble and return final verdict
+        fin_res = {"verdict":max_verdict, "scores_indiv":dict_scores_indiv,
+                "uncertainty":dict_uncertainties, #"components":components,
+                "norm_error":dict_error}
+        #
+        #Print some notes
+        if do_verbose:
+            print("-Returning final verdict dictionary:\n{0}".format(fin_res))
+        #
+        return fin_res
+
+
+        #
+        print(woo)
+
+
+        #Normalize and store the scores
+        """
+        denom = np.sum([dict_results[key]["score_tot_unnorm"]
+                        for key in all_keys])
+        denom_weighted = np.sum([(dict_results[key]["score_tot_unnorm"]
+                                    * dict_weights[key])
+                                for key in all_keys])
+        for curr_key in all_keys:
+            #Calculate and store normalized score
+            if (denom > 0):
+                tmp_score = (dict_results[curr_key]["score_tot_unnorm"] / denom)
+                tmp_score_weighted = (dict_results[curr_key]["score_tot_unnorm"]
+                                        * dict_weights[curr_key]
+                                        / denom_weighted)
+            else:
+                tmp_score = 0
+                tmp_score_weighted = 0
+            #
+            dict_results[curr_key]["score_tot_norm"] = tmp_score
+            dict_results[curr_key]["score_tot_fin"] = tmp_score
+            dict_results[curr_key]["score_tot_weighted"] = tmp_score_weighted
+        #
+
+        #Normalize the count of individual scores with max verdicts as well
+        denom = sum([dict_results[key]["count_thiskey"] for key in all_keys])
+        for curr_key in all_keys:
+            #Calculate and store normalized count
+            if (denom > 0):
+                dict_results[curr_key]["count_norm"] = (
+                            dict_results[curr_key]["count_thiskey"] / denom)
+            else:
+                dict_results[curr_key]["count_norm"] = 0
+        #"""
+
+        #Override combined scores with absolutes if requested
+        """
+        tmp_max_key = None
+        if ((thres_override_acceptance is not None)
+                            and (order_override_acceptance is not None)):
+            for curr_key in order_override_acceptance:
+                if (sum([(item[curr_key] >= thres_override_acceptance)
+                                for item in dict_scores_indiv])
+                            >= count_for_override):
+                    #Override scores
+                    tmp_max_key = curr_key
+                    break
+        #"""
+
+        #Override combined scores with values above prob. threshold if requested
+        """
+        #tmp_max_key = None
+        if (thres_dict_minprob is not None):
+            tmp_max_key = None
+            for curr_key in order_minprob:
+                if (dict_results[curr_key]["score_tot_norm"] >= thres_dict_minprob[curr_key]):
+                    #Override scores
+                    tmp_max_key = curr_key
+                    break
+        #"""
+
+        #Update total score
+        """
+        if (tmp_max_key is not None):
+            for curr_key in all_keys:
+                if (curr_key == tmp_max_key):
+                    dict_results[curr_key]["score_tot_fin"] = 1.0
+                else:
+                    dict_results[curr_key]["score_tot_fin"] = 0.0
+        #
+
+        #Combined score storage
+        list_scores_comb = [dict_results[key]["score_tot_fin"]
+                            for key in all_keys]
+        #
+
+        #Gather final scores into set of error
+        dict_error = {key:dict_results[key]["score_tot_norm"]
+                                for key in dict_results}
+        #"""
+
+        #Print some notes
+        if do_verbose:
+            print("Indiv. scores without Nones:\n{0}".format(dict_scores_indiv))
+            #print("Normalizing denominator: {0}".format(denom))
+            print("Full score set:")
+            for curr_key in dict_results:
+                print("{0}: {1}".format(curr_key, dict_results[curr_key]))
+            #print("Listed combined scores: {0}: {1}"
+            #        .format(all_keys, list_scores_comb))
+        #
+
+        ##Establish uncertainties from scores
+        #Uncertainty component 1: normalized count
+        #Uncertainty component 2: normalized total score
+        """
+        dict_uncertainties = {key:dict_results[key]["score_tot_weighted"]
+                            for key in all_keys}
+        if (tmp_max_key is not None):
+            for curr_key in all_keys:
+                if (curr_key == tmp_max_key):
+                    continue
+                dict_uncertainties[curr_key] = 0.0
+        #"""
+        """
+        if (tmp_max_key is None):
+            #Average for the overall uncertainty, if no override
+            #dict_uncertainties = {
+            #        key:np.mean([dict_results[key]["count_norm"],
+            #                        dict_results[key]["score_tot_fin"]])
+            #        for key in all_keys}
+            #dict_uncertainties = {
+            #        key:dict_results[key]["count_norm"]
+            #        for key in all_keys}
+            #dict_uncertainties = {
+            #        key:dict_results[key]["score_tot_fin"]
+            #        for key in all_keys}
+            dict_uncertainties = {
+                    key:dict_results[key]["score_tot_weighted"]
+                    for key in all_keys}
+            #dict_uncertainties = {
+            #        key:np.mean([dict_results[key]["count_norm"],
+            #                    dict_results[key]["score_tot_weighted"]])
+            #        for key in all_keys}
+        #
+        #Otherwise, splice in fixed max. uncertainty
+        else:
+            #Set fixed uncertainty for overriden classif.
+            dict_uncertainties = {tmp_max_key:uncertainty_for_override}
+            #Scale other uncertainties to mesh with fixed override uncertainty
+            tmp_subset = sum([dict_results[key]["score_tot_fin"]
+                                for key in all_keys
+                                if (key != tmp_max_key)])
+            #Splice in scaled uncertainties
+            if (tmp_subset != 0): #Avoid division by zero
+                tmp_dict = {key:(dict_results[key]["score_tot_fin"]
+                                                / tmp_subset
+                                                * (1-uncertainty_for_override))
+                                            for key in all_keys
+                                            if (key != tmp_max_key)}
+            else: #If zero denominator, just set to 0
+                tmp_dict = {key:0 for key in all_keys if (key != tmp_max_key)}
+            dict_uncertainties.update(tmp_dict)
+        #"""
+        #
+        #Block: 2024-03-02a
+        #Weight the score metric more if absolute override was applied
+        #if (tmp_max_key is None):
+        #    tmp_weight = 0.5
+        #else:
+        #    tmp_weight = weight_for_override
+        #
+        #Average for the overall uncertainty
+        #dict_uncertainties = {
+        #        key:np.average([dict_results[key]["count_norm"],
+        #                        dict_results[key]["score_tot_fin"]],
+        #                        weights=[(1-tmp_weight), tmp_weight])
+        #        for key in all_keys}
+        #
+        #
+        #
+        #dict_uncertainties = {all_keys[ii]:list_scores_comb[ii]
+        #                        for ii in range(0, len(all_keys))}
+        #
+        #Uncertainty components: percentage of sentences that are counted as verdict; the normalized scores
+        #Example: text with: 3 mentions (80% prob), 1 science (40% prob as mention)
+        #So maybe unnorm. certainty should be 75% and 80%?
+
+        ##Determine best verdict and associated probabilistic error
+        #is_found = False
+
+        #For max normalized total score:
+        #if (not is_found):
+        #max_ind = np.argmax(list_scores_comb)
+        max_verdict = all_keys[max_ind]
+        #Print some notes
+        if do_verbose:
+            #print("\n-Max score: {0}".format(max_score))
+            print("Max verdict: {0}\n".format(max_verdict))
+        #
+        #Return low-prob verdict if multiple equal top probabilities
+        #if (list_scores_comb.count(max_score) > 1):
+        """
+        if (list_scores_comb.count(list_scores_comb[max_ind]) > 1):
+            tmp_res = config.dictverdict_lowprob.copy()
+            tmp_res["scores_indiv"] = dict_scores_indiv
+            tmp_res["uncertainty"] = None #dict_uncertainties
+            #tmp_res["components"] = components
+            #Print some notes
+            if do_verbose:
+                print("-Multiple top prob. scores.")
+                print("Returning low-prob verdict:\n{0}".format(tmp_res))
+            #
+            return tmp_res
+        #"""
+
+        ##Establish uncertainty for max verdict from scores
+        #dict_uncertainties[max_verdict] = max_score
+        #
+
+        ##Assemble and return final verdict
+        fin_res = {"verdict":max_verdict, "scores_indiv":dict_scores_indiv,
+                "uncertainty":dict_uncertainties, #"components":components,
+                "norm_error":dict_error}
+        #
+        #Print some notes
+        if do_verbose:
+            print("-Returning final verdict dictionary:\n{0}".format(fin_res))
+        #
+        return fin_res
+    #
+
+    ##Method: _convert_scorestoverdict
+    ##Purpose: Convert set of decision tree scores into single verdict
+    #def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=1.0, order_override_acceptance=["science"], "data_influenced"]):
+    #If this doesn't work, revert back and use split uncertainty thresholds for rule-based classifs (e.g., more lenient for mentions)
+    def _convert_score_to_verdict(self, dict_scores_indiv):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        order_priority = ["data_influenced", "science", "mention"]
+        prob_priority = {"data_influenced":0.6, "science":0.6, "mention":0.4}
+        min_priority = {"data_influenced":1, "science":1, "mention":1}
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _convert_scorestoverdict.")
+            print("Individual components and score sets:")
+            for ii in range(0, len(dict_scores_indiv)):
+                print("{0}\n-".format(#components[ii],
+                                            dict_scores_indiv[ii]))
+            #
+        #
+
+        ##Return empty verdict if empty scores
+        #For completely empty scores
+        if len(dict_scores_indiv) == 0:
+            tmp_res = config.dictverdict_error.copy()
+            #Print some notes
+            if do_verbose:
+                print("\n-Empty scores; verdict: {0}".format(tmp_res))
+            #
+            return tmp_res
+        #
+        #Otherwise, remove Nones
+        dict_scores_indiv = [item for item in dict_scores_indiv
+                            if (item is not None)]
+        all_keys = list(dict_scores_indiv[0].keys())
+        #
+
+        ##Calculate and store verdict value statistics from indiv. entries
+        num_indiv = len(dict_scores_indiv)
+        #Initialize container for accumulated scores
+        dict_results = {key:{"score_list":[], "count_thiskey":0}
+                        for key in all_keys}
+        dict_uncertainties_unnorm = {key:None for key in all_keys}
+        #
+        #Iterate through individual scores and accumulate them
+        for ii in range(0, num_indiv):
+            curr_scores = dict_scores_indiv[ii]
+            #Iterate through classif scores and accumulate total score
+            for curr_key in all_keys:
+                tmp_unnorm = curr_scores[curr_key]
+                #Increment unnorm. score count
+                dict_results[curr_key]["score_list"].append(tmp_unnorm)
+                dict_results[curr_key]["count_thiskey"] += 1
+            #
+        #
+
+        #Sort and store scores as well
+        for curr_key in all_keys:
+            curr_sorts = np.sort(dict_results[curr_key]["score_list"])[::-1]
+            dict_results[curr_key]["descending_scores"] = curr_sorts
+        #
+
+        #Iterate through ordered verdicts
+        for ii in range(0, len(all_keys)):
+            curr_key = order_priority[ii]
+            curr_scores = dict_results[curr_key]["descending_scores"]
+
+            #Count scores above prob. threshold
+            curr_count = np.sum((curr_scores >= prob_priority[curr_key]))
+            #Count scores of verdicts of higher priority
+            pre_counts = []
+            pre_mins = []
+            pre_uncs = []
+            for pre_key in order_priority[0:ii]:
+                pre_scores = dict_results[pre_key]["descending_scores"]
+                pre_counts.append(np.sum((pre_scores >=prob_priority[pre_key])))
+                pre_mins.append(min_priority[pre_key])
+                #pre_uncs += pre_scores[pre_scores >= prob_priority[pre_key]]
+                #pre_uncs += pre_scores.tolist() #[pre_scores >= prob_priority[pre_key]]
+                pre_uncs += (pre_scores[pre_scores >= prob_priority[pre_key]].tolist())
+            #
+            pre_counts = np.asarray(pre_counts)
+            pre_mins = np.asarray(pre_mins)
+
+            #Establish uncertainty of current verdict
+            #curr_uncertainty = min([1, (curr_count / min_priority[curr_key])])
+            curr_uncertainty = min([1,
+                                (curr_count / min_priority[curr_key]),
+                                np.mean(curr_scores[curr_scores >= prob_priority[curr_key]])])
+                                #np.mean(curr_scores)])
+            if ((len(pre_counts) > 0) and (curr_uncertainty > 0)):
+                pre_uncertainty = max([0,
+                                    min([1,
+                #                        (1 - max(pre_counts / pre_mins))])])
+                                        (1 - np.mean(pre_uncs))])])
+                final_uncertainty = np.mean([pre_uncertainty, curr_uncertainty])
+            else:
+                final_uncertainty = curr_uncertainty
+            #
+            dict_uncertainties_unnorm[curr_key] = final_uncertainty
+        #
+
+        #Normalize the uncertainties
+        tmp_tot = sum([dict_uncertainties_unnorm[key] for key in all_keys])
+        #if (tmp_tot > 0):
+        #    dict_uncertainties = {key:(dict_uncertainties_unnorm[key]/tmp_tot)
+        #                                for key in all_keys}
+        #else: #Avoid division by zero
+        #    dict_uncertainties = {key:0 for key in all_keys}
+        dict_uncertainties = {key:dict_uncertainties_unnorm[key] for key in all_keys}
+        #
+
+        """
+        for curr_key in all_keys:
+            if (dict_results[curr_key]["count_thiskey"] == 0):
+                #dict_results[curr_key]["count_thiskey"] += 1
+                dict_results[curr_key]["score_list"] = [0]
+        #
+        dict_uncertainties = {key:np.mean(dict_results[key]["score_list"])
+                                for key in all_keys}
+        #
+        tmp_thres_science = 1.0
+        if (dict_results["science"]["count_thiskey"] > tmp_thres_science):
+            max_verdict = "science"
+        elif (dict_results["mention"]["count_thiskey"] > 0):
+            max_verdict = "mention"
+        else:
+            max_verdict = max(dict_uncertainties, key=dict_uncertainties.get)
+        #
+
+        tmp_previous = dict_uncertainties["mention"]
+        if (max_verdict == "mention"):
+            tmp_count = dict_results["science"]["count_thiskey"]
+            tmpval1 = np.min([1.0, (1.0-(tmp_count/5))])
+            tmpval2 = np.max([0.0, tmpval1])
+            #
+            dict_uncertainties[max_verdict] = float(tmpval2)
+        #"""
+
+        max_verdict = max(dict_uncertainties, key=dict_uncertainties.get)
+        if (max(dict_uncertainties.values()) == 0):
+            max_verdict = config.verdict_lowprob
+        #
+
+        print(dict_results)
+        print(dict_uncertainties_unnorm)
+        print(dict_uncertainties)
+        print(max_verdict)
+        print("---")
+
+        #for curr_key in all_keys:
+        #    if (curr_key == max_verdict):
+        #        continue
+        #    dict_uncertainties[curr_key] = 0
+        #    #dict_uncertainties["data_influenced"] = 0
+        #
+
+        dict_error = None
+        #dict_scores_indiv = dict_results
         #
 
         ##Assemble and return final verdict

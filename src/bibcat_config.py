@@ -27,8 +27,14 @@ name_model = "perf_run_ML_testfalsepos1_{0}".format(mode_modif)
 #name_model = "perf_run_RB_{0}".format(mode_modif)
 #name_model = "perf_run_MLlarge_{0}".format(mode_modif)
 #!!!"""
-name_model = "test_train_rule_op" #perf_run_ML_testfalsepos1_none
+#
+#mode_modif = "anon"
+#name_model = "paper_model_MLlarge_mode{0}_seedTVT{1}_seedML{2}".format(mode_modif, 1, 101)
+#
+name_model = "test_train_rule_op2" #perf_run_ML_testfalsepos1_none
+#name_model = "perf_run_ML_testfalsepos1_none"
 mode_modif = "none"
+#
 name_model_extension_ML = "_ML"
 name_model_extension_Rule = "_Rule"
 
@@ -206,6 +212,7 @@ ML_activation_dense = "softmax"
 ML_batch_size = 32
 #ML_model_key = "small_bert/bert_en_uncased_L-4_H-512_A-8" #Simpler language model
 #ML_model_key = "bert_en_uncased_L-12_H-768_A-12" #Fancier language model
+ML_model_key = "en_uncased-l-24_h-1024_a-16" #Seemingly fanciest (2024-05-09) language model
 ML_type_optimizer = "lamb" #"adamw"
 ML_name_optimizer = "LAMB" #"AdamWeightDecay"
 ML_frac_dropout = 0.2
@@ -354,11 +361,11 @@ dict_ml_model_preprocessors = {
 #
 dict_ml_model_encoders = {
 "small_bert/bert_en_uncased_L-4_H-512_A-8":"https://kaggle.com/models/tensorflow/bert/frameworks/TensorFlow2/variations/bert-en-uncased-l-4-h-512-a-8/versions/1",
-"bert_en_uncased_L-12_H-768_A-12":"https://www.kaggle.com/models/tensorflow/bert/frameworks/TensorFlow2/variations/en-uncased-l-12-h-768-a-12/versions/4"
+"bert_en_uncased_L-12_H-768_A-12":"https://www.kaggle.com/models/tensorflow/bert/frameworks/TensorFlow2/variations/en-uncased-l-12-h-768-a-12/versions/4", "en_uncased-l-24_h-1024_a-16":"https://www.kaggle.com/models/tensorflow/bert/TensorFlow2/en-uncased-l-24-h-1024-a-16/4"
 }
 dict_ml_model_preprocessors = {
 "small_bert/bert_en_uncased_L-4_H-512_A-8":"https://kaggle.com/models/tensorflow/bert/frameworks/TensorFlow2/variations/en-uncased-preprocess/versions/3",
-"bert_en_uncased_L-12_H-768_A-12":"https://kaggle.com/models/tensorflow/bert/frameworks/TensorFlow2/variations/en-uncased-preprocess/versions/3"
+"bert_en_uncased_L-12_H-768_A-12":"https://kaggle.com/models/tensorflow/bert/frameworks/TensorFlow2/variations/en-uncased-preprocess/versions/3", "en_uncased-l-24_h-1024_a-16":"https://kaggle.com/models/tensorflow/bert/TensorFlow2/en-uncased-preprocess/3"
 }
 #
 
@@ -397,8 +404,14 @@ tree_trainedbranchcount_variable = "count_training"
 thres_category_fracdiff = 0.1
 thres_verbsimilaritymain = 0.75 #25 #Threshold of similarity to say two verbs are similar
 thres_verbsimilarityhigh = 0.75 #Threshold of similarity to say two verbs are similar
-thres_rarity = 0 #2 #2 #3 #None #5 #Number of occurrences of a rule before deemed a statistically significant number of occurrences
-thres_purity = 0 #0.7 #0.0 #Rule must have probability entry of at least this value to be considered a proper rule
+#
+thres_rarity = 20 # 0 #2 #2 #3 #None #5 #Number of occurrences of a rule before deemed a statistically significant number of occurrences
+#thres_purity = None #0.7 #0 #0.7 #0.0 #Rule must have probability entry of at least this value to be considered a proper rule
+thres_purity = {"science":0.7, "data_influenced":0.7, "mention":0.15} #Rule must have probability entry of at least this value to be considered a proper rule
+thres_override_acceptance = None #0.9
+count_override = None #10000000
+#thres_dict_minprob = {"science":0.7, "data_influenced":0.7, "mention":0.25} #None
+order_minprob = ["mention", "data_influenced", "science"] #, "mention"]
 #
 #Grammar nest generation
 conv_pos_fromtreetonest = {"PREPOSITION_SUBJECT":"subjectmatter", "SUBJECT":"subjectmatter", "DIRECT_OBJECT":"objectmatter", "PREPOSITION_OBJECT":"objectmatter"} #Convert from tree to nest terminology

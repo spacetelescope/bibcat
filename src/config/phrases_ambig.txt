@@ -23,6 +23,7 @@ Kepler	Kepler giant	FALSE
 Kepler	Kepler host	FALSE
 Kepler	Kepler Law	FALSE
 Kepler	Kepler's Law	FALSE
+Kepler	Kepler's generalized third law	FALSE
 Kepler	Kepler magnitude	FALSE
 Kepler	Kepler main sequence	FALSE
 Kepler	Kepler Miras	FALSE
@@ -41,7 +42,7 @@ Kepler	Kepler SNe	FALSE
 Kepler	Kepler subgiant	FALSE
 Kepler	Kepler superflare	FALSE
 Kepler	Kepler system	TRUE
-Kepler	Kepler transit	FALSE
+Kepler	Kepler transit	TRUE
 Kepler	Kepler velocity	FALSE
 Kepler	Koester Kepler	FALSE
 Kepler	Romero Kepler	FALSE
@@ -51,6 +52,7 @@ Kepler	two Kepler	TRUE
 Kepler	2.2 Kepler	TRUE
 Kepler	e.g. Kepler	TRUE
 Kepler	Kepler Input Catalog	TRUE
+Kepler	Kepler Eclipsing Binary Catalog	TRUE
 Kepler	Kepler K p	TRUE
 Kepler	Kepler K2	FALSE
 Kepler	Kepler LC	TRUE
@@ -67,6 +69,7 @@ Kepler	Pre Processing Kepler	TRUE
 Kepler	RATS Kepler	TRUE
 Kepler	Simultaneous Kepler	TRUE
 Kepler	whole Kepler	TRUE
+Kepler	Kepler asteroseismic	TRUE
 #
 #K2 Phrases
 K2	−K2 −	FALSE
@@ -177,6 +180,7 @@ AnyMission	AnyMission focal	TRUE
 AnyMission	AnyMission FOV	TRUE
 AnyMission	AnyMission image	TRUE
 AnyMission	AnyMission imaging	TRUE
+AnyMission	AnyMission instrument	TRUE
 AnyMission	AnyMission lightcurve	TRUE
 AnyMission	AnyMission mission	TRUE
 AnyMission	AnyMission mode	TRUE
