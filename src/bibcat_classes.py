@@ -3862,6 +3862,7 @@ class Grammar(_Base):
             #Set current word traits
             curr_word = sentence_NLP[curr_id]
             word_dep = curr_word.dep_
+            word_pos = curr_word.pos_
             word_tag = curr_word.tag_
 
             #Determine if passive tense and store if applicable
@@ -3878,12 +3879,21 @@ class Grammar(_Base):
                 tense = "FUTURE"
             elif (word_tag in tags_purpose): #For purpose tense
                 tense = "PURPOSE"
-            else: #Raise error if tense not recognized
-                raise ValueError(("Err: Tag {4} of word {0} unknown!\n{1}"
-                                +"\ndep={2}, pos={3}, tag={4}\nRoots: {5}")
-                            .format(curr_word, sentence_NLP, word_dep,
-                                    curr_word.pos_, word_tag,
-                                    list(curr_word.ancestors)))
+            else: #Raise error if not a verb after all #tense not recognized
+                if (word_pos != "VERB"):
+                    raise ValueError(("Err: Tag {4} of word {0} unknown!\n{1}"
+                                    +"\ndep={2}, pos={3}, tag={4}\nRoots: {5}")
+                                .format(curr_word, sentence_NLP, word_dep,
+                                        word_pos, word_tag,
+                                        list(curr_word.ancestors)))
+                else: #Otherwise, assume bad ext.-package NLP tagging for now
+                    tense = "PRESENT"
+            #
+            #    raise ValueError(("Err: Tag {4} of word {0} unknown!\n{1}"
+            #                    +"\ndep={2}, pos={3}, tag={4}\nRoots: {5}")
+            #                .format(curr_word, sentence_NLP, word_dep,
+            #                        curr_word.pos_, word_tag,
+            #                        list(curr_word.ancestors)))
 
             #Store current tense
             type_verbs.append(tense)
@@ -12026,7 +12036,7 @@ class Classifier_Rules(_Classifier):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         order_priority = ["data_influenced", "science", "mention"]
-        prob_priority = {"data_influenced":0.6, "science":0.6, "mention":0.4}
+        prob_priority = {"data_influenced":0.6, "science":0.6, "mention":0.3}
         min_priority = {"data_influenced":1, "science":1, "mention":1}
         #Print some notes
         if do_verbose:

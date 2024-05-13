@@ -28,12 +28,12 @@ name_model = "perf_run_ML_testfalsepos1_{0}".format(mode_modif)
 #name_model = "perf_run_MLlarge_{0}".format(mode_modif)
 #!!!"""
 #
-#mode_modif = "anon"
-#name_model = "paper_model_MLlarge_mode{0}_seedTVT{1}_seedML{2}".format(mode_modif, 1, 101)
-#
-name_model = "test_train_rule_op2" #perf_run_ML_testfalsepos1_none
-#name_model = "perf_run_ML_testfalsepos1_none"
 mode_modif = "none"
+name_model = "paper_model_MLlarge_mode{0}_seedTVT{1}_seedML{2}".format(mode_modif, 1, 101)
+#
+#name_model = "test_train_rule_op2" #perf_run_ML_testfalsepos1_none
+#name_model = "perf_run_ML_testfalsepos1_none"
+#mode_modif = "none"
 #
 name_model_extension_ML = "_ML"
 name_model_extension_Rule = "_Rule"
@@ -212,7 +212,7 @@ ML_activation_dense = "softmax"
 ML_batch_size = 32
 #ML_model_key = "small_bert/bert_en_uncased_L-4_H-512_A-8" #Simpler language model
 #ML_model_key = "bert_en_uncased_L-12_H-768_A-12" #Fancier language model
-ML_model_key = "en_uncased-l-24_h-1024_a-16" #Seemingly fanciest (2024-05-09) language model
+#ML_model_key = "en_uncased-l-24_h-1024_a-16" #Seemingly fanciest (2024-05-09) language model
 ML_type_optimizer = "lamb" #"adamw"
 ML_name_optimizer = "LAMB" #"AdamWeightDecay"
 ML_frac_dropout = 0.2
