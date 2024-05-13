@@ -21,13 +21,16 @@ authors = [
 ]
 
 dependencies = [
+  "click >= 8.1.0",
   "spacy >= 3.6.0 ",
   "nltk >= 3.7 ",
   "tensorflow >=2.13.0",
   "tf-models-official >= 2.7.0",
-  "deepmerge >= 1.1.0"
 ]
 dynamic = ["version"]
+
+[project.scripts]
+bibcat = "bibcat.main:cli"
 
 [project.optional-dependencies]
 test = [
