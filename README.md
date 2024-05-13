@@ -83,13 +83,12 @@ python -m unittest
 
 ## Quick start
 
-- First, run `build_dataset.py` if you do not have the input text data.
-  To do so, set the variables `filepath_dataset` (datasets location path) in `bibcat/config.py`.
-  where the papertrack export file and the ADS full text file reside before the run.
-- Next, once you have the input combined dataset, assign a model name to `name_model`
-  (Model name of your choice to save or load) in `bibcat/config.py`.
-- Next, run `build_model.py` to create a training model.
-- Then, run `classify_papers.py` to classify papers. It will produce some evaluation
+There is a CLI interface to bibcat.  Run `bibcat --help` from the terminal to display the available commands.  All commands also have their own help.  For example to see the options
+for classifying papers, run `bibcat classify --help`.
+
+- Set the three user BIBCAT_XXX_DIR environment variables specified above, in particular `BIBCAT_DATA_DIR` points to the location of your input JSON files.
+- To create a training model, run `bibcat train`.
+- To classify papers, run `bibcat classify`. It will produce some evaluation
   diagnostics such as a confusion matrix in the `output/` directory.
 
 
