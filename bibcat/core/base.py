@@ -281,10 +281,10 @@ class Base:
             vmin = 0  # None
             # Ignore nonmatch verdict to avoid spikes in color scaling if present
             tmpmatr = matr.copy()
-            if config.ml.verdict_rejection.lower() in x_labels:
-                tmpmatr[:, x_labels.index(config.ml.verdict_rejection.upper())] = -1
-            if config.ml.verdict_rejection.lower() in y_labels:
-                tmpmatr[y_labels.index(config.ml.verdict_rejection.upper()), :] = -1
+            if config.results.verdict_rejection.lower() in x_labels:
+                tmpmatr[:, x_labels.index(config.results.verdict_rejection.upper())] = -1
+            if config.results.verdict_rejection.lower() in y_labels:
+                tmpmatr[y_labels.index(config.results.verdict_rejection.upper()), :] = -1
             vmax = tmpmatr.max()  # None
 
         # Plot the confusion matrix and colorbar
@@ -480,7 +480,7 @@ class Base:
 
         # Replace numerics and citation numerics with placeholders
         text_orig = text
-        placeholder_number = config.papertrack.placeholder_number
+        placeholder_number = config.textprocessing.placeholder_number
         text = re.sub(r"\(?\b[0-9]+\b\)?", placeholder_number, text_orig)
 
         # Print some notes
@@ -757,7 +757,7 @@ class Base:
 
             # Replace not-bracketed citations or remove bracketed citations
             text = re.sub(exp_cites_yesbrackets, "", text)
-            text = re.sub(exp_cites_nobrackets, config.papertrack.placeholder_author, text)
+            text = re.sub(exp_cites_nobrackets, config.textprocessing.placeholder_author, text)
 
             # Replace singular et al. (e.g. SingleAuthor et al.) wordage as well
             text = re.sub(r" et al\b\.?", "etal", text)
@@ -1269,8 +1269,8 @@ class Base:
 
         # Load the ambig. phrase data
         #lookup_ambigs = [str(item).lower() for item in np.genfromtxt(config.KW_AMBIG, comments="#", dtype=str)]
-        lookup_ambigs = config.papertrack.keywords_ambig
-        data_ambigs = np.array(config.papertrack.phrases_ambig)
+        lookup_ambigs = config.textprocessing.keywords_ambig
+        data_ambigs = np.array(config.textprocessing.phrases_ambig)
         #data_ambigs = np.genfromtxt(config.PHR_AMBIG, comments="#", dtype=str, delimiter="\t")
         if len(data_ambigs.shape) == 1:  # If single row, reshape to 2D
             data_ambigs = data_ambigs.reshape(1, data_ambigs.shape[0])
@@ -1380,7 +1380,7 @@ class Base:
         text = self._cleanse_text(text=text, do_streamline_etal=True)
 
         # Replace annoying websites with placeholder
-        text = re.sub(config.grammar.regex.exp_website, config.papertrack.placeholder_website, text)
+        text = re.sub(config.grammar.regex.exp_website, config.textprocessing.placeholder_website, text)
 
         # Replace annoying <> inserts (e.g. html)
         text = re.sub(r"<[A-Z|a-z|/]+>", "", text)
@@ -1392,18 +1392,18 @@ class Base:
         # Replace annoying object numerical name notations
         # E.g.: HD 123456, 2MASS123-456
         text = re.sub(
-            r"([A-Z]+) ?[0-9][0-9]+[A-Z|a-z]*((\+|-)[0-9][0-9]+)*", r"\g<1>" + config.papertrack.placeholder_number, text
+            r"([A-Z]+) ?[0-9][0-9]+[A-Z|a-z]*((\+|-)[0-9][0-9]+)*", r"\g<1>" + config.textprocessing.placeholder_number, text
         )
         # E.g.: Kepler-123ab
-        text = re.sub(r"([A-Z][a-z]+)( |-)?[0-9][0-9]+([A-Z|a-z])*", r"\g<1> " + config.papertrack.placeholder_number, text)
+        text = re.sub(r"([A-Z][a-z]+)( |-)?[0-9][0-9]+([A-Z|a-z])*", r"\g<1> " + config.textprocessing.placeholder_number, text)
 
         # Remove most obnoxious numeric ranges
         text = re.sub(
-            r"~?[0-9]+([0-9]|\.)* ?- ?[0-9]+([0-9]|\.)*[A-Z|a-z]*\b", "{0}".format(config.papertrack.placeholder_numeric), text
+            r"~?[0-9]+([0-9]|\.)* ?- ?[0-9]+([0-9]|\.)*[A-Z|a-z]*\b", "{0}".format(config.textprocessing.placeholder_numeric), text
         )
 
         # Remove spaces between capital+numeric names
-        text = re.sub(r"([A-Z]+) ([0-9]+)([0-9]|[a-z])+", r"\1\2\3{}".format(config.papertrack.placeholder_numeric), text)
+        text = re.sub(r"([A-Z]+) ([0-9]+)([0-9]|[a-z])+", r"\1\2\3{}".format(config.textprocessing.placeholder_numeric), text)
 
         # Remove any new excessive whitespace and punctuation spaces
         text = self._cleanse_text(text=text, do_streamline_etal=True)

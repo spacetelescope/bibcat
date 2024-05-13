@@ -567,8 +567,8 @@ class Performance(Base):
             meas_classnames_raw = meas_classifs
 
         # Extend measured allowed class names to include low-uncertainty, etc.
-        act_classnames = act_classnames_raw + [config.ml.verdict_rejection]
-        meas_classnames = meas_classnames_raw + config.ml.list_other_verdicts
+        act_classnames = act_classnames_raw + [config.results.verdict_rejection]
+        meas_classnames = meas_classnames_raw + config.results.list_other_verdicts
 
         # Streamline the class names
         act_classnames = [item.lower().replace("_", "") for item in act_classnames]
@@ -606,7 +606,7 @@ class Performance(Base):
                     tmp_pass = curr_measdict[lookup]["uncertainty"]
                     if tmp_pass is not None:
                         if tmp_pass[curr_measval] < threshold:
-                            curr_measval = config.ml.dictverdict_lowprob.copy()["verdict"]
+                            curr_measval = config.results.dictverdict_lowprob.copy()["verdict"]
 
                 # Map to new masking value, if mapper given
                 if (mapper is not None) and (curr_measval.lower() in mapper):

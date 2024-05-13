@@ -50,35 +50,35 @@ dir_test = config.output.folders_TVT[
 
 # do_raise_innererror: if True, will stop if exception encountered;
 # if False, will print error and continue
-do_raise_innererror = config.classify.do_raise_innererror  # CLI option?
-do_verbose_text_summary = config.classify.do_verbose_text_summary  # print input text data summary ; CLI option?
+do_raise_innererror = config.textprocessing.do_raise_innererror  # CLI option?
+do_verbose_text_summary = config.textprocessing.do_verbose_text_summary  # print input text data summary ; CLI option?
 
 
 # Set some overarching global variables
 
 # Random seed for shuffling text dataset
-np.random.seed(config.classify.shuffle_seed)
+np.random.seed(config.textprocessing.shuffle_seed)
 # Whether or not to shuffle the text dataset
-do_shuffle = config.classify.do_shuffle
+do_shuffle = config.textprocessing.do_shuffle
 
 # do_real_testdata: If True, will use real papers to test performance;
 # if False, will use fake texts but we will implement the fake data
 # if we need. For now, we keep this variable and only the real text.
-do_real_testdata = config.classify.do_real_testdata  # can an CLI option?
+do_real_testdata = config.textprocessing.do_real_testdata  # can an CLI option?
 
 # Number of text entries to test the performance for; None for all tests
-max_tests = config.classify.max_tests
+max_tests = config.textprocessing.max_tests
 # mode_modif: Mode to use for text processing and generating
 # possible modes: any combination from "skim", "trim", and "anon" or "none"
-mode_modif = config.classify.mode_modif
+mode_modif = config.textprocessing.mode_modif
 # Prepare some Keyword objects
-lookup = config.classify.lookup
+lookup = config.textprocessing.lookup
 
 
 # threshold: Uncertainty threshold
-threshold = config.classify.threshold
+threshold = config.textprocessing.threshold
 # buffer: the number of sentences to include within paragraph around each sentence with target terms
-buffer = config.classify.buffer
+buffer = config.textprocessing.buffer
 # For uncertainty test
 threshold_array = np.linspace(0.5, 0.95, 20)
 

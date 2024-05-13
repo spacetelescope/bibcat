@@ -111,7 +111,7 @@ class TestKeyword(unittest.TestCase):
         # Test removal of keyword terms from text
         def test_replace_keyword__variety(self):
             # Prepare text and answers for test
-            placeholder = config.papertrack.placeholder_anon
+            placeholder = config.textprocessing.placeholder_anon
             dict_acts = {
                 "Keplerian velocity": {"kobj": params.kobj_kepler, "result": "Keplerian velocity"},
                 "that Hubble data": {"kobj": params.kobj_hubble, "result": "that {0} data".format(placeholder)},

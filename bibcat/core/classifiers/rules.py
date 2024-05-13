@@ -1363,7 +1363,7 @@ class RuleBasedClassifier(ClassifierBase):
         # Return empty verdict if empty scores
         # For completely empty scores
         if len(dict_scores_indiv) == 0:
-            tmp_res = config.ml.dictverdict_error.copy()
+            tmp_res = config.results.dictverdict_error.copy()
             # Print some notes
             if do_verbose:
                 print("\n-Empty scores; verdict: {0}".format(tmp_res))
@@ -1453,7 +1453,7 @@ class RuleBasedClassifier(ClassifierBase):
 
             # Return verdict only if above given threshold probability
             if (threshold is not None) and (max_score < threshold):
-                tmp_res = config.ml.dictverdict_lowprob.copy()
+                tmp_res = config.results.dictverdict_lowprob.copy()
                 tmp_res["scores_indiv"] = dict_scores_indiv
                 tmp_res["uncertainty"] = dict_uncertainties
                 tmp_res["components"] = components
@@ -1466,7 +1466,7 @@ class RuleBasedClassifier(ClassifierBase):
 
             # Return low-prob verdict if multiple equal top probabilities
             elif list_scores_comb.count(max_score) > 1:
-                tmp_res = config.ml.dictverdict_lowprob.copy()
+                tmp_res = config.results.dictverdict_lowprob.copy()
                 tmp_res["scores_indiv"] = dict_scores_indiv
                 tmp_res["uncertainty"] = dict_uncertainties
                 tmp_res["components"] = components

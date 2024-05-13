@@ -10,7 +10,7 @@ from bibcat import parameters as params
 from bibcat.core.operator import Operator
 
 # map model_settings back to settings
-settings = config.model
+settings = config.dataprep
 
 
 def load_source_dataset(do_verbose: bool):

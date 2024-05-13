@@ -77,7 +77,7 @@ def fetch_papers(
                     }
                 # Otherwise, store that this mission was not detected for this text
                 else:
-                    curr_info["missions"][curr_name] = {"mission": curr_name, "class": config.ml.verdict_rejection}
+                    curr_info["missions"][curr_name] = {"mission": curr_name, "class": config.results.verdict_rejection}
         # Store this data entry
         dict_texts[str(curr_ind)] = curr_info
 

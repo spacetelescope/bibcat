@@ -201,12 +201,12 @@ class MachineLearningClassifier(ClassifierBase):
             print("Loading ML model components...")
 
         # Load the preprocessor
-        ml_handle_preprocessor = config.ml.dict_ml_model_preprocessors[ml_model_key]
+        ml_handle_preprocessor = config.ml.bert.dict_ml_model_preprocessors[ml_model_key]
         ml_preprocessor = tfhub.KerasLayer(ml_handle_preprocessor)
         if do_verbose:
             print("Loaded ML preprocessor: {0}".format(ml_handle_preprocessor))
 
-        ml_handle_encoder = config.ml.dict_ml_model_encoders[ml_model_key]
+        ml_handle_encoder = config.ml.bert.dict_ml_model_encoders[ml_model_key]
         ml_encoder = tfhub.KerasLayer(ml_handle_encoder, trainable=True)
         if do_verbose:
             print("Loaded ML encoder: {0}".format(ml_handle_encoder))
@@ -405,7 +405,7 @@ class MachineLearningClassifier(ClassifierBase):
 
         # Return low-uncertainty verdict if below given threshold
         if (threshold is not None) and (probs[max_ind] < threshold):
-            dict_results = config.ml.dictverdict_lowprob.copy()
+            dict_results = config.results.dictverdict_lowprob.copy()
             dict_results["uncertainty"] = dict_uncertainty
 
         # Otherwise, generate dictionary of results

@@ -776,7 +776,7 @@ class Grammar(Base):
             if do_verbose:
                 print("> Applying anon modifications...")
 
-            placeholder_anon = config.papertrack.placeholder_anon
+            placeholder_anon = config.textprocessing.placeholder_anon
             # Update latest text with these updates
             text_updated = keyword_obj.replace_keyword(text=text_updated, placeholder=placeholder_anon)
 
