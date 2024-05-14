@@ -249,7 +249,7 @@ ml:
   ML_frac_dropout: 0.2
   ML_frac_steps_warmup: 0.1
   ML_num_epochs: 5
-  ML_init_lr: 3e-5
+  ML_init_lr: !!float 3e-5
   seed_ML: 8  # Random seed for ML model
   bert:
     dict_ml_model_encoders: {
