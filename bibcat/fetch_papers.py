@@ -35,7 +35,7 @@ def fetch_papers(
     list_test_bibcodes = [key for key in dict_TVTinfo if (dict_TVTinfo[key]["folder_TVT"] == dir_test)]
 
     # Load the original data
-    with open(config.path_source_data, "r") as openfile:
+    with open(config.inputs.path_source_data, "r") as openfile:
         dataset = json.load(openfile)
     # Extract text information for the bibcodes reserved for testing
     # Data for test set
@@ -77,7 +77,7 @@ def fetch_papers(
                     }
                 # Otherwise, store that this mission was not detected for this text
                 else:
-                    curr_info["missions"][curr_name] = {"mission": curr_name, "class": config.verdict_rejection}
+                    curr_info["missions"][curr_name] = {"mission": curr_name, "class": config.results.verdict_rejection}
         # Store this data entry
         dict_texts[str(curr_ind)] = curr_info
 
@@ -102,5 +102,5 @@ if __name__ == "__main__":
     # Currently, text data is fed from the TVT test folder but this can be changed when a need arises.
     print("The script is running as a standalone script though I don't see yet a purpose for it.\n Fetching papers!")
     fetch_papers(
-        dir_datasets=os.path.join(config.path_partitioned_data, config.name_model), dir_test=config.folders_TVT["test"]
+        dir_datasets=os.path.join(config.paths.partitioned, config.output.name_model), dir_test=config.output.folders_TVT["test"]
     )

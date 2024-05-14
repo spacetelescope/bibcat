@@ -1,11 +1,11 @@
 """
 :title: keyword.py
 
-This class's primary purpose is to extract all sentences from within 
-a larger text block that refers to a given mission(s).  This collection of sentences 
-for each mission, denoted from here on as a 'paragraph', is created to focus 
-on the portions of the original text related to the target mission.  
-Using paragraphs for classification instead of the full text allows us to remove 
+This class's primary purpose is to extract all sentences from within
+a larger text block that refers to a given mission(s).  This collection of sentences
+for each mission, denoted from here on as a 'paragraph', is created to focus
+on the portions of the original text related to the target mission.
+Using paragraphs for classification instead of the full text allows us to remove
 much of the 'noise' inherent to the rest of the text.
 
 """
@@ -56,7 +56,7 @@ class Keyword(Base):
 
         # Also cleanse+store acronyms, if given
         if acronyms is not None:
-            acronyms_mid = [re.sub(config.exp_nopunct, "", item, flags=re.IGNORECASE) for item in acronyms]
+            acronyms_mid = [re.sub(config.grammar.regex.exp_nopunct, "", item, flags=re.IGNORECASE) for item in acronyms]
             # Remove all whitespace
             acronyms_mid = [re.sub(" ", "", item) for item in acronyms_mid]
             acronyms_clean = sorted(acronyms_mid, key=(lambda w: len(w)))[::-1]  # Sort by desc. length

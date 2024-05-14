@@ -15,16 +15,18 @@ import os
 import time
 
 from bibcat import config
-from bibcat import model_settings as settings
+#from bibcat import model_settings as settings
 from bibcat import parameters as params
 from bibcat.core import operator
 from bibcat.core.classifiers import ml
 from bibcat.data.streamline_dataset import load_source_dataset, streamline_dataset
 
+settings = config.dataprep
+
 # Fetch filepath for model
-name_model = config.name_model
-dir_data = os.path.join(config.path_partitioned_data, name_model)
-dir_model = os.path.join(config.PATH_MODELS, name_model)
+name_model = config.output.name_model
+dir_data = os.path.join(config.paths.partitioned, name_model)
+dir_model = os.path.join(config.paths.models, name_model)
 
 
 def build_model() -> None:
@@ -61,7 +63,7 @@ def build_model() -> None:
     # Initialize an Operator
     tabby_ML = operator.Operator(
         classifier=classifier_ML,
-        mode=settings.mode_modif,
+        mode=config.textprocessing.mode_modif,
         keyword_objs=params.all_kobjs,
         do_verbose=True,
         load_check_truematch=do_check_truematch,
@@ -83,11 +85,11 @@ def build_model() -> None:
         name_model=name_model,
         do_reuse_run=do_reuse_run,
         do_check_truematch=do_check_truematch,
-        seed_ML=settings.seed_ML,
+        seed_ML=config.ml.seed_ML,
         seed_TVT=settings.seed_TVT,
         dict_texts=dict_texts,
         mapper=mapper,
-        buffer=settings.buffer,
+        buffer=config.textprocessing.buffer,
         fraction_TVT=settings.fraction_TVT,
         mode_TVT=settings.mode_TVT,
         do_shuffle=do_shuffle,

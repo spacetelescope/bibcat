@@ -1,17 +1,23 @@
 import json
 from typing import Dict
 
+#from bibcat import config
+#from bibcat import model_settings as settings
+
 from bibcat import config
-from bibcat import model_settings as settings
+
 from bibcat import parameters as params
 from bibcat.core.operator import Operator
+
+# map model_settings back to settings
+settings = config.dataprep
 
 
 def load_source_dataset(do_verbose: bool):
     """
     Load the original source dataset that is a combined set of papertrack classification and ADS full text. Return a dictionary of the JSON content.
     """
-    with open(config.path_source_data, "r") as openfile:
+    with open(config.inputs.path_source_data, "r") as openfile:
         source_dataset = json.load(openfile)
         if do_verbose:
             len(source_dataset)

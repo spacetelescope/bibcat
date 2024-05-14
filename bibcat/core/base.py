@@ -33,9 +33,9 @@ import spacy
 from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore
 from nltk.corpus import wordnet  # type: ignore
 
-import bibcat.config as config
+from bibcat import config
 
-nlp = spacy.load(config.spacy_language_model)
+nlp = spacy.load(config.grammar.spacy_language_model)
 
 
 class Base:
@@ -281,10 +281,10 @@ class Base:
             vmin = 0  # None
             # Ignore nonmatch verdict to avoid spikes in color scaling if present
             tmpmatr = matr.copy()
-            if config.verdict_rejection.lower() in x_labels:
-                tmpmatr[:, x_labels.index(config.verdict_rejection.upper())] = -1
-            if config.verdict_rejection.lower() in y_labels:
-                tmpmatr[y_labels.index(config.verdict_rejection.upper()), :] = -1
+            if config.results.verdict_rejection.lower() in x_labels:
+                tmpmatr[:, x_labels.index(config.results.verdict_rejection.upper())] = -1
+            if config.results.verdict_rejection.lower() in y_labels:
+                tmpmatr[y_labels.index(config.results.verdict_rejection.upper()), :] = -1
             vmax = tmpmatr.max()  # None
 
         # Plot the confusion matrix and colorbar
@@ -390,8 +390,8 @@ class Base:
 
         # Check for first-person pronouns, if requested
         if include_Ipronouns:
-            list_pos_pronoun = config.pos_pronoun
-            nlp_lookup_person = config.nlp_lookup_person
+            list_pos_pronoun = config.grammar.speech.pos_pronoun
+            nlp_lookup_person = config.grammar.nlp_lookup_person
             check_pronounI = any(
                 [
                     (
@@ -407,9 +407,9 @@ class Base:
 
         # Check for special terms, if requested
         if include_terms:
-            list_pos_pronoun = config.pos_pronoun
-            nlp_lookup_person = config.nlp_lookup_person
-            special_synsets_fig = config.special_synsets_fig
+            list_pos_pronoun = config.grammar.speech.pos_pronoun
+            nlp_lookup_person = config.grammar.nlp_lookup_person
+            special_synsets_fig = config.grammar.special_synsets_fig
 
             # For 'they' pronouns
             check_terms_they = any(
@@ -439,7 +439,7 @@ class Base:
 
         # Check for etal terms, if requested
         if include_etal:
-            exp = config.exp_etal_cleansed  # Reg.ex. to find cleansed et al
+            exp = config.grammar.regex.exp_etal_cleansed  # Reg.ex. to find cleansed et al
             check_etal = bool(re.search(exp, text, flags=re.IGNORECASE))
             dict_results["is_etal"] = check_etal
         else:  # Otherwise, remove term contribution
@@ -480,7 +480,7 @@ class Base:
 
         # Replace numerics and citation numerics with placeholders
         text_orig = text
-        placeholder_number = config.placeholder_number
+        placeholder_number = config.textprocessing.placeholder_number
         text = re.sub(r"\(?\b[0-9]+\b\)?", placeholder_number, text_orig)
 
         # Print some notes
@@ -695,11 +695,11 @@ class Base:
         """
 
         # Extract global punctuation expressions
-        set_apostrophe = config.set_apostrophe
-        set_punctuation = config.set_punctuation
-        exp_punctuation = config.exp_punctuation
-        set_openbrackets = config.set_openbrackets
-        set_closebrackets = config.set_closebrackets
+        set_apostrophe = config.grammar.regex.set_apostrophe
+        set_punctuation = config.grammar.regex.set_punctuation
+        exp_punctuation = config.grammar.regex.exp_punctuation
+        set_openbrackets = config.grammar.regex.set_openbrackets
+        set_closebrackets = config.grammar.regex.set_closebrackets
 
         # Remove any starting punctuation
         text = re.sub((r"^(" + "|".join(exp_punctuation) + r")"), "", text)  # Remove starting punct.
@@ -757,7 +757,7 @@ class Base:
 
             # Replace not-bracketed citations or remove bracketed citations
             text = re.sub(exp_cites_yesbrackets, "", text)
-            text = re.sub(exp_cites_nobrackets, config.placeholder_author, text)
+            text = re.sub(exp_cites_nobrackets, config.textprocessing.placeholder_author, text)
 
             # Replace singular et al. (e.g. SingleAuthor et al.) wordage as well
             text = re.sub(r" et al\b\.?", "etal", text)
@@ -829,7 +829,7 @@ class Base:
 
             # Store a representative synset and skip ahead if word is a numeral
             if bool(re.search(("^(ID)?[0-9]+"), curr_word.text, flags=re.IGNORECASE)):
-                tmp_rep = config.string_numeral_ambig
+                tmp_rep = config.grammar.string_numeral_ambig
                 core_synsets.append([tmp_rep])
                 # Print some notes
                 if do_verbose:
@@ -870,7 +870,7 @@ class Base:
             raise ValueError("Err: Empty synset?\n{0}".format(core_synsets))
 
         # Extract unique roots of sets of synsets
-        exp_synset = config.exp_synset
+        exp_synset = config.grammar.regex.exp_synset
         core_roots = [
             np.unique(
                 [item2.split(".")[0] if bool(re.search(exp_synset, item2)) else item2 for item2 in item1]
@@ -907,7 +907,7 @@ class Base:
         """
 
         # Return False if pos is aux (which may not be conjoined)
-        if pos in config.pos_aux:
+        if pos in config.grammar.speech.pos_aux:
             return False
 
         # Check if this word is conjoined
@@ -959,22 +959,22 @@ class Base:
         # Check if given word is of given part-of-speech
         # Identify roots
         if pos in ["ROOT"]:
-            check_all = word_dep in config.dep_root
+            check_all = word_dep in config.grammar.speech.dep_root
 
         # Identify verbs
         elif pos in ["VERB"]:
-            check_posaux = word_pos in config.pos_aux
+            check_posaux = word_pos in config.grammar.speech.pos_aux
             # check_isrightword = (len(list(word.rights)) > 0)
             # NOTE: 'isrightword' check, since aux-verb would have right word(s)
             # (E.g., 'The star is observable')
 
             check_root = self._is_pos_word(word=word, pos="ROOT")
             check_conj = self._is_pos_conjoined(word=word, pos=pos)
-            check_ccomp = word_dep in config.dep_ccomp
-            check_tag = word_tag in config.tag_verb_any
-            check_pos = word_pos in config.pos_verb
-            check_dep = word_dep in config.dep_verb
-            tag_approved = config.tag_verb_present + config.tag_verb_past + config.tag_verb_future
+            check_ccomp = word_dep in config.grammar.speech.dep_ccomp
+            check_tag = word_tag in config.grammar.speech.tag_verb_any
+            check_pos = word_pos in config.grammar.speech.pos_verb
+            check_dep = word_dep in config.grammar.speech.dep_verb
+            tag_approved = config.grammar.speech.tag_verb_present + config.grammar.speech.tag_verb_past + config.grammar.speech.tag_verb_future
             check_approved = word_tag in tag_approved
 
             # For ambiguous adjectival modifier sentences
@@ -984,7 +984,7 @@ class Base:
                 and self._is_pos_word(word=word.head, pos="ROOT")
                 and self._is_pos_word(word=word.head, pos="NOUN")
             )
-            check_amod = word_dep in config.dep_adjective
+            check_amod = word_dep in config.grammar.speech.dep_adjective
             check_islefts = len(list(word.lefts)) > 0
             check_valid_amod = check_nounroot and check_amod and check_islefts
 
@@ -1011,9 +1011,9 @@ class Base:
                     keyword_objs = self._get_info("keyword_objs", do_flag_hidden=True)
 
             # Check p.o.s. components
-            check_tag = word_tag in config.tag_useless
-            check_dep = word_dep in config.dep_useless
-            check_pos = word_pos in config.pos_useless
+            check_tag = word_tag in config.grammar.speech.tag_useless
+            check_dep = word_dep in config.grammar.speech.dep_useless
+            check_pos = word_pos in config.grammar.speech.pos_useless
             check_use = self._check_importance(word_text, version_NLP=word, keyword_objs=keyword_objs)[
                 "is_any"
             ]  # Useful
@@ -1042,7 +1042,7 @@ class Base:
             # Determine if conjoined to subject, if applicable
             is_conjsubj = self._is_pos_conjoined(word, pos=pos)
             is_root = self._is_pos_word(word=word, pos="ROOT")
-            check_dep = word_dep in config.dep_subject
+            check_dep = word_dep in config.grammar.speech.dep_subject
             check_all = (
                 (check_dep and is_leftofverb)
                 or (is_conjsubj)
@@ -1052,17 +1052,17 @@ class Base:
 
         # Identify prepositions
         elif pos in ["PREPOSITION"]:
-            check_dep = word_dep in config.dep_preposition
-            check_pos = word_pos in config.pos_preposition
-            check_tag = word_tag in config.tag_preposition
+            check_dep = word_dep in config.grammar.speech.dep_preposition
+            check_pos = word_pos in config.grammar.speech.pos_preposition
+            check_tag = word_tag in config.grammar.speech.tag_preposition
             check_prepaux = (
-                (word_dep in config.dep_aux) and (word_pos in config.pos_aux) and (check_tag)
+                (word_dep in config.grammar.speech.dep_aux) and (word_pos in config.grammar.speech.pos_aux) and (check_tag)
             )  # For e.g. mishandled 'to'
             check_all = (check_dep and check_pos and check_tag) or (check_prepaux)
 
         # Identify base objects (so either direct or prep. objects)
         elif pos in ["BASE_OBJECT"]:
-            check_dep = word_dep in config.dep_object
+            check_dep = word_dep in config.grammar.speech.dep_object
             check_noun = self._is_pos_word(word=word, pos="NOUN")
             check_all = check_noun and check_dep
 
@@ -1127,8 +1127,8 @@ class Base:
 
         # Identify markers
         elif pos in ["MARKER"]:
-            check_dep = word_dep in config.dep_marker
-            check_tag = word_tag in config.tag_marker
+            check_dep = word_dep in config.grammar.speech.dep_marker
+            check_tag = word_tag in config.grammar.speech.tag_marker
             check_marker = check_dep or check_tag
             # Check if subject marker after non-root verb
             is_notroot = len(word_ancestors) > 0
@@ -1143,32 +1143,32 @@ class Base:
 
         # Identify improper X-words (for improper sentences)
         elif pos in ["X"]:
-            check_dep = word_dep in config.dep_xpos
-            check_pos = word_pos in config.pos_xpos
+            check_dep = word_dep in config.grammar.speech.dep_xpos
+            check_pos = word_pos in config.grammar.speech.pos_xpos
             check_all = check_dep or check_pos
 
         # Identify conjoined words
         elif pos in ["CONJOINED"]:
-            check_conj = word_dep in config.dep_conjoined
-            check_appos = word_dep in config.dep_appos
-            check_det = word_tag in config.tag_determinant
+            check_conj = word_dep in config.grammar.speech.dep_conjoined
+            check_appos = word_dep in config.grammar.speech.dep_appos
+            check_det = word_tag in config.grammar.speech.tag_determinant
             check_all = (check_conj or check_appos) and (not check_det)
 
         # Identify determinants
         elif pos in ["DETERMINANT"]:
-            check_pos = word_pos in config.pos_determinant
-            check_tag = word_tag in config.tag_determinant
+            check_pos = word_pos in config.grammar.speech.pos_determinant
+            check_tag = word_tag in config.grammar.speech.tag_determinant
             check_all = check_pos and check_tag
 
         # Identify aux
         elif pos in ["AUX"]:
-            check_dep = word_dep in config.dep_aux
-            check_pos = word_pos in config.pos_aux
-            check_prep = word_tag in config.tag_preposition
-            check_num = word_tag in config.tag_number
+            check_dep = word_dep in config.grammar.speech.dep_aux
+            check_pos = word_pos in config.grammar.speech.pos_aux
+            check_prep = word_tag in config.grammar.speech.tag_preposition
+            check_num = word_tag in config.grammar.speech.tag_number
 
             tags_approved = (
-                config.tag_verb_past + config.tag_verb_present + config.tag_verb_future + config.tag_verb_purpose
+                config.grammar.speech.tag_verb_past + config.grammar.speech.tag_verb_present + config.grammar.speech.tag_verb_future + config.grammar.speech.tag_verb_purpose
             )
             check_approved = word_tag in tags_approved
 
@@ -1176,62 +1176,62 @@ class Base:
 
         # Identify nouns
         elif pos in ["NOUN"]:
-            check_pos = word_pos in config.pos_noun
-            check_det = word_tag in config.tag_determinant
+            check_pos = word_pos in config.grammar.speech.pos_noun
+            check_det = word_tag in config.grammar.speech.tag_determinant
             check_all = check_pos and (not check_det)
 
         # Identify pronouns
         elif pos in ["PRONOUN"]:
-            check_tag = word_tag in config.tag_pronoun
-            check_pos = word_pos in config.pos_pronoun
+            check_tag = word_tag in config.grammar.speech.tag_pronoun
+            check_pos = word_pos in config.grammar.speech.pos_pronoun
             check_all = check_tag or check_pos
 
         # Identify adjectives
         elif pos in ["ADJECTIVE"]:
             check_adjverb = (
-                (word_dep in config.dep_adjective)
-                and (word_pos in config.pos_verb)
-                and (word_tag in config.tag_verb_any)
+                (word_dep in config.grammar.speech.dep_adjective)
+                and (word_pos in config.grammar.speech.pos_verb)
+                and (word_tag in config.grammar.speech.tag_verb_any)
             )
-            check_pos = word_pos in config.pos_adjective
-            check_tag = word_tag in config.tag_adjective
+            check_pos = word_pos in config.grammar.speech.pos_adjective
+            check_tag = word_tag in config.grammar.speech.tag_adjective
             check_all = check_tag or check_pos or check_adjverb
 
         # Identify  conjunctions
         elif pos in ["CONJUNCTION"]:
-            check_pos = word_pos in config.pos_conjunction
-            check_tag = word_tag in config.tag_conjunction
+            check_pos = word_pos in config.grammar.speech.pos_conjunction
+            check_tag = word_tag in config.grammar.speech.tag_conjunction
             check_all = check_pos and check_tag
 
         # Identify passive verbs and aux
         elif pos in ["PASSIVE"]:
-            check_dep = word_dep in config.dep_verb_passive
+            check_dep = word_dep in config.grammar.speech.dep_verb_passive
             check_all = check_dep
 
         # Identify negative words
         elif pos in ["NEGATIVE"]:
-            check_dep = word_dep in config.dep_negative
+            check_dep = word_dep in config.grammar.speech.dep_negative
             check_all = check_dep
 
         # Identify punctuation
         elif pos in ["PUNCTUATION"]:
-            check_punct = word_dep in config.dep_punctuation
+            check_punct = word_dep in config.grammar.speech.dep_punctuation
             check_letter = bool(re.search(".*[a-z|0-9].*", word_text, flags=re.IGNORECASE))
             check_all = check_punct and (not check_letter)
 
         # Identify punctuation
         elif pos in ["BRACKET"]:
-            check_brackets = word_tag in (config.tag_brackets)
+            check_brackets = word_tag in (config.grammar.speech.tag_brackets)
             check_all = check_brackets
 
         # Identify possessive markers
         elif pos in ["POSSESSIVE"]:
-            check_possessive = word_tag in config.tag_possessive
+            check_possessive = word_tag in config.grammar.speech.tag_possessive
             check_all = check_possessive
 
         # Identify numbers
         elif pos in ["NUMBER"]:
-            check_number = word_pos in config.pos_number
+            check_number = word_pos in config.grammar.speech.pos_number
             check_all = check_number
 
         # Otherwise, raise error if given pos is not recognized
@@ -1268,13 +1268,15 @@ class Base:
         """
 
         # Load the ambig. phrase data
-        lookup_ambigs = [str(item).lower() for item in np.genfromtxt(config.KW_AMBIG, comments="#", dtype=str)]
-        data_ambigs = np.genfromtxt(config.PHR_AMBIG, comments="#", dtype=str, delimiter="\t")
+        #lookup_ambigs = [str(item).lower() for item in np.genfromtxt(config.KW_AMBIG, comments="#", dtype=str)]
+        lookup_ambigs = config.textprocessing.keywords_ambig
+        data_ambigs = np.array(config.textprocessing.phrases_ambig)
+        #data_ambigs = np.genfromtxt(config.PHR_AMBIG, comments="#", dtype=str, delimiter="\t")
         if len(data_ambigs.shape) == 1:  # If single row, reshape to 2D
             data_ambigs = data_ambigs.reshape(1, data_ambigs.shape[0])
         num_ambigs = data_ambigs.shape[0]
 
-        str_anymatch_ambig = config.string_anymatch_ambig.lower()
+        str_anymatch_ambig = config.grammar.string_anymatch_ambig.lower()
 
         ind_keyword = 0
         ind_phrase = 1
@@ -1372,13 +1374,13 @@ class Base:
         """
 
         # Extract global variables
-        dict_exp_abbrev = config.dict_exp_abbrev
+        dict_exp_abbrev = config.grammar.regex.dict_exp_abbrev
 
         # Remove any initial excessive whitespace
         text = self._cleanse_text(text=text, do_streamline_etal=True)
 
         # Replace annoying websites with placeholder
-        text = re.sub(config.exp_website, config.placeholder_website, text)
+        text = re.sub(config.grammar.regex.exp_website, config.textprocessing.placeholder_website, text)
 
         # Replace annoying <> inserts (e.g. html)
         text = re.sub(r"<[A-Z|a-z|/]+>", "", text)
@@ -1390,18 +1392,18 @@ class Base:
         # Replace annoying object numerical name notations
         # E.g.: HD 123456, 2MASS123-456
         text = re.sub(
-            r"([A-Z]+) ?[0-9][0-9]+[A-Z|a-z]*((\+|-)[0-9][0-9]+)*", r"\g<1>" + config.placeholder_number, text
+            r"([A-Z]+) ?[0-9][0-9]+[A-Z|a-z]*((\+|-)[0-9][0-9]+)*", r"\g<1>" + config.textprocessing.placeholder_number, text
         )
         # E.g.: Kepler-123ab
-        text = re.sub(r"([A-Z][a-z]+)( |-)?[0-9][0-9]+([A-Z|a-z])*", r"\g<1> " + config.placeholder_number, text)
+        text = re.sub(r"([A-Z][a-z]+)( |-)?[0-9][0-9]+([A-Z|a-z])*", r"\g<1> " + config.textprocessing.placeholder_number, text)
 
         # Remove most obnoxious numeric ranges
         text = re.sub(
-            r"~?[0-9]+([0-9]|\.)* ?- ?[0-9]+([0-9]|\.)*[A-Z|a-z]*\b", "{0}".format(config.placeholder_numeric), text
+            r"~?[0-9]+([0-9]|\.)* ?- ?[0-9]+([0-9]|\.)*[A-Z|a-z]*\b", "{0}".format(config.textprocessing.placeholder_numeric), text
         )
 
         # Remove spaces between capital+numeric names
-        text = re.sub(r"([A-Z]+) ([0-9]+)([0-9]|[a-z])+", r"\1\2\3{}".format(config.placeholder_numeric), text)
+        text = re.sub(r"([A-Z]+) ([0-9]+)([0-9]|[a-z])+", r"\1\2\3{}".format(config.textprocessing.placeholder_numeric), text)
 
         # Remove any new excessive whitespace and punctuation spaces
         text = self._cleanse_text(text=text, do_streamline_etal=True)

@@ -2,7 +2,7 @@
 :title: partition_dataset.py
 
 This module splits the streamlined dataset into training,
-validation, and testing datasets for each run for ML classifier. 
+validation, and testing datasets for each run for ML classifier.
 
 """
 import collections
@@ -25,7 +25,7 @@ def generate_directory_TVT(
 
     # Load global variables
     dataset = dict_texts
-    name_folderTVT = [config.folders_TVT["train"], config.folders_TVT["validate"], config.folders_TVT["test"]]
+    name_folderTVT = [config.output.folders_TVT["train"], config.output.folders_TVT["validate"], config.output.folders_TVT["test"]]
 
     num_TVT = len(name_folderTVT)
     if num_TVT != len(fraction_TVT):
@@ -250,10 +250,10 @@ def generate_directory_TVT(
 
     # Otherwise, make the directories
     for curr_folder in name_folderTVT:
-        os.mkdir(os.path.join(config.path_partitioned_data, dir_data, curr_folder))
+        os.mkdir(os.path.join(config.paths.partitioned, dir_data, curr_folder))
         # Iterate through classes and create subfolder per class
         for curr_key in unique_classes:
-            os.mkdir(os.path.join(config.path_partitioned_data, dir_data, curr_folder, curr_key))
+            os.mkdir(os.path.join(config.paths.partitioned, dir_data, curr_folder, curr_key))
 
     # Print some notes
     if do_verbose:
@@ -358,10 +358,10 @@ def generate_directory_TVT(
 
     # Save the dictionary of TVT bibcode partitioning to its own file
     # tmp_filesave = config.path_TVTinfo
-    np.save(config.path_TVTinfo, dict_info)
+    np.save(config.paths.TVTinfo, dict_info)
     # Print some notes
     if do_verbose:
-        print("Dictionary of TVT bibcode partitioning info saved at: {0}.".format(config.path_TVTinfo))
+        print("Dictionary of TVT bibcode partitioning info saved at: {0}.".format(config.paths.TVTinfo))
 
     # Verify that count of saved .txt files adds up to original data count
     for curr_key in unique_classes:

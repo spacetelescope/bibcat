@@ -1,0 +1,470 @@
+
+inputs:
+  filepath_dataset: $BIBCAT_DATA_DIR
+  path_papertrack: $BIBCAT_DATA_DIR/papertrack_export_2023-11-06.json  # papertrack data
+  path_papertext: $BIBCAT_DATA_DIR/ST_Request2018-2023.json  # papertrack corpus text
+  path_source_data: $BIBCAT_DATA_DIR/dataset_combined_all_2018-2023.json  # combined JSON file
+  path_not_in_papertext: $BIBCAT_DATA_DIR/bibcodes_notin_papertext.txt  # file for bibcodes not in papertrack
+  path_not_in_papertrack: $BIBCAT_DATA_DIR/bibcodes_notin_papertrack.txt # file for bibcodes not in ADS papertext
+  keys_papertext: [abstract, author, bibcode, body, keyword, keyword_norm, pubdate, title]  # metadata keys for ADS papertext required for building input
+
+output:
+  root_path: $BIBCAT_OUTPUT_DIR
+  name_model: my_test_run_2
+  folders_TVT: {train: dir_train, validate: dir_validate, test: dir_test}
+  tfoutput_prefix: tfoutput_
+
+paths:
+  root: null
+  parent: null
+  config: null
+  docs: null
+  models: null
+  output: null
+  partitioned: null
+  modiferrors: null
+  TVTinfo: null
+
+dataprep:
+  num_papers: 100  # the number of papers to use. Set to null to use all available papers in external dataset
+  fraction_TVT: [0.8, 0.1, 0.1]  # Partition fraction of training, validation, testing dataset
+  mode_TVT: uniform  # Mode for splits; "uniform" = all training datasets will have the same number of entries from fraction_TVT; "available" = all training datasets will use full fraction
+  seed_TVT: 10  # Random seed for generating train vs valid. vs test datasets
+
+textprocessing:
+  do_verify_truematch: true  # used in Performance class
+  do_raise_innererror: false  # raise error or print and continue
+  do_verbose_text_summary: false  # print input text data summary
+  mode_modif: skim_anon  # Mode to use for text processing and generating possible modes: any combination from "skim", "trim", and "anon" or "none"
+  shuffle_seed: 10 # Random seed for shuffling text dataset
+  do_shuffle: true  # whether or not to shuffle the text dataset
+  do_real_testdata: true  # If True, will use real papers to test performance; if False, will use fake texts but we will implement the fake data if we need.
+  max_tests: 30  # Number of text entries to test the performance for; None for all tests
+  lookup: HST  # Prepare some Keyword objects
+  threshold: 0.70
+  buffer: 0  # the number of sentences to include within paragraph around each sentence with target terms
+  placeholder_anon: "OBJ"
+  placeholder_numeric: "numeric"
+  placeholder_number: "000"
+  placeholder_website: "website"
+  placeholder_author: "Authorsetal"
+  which_modes: [none, skim, trim, anon, skim_trim_anon]
+  keywords_ambig: [Hubble, Kepler, K2]
+  phrases_ambig:
+  - [Kepler, Campos Kepler, 'FALSE']
+  - [Kepler, Castanheira Kepler, 'FALSE']
+  - [Kepler, Kepler 000, 'FALSE']
+  - [Kepler, Kepler C000, 'FALSE']
+  - [Kepler, Kepler type, 'FALSE']
+  - [Kepler, Kepler activity, 'FALSE']
+  - [Kepler, Kepler AGN, 'FALSE']
+  - [Kepler, Kepler Algol, 'FALSE']
+  - [Kepler, Kepler binary, 'FALSE']
+  - [Kepler, Kepler CBP, 'FALSE']
+  - [Kepler, Kepler code, 'FALSE']
+  - [Kepler, Kepler dichotomy, 'FALSE']
+  - [Kepler, Kepler dwarf, 'FALSE']
+  - [Kepler, Kepler EB, 'FALSE']
+  - [Kepler, Kepler eclipsing, 'FALSE']
+  - [Kepler, Kepler exoplanet, 'FALSE']
+  - [Kepler, Kepler flare, 'FALSE']
+  - [Kepler, Kepler frequency, 'FALSE']
+  - [Kepler, Kepler giant, 'FALSE']
+  - [Kepler, Kepler host, 'FALSE']
+  - [Kepler, Kepler Law, 'FALSE']
+  - [Kepler, Kepler magnitude, 'FALSE']
+  - [Kepler, Kepler main sequence, 'FALSE']
+  - [Kepler, Kepler Miras, 'FALSE']
+  - [Kepler, Kepler model, 'FALSE']
+  - [Kepler, Kepler Neptune, 'FALSE']
+  - [Kepler, Kepler Object of Interest, 'FALSE']
+  - [Kepler, Kepler occurrence rate, 'FALSE']
+  - [Kepler, Kepler period, 'FALSE']
+  - [Kepler, Kepler planet, 'FALSE']
+  - [Kepler, Kepler population, 'FALSE']
+  - [Kepler, Kepler progenitor, 'FALSE']
+  - [Kepler, Kepler rotator, 'FALSE']
+  - [Kepler, Kepler star, 'FALSE']
+  - [Kepler, Kepler size, 'FALSE']
+  - [Kepler, Kepler SNe, 'FALSE']
+  - [Kepler, Kepler subgiant, 'FALSE']
+  - [Kepler, Kepler superflare, 'FALSE']
+  - [Kepler, Kepler system, 'FALSE']
+  - [Kepler, Kepler transit, 'FALSE']
+  - [Kepler, Kepler velocity, 'FALSE']
+  - [Kepler, Koester Kepler, 'FALSE']
+  - [Kepler, Romero Kepler, 'FALSE']
+  - [Kepler, Winget Kepler, 'FALSE']
+  - [Kepler, NASA Kepler, 'TRUE']
+  - [Kepler, two Kepler, 'TRUE']
+  - [Kepler, 2.2 Kepler, 'TRUE']
+  - [Kepler, e.g. Kepler, 'TRUE']
+  - [Kepler, Kepler Input Catalog, 'TRUE']
+  - [Kepler, Kepler K p, 'TRUE']
+  - [Kepler, Kepler K2, 'TRUE']
+  - [Kepler, Kepler LC, 'TRUE']
+  - [Kepler, Kepler light, 'TRUE']
+  - [Kepler, Kepler measurement, 'TRUE']
+  - [Kepler, Kepler Orrery, 'TRUE']
+  - [Kepler, Kepler Q1, 'TRUE']
+  - [Kepler, Kepler Science Operations Center, 'TRUE']
+  - [Kepler, Kepler show triplet, 'TRUE']
+  - [Kepler, Kepler work, 'TRUE']
+  - [Kepler, Kepler / K2, 'TRUE']
+  - [Kepler, Lamost Kepler, 'TRUE']
+  - [Kepler, Pre Processing Kepler, 'TRUE']
+  - [Kepler, RATS Kepler, 'TRUE']
+  - [Kepler, Simultaneous Kepler, 'TRUE']
+  - [Kepler, whole Kepler, 'TRUE']
+  - [K2, "\u2212K2 \u2212", 'FALSE']
+  - [K2, "iso\u2212K2 \u2212", 'FALSE']
+  - [K2, k2fov, 'FALSE']
+  - [K2, k2phot, 'FALSE']
+  - [K2, K2 000, 'FALSE']
+  - [K2, K2 C000, 'FALSE']
+  - [K2, K2 C0, 'FALSE']
+  - [K2, K2 C3 star, 'FALSE']
+  - [K2, K2 C5, 'FALSE']
+  - [K2, K2 C6, 'FALSE']
+  - [K2, K2 dwarf, 'FALSE']
+  - [K2, K2 fit, 'FALSE']
+  - [K2, K2 giant, 'FALSE']
+  - [K2, K2 model, 'FALSE']
+  - [K2, K2 Neptune, 'FALSE']
+  - [K2, K2 star, 'FALSE']
+  - [K2, K2 self, 'FALSE']
+  - [K2, K2 transit, 'FALSE']
+  - [K2, "log g Gaia \u2212K2", 'FALSE']
+  - [K2, Order D K2, 'FALSE']
+  - [K2, phot K2, 'FALSE']
+  - [K2, early K2, 'TRUE']
+  - [K2, EXOFOP K2, 'TRUE']
+  - [K2, Gaia K2, 'TRUE']
+  - [K2, Kepler K2, 'TRUE']
+  - [K2, K2Gaia, 'TRUE']
+  - [K2, K2GAP, 'TRUE']
+  - [K2, K2 ESO, 'TRUE']
+  - [K2, K2 flux, 'TRUE']
+  - [K2, K2 Gaia, 'TRUE']
+  - [K2, K2 Galactic Caps Project, 'TRUE']
+  - [K2, K2 Hermes, 'TRUE']
+  - [K2, K2 measurement, 'TRUE']
+  - [K2, K2 nod, 'TRUE']
+  - [K2, K2 parallax, 'TRUE']
+  - [K2, K2 season, 'TRUE']
+  - [K2, K2 year, 'TRUE']
+  - [K2, K2 yield, 'TRUE']
+  - [K2, Kepler / K2, 'TRUE']
+  - [Hubble, Edwin Hubble, 'FALSE']
+  - [Hubble, generalised Hubble, 'FALSE']
+  - [Hubble, Hubble 000, 'FALSE']
+  - [Hubble, Hubble classification, 'FALSE']
+  - [Hubble, Hubble constant, 'FALSE']
+  - [Hubble, Hubble horizon, 'FALSE']
+  - [Hubble, Hubble law, 'FALSE']
+  - [Hubble, Hubble mass, 'FALSE']
+  - [Hubble, Hubble model, 'FALSE']
+  - [Hubble, Hubble profile, 'FALSE']
+  - [Hubble, Hubble residual, 'FALSE']
+  - [Hubble, Hubble stage, 'FALSE']
+  - [Hubble, Hubble value, 'FALSE']
+  - [Hubble, Hubble velocity, 'FALSE']
+  - [Hubble, t Hubble, 'FALSE']
+  - [Hubble, deep Hubble, 'TRUE']
+  - [Hubble, ESA / Hubble, 'TRUE']
+  - [Hubble, Hubble ACS, 'TRUE']
+  - [Hubble, Hubble heritage, 'TRUE']
+  - [Hubble, Hubble source, 'TRUE']
+  - [Hubble, Hubble system, 'TRUE']
+  - [Hubble, Hubble UDF, 'TRUE']
+  - [AnyMission, AnyMission candidate, 'FALSE']
+  - [AnyMission, AnyMission Earth, 'FALSE']
+  - [AnyMission, AnyMission et al, 'FALSE']
+  - [AnyMission, AnyMission equation, 'FALSE']
+  - [AnyMission, AnyMission function, 'FALSE']
+  - [AnyMission, AnyMission mass, 'FALSE']
+  - [AnyMission, AnyMission radius, 'FALSE']
+  - [AnyMission, AnyMission team, 'FALSE']
+  - [AnyMission, AnyMission analysis, 'TRUE']
+  - [AnyMission, AnyMission aperture, 'TRUE']
+  - [AnyMission, AnyMission archive, 'TRUE']
+  - [AnyMission, AnyMission band, 'TRUE']
+  - [AnyMission, AnyMission bandpass, 'TRUE']
+  - [AnyMission, AnyMission based, 'TRUE']
+  - [AnyMission, AnyMission baseline, 'TRUE']
+  - [AnyMission, AnyMission campaign, 'TRUE']
+  - [AnyMission, AnyMission catalog, 'TRUE']
+  - [AnyMission, AnyMission CCD, 'TRUE']
+  - [AnyMission, AnyMission curve, 'TRUE']
+  - [AnyMission, AnyMission data, 'TRUE']
+  - [AnyMission, AnyMission database, 'TRUE']
+  - [AnyMission, AnyMission detection, 'TRUE']
+  - [AnyMission, AnyMission discovery, 'TRUE']
+  - [AnyMission, AnyMission documentation, 'TRUE']
+  - [AnyMission, AnyMission epoch, 'TRUE']
+  - [AnyMission, AnyMission field, 'TRUE']
+  - [AnyMission, AnyMission filter, 'TRUE']
+  - [AnyMission, AnyMission focal, 'TRUE']
+  - [AnyMission, AnyMission FOV, 'TRUE']
+  - [AnyMission, AnyMission image, 'TRUE']
+  - [AnyMission, AnyMission imaging, 'TRUE']
+  - [AnyMission, AnyMission lightcurve, 'TRUE']
+  - [AnyMission, AnyMission mission, 'TRUE']
+  - [AnyMission, AnyMission mode, 'TRUE']
+  - [AnyMission, AnyMission monitoring, 'TRUE']
+  - [AnyMission, AnyMission observation, 'TRUE']
+  - [AnyMission, AnyMission observatory, 'TRUE']
+  - [AnyMission, AnyMission passband, 'TRUE']
+  - [AnyMission, AnyMission photometry, 'TRUE']
+  - [AnyMission, AnyMission pipeline, 'TRUE']
+  - [AnyMission, AnyMission pixel, 'TRUE']
+  - [AnyMission, AnyMission plot, 'TRUE']
+  - [AnyMission, AnyMission program, 'TRUE']
+  - [AnyMission, AnyMission quarter, 'TRUE']
+  - [AnyMission, AnyMission quest, 'TRUE']
+  - [AnyMission, AnyMission result, 'TRUE']
+  - [AnyMission, AnyMission sample, 'TRUE']
+  - [AnyMission, AnyMission satellite, 'TRUE']
+  - [AnyMission, AnyMission scientific, 'TRUE']
+  - [AnyMission, AnyMission sensitivity, 'TRUE']
+  - [AnyMission, AnyMission spacecraft, 'TRUE']
+  - [AnyMission, AnyMission spectrograph, 'TRUE']
+  - [AnyMission, AnyMission spectrum, 'TRUE']
+  - [AnyMission, AnyMission survey, 'TRUE']
+  - [AnyMission, AnyMission target, 'TRUE']
+  - [AnyMission, AnyMission telescope, 'TRUE']
+  - [AnyMission, AnyMission telecscope, 'TRUE']
+  - [AnyMission, AnyMission timeseries, 'TRUE']
+  - [AnyMission, AnyMission treasury, 'TRUE']
+
+ml:
+  # Set machine learning variables
+  ML_label_model: "categorical"
+  ML_activation_dense: "softmax"
+  ML_batch_size: 32
+  ML_model_key: "small_bert/bert_en_uncased_L-4_H-512_A-8"  # Simpler language model
+  # ML_model_key: "bert_en_uncased_L-12_H-768_A-12" #Fancier language model
+  ML_type_optimizer: "lamb"  # "adamw"
+  ML_name_optimizer: "LAMB"  # "AdamWeightDecay"
+  ML_frac_dropout: 0.2
+  ML_frac_steps_warmup: 0.1
+  ML_num_epochs: 5
+  ML_init_lr: 3e-5
+  seed_ML: 8  # Random seed for ML model
+  bert:
+    dict_ml_model_encoders: {
+        "bert_en_uncased_L-12_H-768_A-12": "https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/3",
+        "bert_en_cased_L-12_H-768_A-12": "https://tfhub.dev/tensorflow/bert_en_cased_L-12_H-768_A-12/3",
+        "bert_multi_cased_L-12_H-768_A-12": "https://tfhub.dev/tensorflow/bert_multi_cased_L-12_H-768_A-12/3",
+        "small_bert/bert_en_uncased_L-2_H-128_A-2": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-2_H-128_A-2/1",
+        "small_bert/bert_en_uncased_L-2_H-256_A-4": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-2_H-256_A-4/1",
+        "small_bert/bert_en_uncased_L-2_H-512_A-8": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-2_H-512_A-8/1",
+        "small_bert/bert_en_uncased_L-2_H-768_A-12": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-2_H-768_A-12/1",
+        "small_bert/bert_en_uncased_L-4_H-128_A-2": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-4_H-128_A-2/1",
+        "small_bert/bert_en_uncased_L-4_H-256_A-4": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-4_H-256_A-4/1",
+        "small_bert/bert_en_uncased_L-4_H-512_A-8": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-4_H-512_A-8/1",
+        "small_bert/bert_en_uncased_L-4_H-768_A-12": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-4_H-768_A-12/1",
+        "small_bert/bert_en_uncased_L-6_H-128_A-2": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-6_H-128_A-2/1",
+        "small_bert/bert_en_uncased_L-6_H-256_A-4": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-6_H-256_A-4/1",
+        "small_bert/bert_en_uncased_L-6_H-512_A-8": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-6_H-512_A-8/1",
+        "small_bert/bert_en_uncased_L-6_H-768_A-12": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-6_H-768_A-12/1",
+        "small_bert/bert_en_uncased_L-8_H-128_A-2": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-8_H-128_A-2/1",
+        "small_bert/bert_en_uncased_L-8_H-256_A-4": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-8_H-256_A-4/1",
+        "small_bert/bert_en_uncased_L-8_H-512_A-8": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-8_H-512_A-8/1",
+        "small_bert/bert_en_uncased_L-8_H-768_A-12": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-8_H-768_A-12/1",
+        "small_bert/bert_en_uncased_L-10_H-128_A-2": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-10_H-128_A-2/1",
+        "small_bert/bert_en_uncased_L-10_H-256_A-4": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-10_H-256_A-4/1",
+        "small_bert/bert_en_uncased_L-10_H-512_A-8": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-10_H-512_A-8/1",
+        "small_bert/bert_en_uncased_L-10_H-768_A-12": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-10_H-768_A-12/1",
+        "small_bert/bert_en_uncased_L-12_H-128_A-2": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-12_H-128_A-2/1",
+        "small_bert/bert_en_uncased_L-12_H-256_A-4": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-12_H-256_A-4/1",
+        "small_bert/bert_en_uncased_L-12_H-512_A-8": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-12_H-512_A-8/1",
+        "small_bert/bert_en_uncased_L-12_H-768_A-12": "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-12_H-768_A-12/1",
+        "albert_en_base": "https://tfhub.dev/tensorflow/albert_en_base/2",
+        "electra_small": "https://tfhub.dev/google/electra_small/2",
+        "electra_base": "https://tfhub.dev/google/electra_base/2",
+        "experts_pubmed": "https://tfhub.dev/google/experts/bert/pubmed/2",
+        "experts_wiki_books": "https://tfhub.dev/google/experts/bert/wiki_books/2",
+        "talking-heads_base": "https://tfhub.dev/tensorflow/talkheads_ggelu_bert_en_base/1",
+    }
+    dict_ml_model_preprocessors: {
+        "bert_en_uncased_L-12_H-768_A-12": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "bert_en_cased_L-12_H-768_A-12": "https://tfhub.dev/tensorflow/bert_en_cased_preprocess/3",
+        "small_bert/bert_en_uncased_L-2_H-128_A-2": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-2_H-256_A-4": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-2_H-512_A-8": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-2_H-768_A-12": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-4_H-128_A-2": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-4_H-256_A-4": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-4_H-512_A-8": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-4_H-768_A-12": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-6_H-128_A-2": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-6_H-256_A-4": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-6_H-512_A-8": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-6_H-768_A-12": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-8_H-128_A-2": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-8_H-256_A-4": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-8_H-512_A-8": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-8_H-768_A-12": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-10_H-128_A-2": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-10_H-256_A-4": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-10_H-512_A-8": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-10_H-768_A-12": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-12_H-128_A-2": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-12_H-256_A-4": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-12_H-512_A-8": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "small_bert/bert_en_uncased_L-12_H-768_A-12": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "bert_multi_cased_L-12_H-768_A-12": "https://tfhub.dev/tensorflow/bert_multi_cased_preprocess/3",
+        "albert_en_base": "https://tfhub.dev/tensorflow/albert_en_preprocess/3",
+        "electra_small": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "electra_base": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "experts_pubmed": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "experts_wiki_books": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        "talking-heads_base": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+    }
+
+results:
+  # Classification
+  # For custom classification verdicts
+  verdict_error: "z_error"
+  verdict_lowprob: "z_lowprob"
+  verdict_rejection: "z_notmatch"
+  list_other_verdicts: [verdict_error, verdict_lowprob, verdict_rejection]
+
+  # For preset custom verdict outputs
+  dictverdict_lowprob: {"verdict": verdict_lowprob, "scores_comb": None, "scores_indiv": None, "uncertainty": None}
+  dictverdict_rejection: {"verdict": verdict_rejection, "scores_comb": None, "scores_indiv": None, "uncertainty": None}
+  dictverdict_error: {"verdict": verdict_error, "scores_comb": None, "scores_indiv": None, "uncertainty": None}
+
+grammar:
+  regex:
+    exp_acronym_midwords: r' +(?:(?:(?:for )|(?:the )|(?:in )|(?:of )|(?:from ))*)\b'
+    exp_nopunct: '[^\w\s]'  # For removing punctuation from strings
+    exp_punctuation: ['\.', ',', ';', '\:', '\?', '\!']  # For matching open brackets in string
+    set_punctuation: ['.', ',', ';', ':', '?', '!']  # For matching open brackets in string
+    set_apostrophe: ["'"]  # For matching apostrophes
+    set_openbrackets: ['(', '[', '{', '<']  # For matching open brackets in string
+    set_closebrackets: [')', ']', '}', '>']  # For matching close brackets in string
+    exp_splittext: '(?<=.[.?!]) +(?=[A-Z])'  # Splits text into rough sentences; based on stackoverflow post, heh: Avinash Raj answer from Sep 9 2014 from https://stackoverflow.com/questions/25735644/python-regex-for-splitting-text-into-sentences-sentence-tokenizing
+    exp_splitbracketstarts: ('(?<=.[.?!]) +(?=\\' + '|\\'.join(set_openbrackets) + ')')
+    exp_splitbracketends: ('(?<=.[.?!][' + ('\\' + '\\'.join(set_closebrackets)) + '])(?=[A-Z])')
+    exp_synset: r'[A-Z|a-z]+\.[a-z]\.[0-9]{2,2}'  # Regular expression to match to wordnet synsets
+    exp_website: (r'\b(http(s?):(//)?)?(www\.)?[A-Z|a-z|-]*(\.[A-Z|a-z|0-9]+)*(\.[A-Z|a-z]{2,})((/|\?|=)[A-Z|a-z|0-9]+)*\b\/?')
+    exp_etal_cleansed: r'\b[A-Z][A-Z|a-z]+etal\b'
+    dict_exp_abbrev: {r'\bFig\b\.': 'Figure', r'\bTab\b\.': 'Table', r'\bvs\b\.': 'vs'}
+  trail_pos_main: ["VERB"]
+  special_pos_main: ["SUBJECT", "PREPOSITION_SUBJECT", "VERB", "DIRECT_OBJECT", "PREPOSITION", "PREPOSITION_OBJECT", "AUX"]
+  ignore_pos_main: ["USELESS", "PUNCTUATION", "ADJECTIVE", "MARKER", "CONJUNCTION"]
+  speech:
+    # For part-of-speech (pos) identification
+    # Conjoined
+    dep_conjoined: ["conj"]
+    # Conjunction
+    pos_conjunction: ["CCONJ"]
+    tag_conjunction: ["CC"]
+    # Roots
+    dep_root: ["ROOT"]
+    # Useless words
+    dep_useless: ["det", "amod", "advmod"]
+    pos_useless: ["DET", "ADJ", "ADV"]
+    tag_useless: ["CD", "JJ", "JJR", "JJS", "LS", "PDT", "RB", "RBR", "RBS", "UH", "WRB", "RP"]
+    # Verbs
+    dep_verb: ["verb", "advcl", "relcl", "acl"]
+    dep_verb_passive: ["pass", "auxpass"]
+    pos_verb: ["VERB"]
+    tag_verb_past: ["VBD", "VBN"]
+    tag_verb_present: ["VB", "VBP", "VBZ", "VBG"]
+    tag_verb_future: ["MD"]
+    tag_verb_purpose: ["TO"]
+    tag_verb_any: tag_verb_past + tag_verb_present + tag_verb_future
+    # Subjects
+    dep_subject: ["nsubj", "nsubjpass", "expl"]
+    # Objects
+    dep_object: ["dobj", "pobj", "attr"]  # , "appos"]
+    # Appositional Modifiers
+    dep_appos: ["appos"]
+    # Clausal Complements
+    dep_ccomp: ["ccomp"]
+    # Prepositions
+    dep_preposition: ["prep", "agent", "dative"]
+    pos_preposition: ["ADP"]
+    tag_preposition: ["IN"]
+    # Aux
+    dep_aux: ["aux", "auxpass"]
+    pos_aux: ["AUX", "PART"]  # , "PART"]
+    # Determinants
+    pos_determinant: ["DET", "PRON"]
+    tag_determinant: ["PDT", "DT", "WDT", "EX"]
+    # Nouns
+    pos_noun: ["PROPN", "NOUN", "PRON"]
+    # Pronouns
+    pos_pronoun: ["PRON"]
+    tag_pronoun: ["PRP", "PRP$", "WP", "WP$"]
+    # Adjectives
+    dep_adjective: ["amod"]
+    pos_adjective: ["ADJ"]
+    tag_adjective: ["JJ", "JJR", "JJS"]
+    # Markers
+    dep_marker: ["mark"]
+    tag_marker: ["WRB", "WDT"]
+    # Negatives
+    dep_negative: ["neg"]
+    # Numbers
+    pos_number: ["NUM"]
+    tag_number: ["CD"]
+    # Unidentified words
+    dep_xpos: ["X"]
+    pos_xpos: ["X"]
+    # Brackets
+    tag_brackets: ["-LRB-", "-RRB-"]
+    # Possessive
+    tag_possessive: ["POS"]
+    # Punctuation
+    dep_punctuation: ["punct"]
+  spacy_language_model:  "en_core_web_sm"  # Simpler language model
+  nlp_lookup_person:  "Person"  # To look up e.g. 1st,3rd person status of pronoun
+  string_anymatch_ambig:  "anymission"  # Mission marker in ambig. phrase database to match to any mission
+  string_numeral_ambig:  "000"  # String representation of given numeral word
+  special_synsets_fig:  ["table.n.01", "tab.n.04", "figure.n.01", "section.n.01", "chapter.n.01", "appendix.n.01"]
+  rules:
+    # Set rule-based processing variables
+    # Rule-based thresholds
+    thres_category_fracdiff: 0.1
+    thres_verbsimilaritymain: 0.75  # 25 #Threshold of similarity to say two verbs are similar
+    thres_verbsimilarityhigh: 0.75  # Threshold of similarity to say two verbs are similar
+
+    # Grammar nest generation
+    # Convert from tree to nest terminology
+    conv_pos_fromtreetonest: {"PREPOSITION_SUBJECT": "subjectmatter", "SUBJECT": "subjectmatter", "DIRECT_OBJECT": "objectmatter", "PREPOSITION_OBJECT": "objectmatter"}
+    # List of important booleans to record into a post-grammar nest
+    nest_important_treebools: ["is_pron_1st", "is_keyword", "is_etal", "is_pron_3rd", "is_term_fig"]
+    # List of important booleans that get merged into main component from linked terms in a nest
+    nest_important_treebools_superior: [ "is_pron_1st", "is_term_fig", "is_etal"]
+    nest_unimportant_pos: [None, "PUNCTUATION"]  # Any parts-of-speech (pos) that will be ignored+skipped during nest-building
+    nest_keys_main: ["subjectmatter", "objectmatter", "verbclass", "verbtypes"]  # List of main keywords that define a nest
+    nest_keys_matter: ["subjectmatter", "objectmatter"]  # List of matter keywords that define a nest
+    nest_key_verbtype: "verbtypes"  # verbtype keyword
+    nest_prefix_link: "link_"  # Prefix for linked keys within nest
+    max_num_hypernyms: 3
+
+    # Verb synsets
+    synsets_verbs_be: ["be.v.01"]
+    synsets_verbs_has: ["have.v.01"]
+    synsets_verbs_science: ["use.v.01", "diagram.v.01", "get.v.01", "analyze.v.01", "detect.v.01", "determine.v.03", "classify.v.01", "correct.v.01", "target.v.01", "estimate.v.01"]
+    synsets_verbs_influenced: ["imitate.v.01", "model.v.05", "simulate.v.03", "compare.v.01", "discuss.v.01", "predict.v.01", "estimate.v.01"]
+    synsets_verbs_plot: ["plot.v.01", "show.v.01", "exemplify.v.02", "highlight.v.02", "correlate.v.01", "indicate.v.02", "choose.v.01", "represent.v.01"]
+    synsets_verbs_know: ["know.v.01", "understand.v.01", "want.v.02"]
+
+    # Verb categorization
+    category_nonverb_root: "root_nonverb"
+    list_category_names: ["science", "datainfluenced", "plot", "know"]
+    list_category_synsets: [synsets_verbs_science, synsets_verbs_influenced, synsets_verbs_plot, synsets_verbs_know]
+    list_category_threses: [thres_verbsimilaritymain, thres_verbsimilaritymain, thres_verbsimilaritymain, thres_verbsimilarityhigh]
+  # classification
+  list_default_verdicts_decisiontree: ["science", "data_influenced", "mention"]
+  dict_tree_possible_values: {
+      "subjectmatter": ["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"],
+      "objectmatter": ["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"],
+      "verbclass": ["be", "has", "know", "plot", "root_nonverb", "science", "datainfluenced"],
+      "verbtypes": ["FUTURE", "PASSIVE", "PAST", "POTENTIAL", "PURPOSE", "PRESENT"],
+  }

@@ -24,10 +24,10 @@ class TestGrammar(unittest.TestCase):
                     "skim": "The Hubble Space Telescope is a telescope that is referred to as Hubble or HST.\nThe HST legacy archive is a treasure chest of observations used across the world.",
                     "trim": "The Hubble Space Telescope is a really neat telescope that is often referred to as Hubble or HST.\nThe HST legacy archive is a rich treasure chest of ultraviolet observations.",
                     "anon": "The {0} is a really neat telescope that is often referred to as {0} or {0}.\nThe {0} legacy archive is a rich treasure chest of ultraviolet observations used across the world.".format(
-                        config.placeholder_anon
+                        config.textprocessing.placeholder_anon
                     ),
                     "skim_trim_anon": "The {0} is a telescope that is referred to as {0} or {0}.\nThe {0} legacy archive is a treasure chest of observations.".format(
-                        config.placeholder_anon
+                        config.textprocessing.placeholder_anon
                     ),
                 }
             }
@@ -38,7 +38,7 @@ class TestGrammar(unittest.TestCase):
 
                 # Prepare and run test for bibcat class instance
                 testbase = Grammar(text=phrase, keyword_obj=params.kobj_hubble, do_check_truematch=True)
-                testbase.run_modifications(which_modes=config.test_which_modes)
+                testbase.run_modifications(which_modes=config.textprocessing.test_which_modes)
                 # Iterate through modes
                 for key1 in dict_acts[phrase]:
                     # Skip over non-mode keys
@@ -78,10 +78,10 @@ class TestGrammar(unittest.TestCase):
                     "skim": "Once the transit is observable, we will observe the target in a fashion without delay and at resolution using either JWST or Hubble.",
                     "trim": "we will observe the target in a timely fashion without delay and at high resolution using either JWST or Hubble.",
                     "anon": "Once the transit is observable, we will observe the target in a timely fashion without delay and at high resolution using either JWST or {0}.".format(
-                        config.placeholder_anon
+                        config.textprocessing.placeholder_anon
                     ),
                     "skim_trim_anon": "we will observe the target in a fashion without delay and at resolution using either JWST or {0}.".format(
-                        config.placeholder_anon
+                        config.textprocessing.placeholder_anon
                     ),
                 }
             }
@@ -94,7 +94,7 @@ class TestGrammar(unittest.TestCase):
                 testbase = Grammar(
                     text=phrase, keyword_obj=params.kobj_hubble, do_check_truematch=True, do_verbose=False
                 )
-                testbase.run_modifications(which_modes=config.test_which_modes)
+                testbase.run_modifications(which_modes=config.textprocessing.test_which_modes)
                 # Iterate through modes
                 for key1 in dict_acts[phrase]:
                     # Skip over non-mode keys
@@ -131,10 +131,10 @@ class TestGrammar(unittest.TestCase):
                     "skim": "While we are able to detect (above 5sigma) the three stars within the mosaic created by the HST observations, we are unable to detect those targets in the snapshots taken with the Cool Telescope.",
                     "trim": "While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the HST observations, we are unable to even tentatively detect those same targets in the snapshots.",
                     "anon": "While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the {0} observations, we are unable to even tentatively detect those same targets in the snapshots taken with the Cool Telescope.".format(
-                        config.placeholder_anon
+                        config.textprocessing.placeholder_anon
                     ),
                     "skim_trim_anon": "While we are able to detect (above 5sigma) the three stars within the mosaic created by the {0} observations, we are unable to detect those targets in the snapshots.".format(
-                        config.placeholder_anon
+                        config.textprocessing.placeholder_anon
                     ),
                 }
             }
@@ -145,7 +145,7 @@ class TestGrammar(unittest.TestCase):
 
                 # Prepare and run test for bibcat class instance
                 testbase = Grammar(text=phrase, keyword_obj=params.kobj_hubble, do_check_truematch=True)
-                testbase.run_modifications(which_modes=config.test_which_modes)
+                testbase.run_modifications(which_modes=config.textprocessing.test_which_modes)
                 # Iterate through modes
                 for key1 in dict_acts[phrase]:
                     # Skip over non-mode keys
@@ -181,10 +181,10 @@ class TestGrammar(unittest.TestCase):
                     "skim": "While we are able to detect (above 5sigma) the three stars within the mosaic created by the Cool Telescope observations, we are unable to detect those targets in the snapshots taken with the HST.",
                     "trim": "While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic, we are unable to even tentatively detect those same targets in the snapshots taken with the HST.",
                     "anon": "While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, we are unable to even tentatively detect those same targets in the snapshots taken with the {0}.".format(
-                        config.placeholder_anon
+                        config.textprocessing.placeholder_anon
                     ),
                     "skim_trim_anon": "While we are able to detect (above 5sigma) the three stars within the mosaic, we are unable to detect those targets in the snapshots taken with the {0}.".format(
-                        config.placeholder_anon
+                        config.textprocessing.placeholder_anon
                     ),
                 }
             }
@@ -197,7 +197,7 @@ class TestGrammar(unittest.TestCase):
                 testbase = Grammar(
                     text=phrase, keyword_obj=params.kobj_hubble, do_check_truematch=True, do_verbose=False
                 )
-                testbase.run_modifications(which_modes=config.test_which_modes)
+                testbase.run_modifications(which_modes=config.textprocessing.test_which_modes)
                 # Iterate through modes
                 for key1 in dict_acts[phrase]:
                     # Skip over non-mode keys
@@ -238,10 +238,10 @@ class TestGrammar(unittest.TestCase):
                     "skim": "While that study was able to detect (above 5sigma) the three stars within the mosaic created by the Cool Telescope observations, this study was unable to detect those targets in the snapshots taken with the HST.",
                     "trim": "this study was unable to even tentatively detect those same targets in the snapshots taken with the HST.",
                     "anon": "While that study was able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, this study was unable to even tentatively detect those same targets in the snapshots taken with the {0}.".format(
-                        config.placeholder_anon
+                        config.textprocessing.placeholder_anon
                     ),
                     "skim_trim_anon": "this study was unable to detect those targets in the snapshots taken with the {0}.".format(
-                        config.placeholder_anon
+                        config.textprocessing.placeholder_anon
                     ),
                 }
             }
@@ -253,7 +253,7 @@ class TestGrammar(unittest.TestCase):
 
                 # Prepare and run test for bibcat class instance
                 testbase = Grammar(text=phrase, keyword_obj=params.kobj_hubble, do_check_truematch=True)
-                testbase.run_modifications(which_modes=config.test_which_modes)
+                testbase.run_modifications(which_modes=config.textprocessing.test_which_modes)
                 # Iterate through modes
                 for key1 in dict_acts[phrase]:
                     # Skip over non-mode keys
@@ -295,9 +295,9 @@ class TestGrammar(unittest.TestCase):
                     "skim": "The stars are observed with HST and verified with JWST.",
                     "trim": "The red stars are observed with HST.",
                     "anon": "The red stars are observed with {0} and further verified with JWST.".format(
-                        config.placeholder_anon
+                        config.textprocessing.placeholder_anon
                     ),
-                    "skim_trim_anon": "The stars are observed with {0}.".format(config.placeholder_anon),
+                    "skim_trim_anon": "The stars are observed with {0}.".format(config.textprocessing.placeholder_anon),
                 }
             }
             #
@@ -310,7 +310,7 @@ class TestGrammar(unittest.TestCase):
                 testbase = Grammar(
                     text=phrase, keyword_obj=params.kobj_hubble, do_check_truematch=True, do_verbose=False
                 )
-                testbase.run_modifications(which_modes=config.test_which_modes)
+                testbase.run_modifications(which_modes=config.textprocessing.test_which_modes)
                 # Iterate through modes
                 for key1 in dict_acts[phrase]:
                     # Skip over non-mode keys

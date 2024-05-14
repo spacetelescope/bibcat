@@ -25,15 +25,15 @@ class TestData(unittest.TestCase):
             print("Running test__combined_dataset.")
             # Load each of the datasets
             # For the combined dataset
-            with open(config.path_source_data, "r") as openfile:
+            with open(config.inputs.path_source_data, "r") as openfile:
                 data_combined = json.load(openfile)
 
             # For the original text data
-            with open(config.path_papertext, "r") as openfile:
+            with open(config.inputs.path_papertext, "r") as openfile:
                 data_text = json.load(openfile)
 
             # For the original classification data
-            with open(config.path_papertrack, "r") as openfile:
+            with open(config.inputs.path_papertrack, "r") as openfile:
                 data_classif = json.load(openfile)
 
             # Build list of bibcodes for the original data sources
@@ -141,14 +141,14 @@ class TestData(unittest.TestCase):
             print("Running test__TVT_directory.")
             # Load the datasets
             # Check if TVT information exists
-            if not os.path.isfile(config.path_TVTinfo):
-                raise AssertionError("TVT directory does not exist yet at: {0}".format(config.path_TVTinfo))
+            if not os.path.isfile(config.paths.TVTinfo):
+                raise AssertionError("TVT directory does not exist yet at: {0}".format(config.paths.TVTinfo))
 
             # If exists, carry on with this test
-            dict_info = np.load(config.path_TVTinfo, allow_pickle=True).item()
-            dict_errors = np.load(config.path_modiferrors, allow_pickle=True).item()
+            dict_info = np.load(config.paths.TVTinfo, allow_pickle=True).item()
+            dict_errors = np.load(config.paths.modiferrors, allow_pickle=True).item()
             # Dataset of text and classification information
-            with open(config.path_source_data, "r") as openfile:
+            with open(config.inputs.path_source_data, "r") as openfile:
                 dataset = json.load(openfile)
 
             list_bibcodes_dataset = [item["bibcode"] for item in dataset]

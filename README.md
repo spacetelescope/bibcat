@@ -2,11 +2,11 @@
 Bibcat classifies astronomical journal papers into multiple paper categories. The primary categories are "science", "mention", "data-influenced", and "ignore".
 
 ## Development Workflow
-There are two main branches for bibcat work: 
+There are two main branches for bibcat work:
 
 - The **dev** branch contains ongoing development work and all new work should be done in branches that are merged against **dev**.
 
-- The **main** branch contains the latest stable release of `bibcat`. 
+- The **main** branch contains the latest stable release of `bibcat`.
 
 ## Installation
 ### Required packages and versions
@@ -17,15 +17,23 @@ There are two main branches for bibcat work:
 - tf-models-official
 
 ### Conda env installation
-Change `env_name` below with whatever you want to name the environment. 
+Change `env_name` below with whatever you want to name the environment.
 - Download conda installation yml file [here](envs/bibcat_py310.yml).
 - In the terminal, run these commands.
 ```shell
-conda env create -n `env_name` -f bibcat_py310.yml 
+conda env create -n `env_name` -f bibcat_py310.yml
 conda activate `env_name`
 pip install -U "tensorflow-text"
 python -m spacy download en_core_web_sm
 ```
+
+To utilize your GPU, you need to install `tensorflow-metal`.  You can run `pip install tensorflow-metal`.  To verify if tensorflow is set up to utilize your GPU, do the following:
+```
+import tensorflow as tf
+tf.config.list_physical_devices('GPU')
+```
+You should the following output: `[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]`.  If the output is an empty list, you are not setup for GPU use.
+
 ### Bibcat installation
 The `bibcat` directory contains the python package itself, installable via pip.
 ```shell
@@ -34,7 +42,7 @@ pip install -e .
 ## Setup
 ### Input JSON file
 Download several data files (the ADS full text file and the papertrack file) to create models for training or combined fulltext dataset files for the input text. These files can be accessed only by authorized users. Downloading the files requires a single sign-on.
-Save the files outside the `bibcat` folder on your local computer, and you will set up the paths to the files. See more details in **Set paths for the data files** below.
+Save the files outside the `bibcat` folder on your local computer, and you will set up the paths to the files. See more details in **User Configuration and Data Filepaths** below.
 
 - The combined papers+classification JSON file ([dataset_combined_all_2018-2021.json](https://stsci.app.box.com/file/1380606268376))
 - The papertrack export JSON file ([papertrack_export_2023-11-06.json](https://stsci.box.com/s/zadlr8dixw8706o9k9smlxdk99yohw4d))
@@ -42,15 +50,30 @@ Save the files outside the `bibcat` folder on your local computer, and you will 
 
 Note that other JSON files (extracted from 2018-2023) include paper track data and full texts later than 2021. If you like to test them for your work, feel free to do so.
 
-### Set paths for the data files
-In `bibcat/config.py`, you will need to set several paths as follow.
+### User Configuration and Data Filepaths
 
-#### The combined data set used for training models.
-Set the combined data file path outside the `bibcat` folder, which should not be git-committed to the repo.
-- `filepath_dataset = "/path/to/datasets/"` : this folder has to be outside this package folder.
-- `path_input_data = os.path.join(filepath_dataset, "dataset_combined_all_2018-2023.json")`
+There are three user environment variables to set:
 
-#### When testing with pytest or unittest
+- **BIBCAT_CONFIG_DIR**: a local path to your user configuration yaml file
+- **BIBCAT_DATA_DIR**: a local path to the directory of input data, e.g the input JSON files and full text
+- **BIBCAT_OUTPUT_DIR**: a local path to a directory where the output of bibcat will be written, e.g. the output model and QA plots
+
+If not set, all envvars will default to the user's home directory.  You can set these environment variables in your shell terminal, or in your shell config file, i.e. `.bashrc` or `.zshrc` file. For example,
+```bash
+export BIBCAT_CONFIG_DIR=/my/local/path/to/custom/config
+export BIBCAT_DATA_DIR=/my/local/path/to/input/data/dir
+export BIBCAT_OUTPUT_DIR=/my/local/path/to/bibcat/output
+```
+
+All `bibcat` configuration is contained in a YAML configuration file, `bibcat_config.yaml` .  The default settings are located in `etc/bibcat_config.yaml`.  You don't modify this file directly.  To modify any of the settings, you do so through a custom user configuration file of the same name, placed in `$BIBCAT_CONFIG_DIR` or your home directory, mirroring the same default structure.  All user custom settings override the defaults.
+
+For example, to change the name of the output model saved, within your user `$BIBCAT_CONFIG_DIR/bibcat_config.yaml`, set
+```yaml
+output:
+  name_model: my_new_model
+```
+
+### When testing with pytest or unittest
 
 The test suite is located in `tests/`. For all tests, run the unittest module.
 
@@ -60,13 +83,13 @@ python -m unittest
 
 ## Quick start
 
-- First, run `build_dataset.py` if you do not have the input text data. 
+- First, run `build_dataset.py` if you do not have the input text data.
   To do so, set the variables `filepath_dataset` (datasets location path) in `bibcat/config.py`.
   where the papertrack export file and the ADS full text file reside before the run.
-- Next, once you have the input combined dataset, assign a model name to `name_model` 
+- Next, once you have the input combined dataset, assign a model name to `name_model`
   (Model name of your choice to save or load) in `bibcat/config.py`.
-- Next, run `build_model.py` to create a training model.  
-- Then, run `classify_papers.py` to classify papers. It will produce some evaluation 
+- Next, run `build_model.py` to create a training model.
+- Then, run `classify_papers.py` to classify papers. It will produce some evaluation
   diagnostics such as a confusion matrix in the `output/` directory.
 
 
