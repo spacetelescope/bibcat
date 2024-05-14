@@ -13,21 +13,6 @@ def file_exists(file_path):
     return os.path.exists(file_path)
 
 
-# @pytest.fixture(autouse=True)
-# def setdirs(monkeypatch, tmp_path):
-#     """Fixture to set BIBCAT_OUTPUT_DIR environment variable to a temporary directory."""
-#     # Create a temporary directory specific for the tests
-#     temp_dir = tmp_path / "bibcat_output"
-#     temp_dir.mkdir()
-
-#     # Monkeypatch the environment variable to point to the temporary directory
-#     monkeypatch.setenv('BIBCAT_OUTPUT_DIR', str(temp_dir))
-
-#     # reset the config
-#     setup_paths(config)
-
-
-
 # Test to verify the combined dataset
 @pytest.mark.skipif(
     not (file_exists(config.inputs.path_source_data) and file_exists(config.inputs.path_papertext) and file_exists(config.inputs.path_papertrack)),
