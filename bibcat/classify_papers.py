@@ -14,7 +14,7 @@ It also can classify streamlined JSON paper text(s) with a given classfier.
   folder via `config.output.folders_TVT["test"]` below. However, we will need to modify the
   codebase to  set up a designated folder of operational papers.
 
-- Run example: python classify_papers.py
+- Run example: bibcat classify
 """
 
 import os

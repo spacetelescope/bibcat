@@ -8,7 +8,7 @@ This module creates a new training ML model.
 - Once the model is trained, the `models` folder and its subdirectories for T/V/T
   are created along with various model related files.
 
-:Run example: python build_model.py
+:Run example: bibcat train
 """
 
 import os
