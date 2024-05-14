@@ -12036,7 +12036,7 @@ class Classifier_Rules(_Classifier):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         order_priority = ["data_influenced", "science", "mention"]
-        prob_priority = {"data_influenced":0.6, "science":0.6, "mention":0.3}
+        prob_priority = {"data_influenced":0.6, "science":0.6, "mention":0.2}
         min_priority = {"data_influenced":1, "science":1, "mention":1}
         #Print some notes
         if do_verbose:
