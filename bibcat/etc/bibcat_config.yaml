@@ -249,7 +249,7 @@ ml:
   ML_frac_dropout: 0.2
   ML_frac_steps_warmup: 0.1
   ML_num_epochs: 5
-  ML_init_lr: 3e-5
+  ML_init_lr: !!float 3e-5
   seed_ML: 8  # Random seed for ML model
   bert:
     dict_ml_model_encoders: {
@@ -338,7 +338,7 @@ results:
 
 grammar:
   regex:
-    exp_acronym_midwords: r' +(?:(?:(?:for )|(?:the )|(?:in )|(?:of )|(?:from ))*)\b'
+    exp_acronym_midwords: ' +(?:(?:(?:for )|(?:the )|(?:in )|(?:of )|(?:from ))*)\b'
     exp_nopunct: '[^\w\s]'  # For removing punctuation from strings
     exp_punctuation: ['\.', ',', ';', '\:', '\?', '\!']  # For matching open brackets in string
     set_punctuation: ['.', ',', ';', ':', '?', '!']  # For matching open brackets in string
@@ -346,12 +346,12 @@ grammar:
     set_openbrackets: ['(', '[', '{', '<']  # For matching open brackets in string
     set_closebrackets: [')', ']', '}', '>']  # For matching close brackets in string
     exp_splittext: '(?<=.[.?!]) +(?=[A-Z])'  # Splits text into rough sentences; based on stackoverflow post, heh: Avinash Raj answer from Sep 9 2014 from https://stackoverflow.com/questions/25735644/python-regex-for-splitting-text-into-sentences-sentence-tokenizing
-    exp_splitbracketstarts: ('(?<=.[.?!]) +(?=\\' + '|\\'.join(set_openbrackets) + ')')
-    exp_splitbracketends: ('(?<=.[.?!][' + ('\\' + '\\'.join(set_closebrackets)) + '])(?=[A-Z])')
-    exp_synset: r'[A-Z|a-z]+\.[a-z]\.[0-9]{2,2}'  # Regular expression to match to wordnet synsets
-    exp_website: (r'\b(http(s?):(//)?)?(www\.)?[A-Z|a-z|-]*(\.[A-Z|a-z|0-9]+)*(\.[A-Z|a-z]{2,})((/|\?|=)[A-Z|a-z|0-9]+)*\b\/?')
-    exp_etal_cleansed: r'\b[A-Z][A-Z|a-z]+etal\b'
-    dict_exp_abbrev: {r'\bFig\b\.': 'Figure', r'\bTab\b\.': 'Table', r'\bvs\b\.': 'vs'}
+    exp_splitbracketstarts: "(?<=.[.?!]) +(?=\\(|\\[|\\{|\\<)"
+    exp_splitbracketends: "(?<=.[.?!][\\)\\]\\}\\>]) +(?=[A-Z])"
+    exp_synset: '[A-Z|a-z]+\.[a-z]\.[0-9]{2,2}'  # Regular expression to match to wordnet synsets
+    exp_website: '\b(http(s?):(//)?)?(www\.)?[A-Z|a-z|-]*(\.[A-Z|a-z|0-9]+)*(\.[A-Z|a-z]{2,})((/|\?|=)[A-Z|a-z|0-9]+)*\b\/?'
+    exp_etal_cleansed: '\b[A-Z][A-Z|a-z]+etal\b'
+    dict_exp_abbrev: {'\bFig\b\.': 'Figure', '\bTab\b\.': 'Table', '\bvs\b\.': 'vs'}
   trail_pos_main: ["VERB"]
   special_pos_main: ["SUBJECT", "PREPOSITION_SUBJECT", "VERB", "DIRECT_OBJECT", "PREPOSITION", "PREPOSITION_OBJECT", "AUX"]
   ignore_pos_main: ["USELESS", "PUNCTUATION", "ADJECTIVE", "MARKER", "CONJUNCTION"]
@@ -376,7 +376,7 @@ grammar:
     tag_verb_present: ["VB", "VBP", "VBZ", "VBG"]
     tag_verb_future: ["MD"]
     tag_verb_purpose: ["TO"]
-    tag_verb_any: tag_verb_past + tag_verb_present + tag_verb_future
+    tag_verb_any: ['VBD', 'VBN', 'VB', 'VBP', 'VBZ', 'VBG', 'MD']
     # Subjects
     dep_subject: ["nsubj", "nsubjpass", "expl"]
     # Objects

@@ -552,7 +552,7 @@ class Operator(Base):
         )
         # If TVT directories already exist, either print note or raise error
         if is_exist:
-            str_err = None  # Placeholder
+            str_err = ""  # Placeholder
             # Print some notes
             if do_verbose:
                 print("Previous training/validation directories already exist.")
