@@ -38,7 +38,7 @@ class TestGrammar(unittest.TestCase):
 
                 # Prepare and run test for bibcat class instance
                 testbase = Grammar(text=phrase, keyword_obj=params.kobj_hubble, do_check_truematch=True)
-                testbase.run_modifications(which_modes=config.textprocessing.test_which_modes)
+                testbase.run_modifications(which_modes=config.textprocessing.which_modes)
                 # Iterate through modes
                 for key1 in dict_acts[phrase]:
                     # Skip over non-mode keys
@@ -94,7 +94,7 @@ class TestGrammar(unittest.TestCase):
                 testbase = Grammar(
                     text=phrase, keyword_obj=params.kobj_hubble, do_check_truematch=True, do_verbose=False
                 )
-                testbase.run_modifications(which_modes=config.textprocessing.test_which_modes)
+                testbase.run_modifications(which_modes=config.textprocessing.which_modes)
                 # Iterate through modes
                 for key1 in dict_acts[phrase]:
                     # Skip over non-mode keys
@@ -145,7 +145,7 @@ class TestGrammar(unittest.TestCase):
 
                 # Prepare and run test for bibcat class instance
                 testbase = Grammar(text=phrase, keyword_obj=params.kobj_hubble, do_check_truematch=True)
-                testbase.run_modifications(which_modes=config.textprocessing.test_which_modes)
+                testbase.run_modifications(which_modes=config.textprocessing.which_modes)
                 # Iterate through modes
                 for key1 in dict_acts[phrase]:
                     # Skip over non-mode keys
@@ -197,7 +197,7 @@ class TestGrammar(unittest.TestCase):
                 testbase = Grammar(
                     text=phrase, keyword_obj=params.kobj_hubble, do_check_truematch=True, do_verbose=False
                 )
-                testbase.run_modifications(which_modes=config.textprocessing.test_which_modes)
+                testbase.run_modifications(which_modes=config.textprocessing.which_modes)
                 # Iterate through modes
                 for key1 in dict_acts[phrase]:
                     # Skip over non-mode keys
@@ -253,7 +253,7 @@ class TestGrammar(unittest.TestCase):
 
                 # Prepare and run test for bibcat class instance
                 testbase = Grammar(text=phrase, keyword_obj=params.kobj_hubble, do_check_truematch=True)
-                testbase.run_modifications(which_modes=config.textprocessing.test_which_modes)
+                testbase.run_modifications(which_modes=config.textprocessing.which_modes)
                 # Iterate through modes
                 for key1 in dict_acts[phrase]:
                     # Skip over non-mode keys
@@ -310,7 +310,7 @@ class TestGrammar(unittest.TestCase):
                 testbase = Grammar(
                     text=phrase, keyword_obj=params.kobj_hubble, do_check_truematch=True, do_verbose=False
                 )
-                testbase.run_modifications(which_modes=config.textprocessing.test_which_modes)
+                testbase.run_modifications(which_modes=config.textprocessing.which_modes)
                 # Iterate through modes
                 for key1 in dict_acts[phrase]:
                     # Skip over non-mode keys

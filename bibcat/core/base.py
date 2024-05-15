@@ -1269,7 +1269,7 @@ class Base:
 
         # Load the ambig. phrase data
         #lookup_ambigs = [str(item).lower() for item in np.genfromtxt(config.KW_AMBIG, comments="#", dtype=str)]
-        lookup_ambigs = config.textprocessing.keywords_ambig
+        lookup_ambigs = [i.lower() for i in config.textprocessing.keywords_ambig]
         data_ambigs = np.array(config.textprocessing.phrases_ambig)
         #data_ambigs = np.genfromtxt(config.PHR_AMBIG, comments="#", dtype=str, delimiter="\t")
         if len(data_ambigs.shape) == 1:  # If single row, reshape to 2D
