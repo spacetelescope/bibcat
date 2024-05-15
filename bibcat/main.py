@@ -3,7 +3,7 @@
 # -*- coding: utf-8 -*-
 #
 """
-Main entry point into pyaci
+Main entry point into bibcat
 """
 
 import click

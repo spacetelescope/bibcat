@@ -13,3 +13,4 @@ dependencies:
     - tensorflow
     - tensorflow-hub
     - tf-models-official
+    - pytest

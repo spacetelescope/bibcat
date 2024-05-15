@@ -18,7 +18,7 @@ def test_bibcat_cli():
     assert 'Command-line tool for running the bibcat package' in result.output
 
 
-def test_build():
+def test_train():
     """ test the cli train help command """
     runner = CliRunner()
     result = runner.invoke(cli, ['train', '--help'])
