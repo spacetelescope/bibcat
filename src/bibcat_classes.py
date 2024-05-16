@@ -1195,7 +1195,7 @@ class _Base():
 
         ##Measure conjoined status ahead of time
         is_conjoined = False
-        if (pos not in ["CONJOINED", "VERB", "ROOT"]):
+        if (pos not in ["CONJOINED", "VERB", "ROOT", "AUX"]):
             is_conjoined = self._is_pos_word(word=word, pos="CONJOINED")
         #
 
@@ -1268,6 +1268,24 @@ class _Base():
         #Identify roots
         if pos in ["ROOT"]:
             check_all = (word_dep in config.dep_root)
+        #
+        #Identify verbs
+        #elif pos in ["VERB"]: (blocked 2024-05-14)
+        #    check_verb = (word_pos in ["VERB"]) #!!! Set in config. !!!
+        #    check_root = self._is_pos_word(word=word, pos="ROOT")
+        #    check_pos = (word_pos in ["AUX"])
+        #    check_tag = (word_tag in config.tag_verb_any)
+        #    check_auxverb = (check_tag
+        #                        and (word_dep not in ["aux", "auxpass"])
+        #                        and (check_pos))
+        #    check_rootaux = (check_root and check_pos and check_tag)
+        #    if do_exclude_nounverbs:
+        #        check_notnoun = (ids_nounchunks[word_i] is None)
+        #    else:
+        #        check_notnoun = True
+        #    #
+        #    check_all = ((check_verb or check_rootaux or check_auxverb)
+        #                    and check_notnoun)
         #
         #Identify verbs
         elif pos in ["VERB"]:
@@ -3879,15 +3897,16 @@ class Grammar(_Base):
                 tense = "FUTURE"
             elif (word_tag in tags_purpose): #For purpose tense
                 tense = "PURPOSE"
-            else: #Raise error if not a verb after all #tense not recognized
-                if (word_pos != "VERB"):
+            else:
+                #Catch awkward bad tagging errors from external NLP package
+                if (word_pos == "VERB"):
+                    tense = "PRESENT"
+                else:
                     raise ValueError(("Err: Tag {4} of word {0} unknown!\n{1}"
                                     +"\ndep={2}, pos={3}, tag={4}\nRoots: {5}")
                                 .format(curr_word, sentence_NLP, word_dep,
                                         word_pos, word_tag,
                                         list(curr_word.ancestors)))
-                else: #Otherwise, assume bad ext.-package NLP tagging for now
-                    tense = "PRESENT"
             #
             #    raise ValueError(("Err: Tag {4} of word {0} unknown!\n{1}"
             #                    +"\ndep={2}, pos={3}, tag={4}\nRoots: {5}")

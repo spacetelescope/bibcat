@@ -28,10 +28,13 @@ name_model = "perf_run_ML_testfalsepos1_{0}".format(mode_modif)
 #name_model = "perf_run_MLlarge_{0}".format(mode_modif)
 #!!!"""
 #
-#mode_modif = "none"
+#mode_modif = "skim_anon"
 #name_model = "paper_model_MLlarge_mode{0}_seedTVT{1}_seedML{2}".format(mode_modif, 1, 101)
+
+# !!! skim_trim_anon ; then duplicate for medium, small
 #
-name_model = "test_train_rule_op2" #perf_run_ML_testfalsepos1_none
+name_model = "test_train_rule_op_trainfull" #perf_run_ML_testfalsepos1_none
+#name_model = "test_train_rule_op2" #perf_run_ML_testfalsepos1_none
 #name_model = "perf_run_ML_testfalsepos1_none"
 mode_modif = "none"
 #
@@ -405,7 +408,7 @@ thres_category_fracdiff = 0.1
 thres_verbsimilaritymain = 0.75 #25 #Threshold of similarity to say two verbs are similar
 thres_verbsimilarityhigh = 0.75 #Threshold of similarity to say two verbs are similar
 #
-thres_rarity = 20 # 0 #2 #2 #3 #None #5 #Number of occurrences of a rule before deemed a statistically significant number of occurrences
+thres_rarity = 20 #20 # 0 #2 #2 #3 #None #5 #Number of occurrences of a rule before deemed a statistically significant number of occurrences
 #thres_purity = None #0.7 #0 #0.7 #0.0 #Rule must have probability entry of at least this value to be considered a proper rule
 thres_purity = {"science":0.7, "data_influenced":0.7, "mention":0.15} #Rule must have probability entry of at least this value to be considered a proper rule
 thres_override_acceptance = None #0.9

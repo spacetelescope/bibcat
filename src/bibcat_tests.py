@@ -47,6 +47,7 @@ kobj_jwst = params.keyword_obj_JWST
 kobj_jwst_expanded = params.keyword_obj_JWST_expanded
 kobj_kepler = params.keyword_obj_Kepler
 kobj_k2 = params.keyword_obj_K2
+kobj_roman = params.keyword_obj_Roman
 kobj_uit = params.keyword_obj_UIT
 kobj_panstarrs = params.keyword_obj_PanSTARRS
 #
@@ -277,7 +278,7 @@ class TestData(unittest.TestCase):
         #
     #
 #"""
-"""
+#"""
 #class: TestBase
 #Purpose: Testing the Base class
 class TestBase(unittest.TestCase):
@@ -1165,7 +1166,7 @@ class TestBase(unittest.TestCase):
         #
     #
 #"""
-"""
+#"""
 #class: TestKeyword
 #Purpose: Testing the Keyword class
 class TestKeyword(unittest.TestCase):
@@ -1393,7 +1394,7 @@ class TestKeyword(unittest.TestCase):
         #
     #
 #"""
-"""
+#"""
 #class: TestPaper
 #Purpose: Testing the Paper class
 class TestPaper(unittest.TestCase):
@@ -1574,7 +1575,7 @@ class TestPaper(unittest.TestCase):
 class TestGrammar(unittest.TestCase):
     #For tests of generating and fetching modifs:
     if True:
-        """
+        #"""
         #Test modif generation for basic example text
         def test__modifs__basic(self):
             #Prepare text and answers for test
@@ -2086,12 +2087,12 @@ class TestGrammar(unittest.TestCase):
         #Test modif generation for example text with critical punctuation
         def test__modifs__CUSTOM(self):
             quicktext = (
-                "Synthetic photometry is first adjusted to Pan–STARRS grizy photometry (Chambers et al. 2016 ), which yields a first estimate of T eff and the solid angle π R 2 / D 2 ."
+                "Note also that PAndAS has and WFIRST will have photometrically determined metallicities, so a metallicity cut is in principle equivalent to a color and magnitude cut." #Make into example!
                 )
             #Prepare text and answers for test
             dict_acts = {
             quicktext:
-                {"kobj":kobj_panstarrs,
+                {"kobj":kobj_roman,
                 "none":"!"
                 }
             }
@@ -2134,7 +2135,7 @@ class TestGrammar(unittest.TestCase):
             #
         #"""
     #
-    """
+    #"""
     #For tests of clausal generation
     if True:
         #Test clausal generation for a variety of example text
@@ -2188,7 +2189,7 @@ class TestGrammar(unittest.TestCase):
         #
     #"""
 #"""
-"""
+#"""
 #class: TestOperator
 #Purpose: Testing the Operator class
 class TestOperator(unittest.TestCase):
