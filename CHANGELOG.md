@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Added new `click` cli for `bibcat`
 - Consolidated all config into a single `bibcat_config.yaml` YAML file.
 - Moved `bibcat` output to outside the package directory
 - Added support for user custom configuration and settings

@@ -27,7 +27,7 @@ pip install -U "tensorflow-text"
 python -m spacy download en_core_web_sm
 ```
 
-To utilize your GPU, you need to install `tensorflow-metal`.  You can run `pip install tensorflow-metal`.  To verify if tensorflow is set up to utilize your GPU, do the following:
+For Apple Silicon chips, to utilize your GPU, you need to install `tensorflow-metal`.  You can run `pip install tensorflow-metal`.  To verify if tensorflow is set up to utilize your GPU, do the following:
 ```
 import tensorflow as tf
 tf.config.list_physical_devices('GPU')
@@ -75,21 +75,17 @@ output:
 
 ### When testing with pytest or unittest
 
-The test suite is located in `tests/`. For all tests, run the unittest module.
+For testing, you need to install the extra test dependencies.  You do this with `pip install -e ".[test]"`.  The test suite is located in `tests/`. We can recommend using `pytest` for running tests.  Navigate to `/tests/` and run `pytest`, or for extra verbosity run `pytest -vs`. `pytest` can find and run tests written with pytest or unittests.
 
-```shell
-python -m unittest
-```
 
 ## Quick start
 
-- First, run `build_dataset.py` if you do not have the input text data.
-  To do so, set the variables `filepath_dataset` (datasets location path) in `bibcat/config.py`.
-  where the papertrack export file and the ADS full text file reside before the run.
-- Next, once you have the input combined dataset, assign a model name to `name_model`
-  (Model name of your choice to save or load) in `bibcat/config.py`.
-- Next, run `build_model.py` to create a training model.
-- Then, run `classify_papers.py` to classify papers. It will produce some evaluation
+There is a CLI interface to bibcat.  After installation with `pip install -e .`, a `bibcat` cli will be available from the terminal.  Run `bibcat --help` from the terminal to display the available commands.  All commands also have their own help.  For example to see the options
+for classifying papers, run `bibcat classify --help`.
+
+- Set the three user BIBCAT_XXX_DIR environment variables specified above, in particular `BIBCAT_DATA_DIR` points to the location of your input JSON files.
+- To create a training model, run `bibcat train`.
+- To classify papers, run `bibcat classify`. It will produce some evaluation
   diagnostics such as a confusion matrix in the `output/` directory.
 
 
