@@ -232,7 +232,7 @@ class Operator(Base):
 
                 # Catch any exceptions and force-print some notes
                 except Exception as err:
-                    dict_verdicts = config["results"].dictverdict_error.copy()
+                    dict_verdicts = config.results.dictverdict_error.copy()
                     print("-\nThe following err. was encountered in operate:")
                     print(repr(err))
                     print("Error was noted. Returning error as verdict.\n-")
@@ -264,7 +264,7 @@ class Operator(Base):
                 print("No text found matching keyword object.")
                 print("Returning rejection verdict.")
 
-            dict_verdicts = config["results"].dictverdict_rejection.copy()
+            dict_verdicts = config.results.dictverdict_rejection.copy()
 
         # Classify the text using stored classifier with raised error
         elif do_raise_innererror:  # If True, allow raising of inner errors
@@ -292,7 +292,7 @@ class Operator(Base):
 
             # Catch certain exceptions and force-print some notes
             except Exception as err:
-                dict_verdicts = config["results"].dictverdict_error.copy()
+                dict_verdicts = config.results.dictverdict_error.copy()
                 print("-\nThe following err. was encountered in operate:")
                 print(repr(err))
                 print("Error was noted. Continuing.\n-")
