@@ -877,7 +877,9 @@ class TestBase(unittest.TestCase):
         def test_streamline_phrase__citations(self):
             # Prepare text and answers for test
             dict_tests = {
-                "Somename (2013) published  in SJ.": "{0} published in SJ.".format(config.textprocessing.placeholder_author),
+                "Somename (2013) published  in SJ.": "{0} published in SJ.".format(
+                    config.textprocessing.placeholder_author
+                ),
                 "Hubble (1953) was a landmark paper (for that subfield).": "{0} was a landmark paper (for that subfield).".format(
                     config.textprocessing.placeholder_author
                 ),
@@ -955,9 +957,15 @@ class TestBase(unittest.TestCase):
                 "Please check out: www.stsci.edu/home for more info.": "Please check out: {0} for more info.".format(
                     config.textprocessing.placeholder_website
                 ),
-                "Consider also https://jwst.edu/,": "Consider also {0},".format(config.textprocessing.placeholder_website),
-                "http:hst.edu/lookup=wow?; public.stsci.edu,": "{0}; {0},".format(config.textprocessing.placeholder_website),
-                "   www.roman-telescope.stsci.edu/main/about/. ": "{0}.".format(config.textprocessing.placeholder_website),
+                "Consider also https://jwst.edu/,": "Consider also {0},".format(
+                    config.textprocessing.placeholder_website
+                ),
+                "http:hst.edu/lookup=wow?; public.stsci.edu,": "{0}; {0},".format(
+                    config.textprocessing.placeholder_website
+                ),
+                "   www.roman-telescope.stsci.edu/main/about/. ": "{0}.".format(
+                    config.textprocessing.placeholder_website
+                ),
             }
 
             # Prepare and run tests for bibcat class instance

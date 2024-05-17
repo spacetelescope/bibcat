@@ -14,3 +14,5 @@ dependencies:
     - tensorflow-hub
     - tf-models-official
     - pytest
+    - pytest-doctestplus
+    - deepmerge
