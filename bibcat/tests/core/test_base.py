@@ -8,7 +8,7 @@ import unittest
 
 import numpy as np
 import spacy
-from nltk.corpus import wordnet
+from nltk.corpus import wordnet  # type: ignore
 
 from bibcat import config
 from bibcat import parameters as params

@@ -4,10 +4,43 @@
 
 import os
 import pathlib
-from typing import Any
+from typing import Any, Dict
 
 import yaml  # type: ignore
 from deepmerge import always_merger  # type: ignore
+
+
+class ddict(Dict[str, Any]):
+    """Create a dottable dictionary
+
+    This allows for dictionary keys to be accessed
+    like class attributes.  For example, in x = {'a': 1, 'b': 2},
+    one can access x['a'] or x.a
+
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """override init"""
+        # initialize normal dict
+        super().__init__(*args, **kwargs)
+
+        # Convert any nested dictionaries into ddict instances
+        for key, value in self.items():
+            if isinstance(value, dict):
+                self[key] = ddict(value)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        self[name] = value
+
+    def __delattr__(self, name: str) -> None:
+        del self[name]
+
+    def __getattr__(self, name: str) -> Any:
+        """override getattr"""
+        # Allow attribute access to existing dictionary keys
+        if name in self:
+            return self[name]
+        raise AttributeError(f"'ddict' object has no attribute '{name}'")
 
 
 def read_yaml(filename: pathlib.Path) -> dict:
@@ -26,7 +59,7 @@ def read_yaml(filename: pathlib.Path) -> dict:
         the yaml configuration
     """
     with open(filename, "r") as f:
-        data = yaml.load(os.path.expandvars(f.read()), Loader=yaml.SafeLoader)
+        data: Dict[str, Any] = yaml.load(os.path.expandvars(f.read()), Loader=yaml.SafeLoader)
         return data
 
 
@@ -58,7 +91,7 @@ def get_custom_config() -> dict | None:
     return read_yaml(path)
 
 
-def get_config() -> dict:
+def get_config() -> ddict:
     """Read in the bibcat configuration
 
     Reads in the bibcat configuration from a yaml file.
@@ -85,36 +118,3 @@ def get_config() -> dict:
         config = always_merger.merge(config, custom_config)
 
     return ddict(config)
-
-
-class ddict(dict):
-    """Create a dottable dictionary
-
-    This allows for dictionary keys to be accessed
-    like class attributes.  For example, in x = {'a': 1, 'b': 2},
-    one can access x['a'] or x.a
-
-    """
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """override init"""
-        # initialize normal dict
-        super().__init__(*args, **kwargs)
-
-        # Convert any nested dictionaries into ddict instances
-        for key, value in self.items():
-            if isinstance(value, dict):
-                self[key] = ddict(value)
-
-    def __setattr__(self, name: str, value: Any) -> None:
-        self[name] = value
-
-    def __delattr__(self, name: str) -> None:
-        del self[name]
-
-    def __getattr__(self, name: str) -> Any:
-        """override getattr"""
-        # Allow attribute access to existing dictionary keys
-        if name in self:
-            return self[name]
-        raise AttributeError(f"'ddict' object has no attribute '{name}'")
