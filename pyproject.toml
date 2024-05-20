@@ -22,10 +22,12 @@ authors = [
 
 dependencies = [
   "click >= 8.1.0",
-  "spacy >= 3.6.0 ",
-  "nltk >= 3.7 ",
-  "tensorflow >=2.13.0",
-  "tf-models-official >= 2.7.0",
+  "spacy >= 3.7.2 ",
+  "nltk >= 3.8.1 ",
+  "tensorflow >=2.15.0",
+  "tensorflow-text >=2.15.0",
+  "tf-models-official >= 2.15.0",
+  "deepmerge >=1.1.1",
 ]
 dynamic = ["version"]
 
