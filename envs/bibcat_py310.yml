@@ -12,7 +12,8 @@ dependencies:
     - spacy
     - tensorflow
     - tensorflow-hub
-    - tf-models-official
+    - tensorflow-macos
+    - tensorflow-metal
     - pytest
     - pytest-doctestplus
     - deepmerge
