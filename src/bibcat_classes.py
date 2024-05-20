@@ -4439,7 +4439,7 @@ class Classifier_ML(_Classifier):
             load_dict = np.load(filepath_model, allow_pickle=True).item()
             #
             class_names = load_dict["class_names"]
-            optimizer = tf.keras.optimizers.Adam(init_lr=load_dict["init_lr"])
+            optimizer = tf.keras.optimizers.Adam() #init_lr=load_dict["init_lr"])
             #optimizer = tf_opt.create_optimizer(init_lr=load_dict["init_lr"],
             #                    num_train_steps=load_dict["num_steps_train"],
             #                    num_warmup_steps=load_dict["num_steps_warmup"],
@@ -4687,10 +4687,10 @@ class Classifier_ML(_Classifier):
         ##Save the model
         save_dict = {"loss":res_loss, "class_names":class_names,
                     "accuracy":res_accuracy, "init_lr":init_lr,
-                    "num_epochs":num_epochs,
-                    "num_steps_train":num_steps_train,
-                    "num_steps_warmup":num_steps_warmup,
-                    "type_optimizer":type_optimizer}
+                    "num_epochs":num_epochs} #,
+                    #"num_steps_train":num_steps_train,
+                    #"num_steps_warmup":num_steps_warmup,
+                    #"type_optimizer":type_optimizer}
         model.save(os.path.join(dir_model, savename_ML),
                     include_optimizer=False)
         np.save(os.path.join(dir_model, savename_model), save_dict)
@@ -7385,7 +7385,7 @@ class matrix_Classifier_Rules(_Classifier):
 
 
 ##Class: Classifier_Rules
-class Classifier_Rules(_Classifier):
+class Classifier_Rules_blocked_2024_05_20_beforemovetotextprocessmethod(_Classifier):
     """
     Class: Classifier_Rules
     Purpose:
@@ -7414,12 +7414,16 @@ class Classifier_Rules(_Classifier):
         ##Assemble the fixed decision tree
         if (filepath_model is not None):
             decision_tree = self._assemble_decision_tree_loaded(
-                                                        do_final_blanketrule)
+                                                do_final_blanketrule)["tree"]
+            decision_cactus = self._assemble_decision_tree_loaded(
+                                                do_final_blanketrule)["cactus"]
         #
         else:
             decision_tree = None
+            decision_cactus = None
         #
         self._store_info(decision_tree, "decision_tree")
+        self._store_info(decision_cactus, "decision_cactus")
         #
 
         ##Print some notes
@@ -7428,6 +7432,8 @@ class Classifier_Rules(_Classifier):
             print("Internal decision tree has been assembled.")
             print("NOTE: Decision tree probabilities:\n{0}\n"
                     .format(decision_tree))
+            print("NOTE: Decision cactus probabilities:\n{0}\n"
+                    .format(decision_cactus))
         #
 
         ##Nothing to see here
@@ -7436,7 +7442,7 @@ class Classifier_Rules(_Classifier):
 
     ##Method: train_Rules
     ##Purpose: Train and save an empty Rule model
-    def train_Rules(self, dir_model, name_model, keyword_objs, mapper, do_check_truematch, dict_grammar_train=None, dict_text_train=None, do_verbose=None, do_verbose_deep=None, do_return_model=False):
+    def train_Rules_old_2024_05_17_beforecombinedapproach(self, dir_model, name_model, keyword_objs, mapper, do_check_truematch, dict_grammar_train=None, dict_text_train=None, do_verbose=None, do_verbose_deep=None, do_return_model=False):
         """
         Method: train_Rules
         Purpose: Train the weights of a rule-based model.
@@ -7710,6 +7716,395 @@ class Classifier_Rules(_Classifier):
         #    return dict_tree
         #else:
         #    return
+    #
+
+    ##Method: train_Rules
+    ##Purpose: Train and save an empty Rule model
+    def train_Rules(self, dir_model, name_model, keyword_objs, mapper, do_check_truematch, dict_grammar_train=None, dict_text_train=None, do_verbose=None, do_verbose_deep=None, do_return_model=False):
+        """
+        Method: train_Rules
+        Purpose: Train the weights of a rule-based model.
+        Arguments:
+          - do_verbose [bool (default=False)]:
+            - Whether or not to print surface-level log information and tests.
+        Returns:
+          - dict:
+            - 'model': the model itself.
+        """
+        ##Load global variables
+        ext_Rule = config.name_model_extension_Rule
+        key_count = config.tree_trainedbranchcount_variable
+        savename_model = (name_model + ext_Rule + ".npy")
+        filename_model = os.path.join(dir_model, savename_model)
+        #thres_rarity = config.thres_rarity
+        #
+        if (do_verbose is None):
+            do_verbose = self._get_info("do_verbose")
+        if (do_verbose_deep is None):
+            do_verbose_deep = self._get_info("do_verbose_deep")
+        #
+
+        ##Throw error if model already exists
+        if os.path.exists(filename_model):
+            raise ValueError("Err: Model already exists, will not overwrite."
+                            +"\n{0}, at {1}."
+                            .format(savename_model, dir_model))
+        #
+        ##Throw error if invalid inputs given
+        if ((dict_grammar_train is not None) and (dict_text_train is not None)):
+            raise ValueError("Err: Please pass in only one training format "
+                            +"(pre-processed OR text).")
+        #
+        elif ((dict_grammar_train is None) and (dict_text_train is None)):
+            raise ValueError("Err: Please pass in one training format "
+                            +"(pre-processed OR text).")
+        #
+
+        ##Process training dataset, if given in text format
+        if (dict_text_train is not None):
+            dict_errors = {}
+            dict_forest = {}
+            dict_cached_kobjs = {}
+            str_err = ""
+            i_track = 0
+            i_skipped = 0
+            num_text_train = len(dict_text_train)
+            #Print some notes
+            if do_verbose:
+                print("Processing training dataset of text...")
+            #
+            #Extract forests from all texts
+            for curr_id in dict_text_train:
+                curr_dict = dict_text_train[curr_id]
+                curr_mission = curr_dict["mission"]
+                masked_class = mapper[curr_dict["class"].lower()]
+                #
+                #Fetch keyword object for this mission
+                if (curr_mission not in dict_cached_kobjs):
+                    curr_kobj = self._fetch_keyword_object(lookup=curr_mission,
+                                keyword_objs=keyword_objs,
+                                do_verbose=do_verbose_deep,
+                                do_raise_emptyerror=True)
+                    dict_cached_kobjs[curr_mission] = curr_kobj #Cache for later
+                else:
+                    curr_kobj = dict_cached_kobjs[curr_mission]
+                #
+
+                #Extract modif for current text
+                if do_check_truematch: #Catch and print unknown ambig. phrases
+                    try:
+                        curr_res = self._process_text(text=curr_dict["text"],
+                                        do_check_truematch=do_check_truematch,
+                                        keyword_obj=curr_kobj,
+                                        do_verbose=do_verbose_deep,
+                                        buffer=0, which_mode="none"
+                                        )["forest"]
+                    except NotImplementedError as err:
+                        curr_str = (("\n-\n"
+                                +"Printing Error:\nID: {0}\nBibcode: {1}\n"
+                                +"Mission: {2}\nMasked class: {3}\n")
+                                .format(curr_dict["id"],curr_dict["bibcode"],
+                                        curr_dict["mission"], masked_class))
+                        curr_str += ("The following err. was encountered"
+                                    +" in train_model_Rule:\n")
+                        curr_str += repr(err)
+                        curr_str += "\nError was noted. Skipping this paper.\n-"
+                        print(curr_str) #Print current error
+                        #
+                        #Store this error-modif
+                        err_dict = {"text":curr_str,
+                            "class":masked_class, #Mask class
+                            "id":curr_dict["id"],"mission":curr_dict["mission"],
+                            "forest":None, "bibcode":curr_dict["bibcode"]}
+                        if (curr_dict["bibcode"] not in dict_errors):
+                            dict_errors[curr_dict["bibcode"]] = {}
+                        dict_errors[curr_dict["bibcode"]][curr_id] = err_dict
+                        #
+                        str_err += curr_str #Tack this error onto full string
+                        i_skipped += 1 #Increment count of skipped papers
+                        continue
+                #
+                else: #Otherwise, run without ambig. phrase check
+                    curr_res = self._process_text(text=curr_dict["text"],
+                                        do_check_truematch=do_check_truematch,
+                                        keyword_obj=curr_kobj,
+                                        do_verbose=do_verbose_deep,
+                                        buffer=0, which_mode="none"
+                                        )["forest"]
+                #
+
+                #Generate+Store forest for current text+mission combination
+                dict_forest[curr_id] = {"forest":curr_res, "class":masked_class}
+                i_track += 1
+                #Print some notes
+                if do_verbose:
+                    print("{0} of {1} training texts have been processed."
+                            .format(i_track, num_text_train))
+                #
+            #
+        #
+        ##Otherwise if given in pre-processed format, extract information
+        elif (dict_grammar_train is not None):
+            #Print some notes
+            if do_verbose:
+                print("Using pre-processed training dataset...")
+            print(woo)
+        #
+        ##Otherwise, throw serious error
+        else:
+            raise ValueError("Err: This error should not have been reached.")
+        #
+        #Print some notes
+        if do_verbose:
+            print("Training dataset has been processed.")
+            print("Converting grammar structures into rules...")
+        #
+
+        ##Fetch all unique class names
+        class_names = list(set([dict_forest[key]["class"]
+                                for key in dict_forest]))
+        #
+
+        ##Convert the grammar forests into rules and count them up
+        #dict_rules = {key:[] for key in dict_forest}
+        dict_stats = {}
+        dict_combos = {}
+        i_track = 0
+        num_forests = len(dict_forest)
+        for curr_key in dict_forest:
+            curr_forest = dict_forest[curr_key]["forest"]
+            curr_class = dict_forest[curr_key]["class"]
+            tmpset = []
+            for ii in range(0, len(curr_forest)):
+                for jj in range(0, len(curr_forest[ii])):
+                    curr_info = curr_forest[ii][jj]
+                    #Convert current clause into rule set
+                    curr_rules_raw = [item
+                                for key in curr_info["clauses"]["text"]
+                                for item in
+                                self._convert_clause_into_rule(
+                                clause_text=curr_info["clauses"]["text"][key],
+                                clause_ids=curr_info["clauses"]["ids"][key],
+                                flags_nounchunks=curr_info["flags"],
+                                ids_nounchunks=curr_info["ids_nounchunk"])]
+                    curr_ruleset = self._merge_rules(curr_rules_raw)
+                    curr_ruleset_repr = self._convert_rule_to_str(curr_ruleset)
+                    #
+                    #Store the converted rule set
+                    tmpset.append(curr_ruleset_repr)
+                    #
+                    #Accumulate counter of the converted rule set
+                    if (curr_ruleset_repr not in dict_stats):
+                        dict_stats[curr_ruleset_repr] = {key:0
+                                            for key in (class_names+["total"])}
+                    dict_stats[curr_ruleset_repr]["total"] += 1
+                    #
+                    #Accumulate counter of current class
+                    dict_stats[curr_ruleset_repr][curr_class] += 1
+                #
+            #
+            #Store count of this current combination of rules
+            tmpsort = "\n|||\n".join(np.sort(np.unique(tmpset)).tolist())
+            if (tmpsort not in dict_combos):
+                dict_combos[tmpsort] = {key:0 for key in class_names}
+                dict_combos[tmpsort]["total"] = 0
+            dict_combos[tmpsort][curr_class] += 1
+            dict_combos[tmpsort]["total"] += 1
+            #Print some notes
+            if do_verbose:
+                print("Processed {0} of {1} forests."
+                        .format((i_track+1), num_forests))
+            #
+            i_track += 1
+        #
+        #Print some notes
+        if do_verbose:
+            print("Grammar -> rule conversion complete.")
+            print("Measuring stats across rules...")
+        #
+
+        ##Convert rule stats into uncertainties
+        for curr_key in dict_stats:
+            curr_tot = dict_stats[curr_key]["total"]
+            for curr_verdict in class_names:
+                #Compute occurrence fraction for this verdict
+                curr_count = dict_stats[curr_key][curr_verdict]
+                curr_prob = (curr_count / curr_tot)
+                #
+                #Store final uncertainty
+                dict_stats[curr_key]["prob_"+curr_verdict] = curr_prob
+            #
+            dict_stats[curr_key]["count"] = curr_tot
+        #
+
+        ##Convert rule combos into uncertainties
+        for curr_key in dict_combos:
+            curr_tot = dict_combos[curr_key]["total"]
+            for curr_verdict in class_names:
+                #Compute occurrence fraction for this verdict
+                curr_count = dict_combos[curr_key][curr_verdict]
+                curr_prob = (curr_count / curr_tot)
+                #
+                #Store final uncertainty
+                dict_combos[curr_key]["prob_"+curr_verdict] = curr_prob
+            #
+            dict_combos[curr_key]["count"] = curr_tot
+        #
+
+        ##Gather rules and their uncertainties into decision tree
+        dict_tree = {}
+        i_track = 0
+        for curr_str in dict_stats:
+            #Convert current string representation of rule into dict. rule
+            curr_rule = self._convert_str_to_rule(curr_str)
+            curr_tot = sum([dict_stats[curr_str]["prob_"+key]
+                            for key in class_names])
+            #Fully normalize and store uncertainties
+            for curr_key in class_names:
+                curr_lookup = ("prob_"+curr_key)
+                if (curr_tot == 0): #Avoid division by zero
+                    curr_rule[curr_lookup] = 0
+                else:
+                    curr_rule[curr_lookup] = (dict_stats[curr_str][curr_lookup]
+                                                / curr_tot)
+            #
+            #Store rule count
+            curr_rule[key_count] = dict_stats[curr_str]["count"]
+            #Store current rule and increment tracker
+            dict_tree[i_track] = curr_rule
+            i_track += 1
+        #
+
+        ##Print some notes
+        if do_verbose_deep:
+            print("\n---\n> Rules:")
+            for curr_key in dict_stats:
+                print("Rule (str. repr.):\n{0}\nCounts: {1}\n-"
+                        .format(curr_key, dict_stats[curr_key]))
+            print("\n---\n> Tree:")
+            for curr_key1 in dict_tree:
+                for curr_key2 in dict_tree[curr_key1]:
+                    print("{0}: {1}"
+                            .format(curr_key2, dict_tree[curr_key1][curr_key2]))
+                print("-")
+            print("\n---\n")
+        #
+
+        ##Save the model
+        np.save(filename_model, {"tree":dict_tree, "combos":dict_combos})
+        #
+
+        ##Below Section: Exit the method
+        if do_verbose:
+            print("\nTraining complete.\nTrained rule-based model saved at: {0}"
+                    .format(filename_model))
+        #
+        return str_err
+    #
+
+    ##Method: _apply_decision_cactus
+    ##Purpose: Apply a decision cactus to a 'nest' dictionary for some text
+    def _apply_decision_cactus(self, decision_cactus, ruleset):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        which_classifs = self._get_info("class_names")
+        bool_keyword = "is_keyword"
+        prefix = "prob_"
+        do_verbose = True #!!!
+        #
+        #Print some notes
+        if do_verbose:
+            print("Applying decision cactus to the following rule set:")
+            print(ruleset)
+        #
+        #Convert set of rules into sorted string representation
+        ruleset_repr_raw = [self._convert_rule_to_str(item2)
+                            for item1 in ruleset for item2 in item1]
+        ruleset_repr_init = [item for item in ruleset_repr_raw
+                            if (bool_keyword in item)] #Keyword-related rules
+        ruleset_repr_sorted = np.sort(np.unique(ruleset_repr_raw))
+        ruleset_repr_glued = "\n|||\n".join(ruleset_repr_sorted.tolist())
+        #
+        #Check if this exact rule combination exists in trained structure
+        if (ruleset_repr_glued in decision_cactus):
+            dict_scores = {key:decision_cactus[ruleset_repr_glued][prefix+key]
+                                for key in which_classifs}
+            if do_verbose:
+                print("Exact match to ruleset found:\n{0}\nScores: {1}."
+                        .format(ruleset_repr_glued, dict_scores))
+        #
+        else:
+            #If any rules unrecognized, return 0-probability set
+            all_str = "\n\n\n".join(list(decision_cactus.keys()))
+            check_known = all([(item in all_str)
+                                for item in ruleset_repr_sorted])
+            if (not check_known):
+                if do_verbose:
+                    print("Ruleset has unknown rule:\n{0}\nSetting 0-probs."
+                            .format(ruleset_repr_raw))
+                dict_scores = {key:0 for key in which_classifs}
+            #
+            #Otherwise, accumulate scores across known combinations
+            tmpset = ruleset_repr_sorted.copy()
+            ind_len = (len(ruleset_repr_sorted) - 1) #Starting max. combo length
+            list_scores = []
+            while ((ind_len > 0) and (len(tmpset) > 0)):
+                #Build current list of rule combinations
+                curr_combos_raw = np.unique(["\n|||\n".join(np.sort(item))
+                            for item in iterer.combinations(tmpset, ind_len)])
+                #Keep combinations that exist within trained structure
+                curr_combos = [item for item in curr_combos_raw
+                                if ((item+"\n") in decision_cactus)]
+                #Fetch combination that has maximum count
+                tmpvals = [decision_cactus[key]["count"] for key in curr_combos]
+                if (len(tmpvals) > 0):
+                    max_combo = curr_combos[np.argmax(tmpvals)]
+                    list_scores.append(decision_cactus[max_combo])
+                else:
+                    max_combo = []
+                #Remove combination components from list of rules
+                tmpset = [item for item in tmpset if (item not in max_combo)]
+                #If combo length exceeds number of rules, decrease size
+                if (ind_len > len(tmpset)):
+                    ind_len -= 1
+                #If no combos exist within trained structure, decrease size
+                elif (len(max_combo) == 0):
+                    ind_len -= 1
+                #Proceed to next loop
+            #
+
+                print(list(iterer.combinations(tmpset, ind_len))[0])
+                print("v-v")
+                print(curr_combos)
+                print(tmpvals)
+                print("u-u")
+                print(list(decision_cactus.keys())[0])
+                print("-----~~~")
+
+
+
+
+            #Count up the scores for now
+            dict_counts = {key:sum([item[key] for item in list_scores])
+                                for key in which_classifs}
+            totval = sum(list(dict_counts.values()))
+            if (totval == 0): #Avoid division by zero
+                dict_scores = {key:0 for key in which_classifs}
+            else:
+                dict_scores = {key:(dict_counts[key]/totval)
+                                    for key in which_classifs}
+            #
+            if do_verbose:
+                print("Ruleset components matched:\n{0}\nScores: {1}\nFin: {2}."
+                        .format(ruleset_repr_glued, list_scores, dict_scores))
+        #
+
+        ##Return the final scores
+        if do_verbose:
+            print("Final scores computed for rule set:\n{0}\n\n{1}"
+                    .format(ruleset, dict_scores))
+        #
+        return {"scores":dict_scores, "components":ruleset_repr_glued}
     #
 
     ##Method: _apply_decision_tree
@@ -8981,7 +9376,9 @@ class Classifier_Rules(_Classifier):
         #
 
         ##Load pre-trained model containing base decision tree
-        decision_tree_raw = np.load(filepath_model, allow_pickle=True).item()
+        loaded_raw = np.load(filepath_model, allow_pickle=True).item()
+        decision_tree_raw = loaded_raw["tree"]
+        decision_cactus = loaded_raw["combos"]
         #Add catch-all rule if so requested
         if do_final_blanketrule:
             #Fetch index for catch-all (place after all previous indices)
@@ -9019,7 +9416,7 @@ class Classifier_Rules(_Classifier):
         #
 
         #Return the assembled decision tree
-        return decision_tree
+        return {"tree":decision_tree, "cactus":decision_cactus}
     #
 
     ##Method: _assemble_decision_tree
@@ -11105,12 +11502,13 @@ class Classifier_Rules(_Classifier):
 
     ##Method: _classify_statements
     ##Purpose: Classify a set of statements (rule approach)
-    def _classify_statements(self, forest, do_verbose=None):
+    def _classify_statements_old_2024_05_17_beforecactusapproach(self, forest, do_verbose=None):
         #Extract global variables
         if do_verbose is not None: #Override do_verbose if specified for now
             self._store_info(do_verbose, "do_verbose")
         #Load the fixed decision tree
-        decision_tree = self._get_info("decision_tree")
+        #decision_tree = self._get_info("decision_tree")
+        decision_cactus = self._get_info("decision_cactus")
         key_count = config.tree_trainedbranchcount_variable
         thres_rarity = config.thres_rarity
         #Print some notes
@@ -11142,9 +11540,11 @@ class Classifier_Rules(_Classifier):
                             ids_nounchunks=curr_info["ids_nounchunk"])]
                 curr_rules = [self._merge_rules(curr_rules_raw)]
                 #Fetch and store score of each rule
-                tmp_res = [self._apply_decision_tree(rule=item,
-                                                decision_tree=decision_tree)
-                                for item in curr_rules]
+                #tmp_res = [self._apply_decision_tree(rule=item,
+                #                                decision_tree=decision_tree)
+                #                for item in curr_rules]
+                tmp_res = [self._apply_decision_cactus(ruleset=curr_rules,
+                                            decision_cactus=decision_cactus)]
                 curr_scores = []
                 curr_comps = []
                 for kk in range(0, len(tmp_res)):
@@ -11175,6 +11575,63 @@ class Classifier_Rules(_Classifier):
                 #list_components[ii] += [item["components"] for item in tmp_res
                 #                    if (item is not None)]
         #
+
+        #Combine scores across clauses
+        #comb_score = self._combine_scores(list_scores)
+        comb_score = [item2 for item1 in list_scores for item2 in item1]
+
+        #Convert final score into verdict and other information
+        results = self._convert_score_to_verdict(comb_score)
+        results["indiv_scores"] = list_scores
+        results["indiv_components"] = list_components
+
+        ##Return the dictionary containing verdict, etc. for these statements
+        return results
+    #
+
+    ##Method: _classify_statements
+    ##Purpose: Classify a set of statements (rule approach)
+    def _classify_statements(self, forest, do_verbose=None):
+        #Extract global variables
+        if do_verbose is not None: #Override do_verbose if specified for now
+            self._store_info(do_verbose, "do_verbose")
+        #Load the fixed decision tree
+        #decision_tree = self._get_info("decision_tree")
+        decision_cactus = self._get_info("decision_cactus")
+        key_count = config.tree_trainedbranchcount_variable
+        thres_rarity = config.thres_rarity
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _classify_statements.")
+        #
+
+        #Iterate through and score clauses
+        list_scores = [[] for ii in range(0, len(forest))]
+        list_components = [[] for ii in range(0, len(forest))]
+
+        #
+        ###
+        tmpset = []
+        for ii in range(0, len(forest)):
+            for jj in range(0, len(forest[ii])):
+                curr_info = forest[ii][jj]
+                #Convert current clause into rules
+                curr_rules_raw = [item for key in curr_info["clauses"]["text"]
+                            for item in
+                            self._convert_clause_into_rule(
+                            clause_text=curr_info["clauses"]["text"][key],
+                            clause_ids=curr_info["clauses"]["ids"][key],
+                            flags_nounchunks=curr_info["flags"],
+                            ids_nounchunks=curr_info["ids_nounchunk"])]
+                curr_rules = [self._merge_rules(curr_rules_raw)]
+                #Fetch and store score of each rule
+                tmpset.append(curr_rules)
+        #
+        tmp_res = self._apply_decision_cactus(ruleset=tmpset,
+                                    decision_cactus=decision_cactus)
+        list_scores = [[tmp_res["scores"]]]
+        list_components = [[tmpset]]
+        ####
 
         #Combine scores across clauses
         #comb_score = self._combine_scores(list_scores)
@@ -12051,11 +12508,11 @@ class Classifier_Rules(_Classifier):
     ##Purpose: Convert set of decision tree scores into single verdict
     #def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=1.0, order_override_acceptance=["science"], "data_influenced"]):
     #If this doesn't work, revert back and use split uncertainty thresholds for rule-based classifs (e.g., more lenient for mentions)
-    def _convert_score_to_verdict(self, dict_scores_indiv):
+    def _convert_score_to_verdict_old_2024_05_17_withprevalueweightingscheme(self, dict_scores_indiv):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose")
         order_priority = ["data_influenced", "science", "mention"]
-        prob_priority = {"data_influenced":0.6, "science":0.6, "mention":0.2}
+        prob_priority = {"data_influenced":0.6, "science":0.65, "mention":0.2}
         min_priority = {"data_influenced":1, "science":1, "mention":1}
         #Print some notes
         if do_verbose:
@@ -12144,6 +12601,178 @@ class Classifier_Rules(_Classifier):
                 final_uncertainty = np.mean([pre_uncertainty, curr_uncertainty])
             else:
                 final_uncertainty = curr_uncertainty
+            #
+            dict_uncertainties_unnorm[curr_key] = final_uncertainty
+        #
+
+        #Normalize the uncertainties
+        tmp_tot = sum([dict_uncertainties_unnorm[key] for key in all_keys])
+        #if (tmp_tot > 0):
+        #    dict_uncertainties = {key:(dict_uncertainties_unnorm[key]/tmp_tot)
+        #                                for key in all_keys}
+        #else: #Avoid division by zero
+        #    dict_uncertainties = {key:0 for key in all_keys}
+        dict_uncertainties = {key:dict_uncertainties_unnorm[key] for key in all_keys}
+        #
+
+        """
+        for curr_key in all_keys:
+            if (dict_results[curr_key]["count_thiskey"] == 0):
+                #dict_results[curr_key]["count_thiskey"] += 1
+                dict_results[curr_key]["score_list"] = [0]
+        #
+        dict_uncertainties = {key:np.mean(dict_results[key]["score_list"])
+                                for key in all_keys}
+        #
+        tmp_thres_science = 1.0
+        if (dict_results["science"]["count_thiskey"] > tmp_thres_science):
+            max_verdict = "science"
+        elif (dict_results["mention"]["count_thiskey"] > 0):
+            max_verdict = "mention"
+        else:
+            max_verdict = max(dict_uncertainties, key=dict_uncertainties.get)
+        #
+
+        tmp_previous = dict_uncertainties["mention"]
+        if (max_verdict == "mention"):
+            tmp_count = dict_results["science"]["count_thiskey"]
+            tmpval1 = np.min([1.0, (1.0-(tmp_count/5))])
+            tmpval2 = np.max([0.0, tmpval1])
+            #
+            dict_uncertainties[max_verdict] = float(tmpval2)
+        #"""
+
+        max_verdict = max(dict_uncertainties, key=dict_uncertainties.get)
+        if (max(dict_uncertainties.values()) == 0):
+            max_verdict = config.verdict_lowprob
+        #
+
+        print(dict_results)
+        print(dict_uncertainties_unnorm)
+        print(dict_uncertainties)
+        print(max_verdict)
+        print("---")
+
+        #for curr_key in all_keys:
+        #    if (curr_key == max_verdict):
+        #        continue
+        #    dict_uncertainties[curr_key] = 0
+        #    #dict_uncertainties["data_influenced"] = 0
+        #
+
+        dict_error = None
+        #dict_scores_indiv = dict_results
+        #
+
+        ##Assemble and return final verdict
+        fin_res = {"verdict":max_verdict, "scores_indiv":dict_scores_indiv,
+                "uncertainty":dict_uncertainties, #"components":components,
+                "norm_error":dict_error}
+        #
+        #Print some notes
+        if do_verbose:
+            print("-Returning final verdict dictionary:\n{0}".format(fin_res))
+        #
+        return fin_res
+    #
+
+    ##Method: _convert_scorestoverdict
+    ##Purpose: Convert set of decision tree scores into single verdict
+    #def _convert_score_to_verdict(self, dict_scores_indiv, max_diff_thres=0.10, max_diff_count=3, max_diff_verdicts=["science"], thres_override_acceptance=1.0, order_override_acceptance=["science"], "data_influenced"]):
+    #If this doesn't work, revert back and use split uncertainty thresholds for rule-based classifs (e.g., more lenient for mentions)
+    def _convert_score_to_verdict(self, dict_scores_indiv):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose")
+        order_priority = ["data_influenced", "science", "mention"]
+        prob_priority = {"data_influenced":0.6, "science":0.6, "mention":0.1}
+        min_priority = {"data_influenced":1, "science":2, "mention":1}
+        #Print some notes
+        if do_verbose:
+            print("\n> Running _convert_scorestoverdict.")
+            print("Individual components and score sets:")
+            for ii in range(0, len(dict_scores_indiv)):
+                print("{0}\n-".format(#components[ii],
+                                            dict_scores_indiv[ii]))
+            #
+        #
+
+        ##Return empty verdict if empty scores
+        #For completely empty scores
+        if len(dict_scores_indiv) == 0:
+            tmp_res = config.dictverdict_error.copy()
+            #Print some notes
+            if do_verbose:
+                print("\n-Empty scores; verdict: {0}".format(tmp_res))
+            #
+            return tmp_res
+        #
+        #Otherwise, remove Nones
+        dict_scores_indiv = [item for item in dict_scores_indiv
+                            if (item is not None)]
+        all_keys = list(dict_scores_indiv[0].keys())
+        #
+
+        ##Calculate and store verdict value statistics from indiv. entries
+        num_indiv = len(dict_scores_indiv)
+        #Initialize container for accumulated scores
+        dict_results = {key:{"score_list":[], "count_thiskey":0}
+                        for key in all_keys}
+        dict_uncertainties_unnorm = {key:None for key in all_keys}
+        #
+        #Iterate through individual scores and accumulate them
+        for ii in range(0, num_indiv):
+            curr_scores = dict_scores_indiv[ii]
+            #Iterate through classif scores and accumulate total score
+            for curr_key in all_keys:
+                tmp_unnorm = curr_scores[curr_key]
+                #Increment unnorm. score count
+                dict_results[curr_key]["score_list"].append(tmp_unnorm)
+                dict_results[curr_key]["count_thiskey"] += 1
+            #
+        #
+
+        #Sort and store scores as well
+        for curr_key in all_keys:
+            curr_sorts = np.sort(dict_results[curr_key]["score_list"])[::-1]
+            dict_results[curr_key]["descending_scores"] = curr_sorts
+        #
+
+        #Iterate through ordered verdicts
+        for ii in range(0, len(all_keys)):
+            curr_key = order_priority[ii]
+            curr_scores = dict_results[curr_key]["descending_scores"]
+
+            #Count scores above prob. threshold
+            curr_count = np.sum((curr_scores >= prob_priority[curr_key]))
+            #Count scores of verdicts of higher priority
+            #pre_counts = []
+            #pre_mins = []
+            #pre_uncs = []
+            #for pre_key in order_priority[0:ii]:
+            #    pre_scores = dict_results[pre_key]["descending_scores"]
+            #    pre_counts.append(np.sum((pre_scores >=prob_priority[pre_key])))
+            #    pre_mins.append(min_priority[pre_key])
+                #pre_uncs += pre_scores[pre_scores >= prob_priority[pre_key]]
+                #pre_uncs += pre_scores.tolist() #[pre_scores >= prob_priority[pre_key]]
+            #    pre_uncs += (pre_scores[pre_scores >= prob_priority[pre_key]].tolist())
+            #
+            #pre_counts = np.asarray(pre_counts)
+            #re_mins = np.asarray(pre_mins)
+
+            #Establish uncertainty of current verdict
+            #curr_uncertainty = min([1, (curr_count / min_priority[curr_key])])
+            curr_uncertainty = min([1,
+                                (curr_count / min_priority[curr_key]),
+                                np.mean(curr_scores[curr_scores >= prob_priority[curr_key]])])
+                                #np.mean(curr_scores)])
+            #if ((len(pre_counts) > 0) and (curr_uncertainty > 0)):
+            #    pre_uncertainty = max([0,
+            #                        min([1,
+            #    #                        (1 - max(pre_counts / pre_mins))])])
+            #                            (1 - np.mean(pre_uncs))])])
+            #    final_uncertainty = np.mean([pre_uncertainty, curr_uncertainty])
+            #else:
+            final_uncertainty = curr_uncertainty
             #
             dict_uncertainties_unnorm[curr_key] = final_uncertainty
         #

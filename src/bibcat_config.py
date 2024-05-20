@@ -28,15 +28,15 @@ name_model = "perf_run_ML_testfalsepos1_{0}".format(mode_modif)
 #name_model = "perf_run_MLlarge_{0}".format(mode_modif)
 #!!!"""
 #
-#mode_modif = "skim_anon"
-#name_model = "paper_model_MLlarge_mode{0}_seedTVT{1}_seedML{2}".format(mode_modif, 1, 101)
+mode_modif = "anon"
+name_model = "paper_model_MLlarge_mode{0}_seedTVT{1}_seedML{2}".format(mode_modif, 1, 101)
 
 # !!! skim_trim_anon ; then duplicate for medium, small
 #
-name_model = "test_train_rule_op_trainfull" #perf_run_ML_testfalsepos1_none
+#name_model = "test_train_rule_combo_quick" #perf_run_ML_testfalsepos1_none
 #name_model = "test_train_rule_op2" #perf_run_ML_testfalsepos1_none
 #name_model = "perf_run_ML_testfalsepos1_none"
-mode_modif = "none"
+#mode_modif = "none"
 #
 name_model_extension_ML = "_ML"
 name_model_extension_Rule = "_Rule"
