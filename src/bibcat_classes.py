@@ -3222,6 +3222,233 @@ class Grammar(_Base):
         return ids_nounchunks
     #
 
+    ##Method: _categorize_verb
+    ##Purpose: Categorize topic of given verb
+    def _categorize_verb(self, verb):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose_deep")
+        list_category_names = config.list_category_names
+        list_category_synsets = config.list_category_synsets
+        list_category_threses = config.list_category_threses
+        max_hyp = config.max_num_hypernyms
+        #root_hypernyms = wordnet.synsets(verb, pos=wordnet.VERB)
+        if (max_hyp is None):
+            root_hypernyms = wordnet.synsets(verb, pos=wordnet.VERB)
+        else:
+            root_hypernyms = wordnet.synsets(verb, pos=wordnet.VERB)[0:max_hyp]
+        num_categories = len(list_category_synsets)
+
+        ##Print some notes
+        if do_verbose:
+            print("\n> Running _categorize_verb().")
+            print("Verb: {0}\nMax #hyp: {1}\nRoot hyp: {2}\nCategories: {3}\n"
+                .format(verb, max_hyp, root_hypernyms, list_category_names))
+        #
+
+        ##Handle specialty verbs
+        #For 'be' verbs
+        if any([(roothyp in config.synsets_verbs_be)
+                    for roothyp in root_hypernyms]):
+            return "be"
+        #For 'has' verbs
+        elif any([(roothyp in config.synsets_verbs_has)
+                    for roothyp in root_hypernyms]):
+            return "has"
+        #
+
+        ##Determine likely topical category for this verb
+        score_alls = [None]*num_categories
+        score_fins = [None]*num_categories
+        pass_bools = [None]*num_categories
+        #Iterate through the categories
+        for ii in range(0, num_categories):
+            score_alls[ii] = [roothyp.path_similarity(mainverb)
+                        for mainverb in list_category_synsets[ii]
+                        for roothyp in root_hypernyms]
+            #Take max score, if present
+            if len(score_alls[ii]) > 0:
+                score_fins[ii] = max(score_alls[ii])
+            else:
+                score_fins[ii] = 0
+            #Determine if this score passes any category thresholds
+            pass_bools[ii] = (score_fins[ii] >= list_category_threses[ii])
+        #
+
+        ##Throw an error if no categories fit this verb well
+        if not any(pass_bools):
+            if do_verbose:
+                print("No categories fit verb: {0}, {1}\n"
+                                .format(verb, score_fins))
+            return None
+        #
+
+        ##Throw an error if this verb gives very similar top scores
+        thres = config.thres_category_fracdiff
+        metric_close_raw = (np.abs(np.diff(np.sort(score_fins)[::-1]))
+                            /max(score_fins))
+        metric_close = metric_close_raw[0]
+        if metric_close < thres:
+            #Select most extreme verb with the max score
+            tmp_max = max(score_fins)
+            if score_fins[list_category_names.index("plot")] == tmp_max:
+                tmp_extreme = "plot"
+            elif score_fins[list_category_names.index("science")] == tmp_max:
+                tmp_extreme = "science"
+            else:
+                raise ValueError("Reconsider extreme categories for scoring!")
+            #
+            #Print some notes
+            if do_verbose:
+                print("Multiple categories with max score: {0}: {1}\n{2}\n{3}"
+                        .format(verb, root_hypernyms, score_fins,
+                                list_category_names))
+                print("Selecting most extreme verb: {0}\n".format(tmp_extreme))
+            #Return the selected most-extreme score
+            return tmp_extreme
+
+        ##Return the determined topical category with the best score
+        best_category = list_category_names[np.argmax(score_fins)]
+        #Print some notes
+        if do_verbose:
+            print("Best category: {0}\nScores: {1}"
+                    .format(best_category, score_fins))
+        #Return the best category
+        return best_category
+    #
+
+    ##Method: _convert_clause_into_rule
+    ##Purpose: Convert Grammar-made clause into rule for rule-based classifier
+    def _convert_clause_into_rule(self, clause_text, clause_ids, flags_nounchunks, ids_nounchunks):
+        """
+        Method: _convert_clause_into_rule
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Process text into modifs using Grammar class.
+        """
+        #Set global variables
+        do_verbose = self._get_info("do_verbose_deep")
+
+        #Fetch all sets of subject flags via their ids
+        num_subj = len(clause_text["subjects"])
+        sets_subjmatter = [] #[None]*num_subj #Container for subject flags
+        for ii in range(0, num_subj): #Iterate through subjects
+            id_chunk = ids_nounchunks[clause_ids["subjects"][ii][0]]
+            sets_subjmatter += [key
+                                    for key in flags_nounchunks[id_chunk]
+                                    if ((flags_nounchunks[id_chunk][key])
+                                        and (key != "is_any"))
+                                    ] #Store all subj. flags for this clause
+        #
+        #If no subjects, set container to empty
+        if (num_subj == 0):
+            sets_subjmatter = []
+        #
+        sets_subjmatter = list(set(sets_subjmatter))
+
+        #Fetch all sets of object flags via their ids
+        tmp_list = (clause_ids["dir_objects"] + clause_ids["prep_objects"])
+        num_obj = len(tmp_list)
+        sets_objmatter = [] #[None]*num_obj #Container for object flags
+        for ii in range(0, num_obj): #Iterate through objects
+            id_chunk = ids_nounchunks[tmp_list[ii][0]]
+            sets_objmatter += [key
+                                    for key in flags_nounchunks[id_chunk]
+                                    if ((flags_nounchunks[id_chunk][key])
+                                        and (key != "is_any"))
+                                    ] #Store all obj. flags for this clause
+        #
+        #If no objects, set container to empty
+        if (num_obj == 0):
+            sets_objmatter = []
+        #
+        sets_objmatter = list(set(sets_objmatter))
+
+        #Combine the subject and object matter
+        sets_allmatter = list(set((sets_subjmatter + sets_objmatter)))
+
+        #Set verb class
+        #verbclass = self._categorize_verb(verb=clause_text["verb"])
+        verbclass_raw = self._categorize_verb(verb=clause_text["verb"])
+        if (verbclass_raw is None):
+            verbclass = []
+        elif isinstance(verbclass_raw, str):
+            verbclass = [verbclass_raw]
+        else:
+            verbclass = verbclass_raw
+        #
+
+        #Set verb type
+        #verbtype = clause_text["verbtype"]
+        verbtype_raw = clause_text["verbtype"]
+        if (verbtype_raw is None):
+            verbtype = []
+        elif isinstance(verbtype_raw, str):
+            verbtype = [verbtype_raw]
+        else:
+            verbtype = verbtype_raw
+        #
+
+        #Set rules from combinations of subj. and obj.matter
+        rules = [{"allmatter":sets_allmatter,
+                            #"objectmatter":sets_objmatter,
+                            "verbclass":verbclass, "verbtypes":verbtype}]
+        #
+
+        #Print some notes
+        if do_verbose:
+            print("\n> Run of _convert_clause_into_rule complete.")
+            print("Orginal clause:\n{0}".format(clause_text))
+            print("Extracted rules:")
+            for ii in range(0, len(rules)):
+                print("{0}: {1}\n-".format(ii, rules[ii]))
+
+        #Return the assembled rules
+        return rules
+    #
+
+    ##Method: _convert_rule_to_str
+    ##Purpose: Convert single rule to string representation
+    def _convert_rule_to_str(self, rule, do_sentence):
+        ##Extract global variables
+        do_verbose = self._get_info("do_verbose_deep")
+        #Print some notes
+        if do_verbose:
+            print("\n> Converting rule to string representation.")
+        #
+
+        #Build paragraph-string representation of the given rule
+        if do_sentence:
+            str_rule = "" #"Rule:"
+            tmplist = sorted(list(rule.keys()))
+            for ii in range(0, len(tmplist)):
+                curr_key = tmplist[ii]
+                str_rule += "{0} = (".format(curr_key)
+                str_rule += ", ".join(sorted(rule[curr_key]))
+                str_rule += ")"
+                if (ii < (len(tmplist) - 1)):
+                    str_rule += "; "
+                else:
+                    str_rule += "."
+                #
+            #
+        #
+        #Build paragraph-string representation of the given rule
+        else:
+            str_rule = "" #"Rule:"
+            for curr_key in sorted(list(rule.keys())):
+                str_rule += "\n"
+                str_rule += " - {0}: ".format(curr_key)
+                str_rule += " + ".join(sorted(rule[curr_key]))
+            #
+        #
+
+        #Return the completed string representation
+        if do_verbose:
+            print("Rule converted.\nOriginal rule: {0}\nConversion: {1}"
+                    .format(rule, str_rule))
+        #
+        return str_rule
+    #
+
     ##Method: _generate_clauses_from_sentence()
     ##Purpose: Extract verb-clauses from given NLP sentence
     def _generate_clauses_from_sentence(self, sentence_NLP):
@@ -3406,6 +3633,28 @@ class Grammar(_Base):
         return {"text":chunk_text, "ids":word_ids, "chunk_id":chunkid}
     #
 
+    ##Method: _merge_rules
+    ##Purpose: Merge list of rules into one rule
+    def _merge_rules(self, rules):
+        #Extract global variables
+        keys_matter = config.nest_keys_matter
+        #Extract keys of rules
+        list_keys = rules[0].keys()
+        #Merge rule across all keys
+        merged_rule_raw = {key:[] for key in list_keys}
+        for ii in range(0, len(rules)):
+            #Merge if any important terms in this rule
+            if any([(len(rules[ii][key]) > 0) for key in keys_matter]):
+                for curr_key in list_keys:
+                    merged_rule_raw[curr_key] += rules[ii][curr_key]
+        #
+        #Keep only unique values
+        merged_rule = {key:list(set(merged_rule_raw[key])) for key in list_keys}
+        #
+        #Return merged rule
+        return merged_rule
+    #
+
     ##Method: _modify_structure
     ##Purpose: Modify given grammar structure, following specifications of the given mode
     def _modify_structure(self, cluster_NLP, cluster_info, mode):
@@ -3418,7 +3667,7 @@ class Grammar(_Base):
         do_verbose = self._get_info("do_verbose")
         keyword_obj = self._get_info("keyword_obj")
         buffer = self._get_info("buffer")
-        allowed_modifications = ["none", "skim", "trim", "anon"] #Implemented
+        allowed_modifications = ["none", "skim", "trim", "anon", "rule"]
         num_sents = len(cluster_NLP)
         arrcluster_NLP = [np.asarray(item) for item in cluster_NLP]
         #
@@ -3449,13 +3698,22 @@ class Grammar(_Base):
         do_skim = ("skim" in list_mods)
         do_trim = ("trim" in list_mods)
         do_anon = ("anon" in list_mods)
+        do_rule = ("rule" in list_mods)
 
         #Throw error if a trimming mode was requested with a non-zero buffer
-        if (do_trim and buffer > 0):
+        if (do_trim and (buffer > 0)):
             raise ValueError(("Err: Mode {0} with 'trim' modification given"
                         +" with a non-zero buffer ({1}). This is not allowed"
                         +" because buffered sentences would likely be trimmed."
                         +" Please rerun with a different mode or buffer of 0.")
+                        .format(mode, buffer))
+        #
+        #Throw error if rule mode was requested with other text modifiers
+        if (do_rule and (len(list_mods) > 1)):
+            raise ValueError(("Err: Mode {0} with 'rule' modification given."
+                        +" 'rule' mode is not allowed to be paired with other"
+                        +" modifications."
+                        +" Please rerun with other modifications removed.")
                         .format(mode, buffer))
         #
 
@@ -3582,10 +3840,50 @@ class Grammar(_Base):
                         .format(sents_updated))
             #
         #
+        #For rule: Return underlying grammar structure only
+        if do_rule:
+            #Print some notes
+            if do_verbose:
+                print("> Applying rule modifications...")
+            #
+            #Iterate through sentences
+            for ii in range(0, num_sents):
+                #Extract forest for current sentence
+                curr_forest = cluster_info[ii]
+                #curr_reprs = [None]*len(curr_forest)
+                #Iterate through forest for current sentence
+                #for jj in range(0, len(curr_forest)):
+                curr_info = curr_forest #[jj]
+                #Convert current clause into rule set
+                curr_rules_raw = [item
+                            for key in curr_info["clauses"]["text"]
+                            for item in
+                            self._convert_clause_into_rule(
+                            clause_text=curr_info["clauses"]["text"][key],
+                            clause_ids=curr_info["clauses"]["ids"][key],
+                            flags_nounchunks=curr_info["flags"],
+                            ids_nounchunks=curr_info["ids_nounchunk"])]
+                curr_ruleset = self._merge_rules(curr_rules_raw)
+                curr_repr = self._convert_rule_to_str(curr_ruleset,
+                                                            do_sentence=True)
+                #
+                #Join the rule representations together for this sentence
+                #str_sent = "; ".join(curr_reprs)
+                #str_sent +=  "."
+                #Store the assembled sentence of rule representations
+                sents_updated[ii] = curr_repr #str_sent
+            #
+            #Print some notes
+            if do_verbose:
+                print("rule modifications complete.\nUpdated text:\n{0}\n"
+                        .format(sents_updated))
+            #
+        #
 
         #Join and cleanse the text to finalize it
         text_updated = " ".join(sents_updated)
-        text_updated = self._streamline_phrase(text=text_updated,
+        if (not do_rule):
+            text_updated = self._streamline_phrase(text=text_updated,
                                             do_streamline_etal=False)
         #
 

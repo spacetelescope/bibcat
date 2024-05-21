@@ -28,8 +28,11 @@ name_model = "perf_run_ML_testfalsepos1_{0}".format(mode_modif)
 #name_model = "perf_run_MLlarge_{0}".format(mode_modif)
 #!!!"""
 #
-mode_modif = "anon"
-name_model = "paper_model_MLlarge_mode{0}_seedTVT{1}_seedML{2}".format(mode_modif, 1, 101)
+#mode_modif = "rule" #"skim_anon"
+#name_model = "test_model_ML_rule" #"paper_model_MLlarge_mode{0}_seedTVT{1}_seedML{2}".format(mode_modif, 1, 101)
+#
+mode_modif = "rule"
+name_model = "paper_model_MLsmall_mode{0}_seedTVT{1}_seedML{2}".format(mode_modif, 1, 101)
 
 # !!! skim_trim_anon ; then duplicate for medium, small
 #
