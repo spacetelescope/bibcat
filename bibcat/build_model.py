@@ -15,7 +15,6 @@ import os
 import time
 
 from bibcat import config
-#from bibcat import model_settings as settings
 from bibcat import parameters as params
 from bibcat.core import operator
 from bibcat.core.classifiers import ml
@@ -102,4 +101,3 @@ def build_model() -> None:
     # Save the output error string to a file
     with open(filesave_error, "w") as openfile:
         openfile.write(str_err)
-
