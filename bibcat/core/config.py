@@ -10,7 +10,7 @@ import yaml  # type: ignore
 from deepmerge import Merger  # type: ignore
 
 # For instance, fraction_TVT:list of floats concatenates the values twice. To prevent it, created a new class.
-merger = Merger([(list, ["override"]), (dict, ["merge"])], ["override"], ["override"])
+merger = Merger([(list, ["override"]), (dict, ["merge"]), (set, ["union"])], ["override"], ["override"])
 
 
 class ddict(Dict[str, Any]):
