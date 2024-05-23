@@ -9,7 +9,7 @@ from typing import Any, Dict
 import yaml  # type: ignore
 from deepmerge import Merger  # type: ignore
 
-# For instance, fraction_TVT:list of floats concatenates the values twice.
+# For instance, fraction_TVT:list of floats concatenates the values twice. To prevent it, created a new class.
 merger = Merger([(list, ["override"]), (dict, ["merge"])], ["override"], ["override"])
 
 
