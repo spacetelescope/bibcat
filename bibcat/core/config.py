@@ -94,6 +94,26 @@ def get_custom_config() -> dict | None:
     return read_yaml(path)
 
 
+def get_default_config() -> ddict:
+    """Read in the bibcat default configuration
+
+    Reads in the bibcat configuration from a yaml file.
+    The default config is in etc/bibcat_config.yaml.
+
+    Returns
+    -------
+    dict
+        the bibcat config object
+    """
+
+    # get the default configuration
+    root = pathlib.Path(__file__).resolve().parent.parent
+    config_path = root / "etc/bibcat_config.yaml"
+    config = read_yaml(config_path)
+
+    return ddict(config)
+
+
 def get_config() -> ddict:
     """Read in the bibcat configuration
 
@@ -108,11 +128,8 @@ def get_config() -> ddict:
     dict
         the bibcat config object
     """
-    # get the default configuration
-    root = pathlib.Path(__file__).resolve().parent.parent
-    config_path = root / "etc/bibcat_config.yaml"
-    config = read_yaml(config_path)
-
+    # get the default_config()
+    config = get_default_config()
     # get any custom configuration
     custom_config = get_custom_config()
 
