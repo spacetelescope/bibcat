@@ -26,13 +26,14 @@ from bibcat import parameters as params
 from bibcat.core import performance
 from bibcat.core.classifiers import ml, rules
 from bibcat.core.classifiers.textdata import ClassifierBase
-from bibcat.evaluate_basic_performance import generate_performance_evaluation_output
+
+# from bibcat.evaluate_basic_performance import generate_performance_evaluation_output
 from bibcat.fetch_papers import fetch_papers
 from bibcat.operate_classifier import operate_classifier
 
 
-def classify_papers(classifier_name: str = "ML"):
-    """ Classify papers
+def classify_papers(classifier_name: str = "ML") -> None:
+    """Classify papers
 
     Classify papers using machine-learning or rule-based classifiers.
 
@@ -50,9 +51,12 @@ def classify_papers(classifier_name: str = "ML"):
     # Fetch filepath for model
     name_model = config.output.name_model
     dir_model = os.path.join(config.paths.models, name_model)
+    filepath_model = os.path.join(dir_model, (name_model + ".npy"))
+    fileloc_ML = os.path.join(dir_model, (config.output.tfoutput_prefix + name_model))
+
+    # Fetch filepath for output or create the directory if not exists.
     dir_output = os.path.join(config.paths.output, name_model)
     os.makedirs(dir_output, exist_ok=True)
-
 
     # Set directories for fetching test text
 
@@ -62,50 +66,21 @@ def classify_papers(classifier_name: str = "ML"):
         "test"
     ]  # the directory name "dir_test" in the partitioned_datasets/name_model/ folder # can be an CLI option
 
-
-    # Set parameters for each operator and its internal classifier
-
-    # do_raise_innererror: if True, will stop if exception encountered;
-    # if False, will print error and continue
-    do_raise_innererror = config.textprocessing.do_raise_innererror  # CLI option?
-    do_verbose_text_summary = config.textprocessing.do_verbose_text_summary  # print input text data summary ; CLI option?
-
-
-    # Set some overarching global variables
-
-    # Random seed for shuffling text dataset
-    np.random.seed(config.textprocessing.shuffle_seed)
-    # Whether or not to shuffle the text dataset
-    do_shuffle = config.textprocessing.do_shuffle
-
     # do_real_testdata: If True, will use real papers to test performance;
     # if False, will use fake texts but we will implement the fake data
     # if we need. For now, we keep this variable and only the real text.
     do_real_testdata = config.textprocessing.do_real_testdata  # can an CLI option?
 
-    # Number of text entries to test the performance for; None for all tests
-    max_tests = config.textprocessing.max_tests
-    # mode_modif: Mode to use for text processing and generating
-    # possible modes: any combination from "skim", "trim", and "anon" or "none"
-    mode_modif = config.textprocessing.mode_modif
-    # Prepare some Keyword objects
-    lookup = config.textprocessing.lookup
-
-
-    # threshold: Uncertainty threshold
-    threshold = config.textprocessing.threshold
-    # buffer: the number of sentences to include within paragraph around each sentence with target terms
-    buffer = config.textprocessing.buffer
-    # For uncertainty test
-    threshold_array = np.linspace(0.5, 0.95, 20)
+    # Random seed for shuffling text dataset
+    np.random.seed(config.textprocessing.shuffle_seed)
 
     # Fetching real JSON paper text
     dict_texts = fetch_papers(
         dir_datasets=dir_datasets,
         dir_test=dir_test,
-        do_shuffle=do_shuffle,
-        do_verbose_text_summary=do_verbose_text_summary,
-        max_tests=max_tests,
+        do_shuffle=config.textprocessing.do_shuffle,
+        do_verbose_text_summary=config.textprocessing.do_verbose_text_summary,
+        max_tests=config.textprocessing.max_tests,
     )
 
     # We will choose which operator/method to classify the papers and evaluate performance below.
@@ -115,21 +90,11 @@ def classify_papers(classifier_name: str = "ML"):
     classifier: ClassifierBase
 
     # Rule-Based Classifier
-    classifier_RB = rules.RuleBasedClassifier(
-        which_classifs=None, do_verbose=True, do_verbose_deep=False
-    )
-
-
-    # ML model file location
-    filepath_model = os.path.join(dir_model, (name_model + ".npy"))
-    fileloc_ML = os.path.join(dir_model, (config.output.tfoutput_prefix + name_model))
+    classifier_RB = rules.RuleBasedClassifier(which_classifs=None, do_verbose=True, do_verbose_deep=False)
 
     # initialize classifiers
     # Machine-Learning Classifier
-    classifier_ML = ml.MachineLearningClassifier(
-        filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True
-    )
-
+    classifier_ML = ml.MachineLearningClassifier(filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True)
 
     if classifier_name == "ML":
         classifier = classifier_ML
@@ -140,63 +105,34 @@ def classify_papers(classifier_name: str = "ML"):
             "An invalid value! Choose either 'ML' for the machine learning classifier or 'RB' for the rule-based classifier!"
         )
 
-    # Performance tests: This can be an CLI option.
-    # Create an instance of the Performance class
-    performer = performance.Performance()
-
-    # Parameters for this evaluation
-    # Root name of the file within which to store the performance evaluation output
-    fileroot_evaluation = f"test_eval_basic_{classifier_name}"
-    # Root name of the file within which to store misclassified text information
-    fileroot_misclassif = f"test_misclassif_basic_{classifier_name}"
-    # Root name of the file within which to store classified result information
-    fileroot_class_results = f"classification_results_{classifier_name}"
-
-    figsize = (20, 12)
-
-    # Run the pipeline for a basic evaluation and an evaluation of model performance as a function of uncertainty
-    generate_performance_evaluation_output(
-        classifier_name=classifier_name,
-        classifier=classifier,
-        dict_texts=dict_texts,
-        is_text_processed=False,
-        mapper=params.map_papertypes,
-        keyword_objs=params.all_kobjs,
-        mode_modif=mode_modif,
-        buffer=buffer,
-        threshold=threshold,
-        threshold_array=threshold_array,
-        print_freq=1,
-        filepath_output=dir_output,
-        fileroot_evaluation=fileroot_evaluation,
-        fileroot_misclassif=fileroot_misclassif,
-        fileroot_confusion_matrix_plot=f"performance_confmatr_basic_{classifier_name}.png",
-        fileroot_uncertainty_plot=f"performance_grid_uncertainty_{classifier_name}.png",
-        figsize=figsize,
-        load_check_truematch=True,
-        do_save_evaluation=True,
-        do_save_misclassif=True,
-        do_raise_innererror=False,
-        do_verbose=True,
-        do_verbose_deep=False,
-    )
-
-
     # Operation: classifying paper(s)
     # Currently it pulls the papers from in test folder (`bibcat/data/partitioned_datasets/model_name/dir_test`)
     # but we will have to change a new text feed directory for operation.
+
+    # if text_format == "ascii":
+    #     ops_text
+    # elif text_format == "json":
+    #     ops_texts = fetch_papers(
+    #         dir_datasets=dir_datasets,
+    #         dir_test=dir_test,
+    #         do_shuffle=do_shuffle,
+    #         do_verbose_text_summary=do_verbose_text_summary,
+    #         max_tests=max_tests,
+    #     )
+    # else:
+    #     raise ValueError("An invalid file format! Prepare for your texts either in ascii or JSON format!")
 
     operate_classifier(
         classifier_name=classifier_name,
         classifier=classifier,
         dict_texts=dict_texts,
         keyword_objs=params.all_kobjs,
-        mode_modif=mode_modif,
-        buffer=buffer,
-        threshold=threshold,
+        mode_modif=config.textprocessing.mode_modif,
+        buffer=config.textprocessing.buffer,
+        threshold=config.textprocessing.threshold,
         print_freq=25,
         filepath_output=dir_output,
-        fileroot_class_results=fileroot_class_results,
+        fileroot_class_results=config.results.fileroot_class_results + f"{classifier_name}",
         is_text_processed=False,
         load_check_truematch=True,
         do_verbose=True,

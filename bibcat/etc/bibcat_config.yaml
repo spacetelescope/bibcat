@@ -1,9 +1,9 @@
 
 inputs:
-  filepath_dataset: $BIBCAT_DATA_DIR
+  path_ops_data: $BIBCAT_OPSDATA_DIR
   path_papertrack: $BIBCAT_DATA_DIR/papertrack_export_2023-11-06.json  # papertrack data
   path_papertext: $BIBCAT_DATA_DIR/ST_Request2018-2023.json  # papertrack corpus text
-  path_source_data: $BIBCAT_DATA_DIR/dataset_combined_all_2018-2023.json  # combined JSON file
+  path_source_data: $BIBCAT_DATA_DIR/dataset_combined_all_2018-2023.json  # combined JSON file for training
   path_not_in_papertext: $BIBCAT_DATA_DIR/bibcodes_notin_papertext.txt  # file for bibcodes not in papertrack
   path_not_in_papertrack: $BIBCAT_DATA_DIR/bibcodes_notin_papertrack.txt # file for bibcodes not in ADS papertext
   keys_papertext: [abstract, author, bibcode, body, keyword, keyword_norm, pubdate, title]  # metadata keys for ADS papertext required for building input
@@ -33,7 +33,7 @@ dataprep:
 
 textprocessing:
   do_verify_truematch: true  # used in Performance class
-  do_raise_innererror: false  # raise error or print and continue
+  do_raise_innererror: false  # do_raise_innererror: if True, will stop if exception encountered; # if False, will print error and continue
   do_verbose_text_summary: false  # print input text data summary
   mode_modif: skim_anon  # Mode to use for text processing and generating possible modes: any combination from "skim", "trim", and "anon" or "none"
   shuffle_seed: 10 # Random seed for shuffling text dataset
@@ -42,6 +42,10 @@ textprocessing:
   max_tests: 30  # Number of text entries to test the performance for; None for all tests
   lookup: HST  # Prepare some Keyword objects
   threshold: 0.70
+  threshold_array: !tuple # will be used for np.linspace(0.5, 0.95, 20)
+    - 0.5
+    - 0.95
+    - 20
   buffer: 0  # the number of sentences to include within paragraph around each sentence with target terms
   placeholder_anon: "OBJ"
   placeholder_numeric: "numeric"
@@ -323,7 +327,20 @@ ml:
         "talking-heads_base": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
     }
 
+performance:
+  fileroot_confusion_matrix_plot: "performance_confmatr_basic_"
+  fileroot_uncertainty_plot: "performance_grid_uncertainty_"
+  fileroot_evaluation: "test_eval_basic_"
+  fileroot_misclassif: "test_misclassif_basic_"
+  figsize: !tuple # figsize = (20, 12)
+    - 20
+    - 12
+  print_freq: 1
+
+
 results:
+  # Result file name root
+  fileroot_class_results: "classification_results_"
   # Classification
   # For custom classification verdicts
   verdict_error: "z_error"
