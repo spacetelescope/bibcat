@@ -1,6 +1,16 @@
 """
 :title: evaluate_basic_performance.py
 
+
+This module performs the basic evaluation performance results such as a confusion matrix
+(if ML method) and result numpy save files.
+
+- Context: the input full text JSON file (papertrack + ADS full texts) is
+  called via config.inputs.path_source_data configured in bibcat/config.py and is used for
+  training, validating, and testing the trained model.
+
+- Run example: `bibcat evaluate` or `bibcat -n ML`
+
 This module employs
 
     1) performance.evaluate_performance_basic() to generates a file of dictionary of the basic performance evaluation information and a plot of a confusion matrix after the classification of input test texts conducted based on a trained ML model or the rule-based model. It script also produces a list of the mis-classified papers.
@@ -31,14 +41,29 @@ from bibcat.core.classifiers.textdata import ClassifierBase
 from bibcat.fetch_papers import fetch_papers
 
 
-def evaluate_basic_performance(classifier_name: str = "ML"):
+def evaluate_basic_performance(classifier_name: str = "ML") -> None:
+    """Evaluate performance
+
+    Evaluate basic performance using machine-learning or rule-based classifiers.
+
+    Parameters
+    ----------
+    classifier_name : str, optional
+        the type of classifier to use, by default "ML"
+
+    Raises
+    ------
+    ValueError
+        when an invalid classifier name is provided
+    """
+
     # Fetch filepath for model
     name_model = config.output.name_model
     dir_model = os.path.join(config.paths.models, name_model)
     filepath_model = os.path.join(dir_model, (name_model + ".npy"))
     fileloc_ML = os.path.join(dir_model, (config.output.tfoutput_prefix + name_model))
 
-    # Fetch filepath for output
+    # Fetch filepath for output or create the directory if not exists.
     dir_output = os.path.join(config.paths.output, name_model)
     os.makedirs(dir_output, exist_ok=True)
 
@@ -63,9 +88,10 @@ def evaluate_basic_performance(classifier_name: str = "ML"):
         max_tests=config.textprocessing.max_tests,  # Number of text entries to test the performance for; None for all tests
     )
 
-    # We will choose which operator/method to classify the papers and evaluate performance below.
+    # We will choose which operator/method to evaluate performance below.
     classifier: ClassifierBase
 
+    # Initialize classifiers
     # Rule-Based Classifier
     classifier_RB = rules.RuleBasedClassifier(
         which_classifs=None,
@@ -77,6 +103,7 @@ def evaluate_basic_performance(classifier_name: str = "ML"):
     # Machine-Learning Classifier
     classifier_ML = ml.MachineLearningClassifier(filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True)
 
+    # CLI option
     if classifier_name == "ML":
         classifier = classifier_ML
     elif classifier_name == "RB":
@@ -85,10 +112,6 @@ def evaluate_basic_performance(classifier_name: str = "ML"):
         raise ValueError(
             "An invalid value! Choose either 'ML' for the machine learning classifier or 'RB' for the rule-based classifier!"
         )
-
-    # Performance tests: This can be an CLI option.
-    # Create an instance of the Performance class
-    performer = performance.Performance()
 
     # Initialize operators by loading models into instances of the Operator class
     op = operator.Operator(

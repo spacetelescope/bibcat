@@ -1,9 +1,7 @@
 """
 :title: classify_papers.py
 
-This module fetches test input data for classification, and produces
-performance results such as a confusion matrix (if ML method) and result numpy save files.
-It also can classify streamlined JSON paper text(s) with a given classfier.
+This module fetches test input data for classification and classify streamlined JSON paper text(s) with a given classfier.
 
 - Context: the input full text JSON file (papertrack + ADS full texts) is
   called via config.inputs.path_source_data configured in bibcat/config.py and is used for
@@ -23,11 +21,8 @@ import numpy as np
 
 from bibcat import config
 from bibcat import parameters as params
-from bibcat.core import performance
 from bibcat.core.classifiers import ml, rules
 from bibcat.core.classifiers.textdata import ClassifierBase
-
-# from bibcat.evaluate_basic_performance import generate_performance_evaluation_output
 from bibcat.fetch_papers import fetch_papers
 from bibcat.operate_classifier import operate_classifier
 
@@ -85,17 +80,17 @@ def classify_papers(classifier_name: str = "ML") -> None:
 
     # We will choose which operator/method to classify the papers and evaluate performance below.
 
-    # The classifier_name could eventually be chosen in a user run setting or as a CLI option
-    # in the future refactoring.
+    # The classifier_name will be selected as a CLI option: "ML" or "RB" or something else
     classifier: ClassifierBase
+    # initialize classifiers
 
     # Rule-Based Classifier
     classifier_RB = rules.RuleBasedClassifier(which_classifs=None, do_verbose=True, do_verbose_deep=False)
 
-    # initialize classifiers
     # Machine-Learning Classifier
     classifier_ML = ml.MachineLearningClassifier(filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True)
 
+    # CLI option
     if classifier_name == "ML":
         classifier = classifier_ML
     elif classifier_name == "RB":
