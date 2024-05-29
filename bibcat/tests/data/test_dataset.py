@@ -9,17 +9,22 @@ from bibcat import parameters as params
 
 mapper = params.map_papertypes
 
+
 def file_exists(file_path):
     return os.path.exists(file_path)
 
 
 # Test to verify the combined dataset
 @pytest.mark.skipif(
-    not (file_exists(config.inputs.path_source_data) and file_exists(config.inputs.path_papertext) and file_exists(config.inputs.path_papertrack)),
-    reason="Required data files do not exist."
+    not (
+        file_exists(config.inputs.path_source_data)
+        and file_exists(config.inputs.path_papertext)
+        and file_exists(config.inputs.path_papertrack)
+    ),
+    reason="Required data files do not exist.",
 )
 def test_combined_dataset():
-    """ test the combined dataset """
+    """test the combined dataset"""
     print("Running test_combined_dataset.")
 
     # Load each of the datasets
@@ -31,7 +36,7 @@ def test_combined_dataset():
     with open(config.inputs.path_papertext, "r") as openfile:
         data_text = json.load(openfile)
 
-     # For the original classification data
+    # For the original classification data
     with open(config.inputs.path_papertrack, "r") as openfile:
         data_classif = json.load(openfile)
 
@@ -73,7 +78,10 @@ def test_combined_dataset():
         for curr_mission in data_combined[ii]["class_missions"]:
             tmp_list = [item["mission"] for item in data_classif[ind_classif]["class_missions"]]
             tmp_ind = tmp_list.index(curr_mission)
-            assert data_combined[ii]["class_missions"][curr_mission]["papertype"] == data_classif[ind_classif]["class_missions"][tmp_ind]["paper_type"]
+            assert (
+                data_combined[ii]["class_missions"][curr_mission]["papertype"]
+                == data_classif[ind_classif]["class_missions"][tmp_ind]["paper_type"]
+            )
 
     print("Run of test_combined_dataset complete.")
 
@@ -81,10 +89,10 @@ def test_combined_dataset():
 # Test to verify the TVT directory
 @pytest.mark.skipif(
     not file_exists(config.paths.TVTinfo) or not file_exists(config.paths.modiferrors),
-    reason="TVT directory files do not exist."
+    reason="TVT directory files do not exist.",
 )
 def test_TVT_directory():
-    """ test the TVT directory """
+    """test the TVT directory"""
 
     print("Running test_TVT_directory.")
     dict_info = np.load(config.paths.TVTinfo, allow_pickle=True).item()
@@ -104,8 +112,8 @@ def test_TVT_directory():
         curr_actuals = {
             key: dataset[ind_dataset]["class_missions"][key]
             for key in dataset[ind_dataset]["class_missions"]
-            if any(item.is_keyword(key) for item in params.all_kobjs) and
-               dataset[ind_dataset]["class_missions"][key]["papertype"] in params.allowed_classifications
+            if any(item.is_keyword(key) for item in params.all_kobjs)
+            and dataset[ind_dataset]["class_missions"][key]["papertype"] in params.allowed_classifications
         }
 
         # Fetch results of test and combine with any errors for bibcode

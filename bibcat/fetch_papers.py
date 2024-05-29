@@ -6,7 +6,7 @@ This module fetches test input data for classification.
 - Context: the input full text JSON file (papertrack + ADS full texts) is
   called via config.path_source_data configured in bibcat/config.py.
 
-- It fetches the set number of papers or all in the `bibcat/data/partitioned_datasets/model_name/dir_test` folder
+- It fetches the set number of papers or all in the `bibcat/data/model_name/dir_test` folder
 for classification.
 
 """
@@ -18,89 +18,119 @@ import numpy as np
 
 from bibcat import config
 from bibcat import parameters as params
+from bibcat.utils.logger_config import setup_logger
+
+logger = setup_logger(__name__)
 
 
-# Fetch papers of
-def fetch_papers(
-    dir_datasets: str,
-    dir_test: str,
-    do_shuffle: bool = True,
-    do_verbose_text_summary: bool = True,
-    max_tests: None | int = None,
-) -> dict:
-    # perpare papers to test on
-    # For use of real papers from test dataset to test on
-    # Load information for processed bibcodes reserved for testing
-    dict_TVTinfo = np.load(os.path.join(dir_datasets, "dict_TVTinfo.npy"), allow_pickle=True).item()
-    list_test_bibcodes = [key for key in dict_TVTinfo if (dict_TVTinfo[key]["folder_TVT"] == dir_test)]
+# load TVTinfo when using JSON data in TVT directories
+def load_tvt_info(dir_datasets: str) -> dict:
+    path = os.path.join(dir_datasets, "dict_TVTinfo.npy")
+    logger.info(f"loading TVT info: {path}!")
+    return np.load(path, allow_pickle=True).item()
 
-    # Load the original data
-    with open(config.inputs.path_source_data, "r") as openfile:
-        dataset = json.load(openfile)
-    # Extract text information for the bibcodes reserved for testing
-    # Data for test set
-    list_test_indanddata_raw = [
-        (ii, dataset[ii]) for ii in range(0, len(dataset)) if (dataset[ii]["bibcode"] in list_test_bibcodes)
-    ]
-    # Shuffle, if requested
-    if do_shuffle:
-        np.random.shuffle(list_test_indanddata_raw)
 
-    # Extract target number of test papers from the test bibcodes
-    if max_tests is not None:  # Fetch subset of tests
-        list_test_indanddata = list_test_indanddata_raw[0:max_tests]
-    else:  # Use all tests
-        list_test_indanddata = list_test_indanddata_raw
-    # Process the text input into dictionary format for inputting into the codebase
-    dict_texts = {}  # To hold formatted text entries
-    for ii in range(0, len(list_test_indanddata)):
-        curr_ind = list_test_indanddata[ii][0]
-        curr_data = list_test_indanddata[ii][1]
-        # Convert this data entry into dictionary with: key:text,id,bibcode,
-        # mission structure
-        curr_info = {
-            "text": curr_data["body"],
-            "id": str(curr_ind),
-            "bibcode": curr_data["bibcode"],
+# getting bibcodes for using dir_test
+def get_bibcodes(dict_TVTinfo: dict, dir_test: str) -> list:
+    return [key for key in dict_TVTinfo if dict_TVTinfo[key]["folder_TVT"] == dir_test]
+
+
+# loading json dataset
+def load_json_dataset(path: str) -> list:
+    logger.info(f"Loading {path}!")
+    with open(path, "r") as file:
+        return json.load(file)
+
+
+# Extract text information for the bibcodes reserved for testing
+# Data for test set
+def get_data(dataset: list, bibcodes: list) -> list:
+    return [(i, data) for i, data in enumerate(dataset) if data["bibcode"] in bibcodes]
+
+
+#  Shuffle, if requested
+def shuffle_data(data: list) -> None:
+    np.random.shuffle(data)
+
+
+# set the maximum number of texts
+def set_max_data(data: list, max_texts: int | None) -> list:
+    return data[:max_texts] if max_texts is not None else data
+
+
+# Process the text input into dictionary format for input text
+def process_text_data(data: list) -> dict:
+    texts = {}
+    for idx, entry in data:
+        info = {
+            "text": entry["body"],
+            "id": str(idx),
+            "bibcode": entry["bibcode"],
             "missions": {},
         }
-        # Iterate through missions for this paper
-        for curr_mission in curr_data["class_missions"]:
-            # Iterate through declared Keyword objects
-            for curr_kobj in params.all_kobjs:
-                curr_name = curr_kobj.get_name()
-                # Store mission data under keyword name, if applicable
-                if curr_kobj.is_keyword(curr_mission):
-                    curr_info["missions"][curr_name] = {
-                        "mission": curr_name,
-                        "class": curr_data["class_missions"][curr_mission]["papertype"],
+        for mission in entry["class_missions"]:
+            for kobj in params.all_kobjs:
+                name = kobj.get_name()
+                if kobj.is_keyword(mission):
+                    info["missions"][name] = {
+                        "mission": name,
+                        "class": entry["class_missions"][mission]["papertype"],
                     }
-                # Otherwise, store that this mission was not detected for this text
                 else:
-                    curr_info["missions"][curr_name] = {"mission": curr_name, "class": config.results.verdict_rejection}
-        # Store this data entry
-        dict_texts[str(curr_ind)] = curr_info
-
-    # Print some notes about the testing data
-    # print(f"Number of texts in text set: {dict_texts}")
-    if do_verbose_text_summary:
-        print("Text Summary\n")
-        for key in dict_texts:
-            print(f"Entry: {key}")
-            print(f"ID: {dict_texts[key]['id']}")
-            print(f"Bibcode: {dict_texts[key]['bibcode']}")
-            print(f"Missions: {dict_texts[key]['missions']}")
-            print(f"Start of text:\n{dict_texts[key]['text'][0:500]}")
-            print("-\n")
-
-    return dict_texts
+                    info["missions"][name] = {
+                        "mission": name,
+                        "class": config.results.verdict_rejection,
+                    }
+        texts[str(idx)] = info
+    return texts
 
 
-# This section checks if the script is the main program
+# logging summary
+def log_summary(texts: dict) -> None:
+    logger.debug("Text Summary")
+
+    for key, value in texts.items():
+        logger.debug(f"Entry: {key}")
+        logger.debug(f"ID: {value['id']}")
+        logger.debug(f"Bibcode: {value['bibcode']}")
+        logger.debug(f"Missions: {value['missions']}")
+        logger.debug(f"Start of text:\n{value['text'][:500]}")
+        logger.debug("-")
+
+
+def fetch_papers(
+    do_evaluation: bool = False,
+    do_shuffle: bool | None = None,
+    do_verbose_text_summary: bool = False,
+    max_texts: int | None = None,
+) -> dict:
+    # perpare papers to perform model evaluation
+
+    if not do_evaluation:
+        return load_json_dataset(config.inputs.path_ops_data)
+
+    # For use of real papers from test dataset to test on
+    # Load information for processed bibcodes reserved for testing
+    else:
+        dir_datasets = os.path.join(config.paths.partitioned, config.output.name_model)
+        dir_test = config.output.folders_TVT["test"]
+        dict_TVTinfo = load_tvt_info(dir_datasets)
+        test_bibcodes = get_bibcodes(dict_TVTinfo, dir_test)
+        dataset = load_json_dataset(config.inputs.path_source_data)
+        test_data = get_data(dataset, test_bibcodes)
+
+        if do_shuffle:
+            shuffle_data(test_data)
+
+        selected_data = set_max_data(test_data, max_texts)
+        texts = process_text_data(selected_data)
+
+        if do_verbose_text_summary:
+            log_summary(texts)
+
+        return texts
+
+
 if __name__ == "__main__":
-    # Code here will only execute if the script is run directly, not if it's imported as a module
-    # Currently, text data is fed from the TVT test folder but this can be changed when a need arises.
-    print("The script is running as a standalone script though I don't see yet a purpose for it.\n Fetching papers!")
-    fetch_papers(
-        dir_datasets=os.path.join(config.paths.partitioned, config.output.name_model), dir_test=config.output.folders_TVT["test"]
-    )
+    logger.info("The script is running as a standalone script. Fetching papers!")
+    fetch_papers()
