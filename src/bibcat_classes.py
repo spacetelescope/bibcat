@@ -4096,32 +4096,6 @@ class _Classifier(_Base):
         #
         return dict_info
     #
-
-    ##Method: _process_text
-    ##Purpose: Load text and process into modifs using Grammar class
-    def _process_text(self, text, keyword_obj, which_mode, do_check_truematch, buffer=0, do_verbose=False):
-        """
-        Method: _process_text
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Process text into modifs using Grammar class.
-        """
-        #Generate and store instance of Grammar class for this text
-        use_these_modes = list(set([which_mode, "none"]))
-        grammar = Grammar(text, keyword_obj=keyword_obj,
-                            do_check_truematch=do_check_truematch,
-                            do_verbose=do_verbose, buffer=buffer)
-        grammar.run_modifications(which_modes=use_these_modes)
-        self._store_info(grammar, "grammar")
-        #
-        #Fetch modifs and grammar information
-        set_info = grammar.get_modifs(which_modes=[which_mode])
-        modif = set_info["modifs"][which_mode]
-        forest = set_info["_forest"]
-        #
-
-        #Return all processed statements
-        return {"modif":modif, "forest":forest}
-    #
 #
 
 
