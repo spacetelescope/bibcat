@@ -71,7 +71,7 @@ def process_text_data(data: list) -> dict:
         for mission in entry["class_missions"]:
             for kobj in params.all_kobjs:
                 name = kobj.get_name()
-                if kobj.is_keyword(mission):
+                if kobj.identify_keyword(mission)["bool"]:
                     info["missions"][name] = {
                         "mission": name,
                         "class": entry["class_missions"][mission]["papertype"],
