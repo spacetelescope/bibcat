@@ -3416,19 +3416,45 @@ class Grammar(_Base):
         #
 
         #Build paragraph-string representation of the given rule
+        ###BLOCKED: 2024-05-29: Too formulaic
+        #if do_sentence:
+        #    str_rule = "" #"Rule:"
+        #    tmplist = sorted(list(rule.keys()))
+        #    for ii in range(0, len(tmplist)):
+        #        curr_key = tmplist[ii]
+        #        str_rule += "{0} = (".format(curr_key)
+        #        str_rule += ", ".join(sorted(rule[curr_key]))
+        #        str_rule += ")"
+        #        if (ii < (len(tmplist) - 1)):
+        #            str_rule += "; "
+        #        else:
+        #            str_rule += "."
+                #
+            #
+        #
         if do_sentence:
-            str_rule = "" #"Rule:"
+            dict_conv = {"allmatter":"nouns", "verbclass":"verb types",
+                        "verbtypes":"verb tenses",
+                        "is_etal":"other authors", "is_keyword":"keywords",
+                        "is_pron_1st":"our authors", "is_term_fig":"figures",
+                        "is_pron_3rd":"other people", "be":"being", "has":"having", "know":"knowing", "plot":"plotting", "science":"analyzing", "datainfluenced":"influencing",
+                        "future":"future", "past":"past", "purpose":"purpose",
+                        "present":"present"}
+            str_rule = "For this sentence, " #"Rule:"
             tmplist = sorted(list(rule.keys()))
             for ii in range(0, len(tmplist)):
                 curr_key = tmplist[ii]
-                str_rule += "{0} = (".format(curr_key)
-                str_rule += ", ".join(sorted(rule[curr_key]))
-                str_rule += ")"
+                str_rule += "{0} include ".format(dict_conv[curr_key].title())
+                if (len(rule[curr_key]) > 0):
+                    str_rule += " and ".join(sorted([dict_conv[item.lower()]
+                                                for item in rule[curr_key]]))
+                else:
+                    str_rule += "nothing"
+                #
                 if (ii < (len(tmplist) - 1)):
                     str_rule += "; "
                 else:
                     str_rule += "."
-                #
             #
         #
         #Build paragraph-string representation of the given rule
