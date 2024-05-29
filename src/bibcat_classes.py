@@ -1893,7 +1893,6 @@ class Paper(_Base):
         text_clean_split = self._split_text(text=text_clean)
 
         #Store the preprocessed text
-        self._store_info(text_clean, key="text_clean")
         self._store_info(text_clean_split, key="text_clean_split")
 
         #Close method
@@ -1949,10 +1948,8 @@ class Paper(_Base):
           - "do_overwrite" [bool (default=False)]: Whether or not to overwrite any previously extracted and stored paragraphs.
         Returns: None
         """
-        #Extract clean, naively split paragraphs
-        text_clean_split = self._get_info("text_clean_split")
+        #Extract global variables
         keyword_objs = self._get_info("keyword_objs")
-        do_check_truematch = self._get_info("do_check_truematch")
         #
 
         #If overwrite not allowed, check if paragraphs already extracted+saved
@@ -1977,20 +1974,11 @@ class Paper(_Base):
 
         #Extract paragraphs for each keyword
         dict_paragraphs = {} #Dictionary to hold paragraphs for keyword objects
-        dict_setup = {"keyword_objs":keyword_objs, "buffer":buffer} #Parameters
-        dict_results_ambig = {item.get_name():None
-                                for item in keyword_objs} #To hold ambig. output
-        #dict_acronym_meanings = {item.get_name():None
-        #                        for item in keyword_objs} #False acr. meanings
         for ii in range(0, len(keyword_objs)):
             #Extract all paragraphs containing keywords/verified acronyms
             tmp_res = self._extract_paragraph(keyword_obj=keyword_objs[ii],
                                                 buffer=buffer)
             paragraphs = tmp_res["paragraph"]
-            dict_results_ambig[keyword_objs[ii].get_name()
-                                ] = tmp_res["ambig_matches"]
-            #dict_acronym_meanings[keyword_objs[ii].get_name()
-            #                    ] = tmp_res["acronym_meanings"]
             #
 
             #Store the paragraphs under name of first given keyword
@@ -1999,9 +1987,6 @@ class Paper(_Base):
 
         #Store the extracted paragraphs and setup information
         self._store_info(dict_paragraphs, "_paragraphs")
-        self._store_info(dict_setup, "_paragraphs_setup")
-        self._store_info(dict_results_ambig, "_results_ambig")
-        #self._store_info(dict_acronym_meanings, "_dict_acronym_meanings")
 
         #Close this method
         return
@@ -2111,14 +2096,6 @@ class Paper(_Base):
                 .format(len(inds_with_keywords_init), len(inds_with_acronyms)))
         #
 
-        #If only acronym terms found, run a check of possible false meanings
-        #if (len(inds_with_acronyms) > 0):
-        #    acronym_meanings = self._verify_acronyms(keyword_obj=keyword_obj)
-        #Otherwise, set empty
-        #else:
-        #    acronym_meanings = None
-        #
-
         #If requested, run a check for ambiguous phrases if any ambig. keywords
         if ((not do_not_classify) and do_check_truematch and any([
                                     keyword_obj.identify_keyword(item)["bool"]
@@ -2134,7 +2111,6 @@ class Paper(_Base):
                             keyword_objs=[keyword_obj],dict_ambigs=dict_ambigs)}
                         for ind in inds_with_keywords_init]
             #
-            ambig_matches = [item["result"] for item in output_truematch]
 
             #Keep indices that have true matches
             inds_with_keywords_truematch = [item["ind"]
@@ -2155,13 +2131,7 @@ class Paper(_Base):
         #Otherwise, set empty
         else:
             output_truematch = None
-            ambig_matches = None
             inds_with_keywords_truematch = inds_with_keywords_init #Copy over
-        #
-
-        #Take note of if keywords and/or acronyms have matches
-        dict_has_matches = {"keywords":(len(inds_with_keywords_truematch) > 0),
-                            "acronyms":(len(inds_with_acronyms) > 0)}
         #
 
         #Pool together unique indices of sentences with keywords, acronyms
@@ -2187,14 +2157,11 @@ class Paper(_Base):
         #
         #Otherwise, just copy over previous indices
         else:
-            ranges_buffered = None
             sentences_buffered = sentences[inds_with_terms].tolist()
         #
 
         #Return outputs
-        return {"paragraph":sentences_buffered, "ambig_matches":ambig_matches,
-                #"acronym_meanings":acronym_meanings,
-                "has_matches":dict_has_matches}
+        return {"paragraph":sentences_buffered}
     #
 
     ##Method: _split_text()
@@ -2221,38 +2188,6 @@ class Paper(_Base):
                             re.split(config.exp_splittext, phrase)]
         #Return the split text
         return text_flat
-    #
-
-    #BLOCKED: 2024-03-26: Passive feature of code; output not actually used.
-    ##Method: _verify_acronyms()
-    ##Purpose: Find possible meanings of acronyms in text
-    def _verify_acronyms_old_2024_03_26_passivefeatureofcodewhereoutputnotactuallyused(self, keyword_obj):
-        """
-        Method: _verify_acronyms
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Extract all possible matches from the stored text to the acronyms of the Keyword instance.
-        """
-        #Fetch global variables
-        acronyms = [item.upper() for item in keyword_obj._get_info("acronyms")]
-        text = self._get_info("text_original")
-
-        #Build regular expression for all acronyms
-        list_exp = [(r"\b"
-                    +(r"[a-z]+\b"+config.exp_acronym_midwords).join(letterset)
-                    +r"[a-z]+\b")
-                    for letterset in acronyms]
-        combined_exp = (r"(?:"+(r")|(?:".join(list_exp))+r")")
-
-        #Search full text for possible acronym meanings
-        matches = re.findall(combined_exp, text)
-        #Throw error if any tuple entries found (e.g. loophole in regex)
-        if any([(isinstance(item, tuple)) for item in matches]):
-            raise ValueError("Err: Regex must have holes!\n{0}\n{1}"
-                            .format(combined_exp, matches))
-        #
-
-        #Return all determined matches
-        return matches
     #
 #
 
