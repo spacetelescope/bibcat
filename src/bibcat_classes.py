@@ -4131,11 +4131,7 @@ class Classifier_ML(_Classifier):
             load_dict = np.load(filepath_model, allow_pickle=True).item()
             #
             class_names = load_dict["class_names"]
-            optimizer = tf.keras.optimizers.Adam() #init_lr=load_dict["init_lr"])
-            #optimizer = tf_opt.create_optimizer(init_lr=load_dict["init_lr"],
-            #                    num_train_steps=load_dict["num_steps_train"],
-            #                    num_warmup_steps=load_dict["num_steps_warmup"],
-            #                    optimizer_type=load_dict["type_optimizer"])
+            optimizer = tf.keras.optimizers.Adam()
             model = tf.keras.models.load_model(fileloc_ML,
                                     custom_objects={config.ML_name_optimizer:
                                                     optimizer})
@@ -4167,26 +4163,13 @@ class Classifier_ML(_Classifier):
         #Assemble the layers for the empty model
         #NOTE: Structure is:
         #=Text Input -> Preprocessor -> Encoder -> Dropout layer -> Dense layer
-        #Text input
-        #layer_input =tf.keras.layers.Input(shape=(),dtype=tf.string,name="text")
-        #Preprocessor
-        #layer_preprocessor=tfhub.KerasLayer(ml_preprocessor,name="preprocessor")
-        #Encoder
-        #inputs_encoder = layer_preprocessor(layer_input)
-        #layer_encoder = tfhub.KerasLayer(ml_encoder, trainable=True, name="encoder")
-        #outputs_encoder = layer_encoder(inputs_encoder)
         #
 
-        #ml_handle = config.ML_model_handle
         layer_input =tf.keras.layers.Input(shape=(),dtype=tf.string,name="text")
         #Preprocessor
-        #layer_preprocessor = keras_nlp.models.BertPreprocessor.from_preset(
-        #                            ml_handle, name="preprocessor")
         layer_preprocessor=tfhub.KerasLayer(ml_preprocessor,name="preprocessor")
         #Encoder
         inputs_encoder = layer_preprocessor(layer_input)
-        #layer_encoder = keras_nlp.models.BertPreprocessor.from_preset(
-        #                            ml_handle, trainable=True, name="encoder")
         layer_encoder = tfhub.KerasLayer(ml_encoder, trainable=True, name="encoder")
         outputs_encoder = layer_encoder(inputs_encoder)
 
@@ -4240,10 +4223,8 @@ class Classifier_ML(_Classifier):
         #Load in ML values
         label_mode = config.ML_label_model
         batch_size = config.ML_batch_size
-        type_optimizer = config.ML_type_optimizer
         ml_model_key = config.ML_model_key
         frac_dropout = config.ML_frac_dropout
-        frac_steps_warmup = config.ML_frac_steps_warmup
         num_epochs = config.ML_num_epochs
         init_lr = config.ML_init_lr
         activation_dense = config.ML_activation_dense
@@ -4337,22 +4318,11 @@ class Classifier_ML(_Classifier):
         metrics = [tf.keras.metrics.CategoricalAccuracy("accuracy")]
         stepsize_epoch = tf.data.experimental.cardinality(dataset_train).numpy()
         #
-        #num_steps_train = stepsize_epoch*num_epochs
-        #num_steps_warmup = int(frac_steps_warmup * num_steps_train)
-        #
-        #optimizer = tf_opt.create_optimizer(init_lr=init_lr,
-        #                                    num_train_steps=num_steps_train,
-        #                                    num_warmup_steps=num_steps_warmup,
-        #                                    optimizer_type=type_optimizer)
         optimizer = tf.keras.optimizers.Adam(learning_rate=init_lr)
         #
         #Print some notes
         if do_verbose:
             print("Optimizer created.")
-        #    print("# of training steps: {0}\n# of warmup steps: {1}"
-        #            .format(num_steps_train, num_steps_warmup))
-        #    print("Type of optimizer and initial lr: {0}, {1}"
-        #            .format(type_optimizer, init_lr))
         #
 
         ##Compile the model with the loss, metric, and optimization functions
@@ -4379,16 +4349,13 @@ class Classifier_ML(_Classifier):
         ##Save the model
         save_dict = {"loss":res_loss, "class_names":class_names,
                     "accuracy":res_accuracy, "init_lr":init_lr,
-                    "num_epochs":num_epochs} #,
-                    #"num_steps_train":num_steps_train,
-                    #"num_steps_warmup":num_steps_warmup,
-                    #"type_optimizer":type_optimizer}
+                    "num_epochs":num_epochs}
         model.save(os.path.join(dir_model, savename_ML),
                     include_optimizer=False)
         np.save(os.path.join(dir_model, savename_model), save_dict)
         #
         #Plot the results
-        self._plot_ML(model=model, history=history.history, dict_info=save_dict,
+        self._plot_ML(history=history.history, dict_info=save_dict,
                         folder_save=dir_model)
         #
 
@@ -4402,30 +4369,9 @@ class Classifier_ML(_Classifier):
             return
     #
 
-    ##Method: _run_ML
-    ##Purpose: Run trained ML model on given text
-    def _run_ML(self, model, texts, do_verbose=False):
-        """
-        Method: _run_ML
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Use trained model to classify given text.
-        """
-        #Run the model on the given texts
-        results = model.predict(texts)
-
-        #Print some notes
-        if do_verbose:
-            for ii in range(0, len(texts)):
-                print("{0}:\n{1}\n".format(texts[ii], results[ii]))
-        #
-
-        #Return results
-        return results
-    #
-
     ##Method: _plot_ML
     ##Purpose: Plot structure and results of ML model
-    def _plot_ML(self, model, history, dict_info, folder_save):
+    def _plot_ML(self, history, dict_info, folder_save):
         """
         Method: _plot_ML
         WARNING! This method is *not* meant to be used directly by users.
@@ -4495,7 +4441,7 @@ class Classifier_ML(_Classifier):
             - 'uncertainty': the uncertainty of the classification.
         """
         #Load global variables
-        list_classes = self._get_info("class_names") #dict_info")["class_names"]
+        list_classes = self._get_info("class_names")
         if (do_verbose is None):
             do_verbose = self._get_info("do_verbose")
         #
