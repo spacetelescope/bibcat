@@ -125,6 +125,7 @@ dict_exp_abbrev = {r"\bFig\b\.":"Figure", r"\bTab\b\.":"Table", r"\bvs\b\.":"vs"
 trail_pos_main = ["VERB"]
 special_pos_main = ["SUBJECT", "PREPOSITION_SUBJECT", "VERB", "DIRECT_OBJECT", "PREPOSITION", "PREPOSITION_OBJECT", "AUX"]
 ignore_pos_main = ["USELESS", "PUNCTUATION", "ADJECTIVE", "MARKER", "CONJUNCTION"]
+dict_modes_with_grammar_forest = {"none":False, "anon":False, "skim":True, "trim":True, "rule":True}
 #
 #For part-of-speech (pos) identification
 #Conjoined
