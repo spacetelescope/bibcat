@@ -281,10 +281,6 @@ class _Base():
             vmin = 0 #None
             #Ignore non-target verdicts to avoid color spikes scaling if present
             tmpmatr = matr.copy()
-            #if (config.verdict_rejection.lower() in x_labels):
-            #    tmpmatr[:,x_labels.index(config.verdict_rejection.upper())] = -1
-            #if (config.verdict_rejection.lower() in y_labels):
-            #    tmpmatr[y_labels.index(config.verdict_rejection.upper()),:] = -1
             #Remove max scaling for non-target classifs along y-axis
             for yind in minmax_inds["y"]:
                 #Remove non-target classifications from max consideration
@@ -488,13 +484,6 @@ class _Base():
         num_ambigs = len(list_kw_ambigs)
         #
 
-        #Replace numerics and citation numerics with placeholders
-        #text_orig = text
-        #placeholder_number = config.placeholder_number
-        #text = re.sub(r"\(?\b[0-9]+\b\)?", placeholder_number, text_orig)
-        #Replace any hyphen-word dashes
-        #text = re.sub("([A-Z|a-z])-([A-Z|a-z|0-9])", r"\1 \2", text)
-
         #Replace hyphenated numerics with placeholders
         text_orig = text
         placeholder_number = config.placeholder_number
@@ -518,8 +507,6 @@ class _Base():
                         for item in keyword_objs}
 
         #Return status as true match if non-ambig keywords match to text
-        #if any([item1.identify_keyword(text)["bool"] for item1 in keyword_objs
-        #        if (item1 not in keyword_objs_ambigs)]):
         if any([dict_kobjinfo[item1._get_info("name")]["bool"]
                     for item1 in keyword_objs
                     if (item1 not in keyword_objs_ambigs)]):
@@ -533,8 +520,6 @@ class _Base():
                         "text_wordchunk":"<Not ambig.>", "text_database":None}]}
         #
         #Return status as false match if no keywords match at all
-        #elif (not any([item.identify_keyword(text)["bool"]
-        #                    for item in keyword_objs_ambigs])):
         elif (not any([dict_kobjinfo[item._get_info("name")]["bool"]
                             for item in keyword_objs_ambigs])):
             #Print some notes
@@ -546,13 +531,6 @@ class _Base():
                             "bool":False,
                             "text_wordchunk":"<No matching keywords at all.>"}]}
         #
-        #First two checks confirm that ambig-keyword-obj. matches to text
-        #
-        #Return status as true match if no ambig. phrases match to text
-        #elif (not any([bool(re.search((r"\b"+item2+r"\b"), text,
-        #                                flags=re.IGNORECASE))
-        #            for item1 in keyword_objs_ambigs
-        #            for item2 in item1._get_info("ambig_words")])):
         #Return status as true match if any acronyms match
         elif (any([dict_kobjinfo[item._get_info("name")]["bool_acronym_only"]
                             for item in keyword_objs_ambigs])):
@@ -750,102 +728,6 @@ class _Base():
                         "info":[item["info"] for item in list_results]}
         return fin_result
         #
-    #
-
-    ##Method: _cleanse_text()
-    ##Purpose: Cleanse given (any length) string of extra whitespace, dashes, etc.
-    def _cleanse_text_old_2024_03_25_beforeetalupdates(self, text, do_streamline_etal):
-        """
-        Method: _cleanse_text
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-         - Cleanse text of extra whitespace, punctuation, etc.
-         - Replace paper citations (e.g. 'et al.') with uniform placeholder.
-        """
-        #Extract global punctuation expressions
-        set_apostrophe = config.set_apostrophe
-        set_punctuation = config.set_punctuation
-        exp_punctuation = config.exp_punctuation
-        set_openbrackets = config.set_openbrackets
-        set_closebrackets = config.set_closebrackets
-
-        #Remove any starting punctuation
-        text = re.sub(((r"^("+"|".join(exp_punctuation)+r")")),
-                        "", text) #Remove starting punct.
-
-        #Remove extra whitespace in general
-        text = re.sub("  +", " ", text) #Removes spaces > length=1
-
-        #Remove excessive whitespace around punctuation
-        #For opening brackets
-        tmp_exp_inner = ("\\" + "|\\".join(set_openbrackets))
-        text = re.sub(("("+tmp_exp_inner+") ?"), r"\1", text)
-        #For closing brackets and punctuation
-        tmp_exp_inner = ("\\" + "|\\"
-                            .join((set_closebrackets+set_punctuation)))
-        text = re.sub((" ?("+tmp_exp_inner+")"), r"\1", text)
-        #For apostrophes
-        tmp_exp_inner = ("\\" + "|\\".join(set_apostrophe))
-        text = re.sub((" ?("+tmp_exp_inner+") ?"), r"\1", text)
-        #
-
-        #Remove empty brackets and doubled-up punctuation
-        #Extract ids of empty brackets and doubled-up punctuation
-        ids_rem = [ii for ii in range(0, (len(text)-1))
-                    if (((text[ii] in set_openbrackets)
-                        and (text[ii+1] in set_closebrackets)) #Empty brackets
-                    or ((text[ii] in set_punctuation)
-                        and (text[ii+1] in set_punctuation)))] #Double punct.
-        #Remove the characters (in reverse order!) at the identified ids
-        for ii in sorted(ids_rem)[::-1]: #Reverse-sorted
-            text = text[0:ii] + text[(ii+1):len(text)]
-        #
-
-        #Replace pesky "Author & Author (date)", et al., etc., wordage
-        if do_streamline_etal:
-            #Adapted from:
-            # https://regex101.com/r/xssPEs/1
-            # https://stackoverflow.com/questions/63632861/
-            #                           python-regex-to-get-citations-in-a-paper
-            bit_author = r"(?:[A-Z][A-Za-z'`-]+)"
-            bit_etal = r"(?:et al\.?)"
-            bit_additional = f"(?:,? (?:(?:and |& )?{bit_author}|{bit_etal}))"
-            #Regular expressions for years (with or without brackets)
-            exp_year_yesbrackets = (
-                        r"( (\(|\[|\{)"
-                        + r"([0-9]{4,4}|[0-9]{2,2})"
-                        + r"((,|;) ?([0-9]{4,4}|[0-9]{2,2}))*"
-                        + r"(\)|\]|\}))")
-            exp_year_nobrackets = (
-                        r" "
-                        + r"([0-9]{4,4}|[0-9]{2,2})"
-                        + r"((,|;) ?([0-9]{4,4}|[0-9]{2,2}))*")
-            #Regular expressions for citations (with or without brackets)
-            exp_cites_yesbrackets = (
-                    r"(\(|\[|\{)"
-                    +fr"{bit_author}{bit_additional}*{exp_year_nobrackets}"
-                    +(r"((,|;) "
-                        +fr"{bit_author}{bit_additional}*{exp_year_nobrackets}"
-                    +r")*")
-                    +r"(\)|\]|\})")
-            exp_cites_nobrackets = (
-                    fr"{bit_author}{bit_additional}*{exp_year_yesbrackets}")
-            #
-            #Replace not-bracketed citations or remove bracketed citations
-            text = re.sub(exp_cites_yesbrackets, "", text)
-            text = re.sub(exp_cites_nobrackets, config.placeholder_author, text)
-            #
-            #Replace singular et al. (e.g. SingleAuthor et al.) wordage as well
-            #text = re.sub(r" et al\b\.?", "etal", text)
-            text = re.sub(r"([A-Z][A-Z|a-z]+) et al\b\.?",
-                            config.placeholder_author, text)
-        #
-
-        #Remove starting+ending whitespace
-        text = text.lstrip().rstrip()
-
-        #Return cleansed text
-        return text
     #
 
     ##Method: _cleanse_text()
@@ -1180,7 +1062,6 @@ class _Base():
         word_tag = word.tag_ #tag label
         word_text = word.text #Text version of word
         word_ancestors = list(word.ancestors)#All previous nodes leading to word
-        #word_conjoins = list(word.conjuncts)#All previous nodes leading to word
         #
         #Print some notes
         if do_verbose:
@@ -1198,51 +1079,6 @@ class _Base():
         if (pos not in ["CONJOINED", "VERB", "ROOT", "AUX"]):
             is_conjoined = self._is_pos_word(word=word, pos="CONJOINED")
         #
-
-        """BLOCKED: 2024-03-27: Bad attempt at handling conjoined words.
-        ##Check if given word is of given part-of-speech
-        #Handle conjoined cases
-        if is_conjoined:
-            #Check if verb first and if root is verb (standard tree structure)
-            isverb = self._is_pos_word(word=word, pos="VERB",
-                    keyword_objs=keyword_objs, ids_nounchunks=ids_nounchunks,
-                    do_verbose=do_verbose,
-                    do_exclude_nounverbs=do_exclude_nounverbs)
-            ispreverb = self._is_pos_word(word=word_conjoins[0], pos="VERB",
-                    keyword_objs=keyword_objs, ids_nounchunks=ids_nounchunks,
-                    do_verbose=do_verbose,
-                    do_exclude_nounverbs=do_exclude_nounverbs)
-            #
-            #Point pos check to nearby node, if bad pairing from bad tree
-            if ((not isverb) and ispreverb):
-                word_neighbors = list(word_conjoins[0].rights) #Right of root
-                #Scroll through neighbors until another noun found
-                #for curr_neighbor in word_neighbors:
-                    #Check if current neighbor is a noun
-                #    isprenoun = self._is_pos_word(word=curr_neighbor,pos="NOUN",
-                #            keyword_objs=keyword_objs,
-                #            ids_nounchunks=ids_nounchunks,do_verbose=do_verbose,
-                #            do_exclude_nounverbs=do_exclude_nounverbs)
-                    #If noun, set this as root of conjoined set
-                #    if isprenoun:
-                #        conj_rootword = curr_neighbor
-                        #Break out of loop early
-                #        break
-                    #
-                #
-                conj_rootword = word_neighbors[0]
-            #
-            #Point pos check to previous node, otherwise
-            else:
-                conj_rootword = word_conjoins[0]
-            #
-            #Call pos check on noted root of conjoining
-            return self._is_pos_word(word=conj_rootword, pos=pos,
-                        keyword_objs=keyword_objs,
-                        ids_nounchunks=ids_nounchunks, do_verbose=do_verbose,
-                        do_exclude_nounverbs=do_exclude_nounverbs)
-            #
-        #"""
 
         ##Check if given word is of given part-of-speech
         #Handle sufficiently clear-cut conjoined cases
@@ -1268,24 +1104,6 @@ class _Base():
         #Identify roots
         if pos in ["ROOT"]:
             check_all = (word_dep in config.dep_root)
-        #
-        #Identify verbs
-        #elif pos in ["VERB"]: (blocked 2024-05-14)
-        #    check_verb = (word_pos in ["VERB"]) #!!! Set in config. !!!
-        #    check_root = self._is_pos_word(word=word, pos="ROOT")
-        #    check_pos = (word_pos in ["AUX"])
-        #    check_tag = (word_tag in config.tag_verb_any)
-        #    check_auxverb = (check_tag
-        #                        and (word_dep not in ["aux", "auxpass"])
-        #                        and (check_pos))
-        #    check_rootaux = (check_root and check_pos and check_tag)
-        #    if do_exclude_nounverbs:
-        #        check_notnoun = (ids_nounchunks[word_i] is None)
-        #    else:
-        #        check_notnoun = True
-        #    #
-        #    check_all = ((check_verb or check_rootaux or check_auxverb)
-        #                    and check_notnoun)
         #
         #Identify verbs
         elif pos in ["VERB"]:
@@ -1339,13 +1157,10 @@ class _Base():
             is_leftofverb = False
             if (len(word_ancestors) > 0):
                 tmp_verb = self._is_pos_word(word=word_ancestors[0], pos="VERB")
-                #tmp_root = self._is_pos_word(word=word_ancestors[0], pos="ROOT")
-                #if (tmp_verb or tmp_root):
                 if tmp_verb:
                     is_leftofverb = (word in word_ancestors[0].lefts)
             #
             #Determine if conjoined to subject, if applicable
-            #is_conjsubj = self._is_pos_conjoined(word, pos=pos)
             is_root = self._is_pos_word(word=word, pos="ROOT")
             check_dep = (word_dep in config.dep_subject)
             check_all = ((
@@ -1376,7 +1191,6 @@ class _Base():
         elif pos in ["DIRECT_OBJECT"]:
             check_noun = self._is_pos_word(word=word, pos="NOUN")
             check_baseobj = self._is_pos_word(word=word, pos="BASE_OBJECT")
-            #is_conjprepobj = self._is_pos_conjoined(word, pos=pos)
             #Check if this word follows preposition
             check_objprep = False
             check_subjprep = False
@@ -1397,7 +1211,6 @@ class _Base():
                     check_objprep = False
                     break
             #
-            #check_all = (is_conjprepobj or (check_baseobj and check_objprep))
             check_all = ((check_baseobj and (not check_objprep)
                             and (not check_subjprep) and check_noun))
         #
@@ -1405,7 +1218,6 @@ class _Base():
         elif pos in ["PREPOSITIONAL_OBJECT"]:
             check_noun = self._is_pos_word(word=word, pos="NOUN")
             check_baseobj = self._is_pos_word(word=word, pos="BASE_OBJECT")
-            #is_conjprepobj = self._is_pos_conjoined(word, pos=pos)
             #Check if this word follows preposition
             check_objprep = False
             for pre_node in word_ancestors:
@@ -1425,30 +1237,16 @@ class _Base():
             #check_all = (is_conjprepobj or (check_baseobj and check_objprep))
             check_all = ((check_baseobj and check_objprep and check_noun))
         #
-        #Identify improper X-words (for improper sentences)
-        elif pos in ["X"]:
-            check_dep = (word_dep in config.dep_xpos)
-            check_pos = (word_pos in config.pos_xpos)
-            check_all = (check_dep or check_pos)
-        #
         #Identify conjoined words
         elif pos in ["CONJOINED"]:
             check_conj = (word_dep in config.dep_conjoined)
-            #check_appos = (word_dep in config.dep_appos)
             check_det = (word_tag in config.tag_determinant)
-            #check_all = ((check_conj or check_appos) and (not check_det))
             check_all = (check_conj and (not check_det))
         #
         #Identify  conjunctions
         elif pos in ["CONJUNCTION"]:
             check_pos = (word_pos in config.pos_conjunction)
             check_tag = (word_tag in config.tag_conjunction)
-            check_all = (check_pos and check_tag)
-        #
-        #Identify determinants
-        elif pos in ["DETERMINANT"]:
-            check_pos = (word_pos in config.pos_determinant)
-            check_tag = (word_tag in config.tag_determinant)
             check_all = (check_pos and check_tag)
         #
         #Identify aux
@@ -1479,11 +1277,6 @@ class _Base():
             check_pos = (word_pos in config.pos_adjective)
             check_tag = (word_tag in config.tag_adjective)
             check_all = (check_tag or check_pos or check_adjverb)
-        #
-        #Identify passive verbs and aux
-        elif pos in ["PASSIVE"]:
-            check_dep = (word_dep in config.dep_verb_passive)
-            check_all = check_dep
         #
         #Identify negative words
         elif pos in ["NEGATIVE"]:
@@ -1525,21 +1318,6 @@ class _Base():
         return check_all
     #
 
-    ##Method: _load_text
-    ##Purpose: Load text from given file
-    def _load_text(self, filepath):
-        """
-        Method: _load_text
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Load text from a given filepath.
-        """
-        #Load text from file
-        with open(filepath, 'r') as openfile:
-            text = openfile.read()
-        #Return the loaded text
-        return text
-    #
-
     ##Method: _process_database_ambig()
     ##Purpose: Process database of ambig. phrases into lookups and dictionary
     def _process_database_ambig(self, keyword_objs=None, do_verbose=False):
@@ -1558,10 +1336,6 @@ class _Base():
                 keyword_objs = self._get_info("keyword_objs",
                                                 do_flag_hidden=True)
         #
-        #Load the ambig. phrase data
-        #lookup_ambigs = [str(item).lower() for item in
-        #            np.genfromtxt(config.KW_AMBIG,
-        #                        comments="#", dtype=str)]
         lookup_ambigs =[item._get_info("name").lower() for item in keyword_objs
                         if (len(item._get_info("ambig_words")) > 0)]
         data_ambigs = np.genfromtxt(config.PHR_AMBIG,
@@ -1608,11 +1382,6 @@ class _Base():
                                 do_verbose=do_verbose, do_skip_useless=False,
                                 keyword_objs=keyword_objs)
             curr_roots = curr_extraction["roots"]
-            #This regex version can be very slow... replaced with version below
-            #curr_exp = (r"("
-            #            + r")( .*)* (".join([(r"(\b"+r"\b|\b".join(item)+r"\b)")
-            #                            for item in curr_roots])
-            #            + r")") #Convert to reg. exp. for substring search later
             curr_exp_exact = r"\b("+re.escape(curr_text)+r")\b"
             curr_exp_meaning = (r"("
                         + r") (\w+ )*(".join([(r"\b("+r"|".join(item)+r")\b")
@@ -1708,11 +1477,6 @@ class _Base():
         text = self._cleanse_text(text=text,
                                 do_streamline_etal=do_streamline_etal)
 
-        """BLOCKED: 2024-03-25: Unnecessary initial text modification.
-        #Replace annoying websites with placeholder
-        text = re.sub(config.exp_website, config.placeholder_website, text)
-        #"""
-
         #Replace annoying <> inserts (e.g. html)
         text = re.sub(r"<[A-Z|a-z|/]+>", "", text)
 
@@ -1720,25 +1484,6 @@ class _Base():
         for key1 in dict_exp_abbrev:
             text = re.sub(key1, dict_exp_abbrev[key1], text)
         #
-
-        #Replace annoying object numerical name notations
-        """BLOCKED: 2024-03-25: Unnecessary initial text modification.
-        #E.g.: HD 123456, 2MASS123-456
-        text = re.sub(r"([A-Z]+) ?[0-9][0-9]+[A-Z|a-z]*((\+|-)[0-9][0-9]+)*",
-                        r"\g<1>"+config.placeholder_number, text)
-        #E.g.: Kepler-123ab
-        text = re.sub(r"([A-Z][a-z]+)( |-)?[0-9][0-9]+([A-Z|a-z])*",
-                        r"\g<1> "+config.placeholder_number, text)
-
-        #Remove most obnoxious numeric ranges
-        text = re.sub(r"~?[0-9]+([0-9]|\.)* ?- ?[0-9]+([0-9]|\.)*[A-Z|a-z]*\b",
-                        "{0}".format(config.placeholder_numeric), text)
-
-        #Remove spaces between capital+numeric names
-        text = re.sub(r"([A-Z]+) ([0-9]+)([0-9]|[a-z])+",
-                        r"\1\2\3".format(config.placeholder_numeric), text)
-        #
-        #"""
 
         #Remove any new excessive whitespace and punctuation spaces
         text = self._cleanse_text(text=text,
@@ -1927,126 +1672,6 @@ class Keyword(_Base):
 
     ##Method: identify_keyword
     ##Purpose: Check if text matches to this keyword object; return match inds
-    def identify_keyword_old_2024_03_26_beforeupdatestobannedoverlaphandling(self, text, mode=None):
-        """
-        Method: identify_keyword
-        Purpose: Return whether or not the given text contains terms (keywords, acronyms) matching this instance.
-        Arguments:
-          - "text" [str]: The text to search within for terms
-        Returns:
-          - [dict] containing:
-            - "bool":[bool] - if any matches
-            - "span":[tuple of 2 ints] - character span of matches
-        """
-        #Fetch global variables
-        exps_k = self._get_info("exps_keywords")
-        keywords = self._get_info("keywords")
-        exp_a_yescase = self._get_info("exp_acronyms_casesensitive")
-        exp_a_nocase = self._get_info("exp_acronyms_caseinsensitive")
-        banned_overlap_lowercase = self._get_info("banned_overlap_lowercase")
-        do_verbose = self._get_info("do_verbose")
-        allowed_modes = [None, "keyword", "acronym"]
-        #
-
-        #Throw error is specified mode not recognized
-        if ((mode is not None) and (mode.lower() not in allowed_modes)):
-            raise ValueError("Err: Invalid mode '{0}'.\nAllowed modes: {1}"
-                            .format(mode, allowed_modes))
-        #
-
-        #Check if this text contains keywords
-        if ((mode is None) or (mode.lower() == "keyword")):
-            set_keywords = [list(re.finditer(item1, text, flags=re.IGNORECASE))
-                            for item1 in exps_k
-                            if (not any([(ban1 in text.lower())
-                                    for ban1 in banned_overlap_lowercase]))]
-            #set_keywords = [list(re.finditer(item1, text, flags=re.IGNORECASE))
-            #                for item1 in exps_k
-            #                if (not any([
-            #                        (bool(re.finditer(item1, ban1,
-            #                                            flags=re.IGNORECASE))
-            #                            and (ban1 in text.lower()))
-            #                        for ban1 in banned_overlap_lowercase]))]
-            charspans_keywords = [(item2.start(), (item2.end()-1))
-                                for item1 in set_keywords
-                                for item2 in item1] #Char. span of matches
-            check_keywords = any([(len(item) > 0)
-                                for item in set_keywords]) #If any matches
-        else:
-            charspans_keywords = []
-            check_keywords = False
-        #
-        #Check if this text contains case-sensitive acronyms
-        if (((mode is None) or (mode.lower() == "acronym"))
-                    and (exp_a_yescase is not None)):
-            set_acronyms_yescase = list(re.finditer(exp_a_yescase, text))
-            #set_acronyms_yescase_raw = [list(re.finditer(item1, text))
-            #                for item1 in exp_a_yescase
-            #                if (not any([
-            #                    (bool(re.finditer(item1, ban1,
-            #                                            flags=re.IGNORECASE))
-            #                            and (ban1 in text.lower()))
-            #                        for ban1 in banned_overlap_lowercase]))]
-            #set_acronyms_yescase = [item2 for item1 in set_acronyms_yescase_raw
-            #                        for item2 in item1]
-            #
-            charspans_acronyms_yescase = [(item.start(), (item.end()-1))
-                                        for item in set_acronyms_yescase]
-            check_acronyms_yescase = (len(set_acronyms_yescase) > 0)
-        else:
-            charspans_acronyms_yescase = []
-            check_acronyms_yescase = False
-        #
-        #Check if this text contains case-insensitive acronyms
-        if (((mode is None) or (mode.lower() == "acronym"))
-                    and (exp_a_nocase is not None)):
-            set_acronyms_nocase = list(re.finditer(exp_a_nocase, text,
-                                                    flags=re.IGNORECASE))
-            #set_acronyms_nocase_raw = [list(re.finditer(item1, text,
-            #                                        flags=re.IGNORECASE))
-            #                for item1 in exp_a_nocase
-            #                if (not any([
-            #                    (bool(re.finditer(item1, ban1,
-            #                                            flags=re.IGNORECASE))
-            #                            and (ban1 in text.lower()))
-            #                        for ban1 in banned_overlap_lowercase]))]
-            #set_acronyms_nocase = [item2 for item1 in set_acronyms_nocase_raw
-            #                        for item2 in item1]
-            #
-            charspans_acronyms_nocase = [(item.start(), (item.end()-1))
-                                        for item in set_acronyms_nocase]
-            check_acronyms_nocase = (len(set_acronyms_nocase) > 0)
-        else:
-            charspans_acronyms_nocase = []
-            check_acronyms_nocase = False
-        #
-        #Combine acronym results
-        check_acronyms_all = (check_acronyms_nocase or check_acronyms_yescase)
-        charspans_acronyms_all = (charspans_acronyms_nocase
-                                    + charspans_acronyms_yescase)
-        #
-
-        #Print some notes
-        if do_verbose:
-            print("Keywords: {0}\nKeyword regex:\n{1}".format(keywords, exps_k))
-            print("Acronyms (Case-Sensitive): {0}\nAcronym regex:\n{1}"
-                    .format(acronyms_yescase, exp_a_yescase))
-            print("Acronyms (Case-Insensitive): {0}\nAcronym regex:\n{1}"
-                    .format(acronyms_nocase, exp_a_nocase))
-            print("Keyword bool: {0}\nAcronym bool: {1}"
-                    .format(check_keywords, check_acronyms_all))
-            print("Keyword char. spans: {0}\nAcronym char. spans: {1}"
-                    .format(charspans_keywords, charspans_acronyms_all))
-        #
-
-        #Return booleans
-        return {"bool":(check_acronyms_all or check_keywords),
-                "charspans":(charspans_keywords + charspans_acronyms_all),
-                "bool_acronym_only":check_acronyms_all}
-    #
-
-    ##Method: identify_keyword
-    ##Purpose: Check if text matches to this keyword object; return match inds
     def identify_keyword(self, text, mode=None):
         """
         Method: identify_keyword
@@ -2086,15 +1711,6 @@ class Keyword(_Base):
         if ((mode is None) or (mode.lower() == "keyword")):
             set_keywords = [list(re.finditer(item1, text_mod,
                             flags=re.IGNORECASE)) for item1 in exps_k]
-                            #if (not any([(ban1 in text.lower())
-                            #        for ban1 in banned_overlap_lowercase]))]
-            #set_keywords = [list(re.finditer(item1, text, flags=re.IGNORECASE))
-            #                for item1 in exps_k
-            #                if (not any([
-            #                        (bool(re.finditer(item1, ban1,
-            #                                            flags=re.IGNORECASE))
-            #                            and (ban1 in text.lower()))
-            #                        for ban1 in banned_overlap_lowercase]))]
             charspans_keywords = [(item2.start(), (item2.end()-1))
                                 for item1 in set_keywords
                                 for item2 in item1] #Char. span of matches
@@ -2108,16 +1724,6 @@ class Keyword(_Base):
         if (((mode is None) or (mode.lower() == "acronym"))
                     and (exp_a_yescase is not None)):
             set_acronyms_yescase = list(re.finditer(exp_a_yescase, text_mod))
-            #set_acronyms_yescase_raw = [list(re.finditer(item1, text))
-            #                for item1 in exp_a_yescase
-            #                if (not any([
-            #                    (bool(re.finditer(item1, ban1,
-            #                                            flags=re.IGNORECASE))
-            #                            and (ban1 in text.lower()))
-            #                        for ban1 in banned_overlap_lowercase]))]
-            #set_acronyms_yescase = [item2 for item1 in set_acronyms_yescase_raw
-            #                        for item2 in item1]
-            #
             charspans_acronyms_yescase = [(item.start(), (item.end()-1))
                                         for item in set_acronyms_yescase]
             check_acronyms_yescase = (len(set_acronyms_yescase) > 0)
@@ -2130,17 +1736,6 @@ class Keyword(_Base):
                     and (exp_a_nocase is not None)):
             set_acronyms_nocase = list(re.finditer(exp_a_nocase, text_mod,
                                                     flags=re.IGNORECASE))
-            #set_acronyms_nocase_raw = [list(re.finditer(item1, text,
-            #                                        flags=re.IGNORECASE))
-            #                for item1 in exp_a_nocase
-            #                if (not any([
-            #                    (bool(re.finditer(item1, ban1,
-            #                                            flags=re.IGNORECASE))
-            #                            and (ban1 in text.lower()))
-            #                        for ban1 in banned_overlap_lowercase]))]
-            #set_acronyms_nocase = [item2 for item1 in set_acronyms_nocase_raw
-            #                        for item2 in item1]
-            #
             charspans_acronyms_nocase = [(item.start(), (item.end()-1))
                                         for item in set_acronyms_nocase]
             check_acronyms_nocase = (len(set_acronyms_nocase) > 0)
@@ -2860,11 +2455,7 @@ class Grammar(_Base):
                     tmp_res = self._generate_clauses_from_sentence(
                                                     sentence_NLP=curr_sentence)
                     curr_clauses = tmp_res["clauses"]
-                    list_pos_NLP = tmp_res["list_pos_NLP"]
-                    list_pos_clause = tmp_res["list_pos_clause"]
                     list_iverbs = tmp_res["list_iverbs"]
-                    ids_conjoined = tmp_res["ids_conjoined"]
-                    list_iskeyword = tmp_res["list_iskeyword"]
                     list_isuseless = tmp_res["list_isuseless"]
                     ids_nounchunks = tmp_res["ids_nounchunks"]
                     flags_nounchunks = tmp_res["flags_nounchunks"]
@@ -2872,9 +2463,7 @@ class Grammar(_Base):
                     #Print some notes
                     if do_verbose:
                         print("Sentence {0}: '{1}'".format(jj, curr_sentence))
-                        print("NLP p.o.s.:\n{0}".format(list_pos_NLP))
                         print("Clausal p.o.s.:\n{0}".format(list_pos_clause))
-                        print("Conjoined ids:\n{0}".format(ids_conjoined))
                         print("Noun-chunk ids:\n{0}".format(ids_nounchunks))
                         print("Noun-chunks:")
                         for curr_ind in set(ids_nounchunks):
@@ -2895,12 +2484,9 @@ class Grammar(_Base):
                     #
 
                     #Store the clauses and information
-                    forest[ii][jj] = {"pos_NLP":list_pos_NLP,
-                                        "pos_clause":list_pos_clause,
-                                        "flags":flags_nounchunks,
+                    forest[ii][jj] = {"flags":flags_nounchunks,
                                         "ids_nounchunk":ids_nounchunks,
                                         "iverbs":list_iverbs,
-                                        "iskeyword":list_iskeyword,
                                         "isuseless":list_isuseless,
                                         "clauses":curr_clauses}
                     #
@@ -2911,13 +2497,6 @@ class Grammar(_Base):
                     print("\n---\nGrammar structure for this cluster complete!")
                     print("Modifying structure based on given modes ({0})..."
                             .format(which_modes))
-                #
-
-                #Generate diff. versions of grammar structure (orig, trim, anon...)
-                #for curr_mode in which_modes:
-                #    forest[curr_mode][ii] = self._modify_structure(mode=curr_mode,
-                #                                    struct_verbs=curr_struct_verbs,
-                #                                    struct_words=curr_struct_words)
                 #
             #
         #
@@ -2952,7 +2531,7 @@ class Grammar(_Base):
 
     ##Method: _add_word_to_clause()
     ##Purpose: Add word, such as sentence subjects, to corresponding verb clause
-    def _add_word_to_clause(self, word, i_verb, sentence_NLP, clauses_text, clauses_ids, list_pos_NLP, list_pos_clause, list_iverbs, ids_conjoined, ids_nounchunks):
+    def _add_word_to_clause(self, word, i_verb, sentence_NLP, clauses_text, clauses_ids, list_pos_clause, list_iverbs, ids_conjoined, ids_nounchunks):
         """
         Method: _get_verb_connector
         WARNING! This method is *not* meant to be used directly by users.
@@ -3012,7 +2591,6 @@ class Grammar(_Base):
             #
             #Copy over traits of the conjoined root, if valid chunks
             if (new_chunk is not None):
-                list_pos_NLP[i_word] = list_pos_NLP[i_root_conj]
                 for curr_ind in new_chunk["ids"]:
                     list_pos_clause[curr_ind] = list_pos_clause[i_root_conj]
                 #
@@ -3498,7 +3076,6 @@ class Grammar(_Base):
         #
 
         #Initialize storage to hold key sentence information
-        list_pos_NLP = [None]*num_words
         list_pos_clause = [None]*num_words
         list_iverbs = [None]*num_words
         list_ischecked = np.zeros(num_words).astype(bool)
@@ -3570,7 +3147,7 @@ class Grammar(_Base):
                 clauses_text=dict_clauses_text, clauses_ids=dict_clauses_ids,
                 list_iskeyword=list_iskeyword, ids_conjoined=ids_conjoined,
                 ids_nounchunks=ids_nounchunks,flags_nounchunks=flags_nounchunks,
-                list_ischecked=list_ischecked, list_pos_NLP=list_pos_NLP,
+                list_ischecked=list_ischecked,
                 list_pos_clause=list_pos_clause, list_iverbs=list_iverbs)
         #
 
@@ -3604,7 +3181,7 @@ class Grammar(_Base):
 
         #Return the dictionary of clauses
         return {"clauses":{"text":dict_clauses_text, "ids":dict_clauses_ids},
-                "list_pos_NLP":list_pos_NLP, "list_pos_clause":list_pos_clause,
+                "list_pos_clause":list_pos_clause,
                 "ids_conjoined":ids_conjoined, "list_isuseless":list_isuseless,
                 "list_iskeyword":list_iskeyword,"ids_nounchunks":ids_nounchunks,
                 "flags_nounchunks":flags_nounchunks,
@@ -3925,7 +3502,7 @@ class Grammar(_Base):
 
     ##Method: _recurse_NLP_tree
     ##Purpose: Recursively explore each word of NLP-sentence and characterize
-    def _recurse_NLP_tree(self, node, i_verb, sentence_NLP, clauses_text, clauses_ids, list_pos_NLP, list_pos_clause, list_iverbs, list_ischecked, list_iskeyword, list_isuseless, ids_conjoined, ids_nounchunks, flags_nounchunks):
+    def _recurse_NLP_tree(self, node, i_verb, sentence_NLP, clauses_text, clauses_ids, list_pos_clause, list_iverbs, list_ischecked, list_iskeyword, list_isuseless, ids_conjoined, ids_nounchunks, flags_nounchunks):
         """
         Method: _get_verb_connector
         WARNING! This method is *not* meant to be used directly by users.
@@ -4041,7 +3618,6 @@ class Grammar(_Base):
         #
 
         #Characterize current node
-        list_pos_NLP[i_node] = node.pos_ #Store current NLP part-of-speech
         list_iverbs[i_node] = i_verb
         #
 
@@ -4055,7 +3631,7 @@ class Grammar(_Base):
                     (tmp_ind not in clauses_ids[i_verb]["clause_nounchunks"])):
                 self._add_word_to_clause(word=node, clauses_text=clauses_text,
                         clauses_ids=clauses_ids, sentence_NLP=sentence_NLP,
-                        ids_conjoined=ids_conjoined, list_pos_NLP=list_pos_NLP,
+                        ids_conjoined=ids_conjoined,
                         list_pos_clause=list_pos_clause,list_iverbs=list_iverbs,
                         i_verb=i_verb, ids_nounchunks=ids_nounchunks)
 
@@ -4091,7 +3667,7 @@ class Grammar(_Base):
         #For left nodes
         for left_node in node.lefts:
             self._recurse_NLP_tree(node=left_node, sentence_NLP=sentence_NLP,
-                    list_pos_NLP=list_pos_NLP, list_pos_clause=list_pos_clause,
+                    list_pos_clause=list_pos_clause,
                     list_iverbs=list_iverbs, ids_conjoined=ids_conjoined,
                     ids_nounchunks=ids_nounchunks,list_iskeyword=list_iskeyword,
                     flags_nounchunks=flags_nounchunks,
@@ -4102,7 +3678,7 @@ class Grammar(_Base):
         #For right nodes
         for right_node in node.rights:
             self._recurse_NLP_tree(node=right_node, sentence_NLP=sentence_NLP,
-                    list_pos_NLP=list_pos_NLP, list_pos_clause=list_pos_clause,
+                    list_pos_clause=list_pos_clause,
                     list_iverbs=list_iverbs, ids_conjoined=ids_conjoined,
                     ids_nounchunks=ids_nounchunks,list_iskeyword=list_iskeyword,
                     flags_nounchunks=flags_nounchunks, i_verb=i_verb,
@@ -4206,11 +3782,6 @@ class Grammar(_Base):
             word_dep = curr_word.dep_
             word_pos = curr_word.pos_
             word_tag = curr_word.tag_
-
-            #Determine if passive tense and store if applicable
-            #if (word_dep in config.deps_passive):
-            #    type_verbs.append("PASSIVE")
-            #
 
             #Determine main tense of this word
             if (word_tag in tags_past): #For past tense
