@@ -4524,7 +4524,6 @@ class Operator(_Base):
         self._store_info(name, "name")
         self._store_info(keyword_objs, "keyword_objs")
         self._store_info(do_verbose, "do_verbose")
-        self._store_info(load_check_truematch, "load_check_truematch")
         self._store_info(do_verbose_deep, "do_verbose_deep")
 
         #Load and process ambiguous (ambig.) data, if so requested
@@ -5092,122 +5091,6 @@ class Operator(_Base):
         #Print some notes
         if do_verbose:
             print("Run of train_model_ML() complete!\nError string returned.")
-        #
-        return str_err
-    #
-
-    ##Method: train_model_Rule
-    ##Purpose: Process text into modifs and then train ML model on the modifs
-    def train_model_Rule(self, dir_model, name_model, keyword_objs, mapper, do_reuse_run, do_check_truematch, mode_TVT="uniform", fraction_TVT=[0.8, 0.1, 0.1], do_shuffle=True, seed_TVT=10, dict_grammars=None, dict_texts=None, do_verbose=None, do_verbose_deep=None):
-        """
-        Method: train_model_Rule
-        Purpose:
-          - !
-        Arguments:
-          - do_verbose [bool (default=False)]:
-            - Whether or not to print surface-level log information and tests.
-          - do_verbose_deep [bool (default=False)]:
-            - Whether or not to print inner log information and tests.
-        Returns:
-          - dict:
-            - !: !
-        """
-        #Fetch global variables
-        classifier = self._get_info("classifier")
-        ext_Rule = config.name_model_extension_Rule
-        savename_model = (name_model + ext_Rule + ".npy")
-        folders_TVT = config.folders_TVT
-        folder_train = folders_TVT["train"]
-        dict_grammars = None
-        if (do_verbose is None):
-            do_verbose = self._get_info("do_verbose")
-        if (do_verbose_deep is None):
-            do_verbose_deep = self._get_info("do_verbose_deep")
-        #
-        #Print some notes
-        if do_verbose:
-            print("\n> Running train_model_Rule()!")
-        #
-
-        #Build model directory, if does not already exist
-        if (not os.path.exists(dir_model)):
-            os.mkdir(dir_model)
-        #
-
-        #Partition the texts into TVT bins
-        dict_dirinfo = classifier.generate_directory_TVT(
-                        dir_model=dir_model,
-                        fraction_TVT=fraction_TVT, mode_TVT=mode_TVT,
-                        dict_texts=dict_texts, do_shuffle=do_shuffle,
-                        seed=seed_TVT, do_verbose=do_verbose,
-                        do_write_directory_TVT=False)
-        #Print some notes
-        if do_verbose:
-            print("Partitioned dataset into TVT bins.")
-        #
-
-        #Extract texts for training from original set
-        dict_text_train = {key:dict_texts[key] for key in dict_texts
-                if (dict_dirinfo[dict_texts[key]["bibcode"]]["folder_TVT"]
-                    == folder_train)
-                }
-        #
-        if do_verbose:
-            print("Extracted partitioned texts for training.")
-            print("{0} of {1} entries will be used for training."
-                    .format(len(dict_text_train), len(dict_texts)))
-        #
-
-        #Train a new rule-based model
-        is_exist = os.path.exists(os.path.join(dir_model, savename_model))
-        #If model or output already exists, either print note or raise error
-        if is_exist:
-            str_err = None
-            #Print some notes
-            if do_verbose:
-                print("Rule model already exists for {0} in {1}."
-                        .format(name_model, dir_model))
-            #
-            #Skip ahead if previous data should be reused
-            if do_reuse_run:
-                print("Reusing the existing Rule model in {0}."
-                        .format(dir_model))
-                pass
-            #
-            #Otherwise, raise error if not to reuse previous run data
-            else:
-                raise ValueError(("Err: Rule model/output already exists"
-                                +" in {0}. Either delete it, or rerun method"
-                                +" with do_reuse_run=True.").format(dir_model))
-            #
-        #
-        #Otherwise, train new ML model on the TVT directories
-        else:
-            #Print some notes
-            if do_verbose:
-                print("Training new Rule model on training data in {0}..."
-                        .format(dir_model))
-            #
-            #Train new Rule model
-            str_err = classifier.train_Rules(dir_model=dir_model,
-                            name_model=name_model, mapper=mapper,
-                            do_check_truematch=do_check_truematch,
-                            dict_grammar_train=dict_grammars,
-                            dict_text_train=dict_text_train,
-                            do_verbose=do_verbose,
-                            keyword_objs=keyword_objs) #, do_return_model=True)
-            #
-            #Print some notes
-            if do_verbose:
-                print("New Rule model trained and stored in {0}."
-                        .format(dir_model))
-            #
-        #
-
-        #Exit the method with error string
-        #Print some notes
-        if do_verbose:
-            print("Run of train_model_Rule() complete!\nError string returned.")
         #
         return str_err
     #
