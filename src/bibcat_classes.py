@@ -2289,7 +2289,6 @@ class Grammar(_Base):
         do_verbose = self._get_info("do_verbose")
         #Extract all computed modes, if none specified
         if (which_modes is None):
-            #which_modes = [key for key in forest]
             which_modes = [key for key in dict_modifs_orig]
         #
         #Print some notes
@@ -2342,8 +2341,6 @@ class Grammar(_Base):
 
         ##Store containers and information
         #Initialize storage for the grammar tree
-        #forest = {mode:{ii:None for ii in range(0, num_clusters)}
-        #        for mode in which_modes}
         forest = [None for ii in range(0, num_clusters)]
         dict_modifs = {mode:None for mode in which_modes}
         #
@@ -2459,8 +2456,6 @@ class Grammar(_Base):
             #
             print("\n---------------\n")
         #
-
-        #print(checkthatallkeywordwordsincluded_errifnot)
         return
     #
 
@@ -2482,8 +2477,7 @@ class Grammar(_Base):
         #Noun-chunk for this word
         new_chunk = self._get_nounchunk(word=word,
                                 sentence_NLP=sentence_NLP,
-                                ids_nounchunks=ids_nounchunks) #,
-                                #do_make_new_if_none=True)
+                                ids_nounchunks=ids_nounchunks)
         #
         #Booleans
         is_conjoined = (self._is_pos_word(word, pos="CONJOINED")
@@ -2559,16 +2553,6 @@ class Grammar(_Base):
                 raise ValueError("Err: Missing condition?")
             #
 
-            #Find verb index for this word so as to look up correct verb-clause
-            #for curr_root in roots:
-            #    #Look for nearest root verb
-            #    if (self._is_pos_word(curr_root, pos="VERB",
-            #                            ids_nounchunks=ids_nounchunks,
-            #                            do_exclude_nounverbs=True)):
-            #        #Extract index and stop search
-            #        #i_verb = curr_root.i
-            #        break #Exit the loop
-            #
             #Fill in notes for this noun-chunk
             for curr_ind in new_chunk["ids"]:
                 list_pos_clause[curr_ind] = pos_clause
@@ -2582,15 +2566,6 @@ class Grammar(_Base):
         #For auxes
         elif is_aux:
             pos_clause = "auxs"
-            #Find verb index for this word so as to look up correct verb-clause
-            #for curr_root in roots:
-            #    #Look for nearest root verb
-            #    if (self._is_pos_word(curr_root, pos="VERB",
-            #                            ids_nounchunks=ids_nounchunks,
-            #                            do_exclude_nounverbs=True)):
-            #        #Extract index and stop search
-            #        i_verb = curr_root.i
-            #        break #Exit the loop
             #
             #Fill in notes for this aux
             list_pos_clause[i_word] = pos_clause
@@ -2704,17 +2679,6 @@ class Grammar(_Base):
             #Check this span has assigned noun-chunks
             is_found = all([(ids_nounchunks[ind] is not None)
                             for ind in curr_inds])
-            #
-            #Throw error if span not found within any noun-chunks
-            #if (not is_found):
-            #    raise ValueError(
-            #        ("Err: Keyword not in noun-chunks!!\n"
-            #            +"{0}\n{1}\n{2}\n{3}\n{4}\n{5}")
-            #                    .format(sentence_NLP, noun_chunks, check_spans,
-            #                            curr_inds, ids_nounchunks, i_shift))
-            #
-            #If the above error is ever called, could use code below
-            #But should be carefully tested first!
             #
             #Add/Overwrite as own noun-chunk if not fully in noun-chunk already
             if (not is_found):
@@ -2879,7 +2843,6 @@ class Grammar(_Base):
         sets_allmatter = list(set((sets_subjmatter + sets_objmatter)))
 
         #Set verb class
-        #verbclass = self._categorize_verb(verb=clause_text["verb"])
         verbclass_raw = self._categorize_verb(verb=clause_text["verb"])
         if (verbclass_raw is None):
             verbclass = []
@@ -2890,7 +2853,6 @@ class Grammar(_Base):
         #
 
         #Set verb type
-        #verbtype = clause_text["verbtype"]
         verbtype_raw = clause_text["verbtype"]
         if (verbtype_raw is None):
             verbtype = []
@@ -2929,22 +2891,6 @@ class Grammar(_Base):
         #
 
         #Build paragraph-string representation of the given rule
-        ###BLOCKED: 2024-05-29: Too formulaic
-        #if do_sentence:
-        #    str_rule = "" #"Rule:"
-        #    tmplist = sorted(list(rule.keys()))
-        #    for ii in range(0, len(tmplist)):
-        #        curr_key = tmplist[ii]
-        #        str_rule += "{0} = (".format(curr_key)
-        #        str_rule += ", ".join(sorted(rule[curr_key]))
-        #        str_rule += ")"
-        #        if (ii < (len(tmplist) - 1)):
-        #            str_rule += "; "
-        #        else:
-        #            str_rule += "."
-                #
-            #
-        #
         if do_sentence:
             dict_conv = {"allmatter":"nouns", "verbclass":"verb types",
                         "verbtypes":"verb tenses",
@@ -3125,7 +3071,7 @@ class Grammar(_Base):
 
     ##Method: _get_nounchunk()
     ##Purpose: Retrieve noun chunk assigned the given id (index)
-    def _get_nounchunk(self, word, sentence_NLP, ids_nounchunks): #, do_make_new_if_none=False):
+    def _get_nounchunk(self, word, sentence_NLP, ids_nounchunks):
         """
         Method: _get_nounchunks
         WARNING! This method is *not* meant to be used directly by users.
@@ -3139,25 +3085,7 @@ class Grammar(_Base):
         chunkid = ids_nounchunks[i_word] #Id of current wordchunk
 
         #Return singular word if noun-esque but no noun-chunk for this word
-        if (chunkid is None): # and
-            #        (word_dep.endswith("subj") or word_dep.endswith("obj"))):
-            #return None #{"text":word.text, "ids":[i_word], "chunk_id":None}
-            #If new one requested, make new one
-            #if do_make_new_if_none:
-                #Set values for new chunk
-            #    chunk_text = word.text
-            #    word_ids = [i_word]
-            #    chunkid = (max([item for item in ids_nounchunks
-            #                    if (item is not None)])
-            #                + 1) #Increment by one to start new chunk
-            #    ids_nounchunks[i_word] = chunkid
-                #Return the newly created noun-chunk information
-            #    return {"text":chunk_text, "ids":word_ids, "chunk_id":chunkid}
-            #
-            #Otherwise, return None
-            #else:
-            #    return None
-            #
+        if (chunkid is None):
             return None
         #
 
@@ -3295,9 +3223,6 @@ class Grammar(_Base):
             for ii in range(0, num_sents):
                 curr_clauses_ids = cluster_info[ii]["clauses"]["ids"]
                 #Sort clausal keys by verb hierarchical order
-                #list_iverbs_sorted = list(curr_clauses_ids.keys())
-                #list_iverbs_sorted.sort(key=lambda x
-                #                            :curr_clauses_ids[x]["order"])
                 list_iverbs_all = list(curr_clauses_ids.keys())
 
                 #Fetch ids of noun-chunks flagged as important
@@ -3307,16 +3232,12 @@ class Grammar(_Base):
                                             and (curr_flags[ind]["is_any"]))]
 
                 #Fetch keys for clauses marked as important
-                #list_iverbs_imp_raw = [ind for ind in list_iverbs_sorted
                 list_iverbs_imp_raw = [ind for ind in list_iverbs_all
                                 if any([(item in
                                     curr_clauses_ids[ind]["clause_nounchunks"])
                                     for item in curr_imp_chunkids])]
 
                 #Now add in keys that precede imp. clauses in heirarchical order
-                #list_iverbs_imp = [
-                #        list_iverbs_sorted[0:list_iverbs_sorted.index(item)+1]
-                #        for item in list_iverbs_imp_raw]
                 list_iverbs_imp = [curr_clauses_ids[item]["chain_iverbs"]
                                     for item in list_iverbs_imp_raw
                                 ] #Gather verbs that branch down to imp. verbs
@@ -3388,9 +3309,6 @@ class Grammar(_Base):
             for ii in range(0, num_sents):
                 #Extract forest for current sentence
                 curr_forest = cluster_info[ii]
-                #curr_reprs = [None]*len(curr_forest)
-                #Iterate through forest for current sentence
-                #for jj in range(0, len(curr_forest)):
                 curr_info = curr_forest #[jj]
                 #Convert current clause into rule set
                 curr_rules_raw = [item
@@ -3405,9 +3323,6 @@ class Grammar(_Base):
                 curr_repr = self._convert_rule_to_str(curr_ruleset,
                                                             do_sentence=True)
                 #
-                #Join the rule representations together for this sentence
-                #str_sent = "; ".join(curr_reprs)
-                #str_sent +=  "."
                 #Store the assembled sentence of rule representations
                 sents_updated[ii] = curr_repr #str_sent
             #
@@ -3467,27 +3382,6 @@ class Grammar(_Base):
             #If no subjects to the left, pull subject from root as able
             tmp_bool = any([self._is_pos_word(item, pos="SUBJECT")
                             for item in node.lefts])
-            #if ((not tmp_bool) and (len(roots) > 0)):
-            #    if self._is_pos_word(roots[0], pos="NOUN"):
-                    #Extract noun-chunk for this noun
-            #        new_chunk = self._get_nounchunk(word=roots[0],
-            #                                sentence_NLP=sentence_NLP,
-            #                                ids_nounchunks=ids_nounchunks)
-                    #
-                    #Add to verb-clause
-            #        clauses_text[i_verb]["subjects"].append(new_chunk["text"])
-            #        clauses_ids[i_verb]["subjects"].append(new_chunk["ids"])
-            #        clauses_ids[i_verb]["clause_nounchunks"].append(
-            #                                            new_chunk["chunk_id"])
-            #    elif self._is_pos_word(roots[0], pos="VERB"): #If conjoined
-                    #Add to verb-clause
-            #        clauses_text[i_verb]["subjects"] = clauses_text[
-            #                                roots[0].i-i_shift]["subjects"]
-            #        clauses_ids[i_verb]["subjects"] = clauses_ids[
-            #                                roots[0].i-i_shift]["subjects"]
-            #        tmp_list = list(set([ids_nounchunks[item[0]]
-            #                    for item in clauses_ids[i_verb]["subjects"]]))
-            #        clauses_ids[i_verb]["clause_nounchunks"] += tmp_list
             if ((not tmp_bool) and (len(roots) > 0)):
                 for curr_root in roots:
                     if self._is_pos_word(curr_root, pos="NOUN"):
@@ -3738,11 +3632,6 @@ class Grammar(_Base):
                                         word_pos, word_tag,
                                         list(curr_word.ancestors)))
             #
-            #    raise ValueError(("Err: Tag {4} of word {0} unknown!\n{1}"
-            #                    +"\ndep={2}, pos={3}, tag={4}\nRoots: {5}")
-            #                .format(curr_word, sentence_NLP, word_dep,
-            #                        curr_word.pos_, word_tag,
-            #                        list(curr_word.ancestors)))
 
             #Store current tense
             type_verbs.append(tense)
