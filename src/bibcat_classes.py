@@ -2358,7 +2358,8 @@ class Grammar(_Base):
         #
 
         ##Build grammar structures for NLP-sentences in each cluster, if needed
-        if (any([dict_do_forest[item] for item in which_modes])):
+        if (any([dict_do_forest[item2] for item1 in which_modes
+                for item2 in item1.lower().split("_")])):
             #Iterate through clusters
             for ii in range(0, num_clusters): #Iterate through NLP-sentences
                 #Prepare variables and storage for current cluster
@@ -2885,6 +2886,7 @@ class Grammar(_Base):
     def _convert_rule_to_str(self, rule, do_sentence):
         ##Extract global variables
         do_verbose = self._get_info("do_verbose_deep")
+        dict_conv = config.dict_conv_ruleterm_to_str
         #Print some notes
         if do_verbose:
             print("\n> Converting rule to string representation.")
@@ -2892,13 +2894,6 @@ class Grammar(_Base):
 
         #Build paragraph-string representation of the given rule
         if do_sentence:
-            dict_conv = {"allmatter":"nouns", "verbclass":"verb types",
-                        "verbtypes":"verb tenses",
-                        "is_etal":"other authors", "is_keyword":"keywords",
-                        "is_pron_1st":"our authors", "is_term_fig":"figures",
-                        "is_pron_3rd":"other people", "be":"being", "has":"having", "know":"knowing", "plot":"plotting", "science":"analyzing", "datainfluenced":"influencing",
-                        "future":"future", "past":"past", "purpose":"purpose",
-                        "present":"present"}
             str_rule = "For this sentence, " #"Rule:"
             tmplist = sorted(list(rule.keys()))
             for ii in range(0, len(tmplist)):
@@ -5709,138 +5704,6 @@ class Performance(_Base):
         return dict_evaluations
     #
 
-    ##Method: _generate_classifications
-    ##Purpose: Generate performance evaluation of full classification pipeline (text to rejection/verdict)
-    def old_2024_03_04_before_split_evals_generate_classifications(self, operators, dicts_texts, mappers, buffers, is_text_processed, do_verify_truematch, do_raise_innererror, do_reuse_run, do_save_evaluation=False, filepath_output=None, fileroot_evaluation=None, print_freq=25, do_verbose=False, do_verbose_deep=False):
-        """
-        Method: _generate_classifications
-        Purpose:
-          - !
-        Arguments:
-          - !
-          - do_verbose [bool (default=False)]:
-            - Whether or not to print surface-level log information and tests.
-          - do_verbose_deep [bool (default=False)]:
-            - Whether or not to print inner log information and tests.
-        Returns:
-          - dict:
-            - !
-        """
-        ##Fetch global variables
-        if (do_verbose is None):
-            do_verbose = self._get_info("do_verbose")
-        if (do_verbose_deep is None):
-            do_verbose_deep = self._get_info("do_verbose_deep")
-        #
-        num_ops = len(operators)
-        if (do_save_evaluation or do_reuse_run):
-            save_filepath = os.path.join(filepath_output,
-                                        (fileroot_evaluation+".npy"))
-        #
-
-        #Throw error if operators do not have unique names
-        if (len(set([item._get_info("name") for item in operators])) !=num_ops):
-            raise ValueError("Err: Please give each operator a unique name."
-                        +"\nCurrently, the names are:\n{0}"
-                        .format([item._get_info("name") for item in operators]))
-        #
-        #Print some notes
-        if do_verbose:
-            print("\n> Running _generate_classifications()!")
-            print("Iterating through Operators to classify each set of text...")
-        #
-
-        ##Load any pre-existing evaluation, if so requested
-        if (do_reuse_run and (os.path.exists(save_filepath))):
-            #Print some notes
-            if do_verbose:
-                print("Previous evaluation exists at {0}\nLoading that eval..."
-                        .format(save_filepath))
-            #
-            dict_evaluations = np.load(save_filepath, allow_pickle=True).item()
-            return dict_evaluations
-        #
-
-        ##Use each operator to classify the set of texts and measure performance
-        dict_evaluations = {item._get_info("name"):None for item in operators}
-        for ii in range(0, num_ops):
-            curr_op = operators[ii] #Current operator
-            curr_name = curr_op._get_info("name")
-            curr_data = dicts_texts[ii]
-            #
-            #Print some notes
-            if do_verbose:
-                print("Classifying with Operator #{0}...".format(ii))
-            #
-
-            #Unpack the classified information for this operator
-            curr_keys = list(curr_data.keys()) #All keys for accessing texts
-            curr_actdicts = [curr_data[curr_keys[jj]]
-                            for jj in range(0, len(curr_keys))] #Forced order
-            #Load in as either raw or preprocessed data
-            if is_text_processed: #If given text preprocessed
-                curr_texts = None
-                curr_modifs = [curr_data[curr_keys[jj]]["text"]
-                                for jj in range(0, len(curr_keys))]
-                curr_forests = [curr_data[curr_keys[jj]]["forest"]
-                                for jj in range(0, len(curr_keys))]
-            else: #If given text needs to be preprocessed
-                curr_texts = [curr_data[curr_keys[jj]]["text"]
-                                for jj in range(0, len(curr_keys))]
-                curr_modifs = None
-                curr_forests = None
-            #
-
-            #Classify texts with current operator
-            curr_results = curr_op.classify_set(texts=curr_texts,
-                                modifs=curr_modifs, forests=curr_forests,
-                                buffer=buffers[ii],
-                                do_check_truematch=do_verify_truematch,
-                                do_raise_innererror=do_raise_innererror,
-                                print_freq=print_freq,
-                                do_verbose=do_verbose,
-                                do_verbose_deep=do_verbose_deep)
-            #
-            #Print some notes
-            if do_verbose:
-                print("Classification complete for Operator #{0}.".format(ii))
-                print("Generating the performance counter...")
-            #
-
-            #Store the current results
-            dict_evaluations[curr_name] = {"actual_results":curr_actdicts,
-                                        "measured_results":curr_results}
-            #
-
-            #Print some notes
-            if do_verbose:
-                print("All work complete for Operator #{0}.".format(ii))
-            #
-        #
-        #Print some notes
-        if do_verbose:
-            print("!")
-        #
-
-        ##Save the evaluation components, if so requested
-        if do_save_evaluation:
-            #tmp_filepath = os.path.join(filepath_output,
-            #                            (fileroot_evaluation+".npy"))
-            #np.save(tmp_filepath, dict_evaluations)
-            np.save(save_filepath, dict_evaluations)
-            #
-            #Print some notes
-            if do_verbose:
-                print("\nEvaluation saved at: {0}".format(save_filepath))
-        #
-
-        ##Return the evaluation components
-        if do_verbose:
-            print("\nRun of _generate_classifications() complete!")
-        #
-        return dict_evaluations
-    #
-
     ##Method: _generate_performance_counter
     ##Purpose: Generate performance counter for set of measured classifications vs actual classifications
     def _generate_performance_counters(self, operators, mappers, classifications, thresholds=None, filepath_output=None, do_save_misclassif=None, fileroot_misclassif=None, print_freq=25, do_verbose=False, do_verbose_deep=False):
@@ -5944,7 +5807,6 @@ class Performance(_Base):
 
                     #Extract measured classif and apply any thresholds
                     curr_measval_raw = curr_measdict_orig[lookup]["verdict"]
-                    #curr_measval = curr_measval_raw.lower().replace("_","")
                     #If no threshold given, use original verdict
                     if ((thresholds is None) or (thresholds[ii] is None)):
                         if ((curr_mapper is not None)
