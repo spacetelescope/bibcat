@@ -10,7 +10,7 @@ inputs:
 
 output:
   root_path: $BIBCAT_OUTPUT_DIR
-  name_model: my_test_run_2
+  name_model: my_test_run
   folders_TVT: {train: dir_train, validate: dir_validate, test: dir_test}
   tfoutput_prefix: tfoutput_
 

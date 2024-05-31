@@ -2,11 +2,10 @@
 
 ## [Unreleased]
 
-- Added new `click` cli for `bibcat`
-- Consolidated all config into a single `bibcat_config.yaml` YAML file.
-- Moved `bibcat` output to outside the package directory
-- Added support for user custom configuration and settings
-- Migrated code to use new `config` object, a dottable dictionary to retain the old config syntax
+- A few bug fixes
+    - `_add_word()` temporary fix
+    - `merger` erorr fix for config parameters
+    - `get_config() error fix
 
 
 Bibcat to do list
@@ -23,7 +22,13 @@ Bibcat to do list
     - Deleted all previous codes and files for a fresh start
 
 ### Changed
-- PR #14
+- [PR #17 # 18]
+    - Consolidated all config into a single `bibcat_config.yaml` YAML file.
+    - Moved `bibcat` output to outside the package directory
+    - Added support for user custom configuration and settings
+    - Migrated code to use new `config` object, a dottable dictionary to retain the old config syntax
+
+- [PR #14]
     - fixed various type annotation errors while refactoring `classify_papers.py` and other related modules such as `performance.py` or `operator.py`.
     - all output results will be saved under a subdirectory of the given model run in the `output` directory.
     - classify_papers.py will produce both evaluation results and classification results per method, rather than combined results of both the RB and ML methods. This way will allow users to choose a classification method using CLI once CLI is enabled.
@@ -67,8 +72,10 @@ Bibcat to do list
     - updated formatting and styling
 
 ### Added
+- [PR #18] 
+    - Added new `click` cli for `bibcat`
 
-- PR #14
+- [PR #14]
     - Refactored `classify_papers.py` and created a few modules, which are called in `classify_papers.py`. These modules could be executed based on CLI options once they are employed.
         - `fetch_papers.py` : fetching papers from the `dir_test` data directory to the bibcat pipeline. This needs an update to fetch operational data using the `dir_datasets` argument in this module.
         - `operate_classifier.py`: the main purpose of this module is to use only one method, classify the input papers, and output classification results as a JSON file for operation.
