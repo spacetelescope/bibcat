@@ -1,11 +1,7 @@
 import json
 from typing import Dict
 
-#from bibcat import config
-#from bibcat import model_settings as settings
-
 from bibcat import config
-
 from bibcat import parameters as params
 from bibcat.core.operator import Operator
 
@@ -18,9 +14,10 @@ def load_source_dataset(do_verbose: bool):
     Load the original source dataset that is a combined set of papertrack classification and ADS full text. Return a dictionary of the JSON content.
     """
     with open(config.inputs.path_source_data, "r") as openfile:
+        print(f"Loading source dataset: {config.inputs.path_source_data}")
         source_dataset = json.load(openfile)
         if do_verbose:
-            len(source_dataset)
+            print(f"{len(source_dataset)} papers have been loaded")
 
     return source_dataset
 
@@ -29,6 +26,7 @@ def streamline_dataset(source_dataset: Dict, operator_ML: Operator, do_verbose_t
     """
     Organize a new version of the data with: key:text,class,id,mission structure
     """
+    print("Start streamlining dataset:")
     # keep track of used bibcodes avoiding duplicate dataset entries
     list_bibcodes = []
 
@@ -128,7 +126,6 @@ def streamline_dataset(source_dataset: Dict, operator_ML: Operator, do_verbose_t
         print(curr_kobj)
         print("")
     print("")
-    print("Number of valid text entries:")
-    print(len(dict_texts))
+    print(f"{len(dict_texts)} of valid text entries have been streamlined.")
 
     return dict_texts

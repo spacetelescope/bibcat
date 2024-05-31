@@ -15,7 +15,6 @@ import os
 import time
 
 from bibcat import config
-#from bibcat import model_settings as settings
 from bibcat import parameters as params
 from bibcat.core import operator
 from bibcat.core.classifiers import ml
@@ -30,9 +29,10 @@ dir_model = os.path.join(config.paths.models, name_model)
 
 
 def build_model() -> None:
+    print(f"Starting buiding and train {dir_model}!")
     if os.path.exists(dir_model):
         print(
-            f"{dir_model} already exists. Change the model name in config.py. if you want to build and train a new model"
+            f"{dir_model} already exists. Change the model name in bibcat_config.yaml. if you want to build and train a new model"
         )
 
     # do_check_truematch: the codebase that have unknown ambiguous phrases, then a note will be
@@ -102,4 +102,3 @@ def build_model() -> None:
     # Save the output error string to a file
     with open(filesave_error, "w") as openfile:
         openfile.write(str_err)
-

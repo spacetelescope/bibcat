@@ -538,7 +538,7 @@ class Operator(Base):
 
         # Print some notes
         if do_verbose:
-            print("\n> Running train_model_ML()!")
+            print(f"\n> Running train_model_ML()for {name_model}!")
 
         # Throw error if invalid classifier given
         allowed_types = ["MachineLearningClassifier"]

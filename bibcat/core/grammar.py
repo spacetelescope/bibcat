@@ -433,6 +433,7 @@ class Grammar(Base):
             if is_pos or is_conj:
                 # Throw error if pos already identified; should just be 1 valid
                 if pos_main is not None:
+                    continue
                     #            and ("ROOT" not in [pos_main, check_pos])):
                     # Take the dominant p.o.s. for allowed cases
                     # This catches weird overlap cases due to ambig. English

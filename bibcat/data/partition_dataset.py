@@ -5,6 +5,7 @@ This module splits the streamlined dataset into training,
 validation, and testing datasets for each run for ML classifier.
 
 """
+
 import collections
 import os
 from typing import Any
@@ -25,7 +26,11 @@ def generate_directory_TVT(
 
     # Load global variables
     dataset = dict_texts
-    name_folderTVT = [config.output.folders_TVT["train"], config.output.folders_TVT["validate"], config.output.folders_TVT["test"]]
+    name_folderTVT = [
+        config.output.folders_TVT["train"],
+        config.output.folders_TVT["validate"],
+        config.output.folders_TVT["test"],
+    ]
 
     num_TVT = len(name_folderTVT)
     if num_TVT != len(fraction_TVT):
@@ -40,7 +45,7 @@ def generate_directory_TVT(
 
     # Print some notes
     if do_verbose:
-        print("\n> Running generate_directory_TVT().")
+        print(f"\n> Running generate_directory_TVT() with fraction_TVT = {fraction_TVT}.")
         if do_shuffle:
             print("Random seed set to: {0}".format(seed))
 
