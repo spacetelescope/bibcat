@@ -1,11 +1,21 @@
 """
 :title: evaluate_basic_performance.py
 
+
+This module performs the basic evaluation performance results such as a confusion matrix
+(if ML method) and result numpy save files.
+
+- Context: the input full text JSON file (papertrack + ADS full texts) is
+  called via config.inputs.path_source_data configured in bibcat/config.py and is used for
+  training, validating, and testing the trained model.
+
+- Run example: `bibcat evaluate` or `bibcat -n ML`
+
 This module employs
 
     1) performance.evaluate_performance_basic() to generates a file of dictionary of the basic performance evaluation information and a plot of a confusion matrix after the classification of input test texts conducted based on a trained ML model or the rule-based model. It script also produces a list of the mis-classified papers.
 
-    2) performance.evaluate_performance_uncertainty() to
+    2) performance.evaluate_performance_uncertainty() to generate uncertainty estimates.
 
 All the output are saved in the output folder.
 
@@ -17,71 +27,127 @@ All the output are saved in the output folder.
 
 """
 
+import os
+
+import numpy as np
 from numpy import float64
 from numpy.typing import NDArray
 
+from bibcat import config
+from bibcat import parameters as params
 from bibcat.core import operator, performance
+from bibcat.core.classifiers import ml, rules
+from bibcat.core.classifiers.textdata import ClassifierBase
+from bibcat.fetch_papers import fetch_papers
 
 
-def generate_performance_evaluation_output(
-    classifier_name: str,
-    classifier: object,
-    dict_texts: dict,  # this dict is very complex so a proper type annotation can be determined later
-    is_text_processed: bool,
-    mapper: dict,
-    keyword_objs: list,
-    mode_modif: str,
-    buffer: int,
-    threshold: float,
-    threshold_array: NDArray[float64],
-    print_freq: int,
-    filepath_output: str,
-    fileroot_evaluation: str,
-    fileroot_misclassif: str,
-    fileroot_uncertainty_plot: str,
-    fileroot_confusion_matrix_plot: str,
-    figsize: tuple,
-    load_check_truematch: bool = True,
-    do_save_evaluation: bool = True,
-    do_save_misclassif: bool = True,
-    do_raise_innererror: bool = False,
-    do_verbose: bool = True,
-    do_verbose_deep: bool = False,
-):
+def evaluate_basic_performance(classifier_name: str = "ML") -> None:
+    """Evaluate performance
+
+    Evaluate basic performance using machine-learning or rule-based classifiers.
+
+    Parameters
+    ----------
+    classifier_name : str, optional
+        the type of classifier to use, by default "ML"
+
+    Raises
+    ------
+    ValueError
+        when an invalid classifier name is provided
+    """
+
+    # Fetch filepath for model
+    name_model = config.output.name_model
+    dir_model = os.path.join(config.paths.models, name_model)
+    filepath_model = os.path.join(dir_model, (name_model + ".npy"))
+    fileloc_ML = os.path.join(dir_model, (config.output.tfoutput_prefix + name_model))
+
+    # Fetch filepath for output or create the directory if not exists.
+    dir_output = os.path.join(config.paths.output, name_model)
+    os.makedirs(dir_output, exist_ok=True)
+
+    # Set directories for fetching test text
+
+    # `partitioned_datasets/name_model/` folder
+    dir_datasets = os.path.join(config.paths.partitioned, name_model)
+    dir_test = config.output.folders_TVT[
+        "test"
+    ]  # the directory name "dir_test" in the partitioned_datasets/name_model/ folder # can be an CLI option
+
+    is_text_processed = False
+
+    # Random seed for shuffling text dataset before fetching
+    np.random.seed(config.textprocessing.shuffle_seed)
+    # Fetching real JSON paper text
+    dict_texts = fetch_papers(
+        dir_datasets=dir_datasets,
+        dir_test=dir_test,
+        do_shuffle=config.textprocessing.do_shuffle,
+        do_verbose_text_summary=config.textprocessing.do_verbose_text_summary,
+        max_tests=config.textprocessing.max_tests,  # Number of text entries to test the performance for; None for all tests
+    )
+
+    # We will choose which operator/method to evaluate performance below.
+    classifier: ClassifierBase
+
+    # Initialize classifiers
+    # Rule-Based Classifier
+    classifier_RB = rules.RuleBasedClassifier(
+        which_classifs=None,
+        do_verbose=True,
+        do_verbose_deep=False,
+    )
+
+    # initialize classifiers
+    # Machine-Learning Classifier
+    classifier_ML = ml.MachineLearningClassifier(filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True)
+
+    # CLI option
+    if classifier_name == "ML":
+        classifier = classifier_ML
+    elif classifier_name == "RB":
+        classifier = classifier_RB
+    else:
+        raise ValueError(
+            "An invalid value! Choose either 'ML' for the machine learning classifier or 'RB' for the rule-based classifier!"
+        )
+
     # Initialize operators by loading models into instances of the Operator class
     op = operator.Operator(
         classifier=classifier,
         name=classifier_name,
-        mode=mode_modif,
-        keyword_objs=keyword_objs,
-        load_check_truematch=load_check_truematch,
-        do_verbose=do_verbose,
-        do_verbose_deep=do_verbose_deep,
+        mode=config.textprocessing.mode_modif,
+        keyword_objs=params.all_kobjs,
+        load_check_truematch=config.textprocessing.do_verify_truematch,
+        do_verbose=True,
+        do_verbose_deep=False,
     )
 
     # Create an instance of the Performance class
     performer = performance.Performance()
 
     # Run the pipeline for a basic evaluation of model performance
+    # Multiple operators can work as list in args.
     performer.evaluate_performance_basic(
         operators=[op],
         dicts_texts=[dict_texts],
-        mappers=[mapper],
-        thresholds=[threshold],
-        buffers=[buffer],
+        mappers=[params.map_papertypes],
+        thresholds=[config.textprocessing.threshold],
+        buffers=[config.textprocessing.buffer],
         is_text_processed=is_text_processed,
-        filepath_output=filepath_output,
-        filename_plot=fileroot_confusion_matrix_plot,
-        fileroot_evaluation=fileroot_evaluation,
-        fileroot_misclassif=fileroot_misclassif,
-        figsize=figsize,
-        print_freq=print_freq,
-        do_verbose=do_verbose,
-        do_verbose_deep=do_verbose_deep,
-        do_raise_innererror=do_raise_innererror,
-        do_save_evaluation=do_save_evaluation,
-        do_save_misclassif=do_save_misclassif,
-        do_verify_truematch=load_check_truematch,
+        filepath_output=dir_output,
+        filename_plot=config.performance.fileroot_confusion_matrix_plot + f"{classifier_name}.png",
+        fileroot_evaluation=config.performance.fileroot_evaluation + f"{classifier_name}",
+        fileroot_misclassif=config.performance.fileroot_misclassif + f"{classifier_name}",
+        figsize=config.performance.figsize,
+        print_freq=config.performance.print_freq,
+        do_verbose=True,
+        do_verbose_deep=False,
+        do_raise_innererror=config.textprocessing.do_raise_innererror,
+        do_save_evaluation=True,
+        do_save_misclassif=True,
+        do_verify_truematch=config.textprocessing.do_verify_truematch,
     )
 
     # Run the pipeline for an evaluation of model performance
@@ -89,20 +155,20 @@ def generate_performance_evaluation_output(
     performer.evaluate_performance_uncertainty(
         operators=[op],
         dicts_texts=[dict_texts],
-        mappers=[mapper],
-        threshold_arrays=[threshold_array],
-        buffers=[buffer],
+        mappers=[params.map_papertypes],
+        threshold_arrays=[np.linspace(*config.textprocessing.threshold_array)],
+        buffers=[config.textprocessing.buffer],
         is_text_processed=is_text_processed,
-        filepath_output=filepath_output,
-        filename_plot=fileroot_uncertainty_plot,
-        fileroot_evaluation=fileroot_evaluation,
-        fileroot_misclassif=fileroot_misclassif,
-        figsize=figsize,
-        print_freq=print_freq,
-        do_verify_truematch=load_check_truematch,
-        do_raise_innererror=do_raise_innererror,
-        do_save_evaluation=do_save_evaluation,
-        do_save_misclassif=do_save_misclassif,
-        do_verbose=do_verbose,
-        do_verbose_deep=do_verbose_deep,
+        filepath_output=dir_output,
+        filename_plot=config.performance.fileroot_uncertainty_plot + f"{classifier_name}.png",
+        fileroot_evaluation=config.performance.fileroot_evaluation + f"{classifier_name}",
+        fileroot_misclassif=config.performance.fileroot_misclassif + f"{classifier_name}",
+        figsize=config.performance.figsize,
+        print_freq=config.performance.print_freq,
+        do_verify_truematch=config.textprocessing.do_verify_truematch,
+        do_raise_innererror=config.textprocessing.do_raise_innererror,
+        do_save_evaluation=True,
+        do_save_misclassif=True,
+        do_verbose=True,
+        do_verbose_deep=True,
     )
