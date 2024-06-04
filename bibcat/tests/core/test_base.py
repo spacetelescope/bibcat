@@ -195,7 +195,7 @@ class TestBase(unittest.TestCase):
                 dict_acts[key1]["roots"] = []
                 for curr_word in curr_text:
                     curr_syns = wordnet.synsets(curr_word)
-                    curr_kobjs = [item for item in params.test_list_lookup_kobj if (item.is_keyword(curr_word))]
+                    curr_kobjs = [item for item in params.test_list_lookup_kobj if (item.identify_keyword(curr_word)["bool"])]
                     curr_set = [item.name() for item in curr_syns if (".n." in item.name())]
                     # Store as name if keyword
                     if len(curr_kobjs) > 0:

@@ -112,7 +112,7 @@ def test_TVT_directory():
         curr_actuals = {
             key: dataset[ind_dataset]["class_missions"][key]
             for key in dataset[ind_dataset]["class_missions"]
-            if any(item.is_keyword(key) for item in params.all_kobjs)
+            if any(item.identify_keyword(key)["bool"] for item in params.all_kobjs)
             and dataset[ind_dataset]["class_missions"][key]["papertype"] in params.allowed_classifications
         }
 

@@ -261,12 +261,12 @@ class Paper(Base):
         # Get indices of sentences that contain any target mission terms
         # For keyword terms
         inds_with_keywords_init = [
-            ii for ii in range(0, num_sentences) if keyword_obj.is_keyword(sentences[ii], mode="keyword")
+            ii for ii in range(0, num_sentences) if keyword_obj.identify_keyword(sentences[ii], mode="keyword")["bool"]
         ]
 
         # For acronym terms
         inds_with_acronyms = [
-            ii for ii in range(0, num_sentences) if keyword_obj.is_keyword(sentences[ii], mode="acronym")
+            ii for ii in range(0, num_sentences) if keyword_obj.identify_keyword(sentences[ii], mode="acronym")["bool"]
         ]
 
         # Print some notes
@@ -286,7 +286,7 @@ class Paper(Base):
         #
 
         # If requested, run a check for ambiguous phrases if any ambig. keywords
-        if do_check_truematch and any([keyword_obj.is_keyword(item) for item in lookup_ambigs]):
+        if do_check_truematch and any([keyword_obj.identify_keyword(item)["bool"] for item in lookup_ambigs]):
             # Print some notes
             if do_verbose:
                 print("Verifying ambiguous phrases...")
@@ -386,7 +386,7 @@ class Paper(Base):
         Purpose: Extract all possible matches from the stored text to the acronyms of the Keyword instance.
         """
         # Fetch global variables
-        acronyms = [item.upper() for item in keyword_obj._get_info("acronyms")]
+        acronyms = [item.upper() for item in keyword_obj._get_info("acronyms_caseinsensitive")]
         text = self._get_info("text_original")
 
         # Build regular expression for all acronyms
