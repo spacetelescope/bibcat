@@ -10,24 +10,68 @@ from bibcat.core import keyword
 # Mission parameters
 kobj_hubble = keyword.Keyword(
     keywords=["Hubble", "Hubble Telescope", "Hubble Space Telescope"],
-    acronyms=["HST", "HT"],
+    acronyms_casesensitive=[],
+    acronyms_caseinsensitive=["HST", "HT"],
+    do_not_classify=False,
     banned_overlap=["Hubble Legacy Archive"],
+    ambig_words=["Hubble"]
 )
-kobj_tess = keyword.Keyword(keywords=["Transiting Exoplanet Survey Satellite"], acronyms=["TESS"], banned_overlap=[])
+kobj_tess = keyword.Keyword(
+    keywords=["Transiting Exoplanet Survey Satellite"],
+    acronyms_casesensitive=["TESS"],
+    acronyms_caseinsensitive=[],
+    do_not_classify=False,
+    banned_overlap=[],
+    ambig_words=[]
+)
 kobj_jwst = keyword.Keyword(
     keywords=["James Webb Space Telescope", "James Webb Telescope", "Webb Space Telescope", "Webb Telescope"],
-    acronyms=["JWST", "JST", "JT"],
+    acronyms_casesensitive=[],
+    acronyms_caseinsensitive=["JWST", "JST", "JT"],
+    do_not_classify=False,
     banned_overlap=[],
+    ambig_words=[]
 )
-kobj_kepler = keyword.Keyword(keywords=["Kepler"], acronyms=[], banned_overlap=[])
+kobj_kepler = keyword.Keyword(
+    keywords=["Kepler"],
+    acronyms_casesensitive=[],
+    acronyms_caseinsensitive=[],
+    do_not_classify=False,
+    banned_overlap=["Kepler K2"],
+    ambig_words=["Kepler"]
+)
 kobj_panstarrs = keyword.Keyword(
     keywords=["Panoramic Survey Telescope and Rapid Response System", "Pan-STARRS", "Pan-STARRS1"],
-    acronyms=["PanSTARRS", "PanSTARRS1", "PS1"],
+    acronyms_casesensitive=[],
+    acronyms_caseinsensitive=["PanSTARRS", "PanSTARRS1", "PS1"],
+    do_not_classify=False,
     banned_overlap=[],
+    ambig_words=[]
 )
-kobj_galex = keyword.Keyword(keywords=["Galaxy Evolution Explorer"], acronyms=["GALEX"], banned_overlap=[])
-kobj_k2 = keyword.Keyword(keywords=["K2"], acronyms=[], banned_overlap=[])
-kobj_hla = keyword.Keyword(keywords=["Hubble Legacy Archive"], acronyms=["HLA"], banned_overlap=[])
+kobj_galex = keyword.Keyword(
+    keywords=["Galaxy Evolution Explorer"],
+    acronyms_casesensitive=[],
+    acronyms_caseinsensitive=["GALEX"],
+    do_not_classify=False,
+    banned_overlap=[],
+    ambig_words=[]
+)
+kobj_k2 = keyword.Keyword(
+    keywords=["K2"],
+    acronyms_casesensitive=[],
+    acronyms_caseinsensitive=[],
+    do_not_classify=False,
+    banned_overlap=[],
+    ambig_words=[]
+)
+kobj_hla = keyword.Keyword(
+    keywords=["Hubble Legacy Archive"],
+    acronyms_casesensitive=[],
+    acronyms_caseinsensitive=["HLA"],
+    do_not_classify=False,
+    banned_overlap=[],
+    ambig_words=[]
+)
 
 all_kobjs = [
     kobj_hubble,
