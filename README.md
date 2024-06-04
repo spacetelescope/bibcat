@@ -20,8 +20,6 @@ There are two main branches for bibcat work:
 - tensorflow 2.15.0
 - tensorflow-hub
 - tensorflow-text
-- tf-models-official 2.15.0
-
 
 ### Conda env installation
 Change `env_name` below with whatever you want to name the environment.
@@ -40,12 +38,11 @@ tf.config.list_physical_devices('GPU')
 ```
 You should see the following output: `[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]`.  If the output is an empty list, you are not setup for GPU use.
 
-#### Install `tensorflow-text` and `tf-models-official`
-- You need to install these two packages separately. Follow the instruction order below.
+#### Install `tensorflow-text`
+- You need to install this package separately. Follow the instruction order below.
 
 - To install `tensorflow-text`, the command `pip install -U "tensorflow-text"` does not work due to some package version conflict. You need to download the latest release library compatible with your system from [the Tensorflow library link.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases); For instance, if you have MacOSX with python 3.10, download [this library.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl)
 - Then `pip install /path-to-download/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl`
-- Finally, `pip install tf-models-officials`.
 
 
 ### Bibcat installation
