@@ -17,10 +17,10 @@ There are two main branches for bibcat work:
 - nltk
 - pytest
 - pytest-doctestplus
-- tensorflow
+- tensorflow 2.15.0
 - tensorflow-hub
 - tensorflow-text
-- tf-models-official
+- tf-models-official 2.15.0
 
 
 ### Conda env installation
@@ -38,7 +38,7 @@ For Apple Silicon chips, to utilize your GPU, you install `tensorflow-metal`.  Y
 import tensorflow as tf
 tf.config.list_physical_devices('GPU')
 ```
-You should the following output: `[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]`.  If the output is an empty list, you are not setup for GPU use.
+You should see the following output: `[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]`.  If the output is an empty list, you are not setup for GPU use.
 
 #### Install `tensorflow-text` and `tf-models-official`
 - You need to install these two packages separately. Follow the instruction order below.
@@ -58,11 +58,11 @@ pip install -e .
 Download several data files (the ADS full text file and the papertrack file) to create models for training or combined fulltext dataset files for the input text. These files can be accessed only by authorized users. Downloading the files requires a single sign-on.
 Save the files outside the `bibcat` folder on your local computer, and you will set up the paths to the files. See more details in **User Configuration and Data Filepaths** below.
 
-- The combined papers+classification JSON file ([dataset_combined_all_2018-2021.json](https://stsci.app.box.com/file/1380606268376))
+- The combined papers+classification JSON file ([dataset_combined_all_2018-2023.json](https://stsci.box.com/s/q99xtyey1lgydt0jtonhot3b3rlv8rns))
 - The papertrack export JSON file ([papertrack_export_2023-11-06.json](https://stsci.box.com/s/zadlr8dixw8706o9k9smlxdk99yohw4d))
-- ADS fulltext data file ([ST_Request2018-2021.json](https://stsci.box.com/s/cl3yg5mxqcz484w0iptwbl9b43h4tk1g))
+- ADS fulltext data file ([ST_Request2018-2023.json](https://stsci.box.com/s/ym9pbt2iz7cqc8m1gbbd2slo0lwbwlr8))
 
-Note that other JSON files (extracted from 2018-2023) include paper track data and full texts later than 2021. If you like to test them for your work, feel free to do so.
+Note that other JSON files (extracted from 2018-2023) include paper track data and full texts later than 2021.
 
 ### User Configuration and Data Filepaths
 
