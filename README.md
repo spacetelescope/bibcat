@@ -21,7 +21,6 @@ There are two main branches for bibcat work:
 - tensorflow-hub
 - tensorflow-text
 
-
 ### Conda env installation
 Change `env_name` below with whatever you want to name the environment.
 - Download conda installation yml file [here](envs/bibcat_py310.yml).
