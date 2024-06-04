@@ -10,7 +10,6 @@ import numpy as np
 import tensorflow as tf  # type: ignore
 import tensorflow_hub as tfhub  # type: ignore
 import tensorflow_text as tftext  # type: ignore
-from official.nlp import optimization as tf_opt  # type: ignore
 
 from bibcat import config
 from bibcat.core.classifiers.textdata import ClassifierBase
@@ -48,12 +47,7 @@ class MachineLearningClassifier(ClassifierBase):
             load_dict = np.load(filepath_model, allow_pickle=True).item()
 
             class_names = load_dict["class_names"]
-            optimizer = tf_opt.create_optimizer(
-                init_lr=load_dict["init_lr"],
-                num_train_steps=load_dict["num_steps_train"],
-                num_warmup_steps=load_dict["num_steps_warmup"],
-                optimizer_type=load_dict["type_optimizer"],
-            )
+            optimizer = tf.keras.optimizers.Adam()
             model = tf.keras.models.load_model(fileloc_ML, custom_objects={config.ml.ML_name_optimizer: optimizer})
 
         # Otherwise, store empty placeholder
@@ -241,12 +235,7 @@ class MachineLearningClassifier(ClassifierBase):
         num_steps_train = stepsize_epoch * num_epochs
         num_steps_warmup = int(frac_steps_warmup * num_steps_train)
 
-        optimizer = tf_opt.create_optimizer(
-            init_lr=init_lr,
-            num_train_steps=num_steps_train,
-            num_warmup_steps=num_steps_warmup,
-            optimizer_type=type_optimizer,
-        )
+        optimizer = tf.keras.optimizers.Adam(learning_rate=init_lr)
 
         # Print some notes
         if do_verbose:
