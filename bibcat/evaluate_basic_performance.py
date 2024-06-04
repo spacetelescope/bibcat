@@ -110,7 +110,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
         name=classifier_name,
         mode=config.textprocessing.mode_modif,
         keyword_objs=params.all_kobjs,
-        load_check_truematch=config.textprocessing.do_verify_truematch,
+        load_check_truematch=config.textprocessing.do_check_truematch,
         do_verbose=True,
         do_verbose_deep=False,
     )
@@ -138,7 +138,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
         do_raise_innererror=config.textprocessing.do_raise_innererror,
         do_save_evaluation=True,
         do_save_misclassif=True,
-        do_verify_truematch=config.textprocessing.do_verify_truematch,
+        do_check_truematch=config.textprocessing.do_check_truematch,
     )
 
     # Run the pipeline for an evaluation of model performance
@@ -156,7 +156,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
         fileroot_misclassif=config.performance.fileroot_misclassif + f"{classifier_name}",
         figsize=config.performance.figsize,
         print_freq=config.performance.print_freq,
-        do_verify_truematch=config.textprocessing.do_verify_truematch,
+        do_check_truematch=config.textprocessing.do_check_truematch,
         do_raise_innererror=config.textprocessing.do_raise_innererror,
         do_save_evaluation=True,
         do_save_misclassif=True,
