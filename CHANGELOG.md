@@ -3,8 +3,11 @@
 ## [Unreleased]
 
 - A few bug fixes
+- PR # 19
     - `_add_word()` temporary fix
     - `merger` erorr fix for config parameters
+
+- PR # 20
     - `get_config() error fix
 
 
@@ -22,7 +25,10 @@ Bibcat to do list
     - Deleted all previous codes and files for a fresh start
 
 ### Changed
-- [PR #17 # 18]
+- [PR #18]
+    - Fix ddict type errors
+    
+- [PR #16 # 17]
     - Consolidated all config into a single `bibcat_config.yaml` YAML file.
     - Moved `bibcat` output to outside the package directory
     - Added support for user custom configuration and settings

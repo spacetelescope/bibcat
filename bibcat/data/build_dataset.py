@@ -127,9 +127,13 @@ if do_verbose:
 with open(config.inputs.path_source_data, "w") as openfile:
     json.dump(storage, openfile, indent=2)
 # Also save the papertrack classifications not found in papertext
-np.savetxt(config.inputs.path_not_in_papertext, np.asarray(bibcodes_notin_papertext).astype(str), delimiter="\n", fmt="%s")
+np.savetxt(
+    config.inputs.path_not_in_papertext, np.asarray(bibcodes_notin_papertext).astype(str), delimiter="\n", fmt="%s"
+)
 # Also save the paper-texts not found in papertrack
-np.savetxt(config.inputs.path_not_in_papertrack, np.asarray(bibcodes_notin_papertrack).astype(str), delimiter="\n", fmt="%s")
+np.savetxt(
+    config.inputs.path_not_in_papertrack, np.asarray(bibcodes_notin_papertrack).astype(str), delimiter="\n", fmt="%s"
+)
 
 # Print some notes
 if do_verbose:

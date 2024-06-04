@@ -8,6 +8,7 @@ from typing import Any, Dict
 
 import yaml  # type: ignore
 from deepmerge import Merger  # type: ignore
+from yaml import SafeLoader, SequenceNode
 
 # For instance, fraction_TVT:list of floats concatenates the values twice. To prevent it, created a new class.
 merger = Merger([(list, ["override"]), (dict, ["merge"]), (set, ["union"])], ["override"], ["override"])
@@ -46,6 +47,16 @@ class ddict(Dict[str, Any]):
         raise AttributeError(f"'ddict' object has no attribute '{name}'")
 
 
+# Custom constructor for !tuple tag
+def tuple_constructor(loader: SafeLoader, node: SequenceNode) -> tuple:
+    return tuple(loader.construct_sequence(node))
+
+
+# Register the custom constructor for !tuple tag with the SafeLoader
+yaml.SafeLoader.add_constructor("!tuple", tuple_constructor)
+
+
+# Read yaml file
 def read_yaml(filename: pathlib.Path) -> dict:
     """Read a yaml configuration file
 
