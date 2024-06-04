@@ -137,7 +137,7 @@ class Base:
                 set_inds = [
                     ind
                     for ind in range(0, len(curr_sent))
-                    if any([item.is_keyword(curr_sent[ind].text) for item in keyword_objs])
+                    if any([item.identify_keyword(curr_sent[ind].text)["bool"] for item in keyword_objs])
                 ]
             # Print some notes
             if do_verbose:
@@ -493,11 +493,23 @@ class Base:
 
         # Extract keyword objects that are potentially ambiguous
         keyword_objs_ambigs = [
-            item1 for item1 in keyword_objs if any([item1.is_keyword(item2) for item2 in lookup_ambigs])
+            item1 for item1 in keyword_objs if any([item1.identify_keyword(item2)["bool"] for item2 in lookup_ambigs])
         ]
 
+        # Extract keyword identification information for each kobj
+        dict_kobjinfo = {
+            item._get_info("name"):item.identify_keyword(text)
+            for item in keyword_objs
+        }
+
         # Return status as true match if non-ambig keywords match to text
-        if any([item1.is_keyword(text) for item1 in keyword_objs if (item1 not in keyword_objs_ambigs)]):
+        if any(
+            [
+                dict_kobjinfo[item1._get_info("name")]["bool"]
+                for item1 in keyword_objs
+                if (item1 not in keyword_objs_ambigs)
+            ]
+        ):
             # Print some notes
             if do_verbose:
                 print("Text matches unambiguous keyword. Returning true state.")
@@ -517,7 +529,12 @@ class Base:
             }
 
         # Return status as false match if no keywords match at all
-        elif not any([item.is_keyword(text) for item in keyword_objs_ambigs]):
+        elif not any(
+            [
+                dict_kobjinfo[item._get_info("name")]["bool"]
+                for item in keyword_objs_ambigs
+            ]
+        ):
             # Print some notes
             if do_verbose:
                 print("Text matches no keywords at all. Returning false state.")
@@ -596,7 +613,7 @@ class Base:
                 [
                     (curr_chunk_text.lower().replace(".", "") == item2.lower())
                     for item1 in keyword_objs
-                    for item2 in (item1._get_info("keywords") + item1._get_info("acronyms"))
+                    for item2 in (item1._get_info("keywords") + item1._get_info("acronyms_casesensitive") + item1._get_info("acronyms_caseinsensitive"))
                     if (item2.lower() not in lookup_ambigs_lower)
                 ]
             )  # Check if wordchunk matches to any non-ambig terms
@@ -815,7 +832,7 @@ class Base:
                 continue
 
             # Store the keyword itself and skip ahead if this word is a keyword
-            matched_kobjs = [item for item in keyword_objs if (item.is_keyword(curr_word.text))]
+            matched_kobjs = [item for item in keyword_objs if (item.identify_keyword(curr_word.text)["bool"])]
             if len(matched_kobjs) > 0:  # If word is a keyword
                 name_kobj = matched_kobjs[0].get_name()  # Fetch name for kobj
                 core_keywords.append(name_kobj.lower())
@@ -1346,13 +1363,14 @@ class Base:
         Purpose: Return boolean for whether or not given text contains keywords/acronyms from given keyword objects.
         """
         # Check if keywords and/or acronyms present in given text
-        check_keywords = any([item.is_keyword(text) for item in keyword_objs])
+        tmp_res = [item.identify_keyword(text) for item in keyword_objs]
+        check_keywords = any([item["bool"] for item in tmp_res])
 
         # Print some notes
         if do_verbose:
             # Extract global variables
             keywords = [item2 for item1 in keyword_objs for item2 in item1._get_info("keywords")]
-            acronyms = [item2 for item1 in keyword_objs for item2 in item1._get_info("acronyms")]
+            acronyms = [item2 for item1 in keyword_objs for item2 in item1._get_info("acronyms_casesensitive") + item1._get_info("acronyms_caseinsensitive")]
             #
             print("Completed _search_text().")
             print("Keywords={0}\nAcronyms={1}".format(keywords, acronyms))

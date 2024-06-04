@@ -17,16 +17,27 @@ class TestKeyword(unittest.TestCase):
         # Test determination of representative name for Keyword object
         def test_get_name__variety(self):
             # Prepare text and answers for test
-            kobj1 = keyword.Keyword(keywords=["Long Phrase", "Phrase", "Longer Phrase", "Mid Phrase"], acronyms=[])
+            kobj1 = keyword.Keyword(
+            keywords=["Long Phrase", "Phrase", "Longer Phrase", "Mid Phrase"],
+            acronyms_casesensitive=[], acronyms_caseinsensitive=[],
+            ambig_words=[], banned_overlap=[], do_not_classify=False
+            )
             ans1 = "Phrase"
-            #
+
             kobj2 = keyword.Keyword(
-                keywords=["Long Phrase", "Phrase", "Longer Phrase", "Mid Phrase"],
-                acronyms=["AB....C", "A....... B...", "A.BC  D", "ABCD E", "AB C"],
+            keywords=["Long Phrase", "Phrase", "Longer Phrase", "Mid Phrase"],
+            acronyms_caseinsensitive=["AB....C", "A....... B...", "A.BC  D", "ABCD E", "AB C"],
+            acronyms_casesensitive=[],
+            ambig_words=[], banned_overlap=[], do_not_classify=False
             )
             ans2 = "Phrase"
 
-            kobj3 = keyword.Keyword(keywords=[], acronyms=["AB....C", "A....... B...", "A.BC  D", "ABCD E", "AB C"])
+            kobj3 = keyword.Keyword(
+            keywords=[],
+            acronyms_caseinsensitive=["AB....C", "A....... B...", "A.BC  D", "ABCD E", "AB C"],
+            acronyms_casesensitive=[],
+            ambig_words=[], banned_overlap=[], do_not_classify=False
+            )
             ans3 = "ABCDE"
 
             list_kobj = [kobj1, kobj2, kobj3]
@@ -92,7 +103,7 @@ class TestKeyword(unittest.TestCase):
             for phrase in dict_acts:
                 curr_kobj = dict_acts[phrase]["kobj"]
                 curr_bool = dict_acts[phrase]["bool"]
-                test_res = curr_kobj.is_keyword(text=phrase)
+                test_res = curr_kobj.identify_keyword(text=phrase)["bool"]
 
                 # Check answer
                 try:

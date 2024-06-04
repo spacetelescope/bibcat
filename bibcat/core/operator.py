@@ -125,7 +125,7 @@ class Operator(Base):
         match = None
         for ii in range(0, num_keyobjs):
             # If current keyword object matches, record and stop loop
-            if keyword_objs[ii].is_keyword(lookup):
+            if keyword_objs[ii].identify_keyword(lookup)["bool"]:
                 match = keyword_objs[ii]
                 break
 

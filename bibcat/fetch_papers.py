@@ -70,7 +70,7 @@ def fetch_papers(
             for curr_kobj in params.all_kobjs:
                 curr_name = curr_kobj.get_name()
                 # Store mission data under keyword name, if applicable
-                if curr_kobj.is_keyword(curr_mission):
+                if curr_kobj.identify_keyword(curr_mission)["bool"]:
                     curr_info["missions"][curr_name] = {
                         "mission": curr_name,
                         "class": curr_data["class_missions"][curr_mission]["papertype"],
