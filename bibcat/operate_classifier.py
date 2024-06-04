@@ -125,4 +125,4 @@ def operate_classifier(
         print(f"Saving '{fileroot_class_results}.json' under '{filepath_output}/'!")
     json_dump = convert_sets(classification_results)  # converts any sets in the results to lists
     with open(tmp_filepath, "w") as f:
-        json.dump(json_dump, f)
+        json.dump(json_dump, f, indent=4)

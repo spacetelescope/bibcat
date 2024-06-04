@@ -11,6 +11,7 @@ This module creates a new training ML model.
 :Run example: bibcat train
 """
 
+import json
 import os
 import time
 
@@ -76,6 +77,9 @@ def build_model() -> None:
     dict_texts = streamline_dataset(
         source_dataset=source_dataset, operator_ML=tabby_ML, do_verbose_text_summary=do_verbose_text_summary
     )
+
+    # with open("bibcat/data/operational_data/fakedata.json", "w") as json_file:
+    #    json.dump(dict_texts["97"], json_file, indent=4)
 
     # Use the Operator instance to train an ML model
     start = time.time()
