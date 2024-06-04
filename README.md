@@ -66,6 +66,7 @@ Note that other JSON files (extracted from 2018-2023) include paper track data a
 There are three user environment variables to set:
 
 - **BIBCAT_CONFIG_DIR**: a local path to your user configuration yaml file
+- **BIBCAT_OPSDATA_DIR** : a local path to the directory of operational data in JSON format. 
 - **BIBCAT_DATA_DIR**: a local path to the directory of input data, e.g the input JSON files and full text
 - **BIBCAT_OUTPUT_DIR**: a local path to a directory where the output of bibcat will be written, e.g. the output model and QA plots
 
@@ -73,6 +74,7 @@ If not set, all envvars will default to the user's home directory.  You can set 
 ```bash
 export BIBCAT_CONFIG_DIR=/my/local/path/to/custom/config
 export BIBCAT_DATA_DIR=/my/local/path/to/input/data/dir
+export BIBCAT_OPSDATA_DIR=/my/local/path/to/operational/data/dir
 export BIBCAT_OUTPUT_DIR=/my/local/path/to/bibcat/output
 ```
 
@@ -96,7 +98,8 @@ for classifying papers, run `bibcat classify --help`.
 
 - Set the three user BIBCAT_XXX_DIR environment variables specified above, in particular `BIBCAT_DATA_DIR` points to the location of your input JSON files.
 - To create a training model, run `bibcat train`.
-- To classify papers, run `bibcat classify`. It will produce some evaluation
+- To classify papers, run `bibcat classify`. Copy `etc/fakedata.json` to your local OPSDATA folder to test `bibcat classify`. Check out `etc/fakedata.json` to see the necessary contents for operational papers in JSON. 
+- To evaluate the classifiers, run `bibcat evaluate`. It will produce some evaluation
   diagnostics such as a confusion matrix in the `output/` directory.
 
 
