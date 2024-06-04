@@ -242,6 +242,103 @@ class Keyword(Base):
                 "charspans":(charspans_keywords + charspans_acronyms_all),
                 "bool_acronym_only":check_acronyms_all}
 
+    # Purpose: Check if text matches to this keyword object; return match inds
+    def identify_keyword(self, text, mode=None):
+        """
+        Method: identify_keyword
+        Purpose: Return whether or not the given text contains terms (keywords, acronyms) matching this instance.
+        Arguments:
+          - "text" [str]: The text to search within for terms
+        Returns:
+          - [dict] containing:
+            - "bool":[bool] - if any matches
+            - "charspans":[lists of 2 ints] - character spans of matches
+            - "bool_acronym_only":[bool] - if any acronym matches
+        """
+        # Fetch global variables
+        exps_k = self._get_info("exps_keywords")
+        keywords = self._get_info("keywords")
+        exp_a_yescase = self._get_info("exp_acronyms_casesensitive")
+        exp_a_nocase = self._get_info("exp_acronyms_caseinsensitive")
+        banned_overlap_lowercase = self._get_info("banned_overlap_lowercase")
+        do_verbose = self._get_info("do_verbose")
+        allowed_modes = [None, "keyword", "acronym"]
+
+        # Throw error is specified mode not recognized
+        if ((mode is not None) and (mode.lower() not in allowed_modes)):
+            raise ValueError("Err: Invalid mode '{0}'.\nAllowed modes: {1}".format(mode, allowed_modes))
+
+        # Modify text (locally only) to block banned overlap
+        text_mod = text
+        for curr_ban in banned_overlap_lowercase:
+            # Below replaces banned phrases with mask '#' string of custom length
+            text_mod = re.sub(
+                curr_ban, (lambda x: ("#" * len(x.group()))), text_mod, flags=re.IGNORECASE
+            )
+        #
+
+        # Check if this text contains keywords
+        if ((mode is None) or (mode.lower() == "keyword")):
+            set_keywords = [
+                list(re.finditer(item1, text_mod, flags=re.IGNORECASE))
+                for item1 in exps_k
+            ]
+            charspans_keywords = [
+                (item2.start(), (item2.end()-1))
+                for item1 in set_keywords
+                for item2 in item1
+            ] # Char. span of matches
+            check_keywords = any(
+                [
+                    (len(item) > 0)
+                    for item in set_keywords
+                ]
+            ) #If any matches
+        else:
+            charspans_keywords = []
+            check_keywords = False
+
+        # Check if this text contains case-sensitive acronyms
+        if (((mode is None) or (mode.lower() == "acronym")) and (exp_a_yescase is not None)):
+            set_acronyms_yescase = list(re.finditer(exp_a_yescase, text_mod))
+            charspans_acronyms_yescase = [(item.start(), (item.end()-1))
+                                        for item in set_acronyms_yescase]
+            check_acronyms_yescase = (len(set_acronyms_yescase) > 0)
+        else:
+            charspans_acronyms_yescase = []
+            check_acronyms_yescase = False
+
+        # Check if this text contains case-insensitive acronyms
+        if (((mode is None) or (mode.lower() == "acronym")) and (exp_a_nocase is not None)):
+            set_acronyms_nocase = list(
+                re.finditer(exp_a_nocase, text_mod, flags=re.IGNORECASE)
+            )
+            charspans_acronyms_nocase = [
+                (item.start(), (item.end()-1))
+                for item in set_acronyms_nocase
+            ]
+            check_acronyms_nocase = (len(set_acronyms_nocase) > 0)
+        else:
+            charspans_acronyms_nocase = []
+            check_acronyms_nocase = False
+
+        # Combine acronym results
+        check_acronyms_all = (check_acronyms_nocase or check_acronyms_yescase)
+        charspans_acronyms_all = (charspans_acronyms_nocase + charspans_acronyms_yescase)
+
+        # Print some notes
+        if do_verbose:
+            print("Keywords: {0}\nKeyword regex:\n{1}".format(keywords, exps_k))
+            print("Acronyms (Case-Sensitive): {0}\nAcronym regex:\n{1}".format(acronyms_yescase, exp_a_yescase))
+            print("Acronyms (Case-Insensitive): {0}\nAcronym regex:\n{1}".format(acronyms_nocase, exp_a_nocase))
+            print("Keyword bool: {0}\nAcronym bool: {1}".format(check_keywords, check_acronyms_all))
+            print("Keyword char. spans: {0}\nAcronym char. spans: {1}".format(charspans_keywords, charspans_acronyms_all))
+
+        # Return booleans
+        return {"bool":(check_acronyms_all or check_keywords),
+                "charspans":(charspans_keywords + charspans_acronyms_all),
+                "bool_acronym_only":check_acronyms_all}
+
     # Purpose: Replace any text that matches to this keyword object
     def replace_keyword(self, text, placeholder):
         """
