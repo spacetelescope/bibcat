@@ -832,7 +832,7 @@ class TestBase(unittest.TestCase):
             for key1 in dict_tests:
                 try:
                     answer = dict_tests[key1]
-                    test_res = testbase._search_text(text=key1, keyword_objs=params.test_list_lookup_kobj)
+                    test_res = testbase._search_text(text=key1, keyword_objs=params.test_list_lookup_kobj)["bool"]
                     self.assertEqual(test_res, answer)
                 except AssertionError:
                     print("")
