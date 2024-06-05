@@ -255,6 +255,7 @@ class Base:
         cbar_title,
         ax_title,
         is_norm,
+        minmax_inds=None,
         cmap=plt.cm.BuPu,
         fontsize=16,
         ticksize=16,
@@ -272,15 +273,24 @@ class Base:
         if is_norm:
             vmin = 0
             vmax = 1
-        else:
-            vmin = 0  # None
-            # Ignore nonmatch verdict to avoid spikes in color scaling if present
+        elif minmax_inds is not None:
+            vmin = 0
+            # Ignore non-target verdicts to avoid color spikes scaling if present
             tmpmatr = matr.copy()
-            if config.results.verdict_rejection.lower() in x_labels:
-                tmpmatr[:, x_labels.index(config.results.verdict_rejection.upper())] = -1
-            if config.results.verdict_rejection.lower() in y_labels:
-                tmpmatr[y_labels.index(config.results.verdict_rejection.upper()), :] = -1
-            vmax = tmpmatr.max()  # None
+            # Remove max scaling for non-target classifs along y-axis
+            for yind in minmax_inds["y"]:
+                # Remove non-target classifications from max consideration
+                tmpmatr[yind,:] = -1
+            # Remove max scaling for non-target classifs along x-axis
+            for xind in minmax_inds["x"]:
+                # Remove non-target classifications from max consideration
+                tmpmatr[:,xind] = -1
+            #
+            vmax = tmpmatr.max()
+        #
+        else:
+            vmin = 0
+            vmax = matr.max()
 
         # Plot the confusion matrix and colorbar
         image = ax.imshow(matr, origin="lower", cmap=cmap, vmin=vmin, vmax=vmax)
