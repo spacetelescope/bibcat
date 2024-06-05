@@ -113,9 +113,6 @@ class Base:
         Purpose: Assembles noun chunks around any keyword terms within given text.
         """
 
-        # dict_ambigs = self._process_database_ambig(keyword_objs=keyword_objs)
-        # lookup_ambigs = dict_ambigs["lookup_ambigs"]
-
         # Find indices of keywords within text
         tmp_sents = list(nlp(str(text)).sents)
         list_wordchunks = []
@@ -144,7 +141,6 @@ class Base:
                 print("Current sentence: '{0}'".format(curr_sent))
                 print("Indices of lookups in sent.: '{0}'".format(set_inds))
             # Build wordchunks from indices of current sentence
-            first_ind = np.inf
             last_ind = -np.inf
             for curr_start in set_inds:
                 # Print some notes
@@ -176,7 +172,6 @@ class Base:
                     # Keep word if relevant p.o.s.
                     if any(tmp_list):
                         curr_wordtext.insert(0, curr_sent[ii].text)
-                        # first_ind = ii  # Update latest index
                     #
                     # Otherwise, break and end this makeshift wordchunk
                     else:
@@ -191,7 +186,7 @@ class Base:
                     check_pos = self._is_pos_word(word=curr_sent[ii], pos="POSSESSIVE")
                     check_imp = self._check_importance(
                         curr_sent[ii].text, keyword_objs=keyword_objs, version_NLP=curr_sent[ii]
-                    )["is_any"]
+                    )["bools"]["is_any"]
                     check_dash = curr_sent[ii].text == "-"
                     # Include brackets, if so requested
                     if do_include_brackets:
