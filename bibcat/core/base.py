@@ -161,7 +161,7 @@ class Base:
                     check_dash = curr_sent[ii].text == "-"
                     check_imp = self._check_importance(
                         curr_sent[ii].text, keyword_objs=keyword_objs, version_NLP=curr_sent[ii]
-                    )["is_any"]
+                    )["bools"]["is_any"]
                     # Include punctuation, if so requested
                     if do_include_brackets:
                         check_brackets = self._is_pos_word(word=curr_sent[ii], pos="BRACKET")
@@ -1038,7 +1038,7 @@ class Base:
             check_dep = word_dep in config.grammar.speech.dep_useless
             check_pos = word_pos in config.grammar.speech.pos_useless
             check_use = self._check_importance(word_text, version_NLP=word, keyword_objs=keyword_objs)[
-                "is_any"
+                "bools"]["is_any"
             ]  # Useful
             check_root = self._is_pos_word(word=word, pos="ROOT")
             check_neg = self._is_pos_word(word=word, pos="NEGATIVE")
@@ -1371,19 +1371,23 @@ class Base:
         # Check if keywords and/or acronyms present in given text
         tmp_res = [item.identify_keyword(text) for item in keyword_objs]
         check_keywords = any([item["bool"] for item in tmp_res])
+        charspans_keywords = []
+        for ii in range(0, len(tmp_res)):
+            charspans_keywords += tmp_res[ii]["charspans"]
 
         # Print some notes
         if do_verbose:
             # Extract global variables
             keywords = [item2 for item1 in keyword_objs for item2 in item1._get_info("keywords")]
             acronyms = [item2 for item1 in keyword_objs for item2 in item1._get_info("acronyms_casesensitive") + item1._get_info("acronyms_caseinsensitive")]
-            #
+
             print("Completed _search_text().")
             print("Keywords={0}\nAcronyms={1}".format(keywords, acronyms))
             print("Boolean: {0}".format(check_keywords))
+            print("Char. Spans: {0}".format(charspans_keywords))
 
         # Return boolean result
-        return check_keywords
+        return {"bool":check_keywords, "charspans":charspans_keywords}
 
     # Cleanse given (short) string of extra whitespace, dashes, etc, and replace websites, etc,
     # with uniform placeholders.

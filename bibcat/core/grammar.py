@@ -422,7 +422,7 @@ class Grammar(Base):
 
         # Characterize some traits of entire phrase
         # Characterize importance
-        res_importance = self._check_importance(text_wordchunk, version_NLP=NLP_wordchunk)
+        res_importance = self._check_importance(text_wordchunk, version_NLP=NLP_wordchunk)["bools"]["is_any"]
 
         # Determine part-of-speech (pos) of main (current) word in wordchunk
         pos_main = None

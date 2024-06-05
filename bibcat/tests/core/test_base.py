@@ -125,7 +125,7 @@ class TestBase(unittest.TestCase):
             # Prepare and run test for bibcat class instance
             testbase = Base()
             for phrase in dict_acts:
-                test_res = testbase._check_importance(text=phrase, keyword_objs=[kobj])
+                test_res = testbase._check_importance(text=phrase, keyword_objs=[kobj])["bools"]
                 list_res = [key for key in test_res if (test_res[key])]
 
                 # Check answer
