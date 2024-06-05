@@ -287,7 +287,6 @@ class Base:
                 tmpmatr[:,xind] = -1
             #
             vmax = tmpmatr.max()
-        #
         else:
             vmin = 0
             vmax = matr.max()
@@ -391,7 +390,9 @@ class Base:
 
         ##Check if text contains keywords, acronyms, important terms, etc
         # For target keywords and acronyms
-        dict_results["is_keyword"] = self._search_text(text=text, keyword_objs=keyword_objs)
+        tmp_res = self._search_text(text=text, keyword_objs=keyword_objs)
+        dict_results["is_keyword"] = tmp_res["bool"]
+        charspans_keyword = tmp_res["charspans"]
 
         # Check for first-person pronouns, if requested
         if include_Ipronouns:
@@ -454,7 +455,7 @@ class Base:
         dict_results["is_any"] = any([dict_results[key] for key in dict_results])
 
         # Return the booleans
-        return dict_results
+        return {"bools":dict_results, "charspans_keyword":charspans_keyword}
 
     # Return boolean for whether or not text contains a true vs false match to the given keywords
     def _check_truematch(self, text, keyword_objs, dict_ambigs, do_verbose=None, do_verbose_deep=False):
