@@ -231,6 +231,7 @@ class Paper(Base):
         do_verbose_deep = self._get_info("do_verbose_deep")
         do_check_truematch = self._get_info("do_check_truematch")
         sentences = np.asarray(self._get_info("text_clean_split"))
+        do_not_classify = keyword_obj._get_info("do_not_classify")
         num_sentences = len(sentences)
 
         # Load ambiguous phrases, if necessary
@@ -266,16 +267,8 @@ class Paper(Base):
                 )
             )
 
-        # If only acronym terms found, run a check of possible false meanings
-        if len(inds_with_acronyms) > 0:
-            acronym_meanings = self._verify_acronyms(keyword_obj=keyword_obj)
-        # Otherwise, set empty
-        else:
-            acronym_meanings = None
-        #
-
         # If requested, run a check for ambiguous phrases if any ambig. keywords
-        if do_check_truematch and any([keyword_obj.identify_keyword(item)["bool"] for item in lookup_ambigs]):
+        if (not do_not_classify) and do_check_truematch and any([keyword_obj.identify_keyword(item)["bool"] for item in lookup_ambigs]):
             # Print some notes
             if do_verbose:
                 print("Verifying ambiguous phrases...")
@@ -291,8 +284,6 @@ class Paper(Base):
                 for ind in inds_with_keywords_init
             ]
 
-            ambig_matches = [item["result"] for item in output_truematch]
-
             # Keep indices that have true matches
             inds_with_keywords_truematch = [item["ind"] for item in output_truematch if (item["result"]["bool"])]
 
@@ -306,14 +297,7 @@ class Paper(Base):
         # Otherwise, set empty
         else:
             output_truematch = None
-            ambig_matches = None
             inds_with_keywords_truematch = inds_with_keywords_init  # Copy over
-
-        # Take note of if keywords and/or acronyms have matches
-        dict_has_matches = {
-            "keywords": (len(inds_with_keywords_truematch) > 0),
-            "acronyms": (len(inds_with_acronyms) > 0),
-        }
 
         # Pool together unique indices of sentences with keywords, acronyms
         inds_with_terms = list(set().union(inds_with_keywords_truematch, inds_with_acronyms))
@@ -336,15 +320,11 @@ class Paper(Base):
 
         # Otherwise, just copy over previous indices
         else:
-            ranges_buffered = None
             sentences_buffered = sentences[inds_with_terms].tolist()
 
         # Return outputs
         return {
             "paragraph": sentences_buffered,
-            "ambig_matches": ambig_matches,
-            "acronym_meanings": acronym_meanings,
-            "has_matches": dict_has_matches,
         }
 
     # Split text into sentences at assumed sentence breaks
@@ -366,32 +346,3 @@ class Paper(Base):
         return text_flat
 
     #
-
-    # Find possible meanings of acronyms in text
-    def _verify_acronyms(self, keyword_obj):
-        """
-        Method: _verify_acronyms
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Extract all possible matches from the stored text to the acronyms of the Keyword instance.
-        """
-        # Fetch global variables
-        acronyms = [item.upper() for item in keyword_obj._get_info("acronyms_caseinsensitive")]
-        text = self._get_info("text_original")
-
-        # Build regular expression for all acronyms
-        list_exp = [
-            (r"\b" + (r"[a-z]+\b" + config.grammar.regex.exp_acronym_midwords).join(letterset) + r"[a-z]+\b")
-            for letterset in acronyms
-        ]
-        combined_exp = r"(?:" + (r")|(?:".join(list_exp)) + r")"
-
-        # Search full text for possible acronym meanings
-        matches = re.findall(combined_exp, text)
-        # Throw error if any tuple entries found (e.g. loophole in regex)
-        if any([(isinstance(item, tuple)) for item in matches]):
-            raise ValueError("Err: Regex must have holes!\n{0}\n{1}".format(combined_exp, matches))
-
-        # Return all determined matches
-        return matches
-        return matches
-        return matches
