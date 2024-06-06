@@ -929,15 +929,29 @@ class Base:
             # Store the keyword itself and skip ahead if this word is a keyword
             matched_kobjs = [item for item in keyword_objs if (item.identify_keyword(curr_word.text)["bool"])]
             if len(matched_kobjs) > 0:  # If word is a keyword
-                name_kobj = matched_kobjs[0].get_name()  # Fetch name for kobj
-                core_keywords.append(name_kobj.lower())
-                core_synsets.append([name_kobj.lower()])
+                # If word contains hyphen-esque|punct., keep whole word as synset
+                if bool(re.search(r"(?:[^\w\s]|_)", curr_word.text)):
+                    name_kobj = matched_kobjs[0].get_name() # Fetch name for kobj
+                    core_keywords.append(name_kobj.lower())
+                    core_synsets.append([curr_word.text.lower()])
 
-                # Print some notes
-                if do_verbose:
-                    print("Word itself is keyword. Stored synset: {0}".format(core_synsets))
+                    # Print some notes
+                    if do_verbose:
+                        print("Word itself is keyword. Stored synset: {0}"
+                                .format(core_synsets))
 
-                continue
+                    continue
+                # Otherwise, store keyword itself
+                else:
+                    name_kobj = matched_kobjs[0].get_name()  # Fetch name for kobj
+                    core_keywords.append(name_kobj.lower())
+                    core_synsets.append([name_kobj.lower()])
+
+                    # Print some notes
+                    if do_verbose:
+                        print("Word itself is keyword. Stored synset: {0}".format(core_synsets))
+
+                    continue
 
             # Store a representative synset and skip ahead if word is a numeral
             if bool(re.search(("^(ID)?[0-9]+"), curr_word.text, flags=re.IGNORECASE)):
@@ -1008,6 +1022,49 @@ class Base:
             "text": phrase_NLP.text,
             "str_meaning": str_meaning,
         }
+
+    # Fetch a keyword object that matches the given lookup
+    def _fetch_keyword_object(self, lookup, keyword_objs=None, do_verbose=None, do_raise_emptyerror=True):
+        """
+        Method: _fetch_keyword_object
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Finds stored Keyword instance that matches to given lookup term.
+        """
+        # Load global variables
+        if (do_verbose is None):
+            do_verbose = self._get_info("do_verbose")
+        if (keyword_objs is None):
+            keyword_objs = self._get_info("keyword_objs")
+        num_keyobjs = len(keyword_objs)
+        # Print some notes
+        if do_verbose:
+            print("> Running _fetch_keyword_object() for lookup term {0}.".format(lookup))
+        #
+
+        # Find keyword object that matches to given lookup term
+        match = None
+        for ii in range(0, num_keyobjs):
+            # If current keyword object matches, record and stop loop
+            if keyword_objs[ii].identify_keyword(lookup)["bool"]:
+                match = keyword_objs[ii]
+                break
+
+        # Throw error if no matching keyword object found
+        if match is None:
+            errstr = "No matching keyword object for {0}.\n".format(lookup)
+            errstr += "Available keyword objects are:\n"
+            for ii in range(0, num_keyobjs):
+                errstr += "{0}\n".format(keyword_objs[ii])
+
+            # Raise error if so requested
+            if do_raise_emptyerror:
+                raise ValueError(errstr)
+            # Otherwise, return None
+            else:
+                return None
+
+        # Return the matching keyword object
+        return match
 
     # Return boolean for if given word (NLP type word) is of conjoined given part of speech
     def _is_pos_conjoined(self, word, pos):
