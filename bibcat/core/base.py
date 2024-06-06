@@ -1369,11 +1369,24 @@ class Base:
          - Process database of ambiguous keyword phrases into dictionary of keywords, regular expressions, boolean verdicts, etc.
         """
 
+        # Load the keywords
+        if keyword_objs is None:
+            try:
+                keyword_objs = [
+                    self._get_info("keyword_obj", do_flag_hidden=True)
+                ]
+            except KeyError:
+                keyword_objs = self._get_info("keyword_objs", do_flag_hidden=True)
+
+        # Load the ambig. lookup phrases
+        lookup_ambigs = [
+            item._get_info("name").lower()
+            for item in keyword_objs
+            if (len(item._get_info("ambig_words")) > 0)
+        ]
+
         # Load the ambig. phrase data
-        #lookup_ambigs = [str(item).lower() for item in np.genfromtxt(config.KW_AMBIG, comments="#", dtype=str)]
-        lookup_ambigs = [i.lower() for i in config.textprocessing.keywords_ambig]
         data_ambigs = np.array(config.textprocessing.phrases_ambig)
-        #data_ambigs = np.genfromtxt(config.PHR_AMBIG, comments="#", dtype=str, delimiter="\t")
         if len(data_ambigs.shape) == 1:  # If single row, reshape to 2D
             data_ambigs = data_ambigs.reshape(1, data_ambigs.shape[0])
         num_ambigs = data_ambigs.shape[0]
@@ -1386,7 +1399,8 @@ class Base:
 
         # Initialize containers for processed ambig. data
         list_kw_ambigs = []
-        list_exp_ambigs = []
+        list_exp_exact_ambigs = []
+        list_exp_meaning_ambigs = []
         list_bool_ambigs = []
         list_text_ambigs = []
 
@@ -1405,12 +1419,14 @@ class Base:
                 raise ValueError("Err: {0}:{1} in ambig. database not bool!".format(ii, data_ambigs[ii, ind_bool]))
 
             # Formulate current regular expression
-            curr_roots = self._extract_core_from_phrase(
+            curr_extraction = self._extract_core_from_phrase(
                 phrase_NLP=curr_NLP, do_verbose=do_verbose, do_skip_useless=False, keyword_objs=keyword_objs
-            )["roots"]
-            curr_exp = (
-                r"(" + r")( .*)* (".join([(r"(\b" + r"\b|\b".join(item) + r"\b)") for item in curr_roots]) + r")"
-            )  # Convert to reg. exp. for substring search later
+            )
+            curr_roots = curr_extraction["roots"]
+            curr_exp_exact = r"\b("+re.escape(curr_text)+r")\b"
+            curr_exp_meaning = (
+                r"(" + r") (\w+ )*(".join([(r"\b("+r"|".join(item)+r")\b") for item in curr_roots]) + r")"
+            ) #Convert to reg. exp. for substring search later
 
             # Extract current keywords
             curr_kw_raw = data_ambigs[ii, ind_keyword].lower()
@@ -1422,8 +1438,11 @@ class Base:
             # Store the extracted data for each keyword
             tmp_num = len(curr_kw)
             list_kw_ambigs += curr_kw
-            list_exp_ambigs += [
-                re.sub(str_anymatch_ambig, curr_kw[jj], curr_exp, flags=re.IGNORECASE) for jj in range(0, tmp_num)
+            list_exp_exact_ambigs += [
+                re.sub(str_anymatch_ambig, curr_kw[jj], curr_exp_exact, flags=re.IGNORECASE) for jj in range(0, tmp_num)
+            ]
+            list_exp_meaning_ambigs += [
+                re.sub(str_anymatch_ambig, curr_kw[jj], curr_exp_meaning, flags=re.IGNORECASE) for jj in range(0, tmp_num)
             ]
             list_bool_ambigs += [curr_bool] * tmp_num
             list_text_ambigs += [curr_text] * tmp_num
@@ -1432,7 +1451,8 @@ class Base:
         dict_ambigs = {
             "lookup_ambigs": lookup_ambigs,
             "all_kw_ambigs": list_kw_ambigs,
-            "all_exp_ambigs": list_exp_ambigs,
+            "all_exp_exact_ambigs": list_exp_exact_ambigs,
+            "all_exp_meaning_ambigs": list_exp_meaning_ambigs,
             "all_bool_ambigs": list_bool_ambigs,
             "all_text_ambigs": list_text_ambigs,
         }
