@@ -77,7 +77,6 @@ class Paper(Base):
         text_clean_split = self._split_text(text=text_clean)
 
         # Store the preprocessed text
-        self._store_info(text_clean, key="text_clean")
         self._store_info(text_clean_split, key="text_clean_split")
 
         return
@@ -135,9 +134,7 @@ class Paper(Base):
         """
 
         # Extract clean, naively split paragraphs
-        text_clean_split = self._get_info("text_clean_split")
         keyword_objs = self._get_info("keyword_objs")
-        do_check_truematch = self._get_info("do_check_truematch")
 
         # If overwrite not allowed, check if paragraphs already extracted+saved
         if not do_overwrite:
@@ -162,24 +159,16 @@ class Paper(Base):
 
         # Extract paragraphs for each keyword
         dict_paragraphs = {}  # Dictionary to hold paragraphs for keyword objects
-        dict_setup = {"keyword_objs": keyword_objs, "buffer": buffer}  # Parameters
-        dict_results_ambig = {item.get_name(): None for item in keyword_objs}  # To hold ambig. output
-        dict_acronym_meanings = {item.get_name(): None for item in keyword_objs}  # False acr. meanings
         for ii in range(0, len(keyword_objs)):
             # Extract all paragraphs containing keywords/verified acronyms
             tmp_res = self._extract_paragraph(keyword_obj=keyword_objs[ii], buffer=buffer)
             paragraphs = tmp_res["paragraph"]
-            dict_results_ambig[keyword_objs[ii].get_name()] = tmp_res["ambig_matches"]
-            dict_acronym_meanings[keyword_objs[ii].get_name()] = tmp_res["acronym_meanings"]
 
             # Store the paragraphs under name of first given keyword
             dict_paragraphs[keyword_objs[ii].get_name()] = paragraphs
 
         # Store the extracted paragraphs and setup information
         self._store_info(dict_paragraphs, "_paragraphs")
-        self._store_info(dict_setup, "_paragraphs_setup")
-        self._store_info(dict_results_ambig, "_results_ambig")
-        self._store_info(dict_acronym_meanings, "_dict_acronym_meanings")
 
         return
 
