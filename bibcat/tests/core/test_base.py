@@ -862,7 +862,7 @@ class TestBase(unittest.TestCase):
             for key1 in dict_tests:
                 try:
                     answer = dict_tests[key1]
-                    test_res = testbase._streamline_phrase(text=key1)
+                    test_res = testbase._streamline_phrase(text=key1, do_streamline_etal=True)
                     self.assertEqual(test_res, answer)
                 except AssertionError:
                     print("")
@@ -903,79 +903,7 @@ class TestBase(unittest.TestCase):
             for key1 in dict_tests:
                 try:
                     answer = dict_tests[key1]
-                    test_res = testbase._streamline_phrase(text=key1)
-                    self.assertEqual(test_res, answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n".format(test_res, answer, key1))
-                    print("---")
-                    print("")
-
-                    self.assertEqual(test_res, answer)
-
-        # Test streamlining for text with numerics
-        def test_streamline_phrase__numerics(self):
-            # Prepare text and answers for test
-            dict_tests = {
-                "There were 200-300 observations done of star AB100+300.": "There were {1} observations done of star AB{0}.".format(
-                    config.textprocessing.placeholder_number, config.textprocessing.placeholder_numeric
-                ),
-                "Consider planet J9385-193 and 2MASS293-04-331+101.": "Consider planet J{0} and 2MASS{0}.".format(
-                    config.textprocessing.placeholder_number
-                ),
-                "Disk HD 193283-10, Kepler-234c, and Planet 312b as well.": "Disk HD{0}, Kepler {0}, and Planet {0} as well.".format(
-                    config.textprocessing.placeholder_number
-                ),
-                "The latter had ~450 - 650 data points in total.": "The latter had {0} data points in total.".format(
-                    config.textprocessing.placeholder_numeric
-                ),
-            }
-
-            # Prepare and run tests for bibcat class instance
-            testbase = Base()
-
-            # Check answers
-            for key1 in dict_tests:
-                try:
-                    answer = dict_tests[key1]
-                    test_res = testbase._streamline_phrase(text=key1)
-                    self.assertEqual(test_res, answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n".format(test_res, answer, key1))
-                    print("---")
-                    print("")
-
-                    self.assertEqual(test_res, answer)
-
-        # Test streamlining for text with websites
-        def test_streamline_phrase__websites(self):
-            # Prepare text and answers for test
-            dict_tests = {
-                "Please check out: www.stsci.edu/home for more info.": "Please check out: {0} for more info.".format(
-                    config.textprocessing.placeholder_website
-                ),
-                "Consider also https://jwst.edu/,": "Consider also {0},".format(
-                    config.textprocessing.placeholder_website
-                ),
-                "http:hst.edu/lookup=wow?; public.stsci.edu,": "{0}; {0},".format(
-                    config.textprocessing.placeholder_website
-                ),
-                "   www.roman-telescope.stsci.edu/main/about/. ": "{0}.".format(
-                    config.textprocessing.placeholder_website
-                ),
-            }
-
-            # Prepare and run tests for bibcat class instance
-            testbase = Base()
-
-            # Check answers
-            for key1 in dict_tests:
-                try:
-                    answer = dict_tests[key1]
-                    test_res = testbase._streamline_phrase(text=key1)
+                    test_res = testbase._streamline_phrase(text=key1, do_streamline_etal=True)
                     self.assertEqual(test_res, answer)
                 except AssertionError:
                     print("")

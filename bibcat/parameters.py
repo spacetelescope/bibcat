@@ -62,7 +62,7 @@ kobj_k2 = keyword.Keyword(
     acronyms_caseinsensitive=[],
     do_not_classify=False,
     banned_overlap=[],
-    ambig_words=[]
+    ambig_words=["K2"]
 )
 kobj_hla = keyword.Keyword(
     keywords=["Hubble Legacy Archive"],

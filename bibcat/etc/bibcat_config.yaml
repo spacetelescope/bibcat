@@ -124,7 +124,7 @@ textprocessing:
   - [K2, "iso\u2212K2 \u2212", 'FALSE']
   - [K2, k2fov, 'FALSE']
   - [K2, k2phot, 'FALSE']
-  - [K2, K2 000, 'FALSE']
+  - [K2, K2-000, 'FALSE']
   - [K2, K2 C000, 'FALSE']
   - [K2, K2 C0, 'FALSE']
   - [K2, K2 C3 star, 'FALSE']
