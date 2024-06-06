@@ -834,15 +834,21 @@ class Base:
         for ii in sorted(ids_rem)[::-1]:  # Reverse-sorted
             text = text[0:ii] + text[(ii + 1) : len(text)]
 
+        # Remove 'et al.' period phrasing (can mess up sentence splitter later)
+        text = re.sub(r"\bet al\b\.", "et al", text)
+        #
+
         # Replace pesky "Author & Author (date)", et al., etc., wordage
         if do_streamline_etal:
             # Adapted from:
             # https://regex101.com/r/xssPEs/1
             # https://stackoverflow.com/questions/63632861/
             #                           python-regex-to-get-citations-in-a-paper
-            bit_author = r"(?:[A-Z][A-Za-z'`-]+)"
+            #bit_author = r"(?:[A-Z][A-Za-z'`-]+)"
+            bit_author = r"(?:(\b[A-Z]\. )*[A-Z][A-Za-z'`-]+)"
             bit_etal = r"(?:et al\.?)"
-            bit_additional = f"(?:,? (?:(?:and |& )?{bit_author}|{bit_etal}))"
+            #bit_additional = f"(?:,? (?:(?:and |& )?{bit_author}|{bit_etal}))"
+            bit_additional = f"(?: (?:(?:and |& ){bit_author}|{bit_etal}))"
             # Regular expressions for years (with or without brackets)
             exp_year_yesbrackets = (
                 r"( (\(|\[|\{)" + r"([0-9]{4,4}|[0-9]{2,2})" + r"((,|;) ?([0-9]{4,4}|[0-9]{2,2}))*" + r"(\)|\]|\}))"
@@ -862,7 +868,11 @@ class Base:
             text = re.sub(exp_cites_nobrackets, config.textprocessing.placeholder_author, text)
 
             # Replace singular et al. (e.g. SingleAuthor et al.) wordage as well
-            text = re.sub(r" et al\b\.?", "etal", text)
+            #text = re.sub(r" et al\b\.?", "etal", text)
+            text = re.sub(r"\b([A-Z]\. )*(\b[A-Z][A-Z|a-z]+) et al\b\.?", config.textprocessing.placeholder_author, text)
+
+            #Collapse adjacent author terms
+            text = re.sub(r"{0}((,|;|(,? and))( )+{0})+".format(config.textprocessing.placeholder_author), config.textprocessing.placeholder_author, text)
 
         # Remove starting+ending whitespace
         text = text.lstrip().rstrip()
