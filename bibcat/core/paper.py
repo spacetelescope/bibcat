@@ -72,7 +72,7 @@ class Paper(Base):
 
         # Preprocess the data
         # Cleanse extra whitespace, strange chars, etc.
-        text_clean = self._streamline_phrase(text=text_original)
+        text_clean = self._streamline_phrase(text=text_original, do_streamline_etal=False)
         # Split cleansed text into naive sentences
         text_clean_split = self._split_text(text=text_clean)
 

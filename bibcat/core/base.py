@@ -1346,20 +1346,6 @@ class Base:
         # Return the final verdict
         return check_all
 
-    # Load text from given file
-    def _load_text(self, filepath):
-        """
-        Method: _load_text
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Load text from a given filepath.
-        """
-
-        # Load text from file
-        with open(filepath, "r") as openfile:
-            text = openfile.read()
-        # Return the loaded text
-        return text
-
     # Process database of ambig. phrases into lookups and dictionary
     def _process_database_ambig(self, keyword_objs=None, do_verbose=False):
         """

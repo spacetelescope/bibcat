@@ -786,7 +786,7 @@ class Grammar(Base):
                 print("anon modifications complete.\nUpdated text:\n{0}\n".format(text_updated))
 
         # Cleanse the text to finalize it
-        text_updated = self._streamline_phrase(text=text_updated)
+        text_updated = self._streamline_phrase(text=text_updated, do_streamline_etal=True)
 
         # Build grammar structures using only kept words
         struct_verbs_updated = {

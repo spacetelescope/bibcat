@@ -381,7 +381,7 @@ class MachineLearningClassifier(ClassifierBase):
             print("Class names from model:\n{0}\n".format(list_classes))
 
         # Cleanse the text
-        text_clean = self._streamline_phrase(text)
+        text_clean = self._streamline_phrase(text, do_streamline_etal=False)
 
         # Fetch and use stored model
         model = self._get_info("model")
