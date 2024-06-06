@@ -1488,9 +1488,9 @@ class Base:
         # Return boolean result
         return {"bool":check_keywords, "charspans":charspans_keywords}
 
-    # Cleanse given (short) string of extra whitespace, dashes, etc, and replace websites, etc,
+    # Cleanse given (short) string of extra whitespace, dashes, etc,
     # with uniform placeholders.
-    def _streamline_phrase(self, text):
+    def _streamline_phrase(self, text, do_streamline_etal):
         """
         Method: _streamline_phrase
         WARNING! This method is *not* meant to be used directly by users.
@@ -1504,10 +1504,7 @@ class Base:
         dict_exp_abbrev = config.grammar.regex.dict_exp_abbrev
 
         # Remove any initial excessive whitespace
-        text = self._cleanse_text(text=text, do_streamline_etal=True)
-
-        # Replace annoying websites with placeholder
-        text = re.sub(config.grammar.regex.exp_website, config.textprocessing.placeholder_website, text)
+        text = self._cleanse_text(text=text, do_streamline_etal=do_streamline_etal)
 
         # Replace annoying <> inserts (e.g. html)
         text = re.sub(r"<[A-Z|a-z|/]+>", "", text)
@@ -1516,24 +1513,8 @@ class Base:
         for key1 in dict_exp_abbrev:
             text = re.sub(key1, dict_exp_abbrev[key1], text)
 
-        # Replace annoying object numerical name notations
-        # E.g.: HD 123456, 2MASS123-456
-        text = re.sub(
-            r"([A-Z]+) ?[0-9][0-9]+[A-Z|a-z]*((\+|-)[0-9][0-9]+)*", r"\g<1>" + config.textprocessing.placeholder_number, text
-        )
-        # E.g.: Kepler-123ab
-        text = re.sub(r"([A-Z][a-z]+)( |-)?[0-9][0-9]+([A-Z|a-z])*", r"\g<1> " + config.textprocessing.placeholder_number, text)
-
-        # Remove most obnoxious numeric ranges
-        text = re.sub(
-            r"~?[0-9]+([0-9]|\.)* ?- ?[0-9]+([0-9]|\.)*[A-Z|a-z]*\b", "{0}".format(config.textprocessing.placeholder_numeric), text
-        )
-
-        # Remove spaces between capital+numeric names
-        text = re.sub(r"([A-Z]+) ([0-9]+)([0-9]|[a-z])+", r"\1\2\3{}".format(config.textprocessing.placeholder_numeric), text)
-
         # Remove any new excessive whitespace and punctuation spaces
-        text = self._cleanse_text(text=text, do_streamline_etal=True)
+        text = self._cleanse_text(text=text, do_streamline_etal=do_streamline_etal)
 
         # Return streamlined text
         return text

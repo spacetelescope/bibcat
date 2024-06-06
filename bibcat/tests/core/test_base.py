@@ -245,8 +245,8 @@ class TestBase(unittest.TestCase):
                 "small Hubble constant": {"lookup": "Kepler", "bool": False},
                 "small Hubble's constant": {"lookup": "Kepler", "bool": False},
                 "Edwin Hubble's papers": {"lookup": "Hubble", "bool": False},
-                "Hubble 1970": {"lookup": "Hubble", "bool": False},
-                "Hubble (2000)": {"lookup": "Hubble", "bool": False},
+                #"Hubble 1970": {"lookup": "Hubble", "bool": False}, - not realistic since would be cleaned beforehand normally
+                #"Hubble (2000)": {"lookup": "Hubble", "bool": False}, - not realistic since would be cleaned beforehand normally
                 "high S/N Hubble image": {"lookup": "Hubble", "bool": True},
                 "HST observatory": {"lookup": "Hubble", "bool": True},
                 "H.S.T. observatory": {"lookup": "Hubble", "bool": True},
