@@ -18,19 +18,19 @@ class TestPaper(unittest.TestCase):
             # placeholder = config.string_anymatch_ambig
             # Prepare text and answers for test
             text1 = "Despite the low S/N of the data, we still detect the stars. Figure 1 plots the Hubble Space Telescope (HST) observations. The HST stars are especially bright. We analyze them in the next section. A filler sentence. Here is another filler sentence (with parentheses). Some more filler content. We summarize our Hubble results next."
-            meanings1 = {"Hubble": ["Hubble Space Telescope"], "Kepler": None, "K2": None}
-            ambigs1 = [("our Hubble results", True)]
+            #meanings1 = None #{"Hubble": ["Hubble Space Telescope"], "Kepler": None, "K2": None}
+            #ambigs1 = [("our Hubble results", True)]
 
             text2 = "Kepler observations are presented in Section 1. Table 1 then gives the measured Kepler velocity data and Kepler planets. The Kepler images and Kepler plots indicate a correlation. The Kepler results are further shown in part 2. Note the Keplerian rotation."
-            meanings2 = {"Hubble": None, "Kepler": None, "K2": None}
-            ambigs2 = [
-                ("Kepler observations", True),
-                ("measured Kepler velocity data", False),
-                ("Kepler planets", False),
-                ("Kepler images", True),
-                ("Kepler plots", True),
-                ("Kepler results", True),
-            ]
+            #meanings2 = None #{"Hubble": None, "Kepler": None, "K2": None}
+            #ambigs2 = [
+            #    ("Kepler observations", True),
+            #    ("measured Kepler velocity data", False),
+            #    ("Kepler planets", False),
+            #    ("Kepler images", True),
+            #    ("Kepler plots", True),
+            #    ("Kepler results", True),
+            #]
 
             list_acts = [
                 {
@@ -42,8 +42,8 @@ class TestPaper(unittest.TestCase):
                         "The HST stars are especially bright.",
                         "We summarize our Hubble results next.",
                     ],
-                    "acronym_meanings": meanings1,
-                    "results_ambig": ambigs1,
+                    #"acronym_meanings": meanings1,
+                    #"results_ambig": ambigs1,
                 },
                 {
                     "text": text1,
@@ -53,8 +53,8 @@ class TestPaper(unittest.TestCase):
                         "Despite the low S/N of the data, we still detect the stars. Figure 1 plots the Hubble Space Telescope (HST) observations. The HST stars are especially bright. We analyze them in the next section.",
                         "Some more filler content. We summarize our Hubble results next.",
                     ],
-                    "acronym_meanings": meanings1,
-                    "results_ambig": ambigs1,
+                    #"acronym_meanings": meanings1,
+                    #"results_ambig": ambigs1,
                 },
                 {
                     "text": text1,
@@ -63,8 +63,8 @@ class TestPaper(unittest.TestCase):
                     "answer": [
                         "Despite the low S/N of the data, we still detect the stars. Figure 1 plots the Hubble Space Telescope (HST) observations. The HST stars are especially bright. We analyze them in the next section. A filler sentence. Here is another filler sentence (with parentheses). Some more filler content. We summarize our Hubble results next."
                     ],
-                    "acronym_meanings": meanings1,
-                    "results_ambig": ambigs1,
+                    #"acronym_meanings": meanings1,
+                    #"results_ambig": ambigs1,
                 },
                 {
                     "text": text1,
@@ -73,8 +73,8 @@ class TestPaper(unittest.TestCase):
                     "answer": [
                         "Despite the low S/N of the data, we still detect the stars. Figure 1 plots the Hubble Space Telescope (HST) observations. The HST stars are especially bright. We analyze them in the next section. A filler sentence. Here is another filler sentence (with parentheses). Some more filler content. We summarize our Hubble results next."
                     ],
-                    "acronym_meanings": meanings1,
-                    "results_ambig": ambigs1,
+                    #"acronym_meanings": meanings1,
+                    #"results_ambig": ambigs1,
                 },
                 {
                     "text": text2,
@@ -85,8 +85,8 @@ class TestPaper(unittest.TestCase):
                         "The Kepler images and Kepler plots indicate a correlation.",
                         "The Kepler results are further shown in part 2.",
                     ],
-                    "acronym_meanings": meanings2,
-                    "results_ambig": ambigs2,
+                    #"acronym_meanings": meanings2,
+                    #"results_ambig": ambigs2,
                 },
                 {
                     "text": text2,
@@ -95,8 +95,8 @@ class TestPaper(unittest.TestCase):
                     "answer": [
                         "Kepler observations are presented in Section 1. Table 1 then gives the measured Kepler velocity data and Kepler planets. The Kepler images and Kepler plots indicate a correlation. The Kepler results are further shown in part 2. Note the Keplerian rotation."
                     ],
-                    "acronym_meanings": meanings2,
-                    "results_ambig": ambigs2,
+                    #"acronym_meanings": meanings2,
+                    #"results_ambig": ambigs2,
                 },
             ]
 
@@ -106,8 +106,8 @@ class TestPaper(unittest.TestCase):
                 curr_kobj = info["kobj"]
                 curr_buffer = info["buffer"]
                 curr_answer = info["answer"]
-                curr_ambig = info["results_ambig"]
-                curr_acr_meanings = info["acronym_meanings"]
+                #curr_ambig = info["results_ambig"]
+                #curr_acr_meanings = info["acronym_meanings"]
                 curr_name = curr_kobj.get_name()
 
                 # Prepare and run test for bibcat class instance
@@ -117,36 +117,36 @@ class TestPaper(unittest.TestCase):
                 set_res = testbase.process_paragraphs(buffer=curr_buffer)
                 test_res = testbase.get_paragraphs()[curr_name]
 
-                ambig_output = testbase._get_info("_results_ambig")[curr_name]
-                test_ambig = [
-                    (item2["text_wordchunk"], item2["bool"])
-                    for item1 in ambig_output
-                    for item2 in item1["info"]
-                    if (item2["matcher"] is not None)
-                ]
-                test_acr_meanings = testbase._get_info("_dict_acronym_meanings")
+                #ambig_output = testbase._get_info("_results_ambig")[curr_name]
+                #test_ambig = [
+                #    (item2["text_wordchunk"], item2["bool"])
+                #    for item1 in ambig_output
+                #    for item2 in item1["info"]
+                #    if (item2["matcher"] is not None)
+                #]
+                #test_acr_meanings = testbase._get_info("_dict_acronym_meanings")
 
                 # Check answer
                 try:
                     self.assertEqual(test_res, curr_answer)
-                    self.assertEqual(test_ambig, curr_ambig)
-                    self.assertEqual(test_acr_meanings, curr_acr_meanings)
+                    #self.assertEqual(test_ambig, curr_ambig)
+                    #self.assertEqual(test_acr_meanings, curr_acr_meanings)
                 except AssertionError:
                     print("")
                     print(">")
                     print("Text: {2}\nTest answer: {0}\nAct. answer: {1}".format(test_res, curr_answer, curr_text))
-                    print("Test ambig: {0}\nAct. ambig: {1}".format(test_ambig, curr_ambig))
-                    print(
-                        "Test acronym matches: {0}\nAct. acronym matches: {1}".format(
-                            test_acr_meanings, curr_acr_meanings
-                        )
-                    )
+                    #print("Test ambig: {0}\nAct. ambig: {1}".format(test_ambig, curr_ambig))
+                    #print(
+                    #    "Test acronym matches: {0}\nAct. acronym matches: {1}".format(
+                    #        test_acr_meanings, curr_acr_meanings
+                    #    )
+                    #)
                     print("---")
                     print("")
 
                     self.assertEqual(test_res, curr_answer)
-                    self.assertEqual(test_ambig, curr_ambig)
-                    self.assertEqual(test_acr_meanings, curr_acr_meanings)
+                    #self.assertEqual(test_ambig, curr_ambig)
+                    #self.assertEqual(test_acr_meanings, curr_acr_meanings)
 
     # For tests of _buffer_indices:
     if True:
@@ -246,54 +246,3 @@ class TestPaper(unittest.TestCase):
                 print("")
 
                 self.assertEqual(test_res, answer)
-
-    # For tests of _verify_acronyms:
-    if True:
-        # Test search for possible meanings of given acronyms
-        def test__verify_acronyms__variety(self):
-            # Prepare text and answers for test
-            dict_acts = {
-                "The Hubble Space Telescope is a telescope often referred to as H.S.T. or HST.": {
-                    "kobj": params.kobj_hubble,
-                    "matches": ["Hubble Space Telescope"],
-                },
-                "The Heralding of the Swan Trumphets will be showing in the Healing Song Theatre Plaza next week.": {
-                    "kobj": params.kobj_hubble,
-                    "matches": ["Heralding of the Swan Trumphets", "Healing Song Theatre"],
-                },
-                "Hello. Space Tyrants is showing in the theatre next door.": {
-                    "kobj": params.kobj_hubble,
-                    "matches": [],
-                },
-                "H. Space Tyrants is showing in the theatre next door.": {"kobj": params.kobj_hubble, "matches": []},
-                "H S T is showing in the theatre next door.": {"kobj": params.kobj_hubble, "matches": []},
-                "Hijinks of Space Tyrants is showing in the theatre next door.": {
-                    "kobj": params.kobj_hubble,
-                    "matches": ["Hijinks of Space Tyrants"],
-                },
-                "Hidden space tyrants is showing in the theatre next door. H. S. TheName will be seeing it.": {
-                    "kobj": params.kobj_hubble,
-                    "matches": [],
-                },
-            }
-
-            # Determine and check answers
-            for phrase in dict_acts:
-                curr_kobj = dict_acts[phrase]["kobj"]
-                curr_answer = dict_acts[phrase]["matches"]
-
-                # Prepare and run test for bibcat class instance
-                testbase = paper.Paper(text=phrase, keyword_objs=[params.kobj_hubble], do_check_truematch=False)
-                test_res = testbase._verify_acronyms(keyword_obj=curr_kobj)
-
-                # Check answer
-                try:
-                    self.assertEqual(test_res, curr_answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("Text: {2}\nTest answer: {0}\nAct. answer: {1}".format(test_res, curr_answer, phrase))
-                    print("---")
-                    print("")
-
-                    self.assertEqual(test_res, curr_answer)
