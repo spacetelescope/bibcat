@@ -477,17 +477,19 @@ class Base:
 
         # Extract info from ambig. database
         list_kw_ambigs = dict_ambigs["all_kw_ambigs"]
-        list_exp_ambigs = dict_ambigs["all_exp_ambigs"]
+        list_exp_exact_ambigs = dict_ambigs["all_exp_exact_ambigs"]
+        list_exp_meaning_ambigs = dict_ambigs["all_exp_meaning_ambigs"]
         list_bool_ambigs = dict_ambigs["all_bool_ambigs"]
         list_text_ambigs = dict_ambigs["all_text_ambigs"]
         lookup_ambigs = dict_ambigs["lookup_ambigs"]
         lookup_ambigs_lower = [item.lower() for item in dict_ambigs["lookup_ambigs"]]
         num_ambigs = len(list_kw_ambigs)
 
-        # Replace numerics and citation numerics with placeholders
+        # Replace hyphenated numerics with placeholders
         text_orig = text
         placeholder_number = config.textprocessing.placeholder_number
-        text = re.sub(r"\(?\b[0-9]+\b\)?", placeholder_number, text_orig)
+        #text = re.sub(r"\(?\b[0-9]+\b\)?", placeholder_number, text_orig)
+        text = re.sub(r"-\b[0-9]+\b", ("-"+placeholder_number), text_orig)
 
         # Print some notes
         if do_verbose:
@@ -558,6 +560,58 @@ class Base:
                 ],
             }
 
+        # Return status as true match if any acronyms match
+        elif any(
+            [
+                dict_kobjinfo[item._get_info("name")]["bool_acronym_only"]
+                for item in keyword_objs_ambigs
+            ]
+        ):
+            # Print some notes
+            if do_verbose:
+                print("Text matches acronym. Returning true state.")
+
+            # Return status as true match
+            return {
+                "bool":True,
+                "info":[
+                    {
+                        "matcher":None,
+                        "set":None,
+                        "bool":True,
+                        "text_wordchunk":"<Not ambig.>",
+                        "text_database":None
+                    }
+                ],
+            }
+
+        # Return status as true match if any non-ambig. phrases match to text
+        elif any(
+            [
+                bool(re.search((r"\b"+item2+r"\b"), text, flags=re.IGNORECASE))
+                for item1 in keyword_objs_ambigs
+                for item2 in item1._get_info("keywords")
+                if (item2 not in item1._get_info("ambig_words"))
+            ]
+        ):
+            # Print some notes
+            if do_verbose:
+                print("Text matches unambiguous keyword. Returning true state.")
+
+            # Return status as true match
+            return {
+                "bool":True,
+                "info":[
+                    {
+                        "matcher":None,
+                        "set":None,
+                        "bool":True,
+                        "text_wordchunk":"<Not ambig.>",
+                        "text_database":None
+                    }
+                ],
+            }
+
         # Assemble makeshift wordchunks (not using NLP ones here)
         # Not sure why happened, but NLP sometimes failed to identify nouns/num.
         # Print some notes
@@ -569,11 +623,11 @@ class Base:
             text=text, keyword_objs=keyword_objs, do_verbose=do_verbose, do_include_verbs=False
         )
         # Throw error if no wordchunks identified
-        tmp_sents = list(nlp(str(text)).sents)
         if len(list_wordchunks) == 0:
             errstr = (
                 "No final wordchunks!: {0}\nText: '{1}'".format(list_wordchunks, text) + "\nAll words and p.o.s.:\n"
             )
+            tmp_sents = list(nlp(str(text)).sents)
             for aa in range(0, len(tmp_sents)):
                 for bb in range(0, len(tmp_sents[aa])):
                     tmp_word = tmp_sents[aa][bb]
@@ -649,8 +703,8 @@ class Base:
                     "ind": jj,
                     "text_database": list_text_ambigs[jj],
                     "text_wordchunk": curr_chunk_text,
-                    "exp": list_exp_ambigs[jj],
-                    "matcher": re.search(list_exp_ambigs[jj], curr_meaning, flags=re.IGNORECASE),
+                    "exp": list_exp_exact_ambigs[jj],
+                    "matcher": re.search(list_exp_exact_ambigs[jj], curr_meaning, flags=re.IGNORECASE),
                     "bool": list_bool_ambigs[jj],
                 }
                 for jj in range(0, num_ambigs)
@@ -663,6 +717,31 @@ class Base:
                 print("Set of matches assembled from ambig. database:")
                 for item1 in set_matches_raw:
                     print(item1)
+
+            # Extract all ambig. phrases+substrings that match to this *meaning*
+            if len(set_matches) == 0: # If no direct matches
+                set_matches_raw = [
+                    {
+                        "ind":jj,
+                        "text_database":list_text_ambigs[jj],
+                        "text_wordchunk":curr_chunk_text,
+                        "exp":list_exp_meaning_ambigs[jj],
+                        "matcher":re.search(list_exp_meaning_ambigs[jj], curr_meaning, flags=re.IGNORECASE),
+                        "bool":list_bool_ambigs[jj]
+                    }
+                    for jj in range(0, num_ambigs)
+                    if (list_kw_ambigs[jj] in curr_inner_kw)
+                ]
+                set_matches = [
+                    item for item in set_matches_raw
+                    if (item["matcher"] is not None)
+                ]
+
+                # Print some notes
+                if do_verbose_deep:
+                    print("Set of meanings assembled from ambig. database:")
+                    for item1 in set_matches_raw:
+                        print(item1)
 
             # Throw error if no match found
             if len(set_matches) == 0:
