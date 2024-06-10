@@ -68,6 +68,7 @@ def process_text_data(data: list) -> dict:
             "bibcode": entry["bibcode"],
             "missions": {},
         }
+        # Iterate through missions for this paper
         for mission in entry["class_missions"]:
             for kobj in params.all_kobjs:
                 name = kobj.get_name()
