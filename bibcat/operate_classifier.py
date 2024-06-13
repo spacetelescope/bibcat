@@ -11,7 +11,10 @@ import json
 import os
 
 from bibcat.core import operator
+from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import convert_sets
+
+logger = setup_logger(__name__)
 
 # Store texts for each operator and its internal classifier
 # For operator ML, Dictionary of texts to classify
@@ -22,12 +25,12 @@ def operate_classifier(
     classifier: object,
     dict_texts: dict,  # this dict is very complex so a proper type annotation can be determined later
     keyword_objs: list,
-    mode_modif: str,
     buffer: int,
     threshold: float,
     print_freq: int,
     filepath_output: str,
     fileroot_class_results: str,
+    mode_modif: str,
     is_text_processed: bool = False,
     load_check_truematch: bool = True,
     do_verbose: bool = True,
@@ -66,7 +69,7 @@ def operate_classifier(
 
     # Print some notes
     if do_verbose:
-        print(f"Classifying with Operator {classifier_name}...")
+        logger.info(f"Classifying with Operator {classifier_name}...")
 
     # Load in as either raw or preprocessed data
     if is_text_processed:  # If given text preprocessed
@@ -95,24 +98,24 @@ def operate_classifier(
 
     # Print some notes
     if do_verbose:
-        print(f"Classification complete for Operator {classifier_name}...")
-        print("Generating the performance counter...")
+        logger.info(f"Classification complete for Operator {classifier_name}...")
+        logger.info("Generating the performance counter...")
 
     # We want to prepend the text ID and its bibcode to the results.
-    text_ids = [{"id": dict_texts[index]["id"]} for index in dict_texts]
+    text_ids = [{"id": index} for index in dict_texts]
     text_bibcodes = [{"bibcode": dict_texts[index]["bibcode"]} for index in dict_texts]
 
     if do_verbose:
-        print(f"{classifier_name} results: \n")
+        logger.info(f"{classifier_name} results: \n")
         for index, dict_content in enumerate(results):
-            print(f"\nText {index+1}: \n")
-            print(f"Text id: {text_ids[index].get('id')}")
-            print(f"Text bibcode: {text_bibcodes[index].get('bibcode')}")
+            logger.info(f"\nText {index+1}: \n")
+            logger.info(f"Text id: {text_ids[index].get('id')}")
+            logger.info(f"Text bibcode: {text_bibcodes[index].get('bibcode')}")
             for key in dict_content:
-                print(f"Mission: {key}")
-                print(f"Verdict: {dict_content[key]['verdict']}")
-                print(f"Probability: {dict_content[key]['uncertainty']}")
-                print(f"Supporting texts:\n'\n{dict_content[key]['modif']}\n' ")
+                logger.info(f"Mission: {key}")
+                logger.info(f"Verdict: {dict_content[key]['verdict']}")
+                logger.info(f"Probability: {dict_content[key]['uncertainty']}")
+                logger.info(f"Supporting texts:\n'\n{dict_content[key]['modif']}\n' ")
 
     # Save the classification results into a JSON file
     classification_results = [
@@ -122,7 +125,7 @@ def operate_classifier(
     # set file save location and filename
     tmp_filepath = os.path.join(filepath_output, f"{fileroot_class_results}.json")
     if do_verbose:
-        print(f"Saving '{fileroot_class_results}.json' under '{filepath_output}/'!")
+        logger.info(f"Saving '{fileroot_class_results}.json' under '{filepath_output}/'!")
     json_dump = convert_sets(classification_results)  # converts any sets in the results to lists
     with open(tmp_filepath, "w") as f:
         json.dump(json_dump, f, indent=4)

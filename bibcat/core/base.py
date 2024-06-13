@@ -991,7 +991,11 @@ class Base:
             check_tag = word_tag in config.grammar.speech.tag_verb_any
             check_pos = word_pos in config.grammar.speech.pos_verb
             check_dep = word_dep in config.grammar.speech.dep_verb
-            tag_approved = config.grammar.speech.tag_verb_present + config.grammar.speech.tag_verb_past + config.grammar.speech.tag_verb_future
+            tag_approved = (
+                config.grammar.speech.tag_verb_present
+                + config.grammar.speech.tag_verb_past
+                + config.grammar.speech.tag_verb_future
+            )
             check_approved = word_tag in tag_approved
 
             # For ambiguous adjectival modifier sentences
@@ -1073,7 +1077,9 @@ class Base:
             check_pos = word_pos in config.grammar.speech.pos_preposition
             check_tag = word_tag in config.grammar.speech.tag_preposition
             check_prepaux = (
-                (word_dep in config.grammar.speech.dep_aux) and (word_pos in config.grammar.speech.pos_aux) and (check_tag)
+                (word_dep in config.grammar.speech.dep_aux)
+                and (word_pos in config.grammar.speech.pos_aux)
+                and (check_tag)
             )  # For e.g. mishandled 'to'
             check_all = (check_dep and check_pos and check_tag) or (check_prepaux)
 
@@ -1185,7 +1191,10 @@ class Base:
             check_num = word_tag in config.grammar.speech.tag_number
 
             tags_approved = (
-                config.grammar.speech.tag_verb_past + config.grammar.speech.tag_verb_present + config.grammar.speech.tag_verb_future + config.grammar.speech.tag_verb_purpose
+                config.grammar.speech.tag_verb_past
+                + config.grammar.speech.tag_verb_present
+                + config.grammar.speech.tag_verb_future
+                + config.grammar.speech.tag_verb_purpose
             )
             check_approved = word_tag in tags_approved
 
@@ -1285,10 +1294,10 @@ class Base:
         """
 
         # Load the ambig. phrase data
-        #lookup_ambigs = [str(item).lower() for item in np.genfromtxt(config.KW_AMBIG, comments="#", dtype=str)]
+        # lookup_ambigs = [str(item).lower() for item in np.genfromtxt(config.KW_AMBIG, comments="#", dtype=str)]
         lookup_ambigs = [i.lower() for i in config.textprocessing.keywords_ambig]
         data_ambigs = np.array(config.textprocessing.phrases_ambig)
-        #data_ambigs = np.genfromtxt(config.PHR_AMBIG, comments="#", dtype=str, delimiter="\t")
+        # data_ambigs = np.genfromtxt(config.PHR_AMBIG, comments="#", dtype=str, delimiter="\t")
         if len(data_ambigs.shape) == 1:  # If single row, reshape to 2D
             data_ambigs = data_ambigs.reshape(1, data_ambigs.shape[0])
         num_ambigs = data_ambigs.shape[0]
@@ -1410,18 +1419,26 @@ class Base:
         # Replace annoying object numerical name notations
         # E.g.: HD 123456, 2MASS123-456
         text = re.sub(
-            r"([A-Z]+) ?[0-9][0-9]+[A-Z|a-z]*((\+|-)[0-9][0-9]+)*", r"\g<1>" + config.textprocessing.placeholder_number, text
+            r"([A-Z]+) ?[0-9][0-9]+[A-Z|a-z]*((\+|-)[0-9][0-9]+)*",
+            r"\g<1>" + config.textprocessing.placeholder_number,
+            text,
         )
         # E.g.: Kepler-123ab
-        text = re.sub(r"([A-Z][a-z]+)( |-)?[0-9][0-9]+([A-Z|a-z])*", r"\g<1> " + config.textprocessing.placeholder_number, text)
+        text = re.sub(
+            r"([A-Z][a-z]+)( |-)?[0-9][0-9]+([A-Z|a-z])*", r"\g<1> " + config.textprocessing.placeholder_number, text
+        )
 
         # Remove most obnoxious numeric ranges
         text = re.sub(
-            r"~?[0-9]+([0-9]|\.)* ?- ?[0-9]+([0-9]|\.)*[A-Z|a-z]*\b", "{0}".format(config.textprocessing.placeholder_numeric), text
+            r"~?[0-9]+([0-9]|\.)* ?- ?[0-9]+([0-9]|\.)*[A-Z|a-z]*\b",
+            "{0}".format(config.textprocessing.placeholder_numeric),
+            text,
         )
 
         # Remove spaces between capital+numeric names
-        text = re.sub(r"([A-Z]+) ([0-9]+)([0-9]|[a-z])+", r"\1\2\3{}".format(config.textprocessing.placeholder_numeric), text)
+        text = re.sub(
+            r"([A-Z]+) ([0-9]+)([0-9]|[a-z])+", r"\1\2\3{}".format(config.textprocessing.placeholder_numeric), text
+        )
 
         # Remove any new excessive whitespace and punctuation spaces
         text = self._cleanse_text(text=text, do_streamline_etal=True)

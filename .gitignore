@@ -1,6 +1,5 @@
 # bibcat files
-bibcat/models
-bibcat/data/partitioned_datasets
+bibcat/data/operational_data
 output
 *.log
 
@@ -29,6 +28,7 @@ sdist
 develop-eggs
 .installed.cfg
 distribute-*.tar.gz
+bibcat/version.py
 
 # Other
 .vs
