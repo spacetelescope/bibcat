@@ -1143,7 +1143,11 @@ class Base:
             check_tag = word_tag in config.grammar.speech.tag_verb_any
             check_pos = word_pos in config.grammar.speech.pos_verb
             check_dep = word_dep in config.grammar.speech.dep_verb
-            tag_approved = config.grammar.speech.tag_verb_present + config.grammar.speech.tag_verb_past + config.grammar.speech.tag_verb_future
+            tag_approved = (
+                config.grammar.speech.tag_verb_present
+                + config.grammar.speech.tag_verb_past
+                + config.grammar.speech.tag_verb_future
+            )
             check_approved = word_tag in tag_approved
 
             # For ambiguous adjectival modifier sentences
@@ -1225,7 +1229,9 @@ class Base:
             check_pos = word_pos in config.grammar.speech.pos_preposition
             check_tag = word_tag in config.grammar.speech.tag_preposition
             check_prepaux = (
-                (word_dep in config.grammar.speech.dep_aux) and (word_pos in config.grammar.speech.pos_aux) and (check_tag)
+                (word_dep in config.grammar.speech.dep_aux)
+                and (word_pos in config.grammar.speech.pos_aux)
+                and (check_tag)
             )  # For e.g. mishandled 'to'
             check_all = (check_dep and check_pos and check_tag) or (check_prepaux)
 
@@ -1337,7 +1343,10 @@ class Base:
             check_num = word_tag in config.grammar.speech.tag_number
 
             tags_approved = (
-                config.grammar.speech.tag_verb_past + config.grammar.speech.tag_verb_present + config.grammar.speech.tag_verb_future + config.grammar.speech.tag_verb_purpose
+                config.grammar.speech.tag_verb_past
+                + config.grammar.speech.tag_verb_present
+                + config.grammar.speech.tag_verb_future
+                + config.grammar.speech.tag_verb_purpose
             )
             check_approved = word_tag in tags_approved
 

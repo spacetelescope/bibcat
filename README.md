@@ -17,10 +17,9 @@ There are two main branches for bibcat work:
 - nltk
 - pytest
 - pytest-doctestplus
-- tensorflow
+- tensorflow 2.15.0
 - tensorflow-hub
 - tensorflow-text
-
 
 ### Conda env installation
 Change `env_name` below with whatever you want to name the environment.
@@ -37,7 +36,7 @@ For Apple Silicon chips, to utilize your GPU, you install `tensorflow-metal`.  Y
 import tensorflow as tf
 tf.config.list_physical_devices('GPU')
 ```
-You should the following output: `[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]`.  If the output is an empty list, you are not setup for GPU use.
+You should see the following output: `[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]`.  If the output is an empty list, you are not setup for GPU use.
 
 #### Install `tensorflow-text`
 - You need to install this package separately. Follow the instruction order below.
@@ -56,17 +55,18 @@ pip install -e .
 Download several data files (the ADS full text file and the papertrack file) to create models for training or combined fulltext dataset files for the input text. These files can be accessed only by authorized users. Downloading the files requires a single sign-on.
 Save the files outside the `bibcat` folder on your local computer, and you will set up the paths to the files. See more details in **User Configuration and Data Filepaths** below.
 
-- The combined papers+classification JSON file ([dataset_combined_all_2018-2021.json](https://stsci.app.box.com/file/1380606268376))
+- The combined papers+classification JSON file ([dataset_combined_all_2018-2023.json](https://stsci.box.com/s/q99xtyey1lgydt0jtonhot3b3rlv8rns))
 - The papertrack export JSON file ([papertrack_export_2023-11-06.json](https://stsci.box.com/s/zadlr8dixw8706o9k9smlxdk99yohw4d))
-- ADS fulltext data file ([ST_Request2018-2021.json](https://stsci.box.com/s/cl3yg5mxqcz484w0iptwbl9b43h4tk1g))
+- ADS fulltext data file ([ST_Request2018-2023.json](https://stsci.box.com/s/ym9pbt2iz7cqc8m1gbbd2slo0lwbwlr8))
 
-Note that other JSON files (extracted from 2018-2023) include paper track data and full texts later than 2021. If you like to test them for your work, feel free to do so.
+Note that other JSON files (extracted from 2018-2023) include paper track data and full texts later than 2021.
 
 ### User Configuration and Data Filepaths
 
 There are three user environment variables to set:
 
 - **BIBCAT_CONFIG_DIR**: a local path to your user configuration yaml file
+- **BIBCAT_OPSDATA_DIR** : a local path to the directory of operational data in JSON format. 
 - **BIBCAT_DATA_DIR**: a local path to the directory of input data, e.g the input JSON files and full text
 - **BIBCAT_OUTPUT_DIR**: a local path to a directory where the output of bibcat will be written, e.g. the output model and QA plots
 
@@ -74,6 +74,7 @@ If not set, all envvars will default to the user's home directory.  You can set 
 ```bash
 export BIBCAT_CONFIG_DIR=/my/local/path/to/custom/config
 export BIBCAT_DATA_DIR=/my/local/path/to/input/data/dir
+export BIBCAT_OPSDATA_DIR=/my/local/path/to/operational/data/dir
 export BIBCAT_OUTPUT_DIR=/my/local/path/to/bibcat/output
 ```
 
@@ -97,7 +98,8 @@ for classifying papers, run `bibcat classify --help`.
 
 - Set the three user BIBCAT_XXX_DIR environment variables specified above, in particular `BIBCAT_DATA_DIR` points to the location of your input JSON files.
 - To create a training model, run `bibcat train`.
-- To classify papers, run `bibcat classify`. It will produce some evaluation
+- To classify papers, run `bibcat classify`. Copy `etc/fakedata.json` to your local OPSDATA folder to test `bibcat classify`. Check out `etc/fakedata.json` to see the necessary contents for operational papers in JSON. 
+- To evaluate the classifiers, run `bibcat evaluate`. It will produce some evaluation
   diagnostics such as a confusion matrix in the `output/` directory.
 
 

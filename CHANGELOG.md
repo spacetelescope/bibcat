@@ -2,14 +2,10 @@
 
 ## [Unreleased]
 
-- A few bug fixes
-- PR # 19
-    - `_add_word()` temporary fix
-    - `merger` erorr fix for config parameters
-
-- PR # 20
-    - `get_config() error fix
-
+- [PR # 23]
+    - Setting a new config for the directory of papers for operational classification with a fake JSON file
+    - Refactored `fetch_paper.py`
+    - Other relevant updates and minor updates
 
 Bibcat to do list
 - Refactor performance.py
@@ -25,6 +21,18 @@ Bibcat to do list
     - Deleted all previous codes and files for a fresh start
 
 ### Changed
+
+- [PR # 22, 23]
+    - The `is_keyword` method is replaced with the `identify_keyword` method.
+
+- [PR # 21]
+    - `evaluate` and `classify` are now separate CLI options. 
+
+- [PR # 19, 20]
+    - `get_config()` error fix
+    - `_add_word()` temporary fix
+    - `merger` erorr fix for config parameters
+
 - [PR #18]
     - Fix ddict type errors
     

@@ -67,25 +67,16 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
     dir_output = os.path.join(config.paths.output, name_model)
     os.makedirs(dir_output, exist_ok=True)
 
-    # Set directories for fetching test text
-
-    # `partitioned_datasets/name_model/` folder
-    dir_datasets = os.path.join(config.paths.partitioned, name_model)
-    dir_test = config.output.folders_TVT[
-        "test"
-    ]  # the directory name "dir_test" in the partitioned_datasets/name_model/ folder # can be an CLI option
-
     is_text_processed = False
 
     # Random seed for shuffling text dataset before fetching
     np.random.seed(config.textprocessing.shuffle_seed)
     # Fetching real JSON paper text
     dict_texts = fetch_papers(
-        dir_datasets=dir_datasets,
-        dir_test=dir_test,
+        do_evaluation=True,
         do_shuffle=config.textprocessing.do_shuffle,
         do_verbose_text_summary=config.textprocessing.do_verbose_text_summary,
-        max_tests=config.textprocessing.max_tests,  # Number of text entries to test the performance for; None for all tests
+        max_texts=config.textprocessing.max_tests,  # Number of text entries to test the performance for; None for all tests
     )
 
     # We will choose which operator/method to evaluate performance below.
@@ -119,7 +110,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
         name=classifier_name,
         mode=config.textprocessing.mode_modif,
         keyword_objs=params.all_kobjs,
-        load_check_truematch=config.textprocessing.do_verify_truematch,
+        load_check_truematch=config.textprocessing.do_check_truematch,
         do_verbose=True,
         do_verbose_deep=False,
     )
@@ -133,7 +124,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
         operators=[op],
         dicts_texts=[dict_texts],
         mappers=[params.map_papertypes],
-        thresholds=[config.textprocessing.threshold],
+        thresholds=[config.performance.threshold],
         buffers=[config.textprocessing.buffer],
         is_text_processed=is_text_processed,
         filepath_output=dir_output,
@@ -147,7 +138,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
         do_raise_innererror=config.textprocessing.do_raise_innererror,
         do_save_evaluation=True,
         do_save_misclassif=True,
-        do_verify_truematch=config.textprocessing.do_verify_truematch,
+        do_check_truematch=config.textprocessing.do_check_truematch,
     )
 
     # Run the pipeline for an evaluation of model performance
@@ -156,7 +147,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
         operators=[op],
         dicts_texts=[dict_texts],
         mappers=[params.map_papertypes],
-        threshold_arrays=[np.linspace(*config.textprocessing.threshold_array)],
+        threshold_arrays=[np.linspace(*config.performance.threshold_array)],
         buffers=[config.textprocessing.buffer],
         is_text_processed=is_text_processed,
         filepath_output=dir_output,
@@ -165,7 +156,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
         fileroot_misclassif=config.performance.fileroot_misclassif + f"{classifier_name}",
         figsize=config.performance.figsize,
         print_freq=config.performance.print_freq,
-        do_verify_truematch=config.textprocessing.do_verify_truematch,
+        do_check_truematch=config.textprocessing.do_check_truematch,
         do_raise_innererror=config.textprocessing.do_raise_innererror,
         do_save_evaluation=True,
         do_save_misclassif=True,

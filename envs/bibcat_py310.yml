@@ -13,7 +13,6 @@ dependencies:
     - tensorflow
     - tensorflow-hub
     - tensorflow-macos
-    - tensorflow-metal
     - pytest
     - pytest-doctestplus
     - deepmerge
