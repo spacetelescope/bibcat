@@ -422,7 +422,7 @@ class Grammar(Base):
 
         # Characterize some traits of entire phrase
         # Characterize importance
-        res_importance = self._check_importance(text_wordchunk, version_NLP=NLP_wordchunk)
+        res_importance = self._check_importance(text_wordchunk, version_NLP=NLP_wordchunk)["bools"]
 
         # Determine part-of-speech (pos) of main (current) word in wordchunk
         pos_main = None
@@ -786,7 +786,7 @@ class Grammar(Base):
                 print("anon modifications complete.\nUpdated text:\n{0}\n".format(text_updated))
 
         # Cleanse the text to finalize it
-        text_updated = self._streamline_phrase(text=text_updated)
+        text_updated = self._streamline_phrase(text=text_updated, do_streamline_etal=True)
 
         # Build grammar structures using only kept words
         struct_verbs_updated = {
