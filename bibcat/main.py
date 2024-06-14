@@ -9,12 +9,22 @@ import click
 
 from bibcat.build_model import build_model
 from bibcat.classify_papers import classify_papers
+from bibcat.data.build_dataset import build_dataset
 from bibcat.evaluate_basic_performance import evaluate_basic_performance
 
 
 @click.group("bibcat")
 def cli():
     """Command-line tool for running the bibcat package"""
+
+
+@cli.command(help="build a combined dataset ")
+def dataset():
+    """build a combined dataset from the papertrack data and the ADS fulltext data
+
+    Wraps the original build_dataset script.
+    """
+    build_dataset()
 
 
 @cli.command(help="train or retrain a classical ML model")
