@@ -5,6 +5,12 @@ This module stores any utility functions necessary for bibcat.
 
 """
 
+import json
+
+from bibcat.utils.logger_config import setup_logger
+
+logger = setup_logger(__name__)
+
 
 def convert_sets(obj: object) -> list | dict | object:
     """
@@ -17,3 +23,15 @@ def convert_sets(obj: object) -> list | dict | object:
     elif isinstance(obj, dict):
         return {key: convert_sets(value) for key, value in obj.items()}
     return obj
+
+
+def load_json_file(path: str) -> list:
+    logger.info(f"Loading {path}!")
+    with open(path, "r") as openfile:
+        return json.load(openfile)
+
+
+def save_json_file(path: str, dataset: list[dict], indent: int = 2) -> list:
+    logger.info(f"Saving {path}!")
+    with open(path, "w") as openfile:
+        json.dump(dataset, openfile, indent=indent)

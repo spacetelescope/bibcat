@@ -26,8 +26,8 @@ Change `env_name` below with whatever you want to name the environment.
 - Download conda installation yml file [here](envs/bibcat_py310.yml).
 - In the terminal, run these commands.
 ```shell
-conda env create -n `env_name` -f bibcat_py310.yml
-conda activate `env_name`
+conda env create -n env_name -f bibcat_py310.yml
+conda activate env_name
 python -m spacy download en_core_web_sm
 ```
 #### Extra pacakge for Apple M1/M2 chip

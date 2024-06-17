@@ -19,6 +19,7 @@ import numpy as np
 from bibcat import config
 from bibcat import parameters as params
 from bibcat.utils.logger_config import setup_logger
+from bibcat.utils.utils import load_json_file
 
 logger = setup_logger(__name__)
 
@@ -33,13 +34,6 @@ def load_tvt_info(dir_datasets: str) -> dict:
 # getting bibcodes for using dir_test
 def get_bibcodes(dict_TVTinfo: dict, dir_test: str) -> list:
     return [key for key in dict_TVTinfo if dict_TVTinfo[key]["folder_TVT"] == dir_test]
-
-
-# loading json dataset
-def load_json_dataset(path: str) -> list:
-    logger.info(f"Loading {path}!")
-    with open(path, "r") as file:
-        return json.load(file)
 
 
 # Extract text information for the bibcodes reserved for testing
@@ -108,7 +102,7 @@ def fetch_papers(
     # perpare papers to perform model evaluation
 
     if not do_evaluation:
-        return load_json_dataset(config.inputs.path_ops_data)
+        return load_json_file(config.inputs.path_ops_data)
 
     # For use of real papers from test dataset to test on
     # Load information for processed bibcodes reserved for testing
@@ -117,7 +111,7 @@ def fetch_papers(
         dir_test = config.output.folders_TVT["test"]
         dict_TVTinfo = load_tvt_info(dir_datasets)
         test_bibcodes = get_bibcodes(dict_TVTinfo, dir_test)
-        dataset = load_json_dataset(config.inputs.path_source_data)
+        dataset = load_json_file(config.inputs.path_source_data)
         test_data = get_data(dataset, test_bibcodes)
 
         if do_shuffle:
