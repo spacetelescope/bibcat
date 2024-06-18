@@ -99,7 +99,6 @@ def combine_datasets(papertrack_data, papertext_data) -> None:
     # Verify that all papers within papertrack are within the papertext database and return the bibcodes
     bibcodes_notin_papertext = missing_bibcodes_in_papertext(bibcodes_papertrack, bibcodes_papertext)
 
-    num_notin_papertrack = 0
     bibcodes_notin_papertrack = []
 
     for curr_index, curr_dict in enumerate(data_storage):
@@ -113,35 +112,52 @@ def combine_datasets(papertrack_data, papertext_data) -> None:
         except ValueError:
             logger.debug(f"Bibcode ({curr_index}, {curr_bibcode}) not in papertrack database. Continuing...")
             bibcodes_notin_papertrack.append(curr_bibcode)
-            num_notin_papertrack += 1
             continue
 
         # Copy over data from papertrack into text database
-        curr_dict["class_missions"] = {}
+
+        # curr_dict["class_missions"] = {}
         for _, dict_content in enumerate(missions_and_papertypes[curr_index_papertrack]):
             curr_mission = dict_content["mission"]
-            curr_papertype = dict_content["paper_type"]
+            # curr_papertype = dict_content["paper_type"]
             # Store inner dictionary under mission name
-            inner_dict = {}
-            curr_dict["class_missions"][curr_mission] = inner_dict
-
+            # inner_dict = {}
+            # curr_dict["class_missions"][curr_mission] = inner_dict
+            curr_dict[curr_mission] = {
+                "class_missions": {
+                    "bibcode": bibcodes_papertrack[curr_index_papertrack],
+                    "papertype": dict_content["paper_type"],
+                }
+            }
             # Store information in inner dict
-            inner_dict["bibcode"] = bibcodes_papertrack[curr_index_papertrack]
-            inner_dict["papertype"] = curr_papertype
+            # inner_dict["bibcode"] = bibcodes_papertrack[curr_index_papertrack]
+            # inner_dict["papertype"] = curr_papertype
 
         # Store search ignore flags
         for _, searches in enumerate(ads_searches[curr_index_papertrack]):
             curr_searchname = searches["search_key"]
-            curr_ignored = searches["ignored"]
-            curr_dict[f"is_ignored_{curr_searchname}"] = curr_ignored
+            curr_dict[f"is_ignored_{curr_searchname}"] = searches["ignored"]
 
         logger.debug("Done generating dictionaries of combined papertrack+text data.")
-    logger.debug(f"NOTE: {num_notin_papertrack} papers in text data that were not in papertrack.")
+    logger.debug(f"NOTE: {len(bibcodes_notin_papertrack)} papers in text data that were not in papertrack.")
 
     return data_storage, bibcodes_notin_papertrack, bibcodes_notin_papertext
 
 
-def build_dataset():
+def save_files(dataset: dict, missing_papertrack_bibcodes: list, missing_papertext_bibcodes: list):
+    # Save the combined dataset
+    save_json_file(config.inputs.path_source_data, dataset)
+    # Also save the bibcodes of the paper-texts not found in papertrack and papertext
+    save_numpy_file(config.inputs.path_not_in_papertext, missing_papertext_bibcodes)
+    save_numpy_file(config.inputs.path_not_in_papertrack, missing_papertrack_bibcodes)
+
+    logger.debug("Dataset generation complete.\n")
+    logger.debug(f"Combined .json file saved to:\n{config.inputs.path_source_data}\n")
+    logger.debug(f"Bibcodes not in papertext saved to:\n{config.inputs.path_not_in_papertext}\n")
+    logger.debug(f"Bibcodes not in papertrack saved to:\n{config.inputs.path_not_in_papertrack}\n")
+
+
+def build_dataset() -> None:
     logger.info("The script is building the dataset for bibcat!")
 
     # Throw an error if any of these files already exist
@@ -168,12 +184,4 @@ def build_dataset():
         )
 
         # Save the combined dataset
-        save_json_file(config.inputs.path_source_data, storage_combined_dataset)
-        # Also save the bibcodes of the paper-texts not found in papertrack and papertext
-        save_numpy_file(config.inputs.path_not_in_papertext, bibcodes_notin_papertext)
-        save_numpy_file(config.inputs.path_not_in_papertrack, bibcodes_notin_papertrack)
-
-        logger.debug("Dataset generation complete.\n")
-        logger.debug(f"Combined .json file saved to:\n{config.inputs.path_source_data}\n")
-        logger.debug(f"Bibcodes not in papertext saved to:\n{config.inputs.path_not_in_papertext}\n")
-        logger.debug(f"Bibcodes not in papertrack saved to:\n{config.inputs.path_not_in_papertrack}\n")
+        save_files(storage_combined_dataset, bibcodes_notin_papertext, bibcodes_notin_papertrack)
