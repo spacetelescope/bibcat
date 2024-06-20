@@ -99,19 +99,22 @@ def fetch_papers(
     do_verbose_text_summary: bool = False,
     max_texts: int | None = None,
 ) -> dict:
-    # perpare papers to perform model evaluation
-
+    # fetching papers for Operation
     if not do_evaluation:
         return load_json_file(config.inputs.path_ops_data)
 
+    # perpare papers to perform model evaluation
     # For use of real papers from test dataset to test on
-    # Load information for processed bibcodes reserved for testing
+    # Load information for processed bibcodes reserved for testing now but this needs to be updated in a simple way.
     else:
+        # fetch the bibcodes of the test papers for evaluation
         dir_datasets = os.path.join(config.paths.partitioned, config.output.name_model)
         dir_test = config.output.folders_TVT["test"]
         dict_TVTinfo = load_tvt_info(dir_datasets)
         test_bibcodes = get_bibcodes(dict_TVTinfo, dir_test)
+        # load the source dataset
         dataset = load_json_file(config.inputs.path_source_data)
+        # extract the test papers with classification for evaluation
         test_data = get_data(dataset, test_bibcodes)
 
         if do_shuffle:
