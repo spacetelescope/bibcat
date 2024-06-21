@@ -19,6 +19,7 @@ import numpy as np
 from bibcat import config
 from bibcat import parameters as params
 from bibcat.utils.logger_config import setup_logger
+from bibcat.utils.utils import load_json_file
 
 logger = setup_logger(__name__)
 
@@ -33,13 +34,6 @@ def load_tvt_info(dir_datasets: str) -> dict:
 # getting bibcodes for using dir_test
 def get_bibcodes(dict_TVTinfo: dict, dir_test: str) -> list:
     return [key for key in dict_TVTinfo if dict_TVTinfo[key]["folder_TVT"] == dir_test]
-
-
-# loading json dataset
-def load_json_dataset(path: str) -> list:
-    logger.info(f"Loading {path}!")
-    with open(path, "r") as file:
-        return json.load(file)
 
 
 # Extract text information for the bibcodes reserved for testing
@@ -105,19 +99,22 @@ def fetch_papers(
     do_verbose_text_summary: bool = False,
     max_texts: int | None = None,
 ) -> dict:
-    # perpare papers to perform model evaluation
-
+    # fetching papers for Operation
     if not do_evaluation:
-        return load_json_dataset(config.inputs.path_ops_data)
+        return load_json_file(config.inputs.path_ops_data)
 
+    # perpare papers to perform model evaluation
     # For use of real papers from test dataset to test on
-    # Load information for processed bibcodes reserved for testing
+    # Load information for processed bibcodes reserved for testing now but this needs to be updated in a simple way.
     else:
+        # fetch the bibcodes of the test papers for evaluation
         dir_datasets = os.path.join(config.paths.partitioned, config.output.name_model)
         dir_test = config.output.folders_TVT["test"]
         dict_TVTinfo = load_tvt_info(dir_datasets)
         test_bibcodes = get_bibcodes(dict_TVTinfo, dir_test)
-        dataset = load_json_dataset(config.inputs.path_source_data)
+        # load the source dataset
+        dataset = load_json_file(config.inputs.path_source_data)
+        # extract the test papers with classification for evaluation
         test_data = get_data(dataset, test_bibcodes)
 
         if do_shuffle:
