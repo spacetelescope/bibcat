@@ -68,7 +68,7 @@ include-package-data = true
 
 [tool.setuptools_scm]
 
-write_to = "bibcat/version.py"
+write_to = "bibcat/_version.py"
 
 
 

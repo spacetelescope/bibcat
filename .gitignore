@@ -28,7 +28,7 @@ sdist
 develop-eggs
 .installed.cfg
 distribute-*.tar.gz
-bibcat/version.py
+bibcat/_version.py
 
 # Other
 .vs

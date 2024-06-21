@@ -1,15 +1,12 @@
 import os
-from importlib.metadata import version as _version, PackageNotFoundError
-try:
-    __version__ = _version(__name__)
-except PackageNotFoundError:
-    pass
 
 from bibcat.core.config import get_config
 
+from ._version import version as __version__
+
 
 def check_env(name: str):
-    """ Check for a user environment variable existence
+    """Check for a user environment variable existence
 
     Parameters
     ----------
@@ -19,13 +16,14 @@ def check_env(name: str):
     name = name.upper()
     # check for user environment variables
     if name not in os.environ:
-        print(f'User environment variable {name} not found. Setting to user home directory.')
-        os.environ[name] = os.path.expanduser('~')
+        print(f"User environment variable {name} not found. Setting to user home directory.")
+        os.environ[name] = os.path.expanduser("~")
+
 
 # check for envvars
 check_env("BIBCAT_DATA_DIR")
 check_env("BIBCAT_OUTPUT_DIR")
-
+check_env("BIBCAT_OPSDATA_DIR")
 
 # create the bibcat configuration object
 config = get_config()
@@ -33,7 +31,7 @@ config = get_config()
 
 # setup paths
 def setup_paths(config: dict) -> dict:
-    """ Setup fixed global paths """
+    """Setup fixed global paths"""
     config.paths.root = os.path.dirname(__file__)
     config.paths.parent = os.path.dirname(config.paths.root)
     config.paths.config = os.path.join(config.paths.root, "config")
@@ -53,4 +51,3 @@ def setup_paths(config: dict) -> dict:
 
 
 config = setup_paths(config)
-
