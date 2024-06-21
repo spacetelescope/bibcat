@@ -2,10 +2,8 @@
 inputs:
   path_ops_data: $BIBCAT_OPSDATA_DIR/fakedata.json # fake operational data to classify
   path_papertrack: $BIBCAT_DATA_DIR/papertrack_export_2023-11-06.json  # papertrack data
-  path_papertext: $BIBCAT_DATA_DIR/ST_Request2018-2023.json  # papertrack corpus text
+  path_papertext: $BIBCAT_DATA_DIR/ST_Request2018-2023.json  # papertext corpus text
   path_source_data: $BIBCAT_DATA_DIR/dataset_combined_all_2018-2023.json  # combined JSON file for training
-  path_not_in_papertext: $BIBCAT_DATA_DIR/bibcodes_notin_papertext.txt  # file for bibcodes not in papertrack
-  path_not_in_papertrack: $BIBCAT_DATA_DIR/bibcodes_notin_papertrack.txt # file for bibcodes not in ADS papertext
   keys_papertext: [abstract, author, bibcode, body, keyword, keyword_norm, pubdate, title]  # metadata keys for ADS papertext required for building input
 
 output:
@@ -13,6 +11,8 @@ output:
   name_model: my_test_run
   folders_TVT: {train: dir_train, validate: dir_validate, test: dir_test}
   tfoutput_prefix: tfoutput_
+  path_not_in_papertext: $BIBCAT_DATA_DIR/bibcodes_notin_papertext.txt  # file for bibcodes not in papertrack
+  path_not_in_papertrack: $BIBCAT_DATA_DIR/bibcodes_notin_papertrack.txt # file for bibcodes not in ADS papertext
 
 paths:
   root: null

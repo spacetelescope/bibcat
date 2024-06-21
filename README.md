@@ -26,8 +26,8 @@ Change `env_name` below with whatever you want to name the environment.
 - Download conda installation yml file [here](envs/bibcat_py310.yml).
 - In the terminal, run these commands.
 ```shell
-conda env create -n `env_name` -f bibcat_py310.yml
-conda activate `env_name`
+conda env create -n env_name -f bibcat_py310.yml
+conda activate env_name
 python -m spacy download en_core_web_sm
 ```
 #### Extra pacakge for Apple M1/M2 chip
@@ -54,10 +54,10 @@ pip install -e .
 ### Input JSON file
 Download several data files (the ADS full text file and the papertrack file) to create models for training or combined fulltext dataset files for the input text. These files can be accessed only by authorized users. Downloading the files requires a single sign-on.
 Save the files outside the `bibcat` folder on your local computer, and you will set up the paths to the files. See more details in **User Configuration and Data Filepaths** below.
-
-- The combined papers+classification JSON file ([dataset_combined_all_2018-2023.json](https://stsci.box.com/s/q99xtyey1lgydt0jtonhot3b3rlv8rns))
-- The papertrack export JSON file ([papertrack_export_2023-11-06.json](https://stsci.box.com/s/zadlr8dixw8706o9k9smlxdk99yohw4d))
-- ADS fulltext data file ([ST_Request2018-2023.json](https://stsci.box.com/s/ym9pbt2iz7cqc8m1gbbd2slo0lwbwlr8))
+We refer
+- the combined papers+classification JSON file ([dataset_combined_all_2018-2023.json](https://stsci.box.com/s/q99xtyey1lgydt0jtonhot3b3rlv8rns)) to `source data`,
+- the papertrack export JSON file ([papertrack_export_2023-11-06.json](https://stsci.box.com/s/zadlr8dixw8706o9k9smlxdk99yohw4d)) to `papertrack data`, and
+- the ADS fulltext data file ([ST_Request2018-2023.json](https://stsci.box.com/s/ym9pbt2iz7cqc8m1gbbd2slo0lwbwlr8)) to `papertext data`.
 
 Note that other JSON files (extracted from 2018-2023) include paper track data and full texts later than 2021.
 
@@ -96,11 +96,20 @@ For testing, you need to install the extra test dependencies.  You do this with 
 There is a CLI interface to bibcat.  After installation with `pip install -e .`, a `bibcat` cli will be available from the terminal.  Run `bibcat --help` from the terminal to display the available commands.  All commands also have their own help.  For example to see the options
 for classifying papers, run `bibcat classify --help`.
 
-- Set the three user BIBCAT_XXX_DIR environment variables specified above, in particular `BIBCAT_DATA_DIR` points to the location of your input JSON files.
+- First, set the three user BIBCAT_XXX_DIR environment variables specified above, in particular `BIBCAT_DATA_DIR` points to the location of your input JSON files.
+
+### Build dataset from the papertrak and ADS papertext JSON files.
+
+- run `bibcat dataset`if you don't already have the source dataset combined from the papertrack data and the papertext data. 
+
+### Train and evaluate the ML models
+
 - To create a training model, run `bibcat train`.
-- To classify papers, run `bibcat classify`. Copy `etc/fakedata.json` to your local OPSDATA folder to test `bibcat classify`. Check out `etc/fakedata.json` to see the necessary contents for operational papers in JSON. 
-- To evaluate the classifiers, run `bibcat evaluate`. It will produce some evaluation
-  diagnostics such as a confusion matrix in the `output/` directory.
+- To evaluate the classifiers, run `bibcat evaluate`. fetch_papers.py (with `do_evaluation=True`) fetches the test papers with papertrack classification (`paper_type`). It will produce some evaluation diagnostics such as a confusion matrix in the `output/ouptut/` directory.
+
+### Paper classification for operation
+- To classify papers, run `bibcat classify`. Copy `etc/fakedata.json` to your local OPSDATA folder to test `bibcat classify`. Check out `etc/fakedata.json` to see the necessary contents for operational papers in JSON. You use any texts with their bibcode in a JSON file by pointing `inputs.path_ops_data`in `bibcat_config.yaml` to your JSON file. fetch_papers.py (with with `do_evaluation=False` will fetch the JSON file for classification )
+
 
 
 

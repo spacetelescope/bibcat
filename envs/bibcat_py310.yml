@@ -9,6 +9,7 @@ dependencies:
   - nltk
   - pip
   - pip:
+    - click
     - spacy
     - tensorflow
     - tensorflow-hub
