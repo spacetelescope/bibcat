@@ -41,8 +41,8 @@ def load_datasets(path_papertext: str, path_papertrack: str) -> tuple[list, list
 
 
 def extract_papertext_info(dataset) -> tuple[list, str, str]:
-    bibcodes = [item["bibcode"] for item in dataset]
-    pubdates = [item["pubdate"] for item in dataset]
+    bibcodes = [entry["bibcode"] for entry in dataset]
+    pubdates = [entry["pubdate"] for entry in dataset]
     logger.debug(f"The earliest date of papers within text database: {min(pubdates)}.")
     logger.debug(f"The latest date of papers within text database: {max(pubdates)}.")
 
@@ -61,7 +61,10 @@ def extract_papertrack_info(dataset) -> tuple[list[None | dict], list[None | str
     return searches, bibcodes, missions_and_papertypes
 
 
-def missing_bibcodes_in_papertext(bibcodes_papertrack: list[str], bibcodes_papertext: list[str]) -> list[str] | None:
+def missing_bibcodes_in_papertext(
+    bibcodes_papertext: list[str],
+    bibcodes_papertrack: list[str],
+) -> list[str] | None:
     # Verify that all papers within papertrack are within the papertext database
     bibcodes_notin_papertext = [val for val in np.unique(bibcodes_papertrack) if (val not in bibcodes_papertext)]
     if len(bibcodes_notin_papertext) > 0:
@@ -69,24 +72,18 @@ def missing_bibcodes_in_papertext(bibcodes_papertrack: list[str], bibcodes_paper
             "Note! Papers in papertrack not in text database!"
             + f"\n{bibcodes_notin_papertext}\n{len(bibcodes_notin_papertext)} of {len(bibcodes_papertrack)} papertrack entries in all.\n"
         )
-        # raise ValueError(errstr)
-        logger.debug(errstr)
+        logger.error(errstr)
     return bibcodes_notin_papertext
 
 
 def trim_papertext_dict(dataset: dict, keys: list) -> list[dict]:
-    try:
-        storage_combined_dataset = [
-            {key: value for key, value in thisdict.items() if (key in keys)}.copy() for thisdict in dataset
-        ]
-    except AttributeError:  # If this error raised, probably earlier Python vers.
-        storage_combined_dataset = [
-            {key: value for key, value in thisdict.iteritems() if (key in keys)}.copy() for thisdict in dataset
-        ]
+    storage_combined_dataset = [
+        {key: value for key, value in thisdict.items() if (key in keys)}.copy() for thisdict in dataset
+    ]
     return storage_combined_dataset
 
 
-def combine_datasets(papertrack_data, papertext_data) -> None:
+def combine_datasets(papertext_data, papertrack_data) -> None:
     # First, store trimmed papertext dictionary down to only columns to include
     data_storage = trim_papertext_dict(papertext_data, config.inputs.keys_papertext)
 
@@ -97,7 +94,7 @@ def combine_datasets(papertrack_data, papertext_data) -> None:
     bibcodes_papertext, _ = extract_papertext_info(papertext_data)
 
     # Verify that all papers within papertrack are within the papertext database and return the bibcodes
-    bibcodes_notin_papertext = missing_bibcodes_in_papertext(bibcodes_papertrack, bibcodes_papertext)
+    bibcodes_notin_papertext = missing_bibcodes_in_papertext(bibcodes_papertext, bibcodes_papertrack)
 
     bibcodes_notin_papertrack = []
 
@@ -105,56 +102,38 @@ def combine_datasets(papertrack_data, papertext_data) -> None:
         # Extract information for current paper within text database
         curr_bibcode = curr_dict["bibcode"]
 
-        # Extract index for current paper within papertrack (paper classification database)
-        curr_index_papertrack = None
-        try:
-            curr_index_papertrack = bibcodes_papertrack.index(curr_bibcode)
-        except ValueError:
-            logger.debug(f"Bibcode ({curr_index}, {curr_bibcode}) not in papertrack database. Continuing...")
-            bibcodes_notin_papertrack.append(curr_bibcode)
-            continue
-
-        # Copy over data from papertrack into text database
-
-        # curr_dict["class_missions"] = {}
-        for _, dict_content in enumerate(missions_and_papertypes[curr_index_papertrack]):
-            curr_mission = dict_content["mission"]
-            # curr_papertype = dict_content["paper_type"]
-            # Store inner dictionary under mission name
-            # inner_dict = {}
-            # curr_dict["class_missions"][curr_mission] = inner_dict
-            curr_dict[curr_mission] = {
-                "class_missions": {
-                    "bibcode": bibcodes_papertrack[curr_index_papertrack],
-                    "papertype": dict_content["paper_type"],
-                }
+        if curr_bibcode in bibcodes_papertrack:
+            index = bibcodes_papertrack.index(curr_bibcode)
+            curr_dict["class_missions"] = {
+                mission["mission"]: {"bibcode": curr_bibcode, "papertype": mission["paper_type"]}
+                for mission in missions_and_papertypes[index]
             }
-            # Store information in inner dict
-            # inner_dict["bibcode"] = bibcodes_papertrack[curr_index_papertrack]
-            # inner_dict["papertype"] = curr_papertype
+            for search in ads_searches[index]:
+                curr_dict[f"is_ignored_{search['search_key']}"] = search["ignored"]
+        else:
+            logger.debug(f"Bibcode ({curr_dict['bibcode']}) not in papertrack database. Continuing...")
+            bibcodes_notin_papertrack.append(curr_bibcode)
+    logger.info(f"NOTE: {len(bibcodes_notin_papertrack)} papers in text data that were not in papertrack.")
+    logger.info("Done generating dictionaries of combined papertrack+text data.")
 
-        # Store search ignore flags
-        for _, searches in enumerate(ads_searches[curr_index_papertrack]):
-            curr_searchname = searches["search_key"]
-            curr_dict[f"is_ignored_{curr_searchname}"] = searches["ignored"]
-
-        logger.debug("Done generating dictionaries of combined papertrack+text data.")
-    logger.debug(f"NOTE: {len(bibcodes_notin_papertrack)} papers in text data that were not in papertrack.")
-
-    return data_storage, bibcodes_notin_papertrack, bibcodes_notin_papertext
+    return (
+        data_storage,
+        bibcodes_notin_papertext,
+        bibcodes_notin_papertrack,
+    )
 
 
-def save_files(dataset: dict, missing_papertrack_bibcodes: list, missing_papertext_bibcodes: list):
+def save_files(dataset: dict, missing_papertext_bibcodes: list, missing_papertrack_bibcodes: list):
     # Save the combined dataset
     save_json_file(config.inputs.path_source_data, dataset)
     # Also save the bibcodes of the paper-texts not found in papertrack and papertext
-    save_numpy_file(config.inputs.path_not_in_papertext, missing_papertext_bibcodes)
-    save_numpy_file(config.inputs.path_not_in_papertrack, missing_papertrack_bibcodes)
+    save_numpy_file(config.output.path_not_in_papertext, missing_papertext_bibcodes)
+    save_numpy_file(config.output.path_not_in_papertrack, missing_papertrack_bibcodes)
 
-    logger.debug("Dataset generation complete.\n")
-    logger.debug(f"Combined .json file saved to:\n{config.inputs.path_source_data}\n")
-    logger.debug(f"Bibcodes not in papertext saved to:\n{config.inputs.path_not_in_papertext}\n")
-    logger.debug(f"Bibcodes not in papertrack saved to:\n{config.inputs.path_not_in_papertrack}\n")
+    logger.info("Dataset generation complete.\n")
+    logger.info(f"Combined .json file saved to:\n{config.inputs.path_source_data}\n")
+    logger.info(f"Bibcodes not in papertext saved to:\n{config.output.path_not_in_papertext}\n")
+    logger.info(f"Bibcodes not in papertrack saved to:\n{config.output.path_not_in_papertrack}\n")
 
 
 def build_dataset() -> None:
@@ -179,8 +158,9 @@ def build_dataset() -> None:
             config.inputs.path_papertext, config.inputs.path_papertrack
         )
         # combine the papertrack and papertext into one dataset
-        storage_combined_dataset, bibcodes_notin_papertrack, bibcodes_notin_papertext = combine_datasets(
-            dataset_papertrack_orig, dataset_papertext_orig
+        storage_combined_dataset, bibcodes_notin_papertext, bibcodes_notin_papertrack = combine_datasets(
+            dataset_papertext_orig,
+            dataset_papertrack_orig,
         )
 
         # Save the combined dataset
