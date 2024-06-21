@@ -55,7 +55,7 @@ def build_model() -> None:
         mode=config.textprocessing.mode_modif,
         keyword_objs=params.all_kobjs,
         do_verbose=True,
-        load_check_truematch=config.textprocessing.do_check_truematch,
+        load_check_truematch=config.textprocessing.do_verify_truematch,
         do_verbose_deep=False,
     )
     # load source dataset
@@ -78,7 +78,7 @@ def build_model() -> None:
         dir_data=dir_data,
         name_model=name_model,
         do_reuse_run=config.dataprep.do_reuse_run,
-        do_check_truematch=config.textprocessing.do_check_truematch,
+        do_check_truematch=config.textprocessing.do_verify_truematch,
         seed_ML=config.ml.seed_ML,
         seed_TVT=settings.seed_TVT,
         dict_texts=dict_texts,

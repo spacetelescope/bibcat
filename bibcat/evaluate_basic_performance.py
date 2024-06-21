@@ -36,7 +36,7 @@ from numpy.typing import NDArray
 from bibcat import config
 from bibcat import parameters as params
 from bibcat.core import operator, performance
-from bibcat.core.classifiers import ml, rules
+from bibcat.core.classifiers import ml
 from bibcat.core.classifiers.textdata import ClassifierBase
 from bibcat.fetch_papers import fetch_papers
 
@@ -82,14 +82,6 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
     # We will choose which operator/method to evaluate performance below.
     classifier: ClassifierBase
 
-    # Initialize classifiers
-    # Rule-Based Classifier
-    classifier_RB = rules.RuleBasedClassifier(
-        which_classifs=None,
-        do_verbose=True,
-        do_verbose_deep=False,
-    )
-
     # initialize classifiers
     # Machine-Learning Classifier
     classifier_ML = ml.MachineLearningClassifier(filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True)
@@ -97,11 +89,9 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
     # CLI option
     if classifier_name == "ML":
         classifier = classifier_ML
-    elif classifier_name == "RB":
-        classifier = classifier_RB
     else:
         raise ValueError(
-            "An invalid value! Choose either 'ML' for the machine learning classifier or 'RB' for the rule-based classifier!"
+            "An invalid value! Choose 'ML' for the machine learning classifier!"
         )
 
     # Initialize operators by loading models into instances of the Operator class
@@ -110,7 +100,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
         name=classifier_name,
         mode=config.textprocessing.mode_modif,
         keyword_objs=params.all_kobjs,
-        load_check_truematch=config.textprocessing.do_check_truematch,
+        load_check_truematch=config.textprocessing.do_verify_truematch,
         do_verbose=True,
         do_verbose_deep=False,
     )
@@ -138,7 +128,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
         do_raise_innererror=config.textprocessing.do_raise_innererror,
         do_save_evaluation=True,
         do_save_misclassif=True,
-        do_check_truematch=config.textprocessing.do_check_truematch,
+        do_check_truematch=config.textprocessing.do_verify_truematch,
     )
 
     # Run the pipeline for an evaluation of model performance
@@ -156,7 +146,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
         fileroot_misclassif=config.performance.fileroot_misclassif + f"{classifier_name}",
         figsize=config.performance.figsize,
         print_freq=config.performance.print_freq,
-        do_check_truematch=config.textprocessing.do_check_truematch,
+        do_check_truematch=config.textprocessing.do_verify_truematch,
         do_raise_innererror=config.textprocessing.do_raise_innererror,
         do_save_evaluation=True,
         do_save_misclassif=True,

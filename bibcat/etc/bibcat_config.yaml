@@ -26,6 +26,7 @@ paths:
   TVTinfo: null
 
 dataprep:
+  do_reuse_run: true # whether or not to reuse saved data from previous model run
   num_papers: 100  # the number of papers to use. Set to null to use all available papers in external dataset
   fraction_TVT: [0.8, 0.1, 0.1]  # Partition fraction of training, validation, testing dataset
   mode_TVT: uniform  # Mode for splits; "uniform" = all training datasets will have the same number of entries from fraction_TVT; "available" = all training datasets will use full fraction
@@ -336,6 +337,7 @@ performance:
     - 20
     - 12
   print_freq: 1
+  threshold: 0.70
 
 
 results:

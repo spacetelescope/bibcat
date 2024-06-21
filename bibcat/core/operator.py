@@ -398,7 +398,7 @@ class Operator(Base):
                 curr_dict[curr_name] = curr_result
 
             # Print some notes at given frequency, if requested
-            if do_verbose and ((ii % print_freq) == 0):
+            if do_verbose and (((ii % print_freq) == 0) or (ii == (num_texts-1))):
                 print("Classification for text #{0} of {1} complete...".format((ii + 1), num_texts))
 
         # Return the classification results
