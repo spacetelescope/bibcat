@@ -30,13 +30,13 @@ settings = config.dataprep
 logger = setup_logger(__name__)
 
 
-# Fetch filepath for model
-name_model = config.output.name_model
-dir_data = os.path.join(config.paths.partitioned, name_model)
-dir_model = os.path.join(config.paths.models, name_model)
-
-
 def build_model() -> None:
+
+    # Fetch filepath for model
+    name_model = config.output.name_model
+    dir_data = os.path.join(config.paths.partitioned, name_model)
+    dir_model = os.path.join(config.paths.models, name_model)
+
     logger.info(f"Starting buiding and train {dir_model}!")
     if os.path.exists(dir_model):
         logger.info(

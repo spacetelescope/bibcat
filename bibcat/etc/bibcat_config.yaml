@@ -8,7 +8,7 @@ inputs:
 
 output:
   root_path: $BIBCAT_OUTPUT_DIR
-  name_model: my_test_run
+  name_model: tf_bert_run
   folders_TVT: {train: dir_train, validate: dir_validate, test: dir_test}
   tfoutput_prefix: tfoutput_
   path_not_in_papertext: $BIBCAT_DATA_DIR/bibcodes_notin_papertext.txt  # file for bibcodes not in papertrack
@@ -331,6 +331,13 @@ ml:
         "experts_wiki_books": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
         "talking-heads_base": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
     }
+  roberta:
+    dict_ml_model_encoders: {
+        "roberta_encased": "https://www.kaggle.com/models/kaggle/roberta/TensorFlow2/en-cased-l-12-h-768-a-12/1",
+        }
+    dict_ml_model_preprocessors: {
+        "roberta_encased": "https://kaggle.com/models/kaggle/roberta/TensorFlow2/en-cased-preprocess/1",
+        }
 
 performance:
   fileroot_confusion_matrix_plot: "performance_confmatr_basic_"
