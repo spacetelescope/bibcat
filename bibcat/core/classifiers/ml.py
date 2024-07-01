@@ -22,7 +22,11 @@ logger = setup_logger(__name__)
 
 
 class AbstractModel(abc.ABC):
-    """ Abstract base class for machine learning models.  To be subclassed by specific model types. """
+    """ Abstract base class for machine learning models.
+
+    To be subclassed by specific model types. All classes marked with @abc.abstractmethod
+    must be implemented in the subclass, or instantiation fails.
+    """
 
     @abc.abstractmethod
     def __repr__(self):
@@ -58,13 +62,28 @@ class AbstractModel(abc.ABC):
 
 
 class TensorFlow(AbstractModel):
+    """ TensorFlow machine learning model class
 
+    Class for building, training, and evaluating a machine learning model using TensorFlow.
+    Most configuration is set by the user or global bibcat_config.yaml file.
+
+    Parameters
+    ----------
+    model_type : str, optional
+        the type of model to use, by default 'bert'
+    verbose : bool, optional
+        Flag to turn on verbosity, by default False
+    load : bool, optional
+        Flag to load the existing model, by default False
+    """
     def __new__(cls, *args, **kwargs):
+        # raise error if tensorflow is not installed
         if not tf:
             raise ImportError('tensorflow packages not found.  Cannot create a tensorflow model.  Please install required packages.')
         return super(TensorFlow, cls).__new__(cls)
 
     def __init__(self, model_type: str = 'bert', verbose: bool = False, load: bool = False):
+        """ Initialize the TensorFlow model class """
         # object attributes
         self.model_type = model_type
         self.mlconfig = config.ml.get(model_type, {})
@@ -108,12 +127,15 @@ class TensorFlow(AbstractModel):
             self.load_model()
 
     def __repr__(self) -> str:
+        """ Class repr """
         return f"<TensorFlow (model_type='{self.model_type}', key='{self.model_key}', loaded={self.loaded})>"
 
     def build_model(self, num_dense: int = 3) -> tf.keras.Model:
         """ Build a training model
 
-        _extended_summary_
+        Builds an empty tensorflow model for training.  The model is built with a text input layer,
+        a preprocessor layer, an encoder layer, a dropout layer, and "num_dense" number of dense layers.
+        The default number of dense layers is 3, the number of paper classes we consider.
 
         Parameters
         ----------
@@ -170,18 +192,18 @@ class TensorFlow(AbstractModel):
         return tf.keras.Model(layer_input, net)
 
     def split_datasets(self, train: str = None, test: str = None, validation: str = None):
-        """_summary_
+        """ Construct the tensorflow datasets
 
-        _extended_summary_
+        Loads and constructs the train, test, validation datasets from input directories.
 
         Parameters
         ----------
         train : str, optional
-            _description_, by default None
+            the directory of training data, by default None
         test : str, optional
-            _description_, by default None
+            the directory of test data, by default None
         validation : str, optional
-            _description_, by default None
+            the directory of validation data, by default None
         """
 
         # load the data paths
@@ -204,18 +226,19 @@ class TensorFlow(AbstractModel):
         self.dataset_validation = dataset_validation.cache().prefetch(buffer_size=tf.data.AUTOTUNE)
 
     def train_model(self, train: str = None, test: str = None, validation: str = None):
-        """_summary_
+        """ Train the model
 
-        _extended_summary_
+        Builds and trains a new model. Uses tensorflow callbacks to track model state,
+        as well as loss and accuracy metrics over time.
 
         Parameters
         ----------
         train : str, optional
-            _description_, by default None
+            the directory of training data, by default None
         test : str, optional
-            _description_, by default None
+            the directory of test data, by default None
         validation : str, optional
-            _description_, by default None
+            the directory of validation data, by default None
         """
 
         # retrieve the split datasets
@@ -290,14 +313,12 @@ class TensorFlow(AbstractModel):
         self.loaded = True
 
     def evaluate_model(self):
-        """_summary_
+        """ Evalute the model using the test dataset
 
-        _extended_summary_
+        Evalute the model and set the loss and accuracy attributes.
 
-        Parameters
-        ----------
-        dataset_test : _type_
-            _description_
+        TODO - maybe move this into train_model method, or remove now that we use callbacks
+
         """
         # Evaluate the model on the test data
         if self.verbose:
@@ -306,20 +327,22 @@ class TensorFlow(AbstractModel):
         self.res_loss, self.res_accuracy = self.model.evaluate(self.dataset_test)
 
 
-    def predict(self, texts: list):
-        """_summary_
+    def predict(self, texts: list) -> np.array:
+        """ Predict the input text
 
-        _extended_summary_
+        Run the model predictions on the input text.  Produces probabilities
+        for each category the model was trainined on.  In this case, the categories
+        are the paper class names of "data_influenced", "mention", "science".
 
         Parameters
         ----------
         texts : list
-            _description_
+            a list of text strings to predict
 
         Returns
         -------
-        _type_
-            _description_
+        np.array
+            an array of probabilities, one for each category
         """
         # Run the model on the given texts
         results = self.model.predict(texts)
@@ -332,9 +355,15 @@ class TensorFlow(AbstractModel):
         return results
 
     def save_model(self):
-        """_summary_
+        """ Save the model
 
-        _extended_summary_
+        Writes out the model as an output directory at
+        $BIBCAT_OUTPUT_DIR/models/[model_name]/[tfoutput_prefix_model_name].
+        Also saves some output parameters into a numpy file, at
+        $BIBCAT_OUTPUT_DIR/models/[model_name]/[model_name].npy.
+
+        TODO - maybe move this to higher class
+
         """
         # Save the model
         self.outputs = {
@@ -351,11 +380,15 @@ class TensorFlow(AbstractModel):
         np.save(os.path.join(self.model_dir, self.savename_model), self.outputs)
 
     def load_model(self):
-        """_summary_
+        """ Load the model from saved output
 
-        _extended_summary_
+        Loads the model output directory and the numpy output file.
+
+        TODO - maybe move this to higher class
+
         """
 
+        # check if the model outputs exist
         if not os.path.exists(self.filepath_ML):
             raise FileNotFoundError(f"Model output directory not found: {self.filepath_ML}.  Cannot load.")
 
@@ -376,9 +409,12 @@ class TensorFlow(AbstractModel):
         self.loaded = True
 
     def plot_model(self):
-        """_summary_
+        """ Plot the loss and accuracy
 
-        _extended_summary_
+        Creates and saves a matplotlib plot of the loss and accuracy over epochs.
+
+        TODO - maybe move this to higher class
+
         """
         # Extract variables
         num_epochs = self.outputs["num_epochs"]
@@ -391,7 +427,6 @@ class TensorFlow(AbstractModel):
         fig.tight_layout()
 
         # For loss
-        #ax = plt.subplot(2, 1, 1)
         ax1.set_title(f"Test loss: {self.outputs['loss']}\nTest accuracy: {self.outputs['accuracy']}")
         ax1.plot(e_arr, self.history.history["loss"], label="Loss: Training", color="blue", linewidth=4)
         ax1.plot(e_arr, self.history.history["val_loss"], label="Loss: Validation", color="gray", linewidth=2)
@@ -401,7 +436,6 @@ class TensorFlow(AbstractModel):
         ax1.set_ylabel("Loss")
 
         # For accuracy
-        #ax = plt.subplot(2, 1, 2)
         ax2.plot( e_arr, self.history.history["accuracy"], label="Accuracy: Training", color="blue", linewidth=4)
         ax2.plot( e_arr, self.history.history["val_accuracy"], label="Accuracy: Validation", color="gray", linewidth=2)
         leg = ax2.legend(loc="best", frameon=False)
@@ -431,12 +465,34 @@ def select_library(name: str) -> object:
             return model
 
 
-class MLClassifier:
+class MachineLearningClassifier:
+    """ Class for setting up and running a ML classifier
+
+    Class for selecting a ML library, running the ML classifier, and
+    predicting the paper class of a given text.  If the model has not been
+    built or trained yet, the ``run`` method should be run.  Otherwise, you can
+    load the saved model with the ``load`` keyword attribute, and run ``classify_text``
+    to predict the paper class of a given text.
+
+    Parameters
+    ----------
+    load : bool, optional
+        Flag to try and load the model, by default False
+    verbose : bool, optional
+        Flag to turn on verbosity, by default True
+
+    Raises
+    ------
+    ValueError
+        when the ML library is not supported
+    """
 
     def __init__(self, load: bool = False, verbose: bool = True):
+        """ Initialize the ML classifier """
+
+        # object attributes
         self.model = None
         self.verbose = verbose
-
         self.threshold = config.performance.threshold
 
         # Load the initial model from the specified library
@@ -446,6 +502,11 @@ class MLClassifier:
         self.model = self.model_class(verbose=verbose, load=load)
 
     def run(self):
+        """ Run the model training and evaluation
+
+        Build, train, evaluate, and save the model. This method is the new
+        top level method to be run for the ML classifier when building the model.
+        """
         # do nothing if model already loaded
         if self.model.loaded:
             return
@@ -457,19 +518,22 @@ class MLClassifier:
         self.model.plot_model()
 
     def classify_text(self, text: str) -> dict:
-        """_summary_
+        """ Classify some text using the ML model
 
-        _extended_summary_
+        Runs the model prediction and returns the paper class probabilities
+        and the paper verdict, i.e. the paper class with the highest probability.
+        If the highest probability is below a given performance threshold, the verdict is
+        set to "verdict_lowprob".
 
         Parameters
         ----------
         text : str
-            _description_
+            the text string to classify
 
         Returns
         -------
         dict
-            _description_
+            the output probabilities and paper verdict
         """
         # Print some notes
         if self.verbose:
