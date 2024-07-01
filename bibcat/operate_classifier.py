@@ -9,6 +9,7 @@ This module applies a given classifier method on the input data for classificati
 
 import json
 import os
+import pathlib
 
 from bibcat.core import operator
 from bibcat.utils.logger_config import setup_logger
@@ -124,6 +125,10 @@ def operate_classifier(
 
     # set file save location and filename
     tmp_filepath = os.path.join(filepath_output, f"{fileroot_class_results}.json")
+
+    if not pathlib.Path(tmp_filepath).exists():
+        pathlib.Path(tmp_filepath).parent.mkdir(parents=True, exist_ok=True)
+
     if do_verbose:
         logger.info(f"Saving '{fileroot_class_results}.json' under '{filepath_output}/'!")
     json_dump = convert_sets(classification_results)  # converts any sets in the results to lists
