@@ -38,6 +38,7 @@ from bibcat import config
 nlp = spacy.load(config.grammar.spacy_language_model)
 
 
+# TODO - remove this class ; want to separate out workflow classes from object classes ; workflow classes maybe should be functions?
 class Base:
     """
     WARNING! This class is *not* meant to be used directly by users.
@@ -61,6 +62,7 @@ class Base:
         return
 
     # Retrieve specified data via given key
+    # TODO - do we really need this? no
     def _get_info(self, key: str, do_flag_hidden=False):
         """
         Method: _get_info
@@ -93,6 +95,7 @@ class Base:
         return
 
     # Store given data into class instance in a unified way
+    # TODO - do we really need this? no
     def _store_info(self, data, key):
         """
         Method: _store_info
@@ -104,6 +107,7 @@ class Base:
         return
 
     # Assemble wordchunks containing keywords from given text
+    # TODO - remove this entirely - this is for rules
     def _assemble_keyword_wordchunks(
         self, text, keyword_objs, do_include_verbs=False, do_include_brackets=False, lookup_terms=None, do_verbose=False
     ):
@@ -244,6 +248,7 @@ class Base:
         return list_wordchunks
 
     # Plot rectangular confusion matrix for given data and labels
+    # TODO - move this under the Performance Class
     def _ax_confusion_matrix(
         self,
         matr,
@@ -355,6 +360,7 @@ class Base:
         return
 
     # Determine if given text is important (e.g., is a keyword)
+    # TODO - move this to grammar class
     def _check_importance(
         self, text, include_Ipronouns=True, include_terms=True, include_etal=True, keyword_objs=None, version_NLP=None
     ):
@@ -458,6 +464,7 @@ class Base:
         return {"bools":dict_results, "charspans_keyword":charspans_keyword}
 
     # Return boolean for whether or not text contains a true vs false match to the given keywords
+    # TODO - move this to operator or grammar class
     def _check_truematch(self, text, keyword_objs, dict_ambigs, do_verbose=None, do_verbose_deep=False):
         """
         Method: _check_truematch
@@ -787,6 +794,7 @@ class Base:
         return fin_result
 
     # Cleanse given (any length) string of extra whitespace, dashes, etc.
+    # TODO - move this to Keyword class
     def _cleanse_text(self, text, do_streamline_etal):
         """
         Method: _cleanse_text
@@ -881,6 +889,7 @@ class Base:
         return text
 
     # Extract core meaning (e.g., synsets) from given phrase
+    # TODO - move this to grammar class
     def _extract_core_from_phrase(self, phrase_NLP, do_skip_useless, do_verbose=None, keyword_objs=None):
         """
         Method: _extract_core_from_phrase
@@ -1024,6 +1033,7 @@ class Base:
         }
 
     # Fetch a keyword object that matches the given lookup
+    # TODO - move this to operator class
     def _fetch_keyword_object(self, lookup, keyword_objs=None, do_verbose=None, do_raise_emptyerror=True):
         """
         Method: _fetch_keyword_object
@@ -1067,6 +1077,7 @@ class Base:
         return match
 
     # Return boolean for if given word (NLP type word) is of conjoined given part of speech
+    # TODO - move this to grammar class
     def _is_pos_conjoined(self, word, pos):
         """
         Method: _is_pos_conjoined
@@ -1102,6 +1113,7 @@ class Base:
         raise ValueError("Err: No original p.o.s. for conjoined word {0}!\n{1}".format(word, word_ancestors))
 
     # Return boolean for if given word (NLP type word) is of given part of speech
+    # TODO - move this to Grammar class
     def _is_pos_word(self, word, pos, keyword_objs=None, do_verbose=False):
         """
         Method: _is_pos_word
@@ -1423,6 +1435,7 @@ class Base:
         return check_all
 
     # Process database of ambig. phrases into lookups and dictionary
+    # TODO - move this to grammar class
     def _process_database_ambig(self, keyword_objs=None, do_verbose=False):
         """
         Method: _process_database_ambig
@@ -1523,6 +1536,7 @@ class Base:
         return dict_ambigs
 
     # Search text for given keywords and acronyms and return metric
+    # TODO - move this to grammar class
     def _search_text(self, text, keyword_objs, do_verbose=False):
         """
         Method: _search_text
@@ -1552,6 +1566,7 @@ class Base:
 
     # Cleanse given (short) string of extra whitespace, dashes, etc,
     # with uniform placeholders.
+    # TODO - move this to grammar class
     def _streamline_phrase(self, text, do_streamline_etal):
         """
         Method: _streamline_phrase
@@ -1582,6 +1597,7 @@ class Base:
         return text
 
     # Write given text to given filepath
+    # TODO - move this to performance class
     @staticmethod
     def _write_text(text: str, filepath: str) -> None:
         """

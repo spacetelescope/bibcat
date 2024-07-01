@@ -1,7 +1,7 @@
 """
 :title: textdata.py
 
-This module is a class purely meant to be inherited by the various *Classifier classes and inherits Base() class.  
+This module is a class purely meant to be inherited by the various *Classifier classes and inherits Base() class.
 In short, the ClassifierBase class is a collection of methods used by different classifier types.
 
 The primary methods and use cases of ClassifierBase include:
@@ -13,6 +13,7 @@ from bibcat.core.base import Base
 from bibcat.core.grammar import Grammar
 
 
+# TODO - remove this ; not needed
 class ClassifierBase(Base):
     """
     WARNING! This class is *not* meant to be used directly by users.
@@ -44,6 +45,7 @@ class ClassifierBase(Base):
         pass
 
     # Load text and process into modifs using Grammar class
+    # TODO - remove this ; this is for rules
     def _process_text(self, text, keyword_obj, which_mode, do_check_truematch, buffer=0, do_verbose=False):
         """
         Method: _process_text
