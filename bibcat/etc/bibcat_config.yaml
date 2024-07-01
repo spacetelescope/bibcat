@@ -30,9 +30,10 @@ dataprep:
   fraction_TVT: [0.8, 0.1, 0.1]  # Partition fraction of training, validation, testing dataset
   mode_TVT: uniform  # Mode for splits; "uniform" = all training datasets will have the same number of entries from fraction_TVT; "available" = all training datasets will use full fraction
   seed_TVT: 10  # Random seed for generating train vs valid. vs test datasets
+  do_reuse_run: true
 
 textprocessing:
-  do_verify_truematch: true  # used in Performance class
+  do_check_truematch: true  # used in Performance class
   do_raise_innererror: false  # do_raise_innererror: if True, will stop if exception encountered; # if False, will print error and continue
   do_verbose_text_summary: false  # print input text data summary
   mode_modif: skim_anon  # Mode to use for text processing and generating possible modes: any combination from "skim", "trim", and "anon" or "none"
@@ -242,6 +243,10 @@ textprocessing:
   - [AnyMission, AnyMission treasury, 'TRUE']
 
 ml:
+  ML_library: "tensorflow"  # Options: "tensorflow", "pytorch"
+  ML_model_type: "bert"  # Options: "bert", "custom"
+  ML_custom_model_path: null  # Path to custom model if ML_model_type is "custom"
+  ML_custom_preprocessor_path: null  # Path to custom preprocessor if ML_model_type is "custom"
   # Set machine learning variables
   ML_label_model: "categorical"
   ML_activation_dense: "softmax"
@@ -252,7 +257,7 @@ ml:
   ML_name_optimizer: "LAMB"  # "AdamWeightDecay"
   ML_frac_dropout: 0.2
   ML_frac_steps_warmup: 0.1
-  ML_num_epochs: 5
+  ML_num_epochs: 20
   ML_init_lr: !!float 3e-5
   seed_ML: 8  # Random seed for ML model
   bert:
@@ -336,6 +341,7 @@ performance:
     - 20
     - 12
   print_freq: 1
+  threshold: 0.70
 
 
 results:
