@@ -231,6 +231,10 @@ class TensorFlow(AbstractModel):
         Builds and trains a new model. Uses tensorflow callbacks to track model state,
         as well as loss and accuracy metrics over time.
 
+        To examine the tensorboard dashboard, run the command ``tensorboard --logdir=path/to/log``,
+        where the logdir points to $BIBCAT_OUTPUT_DIR/models/[model_name]/logs. See also
+        "https://www.tensorflow.org/tensorboard/get_started"
+
         Parameters
         ----------
         train : str, optional
@@ -362,7 +366,7 @@ class TensorFlow(AbstractModel):
         Also saves some output parameters into a numpy file, at
         $BIBCAT_OUTPUT_DIR/models/[model_name]/[model_name].npy.
 
-        TODO - maybe move this to higher class
+        TODO - maybe move this to higher class ; may not need if use model checkpoints
 
         """
         # Save the model
@@ -416,14 +420,15 @@ class TensorFlow(AbstractModel):
         TODO - maybe move this to higher class
 
         """
-        # Extract variables
-        num_epochs = self.outputs["num_epochs"]
+        # Get the number of epochs used.  This can be less than num_epochs due to
+        # early stopping
+        num_used_epochs = len(self.history.history["loss"])
 
         # For plot of loss and accuracy over time
         # For base plot
-        e_arr = np.arange(0, num_epochs, 1)
+        e_arr = np.arange(0, num_used_epochs, 1)
 
-        fig, (ax1, ax2) = plt.subplots(nrows=2, figsize=(10,10))
+        fig, (ax1, ax2) = plt.subplots(nrows=2, figsize=(10, 10))
         fig.tight_layout()
 
         # For loss
@@ -542,7 +547,7 @@ class MachineLearningClassifier:
 
         # Clean the text
         # temporarily manually call Base until we can refactor
-        # TODO - move out this code to keyword or grammer class
+        # TODO - move out this code to keyword or grammar class
         base = Base()
         cleaned_text = base._streamline_phrase(text, do_streamline_etal=False)
 

@@ -47,7 +47,7 @@ def build_model() -> None:
     filesave_error = os.path.join(dir_model, f"{name_model}_processing_errors.txt")
 
     # Initialize an empty ML classifier
-    classifier_ML = ml.MachineLearningClassifier(filepath_model=None, fileloc_ML=None, do_verbose=True)
+    classifier_ML = ml.MachineLearningClassifier(verbose=True)
 
     # Initialize an Operator
     tabby_ML = operator.Operator(
