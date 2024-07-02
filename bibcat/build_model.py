@@ -50,14 +50,10 @@ def build_model() -> None:
     classifier_ML = ml.MachineLearningClassifier(verbose=True)
 
     # Initialize an Operator
-    tabby_ML = operator.Operator(
-        classifier=classifier_ML,
-        mode=config.textprocessing.mode_modif,
-        keyword_objs=params.all_kobjs,
-        do_verbose=True,
-        load_check_truematch=config.textprocessing.do_check_truematch,
-        do_verbose_deep=False,
-    )
+    tabby_ML = operator.Operator(classifier=classifier_ML, name='ML', mode=config.textprocessing.mode_modif,
+                                 keyword_objs=params.all_kobjs, verbose=True,
+                                 load_check_truematch=config.textprocessing.do_check_truematch, deep_verbose=False)
+
     # load source dataset
     source_dataset = load_source_dataset(do_verbose=True)
 
@@ -79,7 +75,6 @@ def build_model() -> None:
         name_model=name_model,
         do_reuse_run=config.dataprep.do_reuse_run,
         do_check_truematch=config.textprocessing.do_check_truematch,
-        seed_ML=config.ml.seed_ML,
         seed_TVT=settings.seed_TVT,
         dict_texts=dict_texts,
         mapper=params.map_papertypes,  # For masking of classes (e.g., masking 'supermention' as 'mention')
@@ -87,8 +82,6 @@ def build_model() -> None:
         fraction_TVT=settings.fraction_TVT,
         mode_TVT=settings.mode_TVT,
         do_shuffle=config.textprocessing.do_shuffle,  # do_shuffle: Whether or not to shuffle contents of training vs. validation vs. testing datasets
-        do_verbose=True,
-        do_verbose_deep=False,
     )
 
     logger.info(f"Time to train the model with run = {time.time()-start} seconds.")
