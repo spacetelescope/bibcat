@@ -346,7 +346,6 @@ class Operator(Base):
                     lookup=curr_name,
                     modif=curr_modif,
                     forest=curr_forest,
-                    threshold=threshold,
                     buffer=buffer,
                     do_check_truematch=do_check_truematch,
                     do_raise_innererror=do_raise_innererror,
@@ -424,7 +423,7 @@ class Operator(Base):
             buffer=buffer,
         )
         grammar.run_modifications(which_modes=use_these_modes)
-        output = grammar.get_modifs(do_include_forest=True)
+        output = grammar.get_modifs()
         modif = output["modifs"][mode]
         modif_none = output["modifs"]["none"]  # Include unmodified vers. as well
         forest = output["_forest"]

@@ -103,7 +103,7 @@ class Grammar(Base):
         return
 
     # Return modifs (modified paragraphs), modified to specified modes
-    def get_modifs(self, which_modes=None, do_include_forest=False):
+    def get_modifs(self, which_modes=None):
         """
         Method: get_modifs
         Purpose: Fetch the modified paragraphs ('modifs') previously assembled and stored within this instance.
@@ -131,10 +131,7 @@ class Grammar(Base):
         dict_modifs = {key: dict_modifs_orig[key] for key in which_modes}
 
         # Tack on grammar information if requested
-        if do_include_forest:
-            dict_results = {"modifs": dict_modifs, "_forest": forest}
-        else:
-            dict_results = dict_modifs
+        dict_results = {"modifs": dict_modifs, "_forest": forest}
 
         # Print some notes
         if do_verbose:
