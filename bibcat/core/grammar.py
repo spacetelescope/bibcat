@@ -121,7 +121,7 @@ class Grammar(Base):
         do_verbose = self._get_info("do_verbose")
         # Extract all computed modes, if none specified
         if which_modes is None:
-            which_modes = [key for key in forest]
+            which_modes = [key for key in dict_modifs_orig]
 
         # Print some notes
         if do_verbose:
