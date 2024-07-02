@@ -27,8 +27,12 @@ from bibcat import config
 from bibcat.core.base import Base
 from bibcat.core.grammar import Grammar
 from bibcat.data.partition_dataset import generate_directory_TVT
+from bibcat.utils.logger_config import setup_logger
 
+logger = setup_logger(__name__)
 
+# TODO - this class is too complicated and may be unneccesary; break down into smaller components and
+# TODO - move to other relevant classes like Paper, Grammar, Keyword, etc.
 class Operator(Base):
     """
     Class: Operator
@@ -50,116 +54,100 @@ class Operator(Base):
     """
 
     # Initialize this class instance
-    def __init__(
-        self,
-        classifier,
-        mode,
-        keyword_objs,
-        do_verbose,
-        name="operator",
-        load_check_truematch=True,
-        do_verbose_deep=False,
-    ):
+    def __init__( self, classifier, mode: str, keyword_objs: list, verbose: bool = False, name: str = "operator",
+                 load_check_truematch: bool = True, deep_verbose: bool = False):
         """
         Method: __init__
         WARNING! This method is *not* meant to be used directly by users.
         Purpose: Initializes instance of Operator class.
         """
         # Initialize storage
-        self._storage = {}
-        self._store_info(classifier, "classifier")
-        self._store_info(mode, "mode")
-        self._store_info(name, "name")
-        self._store_info(keyword_objs, "keyword_objs")
-        self._store_info(do_verbose, "do_verbose")
-        self._store_info(load_check_truematch, "load_check_truematch")
-        self._store_info(do_verbose_deep, "do_verbose_deep")
+        # self._storage = {}
+        # self._store_info(classifier, "classifier")
+        # self._store_info(mode, "mode")
+        # self._store_info(name, "name")
+        # self._store_info(keyword_objs, "keyword_objs")
+        # self._store_info(do_verbose, "do_verbose")
+        # self._store_info(load_check_truematch, "load_check_truematch")
+        # self._store_info(do_verbose_deep, "do_verbose_deep")
+
+        # object attributes
+        self.name = name
+        self.classifier = classifier
+        self.mode = mode
+        self.verbose = verbose
+        self.deep_verbose = deep_verbose
+        self.load_check_truematch = load_check_truematch
+
+        # keyword object info
+        self.keyword_objs = keyword_objs
+        self.num_keyobjs = len(keyword_objs)
+
+        # ambiguous keyword data
+        self.dict_ambigs = None
+        self.lookup_ambigs = None
 
         # Load and process ambiguous (ambig.) data, if so requested
         if load_check_truematch:
             # Run method to load and process external ambig. database
-            dict_ambigs = self._process_database_ambig(keyword_objs=keyword_objs)
-            lookup_ambigs = dict_ambigs["lookup_ambigs"]
+            self.dict_ambigs = self._process_database_ambig(keyword_objs=keyword_objs)
+            self.lookup_ambigs = self.dict_ambigs["lookup_ambigs"]
 
             # Print some notes
-            if do_verbose_deep:
-                print("Loaded+Assembled data for ambiguous phrases.")
+            if self.deep_verbose:
+                logger.info("Loaded+Assembled data for ambiguous phrases.")
 
-        # Otherwise, set empty placeholders
-        else:
-            dict_ambigs = None
-            lookup_ambigs = None
 
-        # Store the processed data in this object instance
-        self._store_info(dict_ambigs, "dict_ambigs")
-        self._store_info(lookup_ambigs, "lookup_ambigs")
+        # # Store the processed data in this object instance
+        # self._store_info(dict_ambigs, "dict_ambigs")
+        # self._store_info(lookup_ambigs, "lookup_ambigs")
 
-        # Exit the method
-        if do_verbose:
-            print("Instance of Operator successfully initialized!")
-            print("Keyword objects:")
-            for ii in range(0, len(keyword_objs)):
-                print("{0}: {1}".format(ii, keyword_objs[ii]))
+        # print the keyword objects
+        if self.verbose:
+            logger.info("Instance of Operator successfully initialized!")
+            logger.info("Keyword objects:")
+            for kobj in self.keyword_objs:
+                logger.info(f"{kobj}")
 
-        return
 
     # Fetch a keyword object that matches the given lookup
-    def _fetch_keyword_object(
-        self, lookup: str, do_verbose: None | bool = None, do_raise_emptyerror: bool = True
-    ) -> Any | None:
+    def _fetch_keyword_object(self, lookup: str, do_raise_emptyerror: bool = True) -> Any | None:
         """
         Method: _fetch_keyword_object
         WARNING! This method is *not* meant to be used directly by users.
         Purpose: Finds stored Keyword instance that matches to given lookup term.
         """
-        # Load Global variables
-        if do_verbose is None:
-            do_verbose = self._get_info("do_verbose")
-        keyword_objs = self._get_info("keyword_objs")
-        num_keyobjs = len(keyword_objs)
+
         # Print some notes
-        if do_verbose:
-            print("> Running _fetch_keyword_object() for lookup term {0}.".format(lookup))
+        if self.verbose:
+            logger.info(f"> Running _fetch_keyword_object() for lookup term {lookup}.")
 
         # Find keyword object that matches to given lookup term
         match = None
-        for ii in range(0, num_keyobjs):
+        for kobj in self.keyword_objs:
             # If current keyword object matches, record and stop loop
-            if keyword_objs[ii].identify_keyword(lookup)["bool"]:
-                match = keyword_objs[ii]
+            if kobj.identify_keyword(lookup)["bool"]:
+                match = kobj
                 break
 
         # Throw error if no matching keyword object found
         if match is None:
-            errstr = "No matching keyword object for {0}.\n".format(lookup)
+            errstr = f"No matching keyword object for {lookup}.\n"
             errstr += "Available keyword objects are:\n"
-            for ii in range(0, num_keyobjs):
-                errstr += "{0}\n".format(keyword_objs[ii])
+            # just use the names of the keywords
+            names = ', '.join(a._get_info('name') for a in self.keyword_objs)
+            errstr += f"{names}\n"
 
             # Raise error if so requested
             if do_raise_emptyerror:
                 raise ValueError(errstr)
-            # Otherwise, return None
-            else:
-                return None
 
         # Return the matching keyword object
         return match
 
     # Inspect text and either reject as false target or give classifications
-    def classify(
-        self,
-        text: str | None,
-        lookup: str,
-        threshold: float,
-        do_check_truematch: bool,
-        do_raise_innererror: bool,
-        modif: str | None = None,
-        forest: str | None = None,
-        buffer: int = 0,
-        do_verbose: bool | None = None,
-        do_verbose_deep: bool | None = None,
-    ) -> dict[str, Any] | Any:
+    def classify(self, text: str | None, keyword: str, modif: str | None = None,
+                 do_check_truematch: bool = False, buffer: int = 0) -> dict[str, Any] | Any:
         """
         Method: classify
         Purpose:
@@ -191,131 +179,79 @@ class Operator(Base):
             - 'uncertainty': the uncertainty of the classification.
         """
         # Fetch global variables
-        if do_verbose is None:
-            do_verbose = self._get_info("do_verbose")
-        if do_verbose_deep is None:
-            do_verbose_deep = self._get_info("do_verbose_deep")
+        # if do_verbose is None:
+        #     do_verbose = self._get_info("do_verbose")
+        # if do_verbose_deep is None:
+        #     do_verbose_deep = self._get_info("do_verbose_deep")
 
-        classifier = self._get_info("classifier")
+        #classifier = self._get_info("classifier")
 
-        # Fetch keyword object matching to the given keyword
-        keyobj = self._fetch_keyword_object(lookup=lookup, do_verbose=do_verbose)
-        if do_verbose:
-            print("Best matching keyword object (keyobj) for keyword {0}:\n{1}".format(lookup, keyobj))
+        # # Fetch keyword object matching to the given keyword
+        # keyobj = self._fetch_keyword_object(lookup=lookup)
+        # if self.verbose:
+        #     logger.info(f"Best matching keyword object (keyobj) for keyword {lookup}:\n{keyobj}")
+
+        modif_none = None
 
         # Process text into modifs using Grammar class, if modif not given
         if modif is None:
-            if do_verbose:
-                print("\nPreprocessing and extracting modifs from the text...")
+            if self.verbose:
+                logger.info("\nPreprocessing and extracting modifs from the text...")
 
-            if do_raise_innererror:  # Allow stop from any exceptions encountered
-                output = self.process(
-                    text=text,
-                    do_check_truematch=do_check_truematch,
-                    buffer=buffer,
-                    lookup=lookup,
-                    keyword_obj=keyobj,
-                    do_verbose=do_verbose,
-                    do_verbose_deep=do_verbose_deep,
-                )
-            else:  # Otherwise, print any exceptions and keep moving forward
-                try:
-                    output = self.process(
-                        text=text,
-                        do_check_truematch=do_check_truematch,
-                        buffer=buffer,
-                        lookup=lookup,
-                        keyword_obj=keyobj,
-                        do_verbose=do_verbose,
-                        do_verbose_deep=do_verbose_deep,
-                    )
-
-                # Catch any exceptions and force-print some notes
-                except Exception as err:
-                    dict_verdicts = config.results.dictverdict_error.copy()
-                    print("-\nThe following err. was encountered in operate:")
-                    print(repr(err))
-                    print("Error was noted. Returning error as verdict.\n-")
-                    dict_verdicts["modif"] = "<PROCESSING ERROR:\n{0}>".format(repr(err))
-                    dict_verdicts["modif_none"] = None
-                    return dict_verdicts
+            try:
+                output = self.process(text, keyword, do_check_truematch=do_check_truematch, buffer=buffer)
+            except Exception as err:
+                verdicts = config.results.dictverdict_error.copy()
+                logger.error("-\nThe following err. was encountered in operate:")
+                logger.error(err)
+                logger.error("Error was noted. Returning error as verdict.\n-")
+                verdicts["modif"] = f"<PROCESSING ERROR:\n{err}>"
+                verdicts["modif_none"] = None
+                return verdicts
 
             # Fetch the generated output
             modif = output["modif"]
             modif_none = output["modif_none"]
-            forest = output["forest"]
 
             # Print some notes
-            if do_verbose:
-                print("Text has been processed into modif.")
+            if self.verbose:
+                logger.info("Text has been processed into modif.")
 
-        # Otherwise, use given modif
-        else:
-            # Print some notes
-            if do_verbose:
-                print("Modif given. No text processing will be done.")
-            #
-            modif_none = None
-            pass
+        # # Otherwise, use given modif
+        # else:
+        #     # Print some notes
+        #     if do_verbose:
+        #         print("Modif given. No text processing will be done.")
+        #     #
+        #     modif_none = None
+        #     pass
 
         # Set rejected verdict if empty text
         if modif.strip() == "":
-            if do_verbose:
-                print("No text found matching keyword object.")
-                print("Returning rejection verdict.")
+            if self.verbose:
+                logger.info("No text found matching keyword object.")
+                logger.info("Returning rejection verdict.")
 
-            dict_verdicts = config.results.dictverdict_rejection.copy()
-
-        # Classify the text using stored classifier with raised error
-        elif do_raise_innererror:  # If True, allow raising of inner errors
-            dict_verdicts = classifier.classify_text(
-                text=modif,
-                do_check_truematch=do_check_truematch,
-                forest=forest,
-                keyword_obj=keyobj,
-                do_verbose=do_verbose,
-                threshold=threshold,
-            )
-
-        # Otherwise, run classification while ignoring inner errors
+            verdicts = config.results.dictverdict_rejection.copy()
         else:
+            # Otherwise, run classification while ignoring inner errors
             # Try running classification
             try:
-                dict_verdicts = classifier.classify_text(
-                    text=modif,
-                    do_check_truematch=do_check_truematch,
-                    forest=forest,
-                    keyword_obj=keyobj,
-                    do_verbose=do_verbose,
-                    threshold=threshold,
-                )
-
-            # Catch certain exceptions and force-print some notes
+                verdicts = self.classifier.classify_text(text=modif)
             except Exception as err:
-                dict_verdicts = config.results.dictverdict_error.copy()
-                print("-\nThe following err. was encountered in operate:")
-                print(repr(err))
-                print("Error was noted. Continuing.\n-")
+                verdicts = config.results.dictverdict_error.copy()
+                logger.error("-\nThe following err. was encountered in operate:")
+                logger.error(err)
+                logger.error("Error was noted. Continuing.\n-")
 
         # Return the verdict with modif included
-        dict_verdicts["modif"] = modif
-        dict_verdicts["modif_none"] = modif_none
-        return dict_verdicts
+        verdicts["modif"] = modif
+        verdicts["modif_none"] = modif_none
+        return verdicts
 
     # Classify set of texts as false target or give classifications
-    def classify_set(
-        self,
-        texts: list[str] | None,
-        threshold: float,
-        do_check_truematch: bool,
-        do_raise_innererror: bool,
-        modifs: list[str] | None = None,
-        forests: list[str] | None = None,
-        buffer: int = 0,
-        print_freq: int = 25,
-        do_verbose: bool | None = None,
-        do_verbose_deep: bool | None = None,
-    ) -> list[dict[str, Any] | Any]:
+    def classify_set(self, texts: list[str] | None, modifs: list[str] | None = None,
+                     do_check_truematch: bool = False, buffer: int = 0, print_freq: int = 25) -> list[dict[str, Any] | Any]:
         """
         Method: classify_set
         Purpose:
@@ -336,81 +272,66 @@ class Operator(Base):
             - 'scores_indiv': the individual scores.
             - 'uncertainty': the uncertainty of the classification.
         """
-        # Fetch global variables
-        if do_verbose is None:
-            do_verbose = self._get_info("do_verbose")
-        if do_verbose_deep is None:
-            do_verbose_deep = self._get_info("do_verbose_deep")
+        # # Fetch global variables
+        # if do_verbose is None:
+        #     do_verbose = self._get_info("do_verbose")
+        # if do_verbose_deep is None:
+        #     do_verbose_deep = self._get_info("do_verbose_deep")
 
-        all_kobjs = self._get_info("keyword_objs")
-        num_kobjs = len(all_kobjs)
+        #all_kobjs = self._get_info("keyword_objs")
 
         # Throw error if both texts and modifs given
         if (texts is not None) and (modifs is not None):
             raise ValueError("Err: texts OR modifs should be given, not both.")
-        elif texts is not None:
+
+        # get the number of texts
+        if texts is not None:
             num_texts = len(texts)
         elif modifs is not None:
             num_texts = len(modifs)
 
         # Print some notes
-        if do_verbose:
-            print("\n> Running classify_set()!")
+        if self.verbose:
+            logger.info("\n> Running classify_set()!")
 
         # Classify every text against every mission
-        list_results: list[dict[str, Any] | Any] = [{} for _ in range(num_texts)]
-        curr_text: str | None = None
-        curr_modif: str | None = None
-        curr_forest: str | None = None
+        results = [{}] * num_texts
+        # curr_text = None
+        # curr_modif = None
+        # curr_forest = None
         # Iterate through texts
-        for ii in range(0, num_texts):
-            curr_dict: dict[str, Any] | Any = {}  # Dictionary to hold set of results
-            list_results[ii] = curr_dict  # Store this dictionary
-            # Extract current text if given in raw (not processed) form
-            if texts is not None:
-                curr_text = texts[ii]  # Current text dict to classify
+        for ii, text in enumerate(texts):
+            item = {}  # Dictionary to hold set of results
+            results[ii] = item  # Store this dictionary
+            # # Extract current text if given in raw (not processed) form
+            # if texts is not None:
+            #     curr_text = texts[ii]  # Current text dict to classify
 
             # Extract current modifs and forests if already processed text
-            if modifs is not None:
-                curr_modif = modifs[ii]
-
-            if forests is not None:
-                curr_forest = forests[ii]
+            modif = modifs[ii] if modifs else None
 
             # Iterate through keyword objects
-            for jj in range(0, num_kobjs):
-                curr_kobj = all_kobjs[jj]
-                curr_name = curr_kobj._get_info("name")
+            for kobj in self.keyword_objs:
+                name = kobj._get_info("name")
                 # Classify current text for current mission
-                curr_result = self.classify(
-                    text=curr_text,
-                    lookup=curr_name,
-                    modif=curr_modif,
-                    forest=curr_forest,
-                    threshold=threshold,
-                    buffer=buffer,
-                    do_check_truematch=do_check_truematch,
-                    do_raise_innererror=do_raise_innererror,
-                    do_verbose=do_verbose_deep,
-                )
+                result = self.classify(text=text, keyword=kobj, modif=modif, do_check_truematch=do_check_truematch,
+                                       buffer=buffer)
 
                 # Store current result
-                curr_dict[curr_name] = curr_result
+                item[name] = result
 
             # Print some notes at given frequency, if requested
-            if do_verbose and ((ii % print_freq) == 0):
-                print("Classification for text #{0} of {1} complete...".format((ii + 1), num_texts))
+            if self.verbose and ((ii % print_freq) == 0):
+                logger.info(f"Classification for text #{(ii + 1)} of {num_texts} complete...")
 
         # Return the classification results
-        if do_verbose:
-            print("\nRun of classify_set() complete!\n")
+        if self.verbose:
+            logger.info("\nRun of classify_set() complete!\n")
 
-        return list_results
+        return results
 
     # Process text into modifs
-    def process(
-        self, text, do_check_truematch, buffer=0, lookup=None, keyword_obj=None, do_verbose=None, do_verbose_deep=None
-    ):
+    def process(self, text, keyword_obj, do_check_truematch=False, buffer=0):
         """
         Method: process
         Purpose:
@@ -438,41 +359,39 @@ class Operator(Base):
         """
 
         # Fetch global variables
-        if do_verbose is None:
-            do_verbose = self._get_info("do_verbose")
-        if do_verbose_deep is None:
-            do_verbose_deep = self._get_info("do_verbose_deep")
+        # if do_verbose is None:
+        #     do_verbose = self._get_info("do_verbose")
+        # if do_verbose_deep is None:
+        #     do_verbose_deep = self._get_info("do_verbose_deep")
 
-        mode = self._get_info("mode")
-        dict_ambigs = self._get_info("dict_ambigs")
+        #mode = self._get_info("mode")
+        #dict_ambigs = self._get_info("dict_ambigs")
 
         # Fetch keyword object matching to the given keyword
-        if keyword_obj is None:
-            keyword_obj = self._fetch_keyword_object(lookup=lookup, do_verbose=do_verbose_deep)
-            if do_verbose:
-                print("Best matching Keyword object for keyword {0}:\n{1}".format(lookup, keyword_obj))
+        # # TODO - don't need this, you already have the keyword object from classify method
+        # if keyword_obj is None:
+        #     keyword_obj = self._fetch_keyword_object(lookup=lookup, do_verbose=do_verbose_deep)
+        #     if do_verbose:
+        #         print("Best matching Keyword object for keyword {0}:\n{1}".format(lookup, keyword_obj))
+
+        if self.verbose:
+            logger.info("\nRunning Grammar on the text...")
 
         # Process text into modifs using Grammar class
-        if do_verbose:
-            print("\nRunning Grammar on the text...")
-        use_these_modes = list(set([mode, "none"]))
-        grammar = Grammar(
-            text=text,
-            keyword_obj=keyword_obj,
-            do_check_truematch=do_check_truematch,
-            dict_ambigs=dict_ambigs,
-            do_verbose=do_verbose_deep,
-            buffer=buffer,
-        )
+        use_these_modes = [self.mode, "none"]
+        grammar = Grammar(text=text, keyword_obj=keyword_obj, do_check_truematch=do_check_truematch, dict_ambigs=self.dict_ambigs,
+                          do_verbose=self.deep_verbose, buffer=buffer)
         grammar.run_modifications(which_modes=use_these_modes)
         output = grammar.get_modifs(do_include_forest=True)
-        modif = output["modifs"][mode]
+
+        # update outputs
+        modif = output["modifs"][self.mode]
         modif_none = output["modifs"]["none"]  # Include unmodified vers. as well
         forest = output["_forest"]
 
         # Print some notes
-        if do_verbose:
-            print("Text has been processed into modifs.")
+        if self.verbose:
+            logger.info("Text has been processed into modifs.")
 
         # Return the modif and internal processing output
         return {"modif": modif, "modif_none": modif_none, "forest": forest}
