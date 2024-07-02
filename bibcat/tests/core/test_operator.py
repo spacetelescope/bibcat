@@ -33,17 +33,17 @@ class TestOperator(unittest.TestCase):
                 classifier=None,
                 mode=None,
                 keyword_objs=tmp_kobj_list,
-                do_verbose=False,
+                verbose=False,
                 name="operator",
                 load_check_truematch=False,
-                do_verbose_deep=False,
+                deep_verbose=False,
             )
             # Determine and check answers
             for key1 in dict_acts:
                 # Otherwise, check generated modif
                 curr_lookup = key1
                 test_res = testbase._fetch_keyword_object(
-                    lookup=curr_lookup, do_verbose=False, do_raise_emptyerror=True
+                    lookup=curr_lookup, do_raise_emptyerror=True
                 )
                 curr_answer = params.test_dict_lookup_kobj[dict_acts[key1]]
 
