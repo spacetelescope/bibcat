@@ -348,12 +348,14 @@ results:
   verdict_error: "z_error"
   verdict_lowprob: "z_lowprob"
   verdict_rejection: "z_notmatch"
-  list_other_verdicts: [verdict_error, verdict_lowprob, verdict_rejection]
+  verdict_donotclassify: "z_modifonly"
+  list_other_verdicts: [verdict_error, verdict_lowprob, verdict_rejection, verdict_donotclassify]
 
   # For preset custom verdict outputs
   dictverdict_lowprob: {"verdict": verdict_lowprob, "scores_comb": None, "scores_indiv": None, "uncertainty": None}
   dictverdict_rejection: {"verdict": verdict_rejection, "scores_comb": None, "scores_indiv": None, "uncertainty": None}
   dictverdict_error: {"verdict": verdict_error, "scores_comb": None, "scores_indiv": None, "uncertainty": None}
+  dictverdict_donotclassify: {"verdict": verdict_donotclassify, "scores_comb": None, "scores_indiv": None, "uncertainty": None}
 
 grammar:
   regex:
