@@ -71,6 +71,8 @@ class TensorFlow(AbstractModel):
     ----------
     model_type : str, optional
         the type of model to use, by default None
+    model_key : str, optional
+        the lookup key for the model preprocessors/encoders, by default None
     verbose : bool, optional
         Flag to turn on verbosity, by default False
     load : bool, optional
@@ -82,12 +84,12 @@ class TensorFlow(AbstractModel):
             raise ImportError('tensorflow packages not found.  Cannot create a tensorflow model.  Please install required packages.')
         return super(TensorFlow, cls).__new__(cls)
 
-    def __init__(self, model_type: str = None, verbose: bool = False, load: bool = False):
+    def __init__(self, model_type: str = None, model_key: str = None, verbose: bool = False, load: bool = False):
         """ Initialize the TensorFlow model class """
         # object attributes
         self.model_type = model_type or config.ml.ML_model_type
         self.mlconfig = config.ml.get(self.model_type, {})
-        self.model_key = config.ml.ML_model_key
+        self.model_key = model_key or config.ml.ML_model_key
         self.loaded = False
         self.verbose = verbose
 
@@ -122,6 +124,9 @@ class TensorFlow(AbstractModel):
         self.outputs = None
         self.hparams = None
 
+        # check the model config
+        self._check_model_config()
+
         # load the existing model if specified
         if load:
             self.load_model()
@@ -129,6 +134,26 @@ class TensorFlow(AbstractModel):
     def __repr__(self) -> str:
         """ Class repr """
         return f"<TensorFlow (model_type='{self.model_type}', key='{self.model_key}', loaded={self.loaded})>"
+
+    def _check_model_config(self):
+        """ Check the model configuration
+
+        Perform a few checks that the model_type is in the configuration object
+        and that the model_key is in the model preprocessors/encoders mapping.
+
+        Raises
+        ------
+        KeyError
+            when the model_type is not in the config.ml object
+        KeyError
+            when the model_key is not in the mapping of preprocessors/encoders
+        """
+        if self.model_type not in config.ml:
+            raise KeyError(f"Model type {self.model_type} not found in config.ml")
+
+        preprocs = self.mlconfig.dict_ml_model_preprocessors
+        if self.model_key not in preprocs:
+            raise KeyError(f"Model key {self.model_key} not found in config.ml.{self.model_type}")
 
     def build_model(self, num_dense: int = 3) -> tf.keras.Model:
         """ Build a training model
