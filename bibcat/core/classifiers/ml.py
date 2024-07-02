@@ -277,26 +277,8 @@ class MachineLearningClassifier(ClassifierBase):
         else:
             return
 
-    # Run trained ML model on given text
-    def _run_ML(self, model, texts, do_verbose=False):
-        """
-        Method: _run_ML
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Use trained model to classify given text.
-        """
-
-        # Run the model on the given texts
-        results = model.predict(texts)
-
-        # Print some notes
-        if do_verbose:
-            for ii in range(0, len(texts)):
-                print("{0}:\n{1}\n".format(texts[ii], results[ii]))
-
-        return results
-
     # Plot structure and results of ML model
-    def _plot_ML(self, model, history, dict_info, folder_save):
+    def _plot_ML(self, history, dict_info, folder_save):
         """
         Method: _plot_ML
         WARNING! This method is *not* meant to be used directly by users.
