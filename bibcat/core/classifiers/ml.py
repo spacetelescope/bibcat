@@ -320,7 +320,7 @@ class MachineLearningClassifier(ClassifierBase):
         return
 
     # Classify a single block of text
-    def classify_text(self, text, threshold, do_check_truematch=None, keyword_obj=None, do_verbose=False, forest=None):
+    def classify_text(self, text, do_check_truematch=None, keyword_obj=None, do_verbose=False, forest=None):
         """
         Method: classify_text
         Purpose: Classify given text using stored machine learning (ML) model.
@@ -329,8 +329,6 @@ class MachineLearningClassifier(ClassifierBase):
             - Unused - merely an empty placeholder for uniformity of classify_text across Classifier_* classes. Keep as None.
           - keyword_objs [list of Keyword instances, or None (default=None)]:
             - List of Keyword instances for which previously constructed paragraphs will be extracted.
-          - threshold [str]:
-            - The minimum uncertainty allowed to return a classification.
           - text [str]:
             - The text to classify.
           - do_verbose [bool (default=False)]:
@@ -365,24 +363,19 @@ class MachineLearningClassifier(ClassifierBase):
         max_ind = np.argmax(probs)
         max_verdict = list_classes[max_ind]
 
-        # Return low-uncertainty verdict if below given threshold
-        if (threshold is not None) and (probs[max_ind] < threshold):
-            dict_results = config.results.dictverdict_lowprob.copy()
-            dict_results["uncertainty"] = dict_uncertainty
-
         # Otherwise, generate dictionary of results
-        else:
-            dict_results = {
-                "verdict": max_verdict,
-                "scores_comb": None,
-                "scores_indiv": None,
-                "uncertainty": dict_uncertainty,
-            }
+        dict_results = {
+            "verdict": max_verdict,
+            "scores_comb": None,
+            "scores_indiv": None,
+            "uncertainty": dict_uncertainty,
+        }
 
         # Print some notes
         if do_verbose:
             print("\nMethod classify_text for ML classifier complete!")
             print("Max verdict: {0}\n".format(max_verdict))
+            print("Uncertainties: {0}\n".format(dict_uncertainty))
 
         # Return dictionary of results
         return dict_results
