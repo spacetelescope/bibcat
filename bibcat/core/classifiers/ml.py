@@ -129,10 +129,8 @@ class MachineLearningClassifier(ClassifierBase):
         # Load in ML values
         label_mode = config.ml.ML_label_model
         batch_size = config.ml.ML_batch_size
-        type_optimizer = config.ml.ML_type_optimizer
         ml_model_key = config.ml.ML_model_key
         frac_dropout = config.ml.ML_frac_dropout
-        frac_steps_warmup = config.ml.ML_frac_steps_warmup
         num_epochs = config.ml.ML_num_epochs
         init_lr = config.ml.ML_init_lr
         activation_dense = config.ml.ML_activation_dense
@@ -232,15 +230,11 @@ class MachineLearningClassifier(ClassifierBase):
         metrics = [tf.keras.metrics.CategoricalAccuracy("accuracy")]
         stepsize_epoch = tf.data.experimental.cardinality(dataset_train).numpy()
 
-        num_steps_train = stepsize_epoch * num_epochs
-        num_steps_warmup = int(frac_steps_warmup * num_steps_train)
-
         optimizer = tf.keras.optimizers.Adam(learning_rate=init_lr)
 
         # Print some notes
         if do_verbose:
-            print("# of training steps: {0}\n# of warmup steps: {1}".format(num_steps_train, num_steps_warmup))
-            print("Type of optimizer and initial lr: {0}, {1}".format(type_optimizer, init_lr))
+            print("Optimizer created.")
 
         # Compile the model with the loss, metric, and optimization functions
         model.compile(optimizer=optimizer, loss=init_loss, metrics=metrics)
@@ -267,15 +261,12 @@ class MachineLearningClassifier(ClassifierBase):
             "accuracy": res_accuracy,
             "init_lr": init_lr,
             "num_epochs": num_epochs,
-            "num_steps_train": num_steps_train,
-            "num_steps_warmup": num_steps_warmup,
-            "type_optimizer": type_optimizer,
         }
         model.save(os.path.join(dir_model, savename_ML), include_optimizer=False)
         np.save(os.path.join(dir_model, savename_model), save_dict)
 
         # Plot the results
-        self._plot_ML(model=model, history=history.history, dict_info=save_dict, folder_save=dir_model)
+        self._plot_ML(history=history.history, dict_info=save_dict, folder_save=dir_model)
 
         # Below Section: Exit the method
         if do_verbose:
