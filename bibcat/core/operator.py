@@ -26,6 +26,7 @@ import numpy as np
 from bibcat import config
 from bibcat.core.base import Base
 from bibcat.core.grammar import Grammar
+from bibcat.core.keyword import Keyword
 from bibcat.data.partition_dataset import generate_directory_TVT
 from bibcat.utils.logger_config import setup_logger
 
@@ -34,33 +35,34 @@ logger = setup_logger(__name__)
 # TODO - this class is too complicated and may be unneccesary; break down into smaller components and
 # TODO - move to other relevant classes like Paper, Grammar, Keyword, etc.
 class Operator(Base):
-    """
-    Class: Operator
-    Purpose:
-        - Run full workflow of text classification, from input text to internal text processing to output classification.
-    Initialization Arguments:
-        - classifier [*Classifier instance]:
-          - Classifier to use for classification.
-        - keyword_objs [list of Keyword instances]:
-          - Target missions; terms will be used to search the text.
-        - mode [str]:
-          - Mode of modification for generating modifs using the Grammar class.
-        - name [str (default="operator")]:
-          - A unique name for this Operator.
-        - load_check_truematch [bool (default=True)]:
-          - Whether nor not to load external data for verifying ambiguous terms as true vs false matches to mission.
-        - do_verbose [bool (default=False)]:
-          - Whether or not to print surface-level log information and tests.
+    """ Operator class for running a bibcat workflow
+
+    Class for running the complete workflow of text classification, from input text to internal text processing,
+    to output classification.  The ``classsify`` method is the primary method that handles the actual classification.
+    ``classify_set`` is a wrapper method to classify a set of texts against all mission keywords.
+
+    Parameters
+    ----------
+    classifier : object
+        the ML classifier instance to use
+    mode : str
+        the mode of text modification to use when processing text using the Grammar class
+    keyword_objs : list
+        the target mission keywords
+    verbose : bool, optional
+        Flag to turn on verbosity, by default False
+    name : str, optional
+        A unique name for the operator, by default "operator"
+    load_check_truematch : bool, optional
+        Flag to check that mission phrases found in text are known true vs. false matches, by default True
+    deep_verbose : bool, optional
+        Flag to turn on deep verbosity, by default False
     """
 
     # Initialize this class instance
     def __init__( self, classifier, mode: str, keyword_objs: list, verbose: bool = False, name: str = "operator",
                  load_check_truematch: bool = True, deep_verbose: bool = False):
-        """
-        Method: __init__
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Initializes instance of Operator class.
-        """
+        """ Initialize the Operator class """
         # object attributes
         self.name = name
         self.classifier = classifier
@@ -97,10 +99,26 @@ class Operator(Base):
 
     # Fetch a keyword object that matches the given lookup
     def _fetch_keyword_object(self, lookup: str, do_raise_emptyerror: bool = True) -> Any | None:
-        """
-        Method: _fetch_keyword_object
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Finds stored Keyword instance that matches to given lookup term.
+        """ Fetch a keyword object
+
+        Given an input lookup string, tries to match it to a stored Keyword instance.
+
+        Parameters
+        ----------
+        lookup : str
+            the input string
+        do_raise_emptyerror : bool, optional
+            Flag to raise an error, by default True
+
+        Returns
+        -------
+        Any | None
+            the matching Keyword instance
+
+        Raises
+        ------
+        ValueError
+            when no match is found
         """
 
         # Print some notes
@@ -133,36 +151,33 @@ class Operator(Base):
     # Inspect text and either reject as false target or give classifications
     def classify(self, text: str | None, keyword: str, modif: str | None = None,
                  do_check_truematch: bool = False, buffer: int = 0) -> dict[str, Any] | Any:
+        """ Classify a text
+
+        Classify a text against a target mission keyword as "science", "mention", or "data_influencded".
+        First converts the input text into a modif, or uses the input modif if given.  Then runs the
+        ml classifier's classify_text method to predict the category probabilities.  The output is a dictionary
+        with the original modif, verdict category, scores_comb (the final score), scores_indiv (the individual scores),
+        and uncertainty (the prediction probabilities).
+
+        Parameters
+        ----------
+        text : str | None
+            the text to classify
+        keyword : str
+            the target mission keyword
+        modif : str | None, optional
+            the modif to classify, by default None
+        do_check_truematch : bool, optional
+            Flag to check that mission phrases found in text are known true vs. false matches, by default False
+        buffer : int, optional
+            Number of +/- sentences around a sentence containing a target mission to include in the paragraph, by default 0
+
+        Returns
+        -------
+        dict[str, Any] | Any
+            the classification results
         """
-        Method: classify
-        Purpose:
-          - Accept text and process it into modifs (using Grammar, Paper classes).
-          - Classify that text (using stored classifier).
-        Arguments:
-          - buffer [int (default=0)]:
-            - Number of +/- sentences around a sentence containing a target mission to include in the paragraph.
-          - do_check_truematch [bool]:
-            - Whether or not to check that mission phrases found in text are known true vs. false matches. (E.g., 'Edwin Hubble' as false match for the Hubble Space Telescope).
-          - do_raise_innererror [bool]:
-            - Whether or not to throw an explicit error if an internal error is encountered. If False, will print notes and continue running code.
-          - lookup [str]:
-            - A term for looking up the target Keyword instance (e.g. 'HST').
-          - text [str]:
-            - The text to classify.
-          - threshold [number]:
-            - The minimum uncertainty allowed for returning classification (instead of a flag).
-          - do_verbose [bool (default=False)]:
-            - Whether or not to print surface-level log information and tests.
-          - do_verbose_deep [bool (default=False)]:
-            - Whether or not to print inner log information and tests.
-        Returns:
-          - dict:
-            - 'modif': the modif.
-            - 'verdict': the classification.
-            - 'scores_comb': the final score.
-            - 'scores_indiv': the individual scores.
-            - 'uncertainty': the uncertainty of the classification.
-        """
+
         modif_none = None
 
         # Process text into modifs using Grammar class, if modif not given
@@ -213,25 +228,32 @@ class Operator(Base):
     # Classify set of texts as false target or give classifications
     def classify_set(self, texts: list[str] | None, modifs: list[str] | None = None,
                      do_check_truematch: bool = False, buffer: int = 0, print_freq: int = 25) -> list[dict[str, Any] | Any]:
-        """
-        Method: classify_set
-        Purpose:
-          - !
-          - Accept text and process it into modifs (using Grammar, Paper classes).
-          - Classify that text (using stored classifier).
-        Arguments:
-          - !
-          - do_verbose [bool (default=False)]:
-            - Whether or not to print surface-level log information and tests.
-          - do_verbose_deep [bool (default=False)]:
-            - Whether or not to print inner log information and tests.
-        Returns:
-          - List of dicts, each containing:
-            - 'modif': the modif.
-            - 'verdict': the classification.
-            - 'scores_comb': the final score.
-            - 'scores_indiv': the individual scores.
-            - 'uncertainty': the uncertainty of the classification.
+        """ Classify a set of texts
+
+        Classify a list of texts against the list of all mission keywords.
+
+        Parameters
+        ----------
+        texts : list[str] | None
+            a list of texts to classify
+        modifs : list[str] | None, optional
+            a list of modifs to classify, by default None
+        do_check_truematch : bool, optional
+            Flag to check that mission phrases found in text are known true vs. false matches, by default False
+        buffer : int, optional
+            Number of +/- sentences around a sentence containing a target mission to include in the paragraph, by default 0
+        print_freq : int, optional
+            The frequency to print updates, by default 25
+
+        Returns
+        -------
+        list[dict[str, Any] | Any]
+            the output classification results for each text
+
+        Raises
+        ------
+        ValueError
+            when both texts and modifs are given
         """
 
         # Throw error if both texts and modifs given
@@ -280,31 +302,30 @@ class Operator(Base):
         return results
 
     # Process text into modifs
-    def process(self, text, lookup = None, keyword_obj=None, do_check_truematch=False, buffer=0):
-        """
-        Method: process
-        Purpose:
-          - Accept text and process it into modifs (using Grammar, Paper classes).
-          - Classify that text (using stored classifier).
-        Arguments:
-          - buffer [int (default=0)]:
-            - Number of +/- sentences around a sentence containing a target mission to include in the paragraph.
-          - do_check_truematch [bool]:
-            - Whether or not to check that mission phrases found in text are known true vs. false matches. (E.g., 'Edwin Hubble' as false match for the Hubble Space Telescope).
-          - keyword_obj [<Keyword object> or None]:
-            - Target Keyword instance. If None, the input variable lookup will be used to look up the Keyword instance.
-          - lookup [str or None]:
-            - A term for looking up the target Keyword instance (e.g. 'HST'). Required if keyobj is None.
-          - text [str]:
-            - The text to classify.
-          - do_verbose [bool (default=False)]:
-            - Whether or not to print surface-level log information and tests.
-          - do_verbose_deep [bool (default=False)]:
-            - Whether or not to print inner log information and tests.
-        Returns:
-          - dict:
-            - 'modif': the modif.
-            - 'forest': the output from internal text processing.
+    def process(self, text: str, lookup: str = None, keyword_obj: Keyword = None, do_check_truematch: bool = False,
+                buffer: int = 0) -> dict:
+        """ Process text into modifs
+
+        Processes the text using the Grammar and Paper classes into modifs.  A "modif" is a modified version of the text
+        that has been processed to identify and remove references to the target keyword mission, i.e. ambiguates the text.
+
+        Parameters
+        ----------
+        text : str
+            the text to classify
+        lookup : str, optional
+            a term for looking up the target Keyword instance (e.g. HST), by default None
+        keyword_obj : Keyword, optional
+            a target Keyword instance, by default None
+        do_check_truematch : bool, optional
+            Flag to check that mission phrases found in text are known true vs. false matches, by default False
+        buffer : int, optional
+            Number of +/- sentences around a sentence containing a target mission to include in the paragraph, by default 0
+
+        Returns
+        -------
+        dict
+            the output modif and forest (internal text processing output)
         """
 
         if self.verbose:
@@ -367,10 +388,6 @@ class Operator(Base):
             - Whether or not to check that mission phrases found in text are known true vs. false matches. (E.g., 'Edwin Hubble' as false match for the Hubble Space Telescope).
           - do_shuffle [bool]:
             - Whether or not to shuffle texts when generating training, validation, and testing directories.
-          - do_verbose [bool (default=False)]:
-            - Whether or not to print surface-level log information and tests.
-          - do_verbose_deep [bool (default=False)]:
-            - Whether or not to print inner log information and tests.
         Returns:
           - dict:
             - 'modif': the modif.
@@ -379,14 +396,8 @@ class Operator(Base):
             - 'scores_indiv': the individual scores.
             - 'uncertainty': the uncertainty of the classification.
         """
-        # # Fetch global variables
-        # if do_verbose is None:
-        #     do_verbose = self._get_info("do_verbose")
-        # if do_verbose_deep is None:
-        #     do_verbose_deep = self._get_info("do_verbose_deep")
 
         dataset = dict_texts
-        #classifier = self._get_info("classifier")
         classifier = self.classifier
         folders_TVT = config.output.folders_TVT
         savename_ML = config.output.tfoutput_prefix + name_model
@@ -441,8 +452,6 @@ class Operator(Base):
             for curr_key in dataset:
                 old_dict = dataset[curr_key]
                 masked_class = mapper[old_dict["class"].lower()]
-
-#process(self, text, lookup = None, keyword_obj=None, do_check_truematch=False, buffer=0):
 
                 # Extract modif for current text
                 if do_check_truematch:  # Catch and print unknown ambig. phrases
