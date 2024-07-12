@@ -24,418 +24,350 @@ import numpy as np
 from bibcat import config
 from bibcat.core.base import Base
 from bibcat.core.grammar import Grammar
+from bibcat.core.keyword import Keyword
 from bibcat.data.partition_dataset import generate_directory_TVT
+from bibcat.utils.logger_config import setup_logger
 
+logger = setup_logger(__name__)
 
+# TODO - this class is too complicated and may be unneccesary; break down into smaller components and
+# TODO - move to other relevant classes like Paper, Grammar, Keyword, etc.
 class Operator(Base):
-    """
-    Class: Operator
-    Purpose:
-        - Run full workflow of text classification, from input text to internal text processing to output classification.
-    Initialization Arguments:
-        - classifier [*Classifier instance]:
-          - Classifier to use for classification.
-        - keyword_objs [list of Keyword instances]:
-          - Target missions; terms will be used to search the text.
-        - mode [str]:
-          - Mode of modification for generating modifs using the Grammar class.
-        - name [str (default="operator")]:
-          - A unique name for this Operator.
-        - load_check_truematch [bool (default=True)]:
-          - Whether nor not to load external data for verifying ambiguous terms as true vs false matches to mission.
-        - do_verbose [bool (default=False)]:
-          - Whether or not to print surface-level log information and tests.
+    """ Operator class for running a bibcat workflow
+
+    Class for running the complete workflow of text classification, from input text to internal text processing,
+    to output classification.  The ``classsify`` method is the primary method that handles the actual classification.
+    ``classify_set`` is a wrapper method to classify a set of texts against all mission keywords.
+
+    Parameters
+    ----------
+    classifier : object
+        the ML classifier instance to use
+    mode : str
+        the mode of text modification to use when processing text using the Grammar class
+    keyword_objs : list
+        the target mission keywords
+    verbose : bool, optional
+        Flag to turn on verbosity, by default False
+    name : str, optional
+        A unique name for the operator, by default "operator"
+    load_check_truematch : bool, optional
+        Flag to check that mission phrases found in text are known true vs. false matches, by default True
+    deep_verbose : bool, optional
+        Flag to turn on deep verbosity, by default False
+
+    Raises
+    ------
+    ValueError
+        when the reserved character '|' is used in the name for the Operator
     """
 
     # Initialize this class instance
-    def __init__(
-        self,
-        classifier,
-        mode,
-        keyword_objs,
-        do_verbose,
-        name="operator",
-        load_check_truematch=True,
-        do_verbose_deep=False,
-    ):
-        """
-        Method: __init__
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Initializes instance of Operator class.
-        """
+    def __init__( self, classifier, mode: str, keyword_objs: list, verbose: bool = False, name: str = "operator",
+                 load_check_truematch: bool = True, deep_verbose: bool = False):
+        """ Initialize the Operator class """
+        # object attributes
+        self.name = name
+        self.classifier = classifier
+        self.mode = mode
+        self.verbose = verbose
+        self.deep_verbose = deep_verbose
+        self.load_check_truematch = load_check_truematch
+
         # Throw an error if reserved character '|' in name
         if "|" in name:
             raise ValueError("Please do not use the reserved character '|' in the name for your Operator.")
 
-        # Initialize storage
-        self._storage = {}
-        self._store_info(classifier, "classifier")
-        self._store_info(mode, "mode")
-        self._store_info(name, "name")
-        self._store_info(keyword_objs, "keyword_objs")
-        self._store_info(do_verbose, "do_verbose")
-        self._store_info(do_verbose_deep, "do_verbose_deep")
+        # keyword object info
+        self.keyword_objs = keyword_objs
+        self.num_keyobjs = len(keyword_objs)
+
+        # ambiguous keyword data
+        self.dict_ambigs = None
+        self.lookup_ambigs = None
 
         # Load and process ambiguous (ambig.) data, if so requested
         if load_check_truematch:
             # Run method to load and process external ambig. database
-            dict_ambigs = self._process_database_ambig(keyword_objs=keyword_objs)
-            lookup_ambigs = dict_ambigs["lookup_ambigs"]
+            self.dict_ambigs = self._process_database_ambig(keyword_objs=keyword_objs)
+            self.lookup_ambigs = self.dict_ambigs["lookup_ambigs"]
 
             # Print some notes
-            if do_verbose_deep:
-                print("Loaded+Assembled data for ambiguous phrases.")
+            if self.deep_verbose:
+                logger.info("Loaded+Assembled data for ambiguous phrases.")
 
-        # Otherwise, set empty placeholders
-        else:
-            dict_ambigs = None
-            lookup_ambigs = None
+        # print the keyword objects
+        if self.verbose:
+            logger.info("Instance of Operator successfully initialized!")
+            logger.info("Keyword objects:")
+            for kobj in self.keyword_objs:
+                logger.info(f"{kobj}")
 
-        # Store the processed data in this object instance
-        self._store_info(dict_ambigs, "dict_ambigs")
-        self._store_info(lookup_ambigs, "lookup_ambigs")
 
-        # Exit the method
-        if do_verbose:
-            print("Instance of Operator successfully initialized!")
-            print("Keyword objects:")
-            for ii in range(0, len(keyword_objs)):
-                print("{0}: {1}".format(ii, keyword_objs[ii]))
+    # Fetch a keyword object that matches the given lookup
+    def _fetch_keyword_object(self, lookup: str, do_raise_emptyerror: bool = True) -> Any | None:
+        """ Fetch a keyword object
 
-        return
+        Given an input lookup string, tries to match it to a stored Keyword instance.
+
+        Parameters
+        ----------
+        lookup : str
+            the input string
+        do_raise_emptyerror : bool, optional
+            Flag to raise an error, by default True
+
+        Returns
+        -------
+        Any | None
+            the matching Keyword instance
+
+        Raises
+        ------
+        ValueError
+            when no match is found
+        """
+
+        # Print some notes
+        if self.verbose:
+            logger.info(f"> Running _fetch_keyword_object() for lookup term {lookup}.")
+
+        # Find keyword object that matches to given lookup term
+        match = None
+        for kobj in self.keyword_objs:
+            # If current keyword object matches, record and stop loop
+            if kobj.identify_keyword(lookup)["bool"]:
+                match = kobj
+                break
+
+        # Throw error if no matching keyword object found
+        if match is None:
+            errstr = f"No matching keyword object for {lookup}.\n"
+            errstr += "Available keyword objects are:\n"
+            # just use the names of the keywords
+            names = ', '.join(a._get_info('name') for a in self.keyword_objs)
+            errstr += f"{names}\n"
+
+            # Raise error if so requested
+            if do_raise_emptyerror:
+                raise ValueError(errstr)
+
+        # Return the matching keyword object
+        return match
 
     # Inspect text and either reject as false target or give classifications
-    def classify(
-        self,
-        text: str | None,
-        lookup: str,
-        do_check_truematch: bool,
-        do_raise_innererror: bool,
-        modif: str | None = None,
-        forest: str | None = None,
-        buffer: int = 0,
-        do_verbose: bool | None = None,
-        do_verbose_deep: bool | None = None,
-    ) -> dict[str, Any] | Any:
-        """
-        Method: classify
-        Purpose:
-          - Accept text and process it into modifs (using Grammar, Paper classes).
-          - Classify that text (using stored classifier).
-        Arguments:
-          - buffer [int (default=0)]:
-            - Number of +/- sentences around a sentence containing a target mission to include in the paragraph.
-          - do_check_truematch [bool]:
-            - Whether or not to check that mission phrases found in text are known true vs. false matches. (E.g., 'Edwin Hubble' as false match for the Hubble Space Telescope).
-          - do_raise_innererror [bool]:
-            - Whether or not to throw an explicit error if an internal error is encountered. If False, will print notes and continue running code.
-          - lookup [str]:
-            - A term for looking up the target Keyword instance (e.g. 'HST').
-          - text [str]:
-            - The text to classify.
-          - threshold [number]:
-            - The minimum uncertainty allowed for returning classification (instead of a flag).
-          - do_verbose [bool (default=False)]:
-            - Whether or not to print surface-level log information and tests.
-          - do_verbose_deep [bool (default=False)]:
-            - Whether or not to print inner log information and tests.
-        Returns:
-          - dict:
-            - 'modif': the modif.
-            - 'verdict': the classification.
-            - 'scores_comb': the final score.
-            - 'scores_indiv': the individual scores.
-            - 'uncertainty': the uncertainty of the classification.
-        """
-        # Fetch global variables
-        if do_verbose is None:
-            do_verbose = self._get_info("do_verbose")
-        if do_verbose_deep is None:
-            do_verbose_deep = self._get_info("do_verbose_deep")
+    def classify(self, text: str | None, keyword: str, modif: str | None = None,
+                 do_check_truematch: bool = False, buffer: int = 0) -> dict[str, Any] | Any:
+        """ Classify a text
 
-        classifier = self._get_info("classifier")
+        Classify a text against a target mission keyword as "science", "mention", or "data_influencded".
+        First converts the input text into a modif, or uses the input modif if given.  Then runs the
+        ml classifier's classify_text method to predict the category probabilities.  The output is a dictionary
+        with the original modif, verdict category, scores_comb (the final score), scores_indiv (the individual scores),
+        and uncertainty (the prediction probabilities).
 
-        # Fetch keyword object matching to the given keyword
-        keyobj = self._fetch_keyword_object(lookup=lookup, do_verbose=do_verbose)
-        if do_verbose:
-            print("Best matching keyword object (keyobj) for keyword {0}:\n{1}".format(lookup, keyobj))
+        Parameters
+        ----------
+        text : str | None
+            the text to classify
+        keyword : str
+            the target mission keyword
+        modif : str | None, optional
+            the modif to classify, by default None
+        do_check_truematch : bool, optional
+            Flag to check that mission phrases found in text are known true vs. false matches, by default False
+        buffer : int, optional
+            Number of +/- sentences around a sentence containing a target mission to include in the paragraph, by default 0
+
+        Returns
+        -------
+        dict[str, Any] | Any
+            the classification results
+        """
+
+        modif_none = None
 
         # Process text into modifs using Grammar class, if modif not given
         if modif is None:
-            if do_verbose:
-                print("\nPreprocessing and extracting modifs from the text...")
+            if self.verbose:
+                logger.info("\nPreprocessing and extracting modifs from the text...")
 
-            if do_raise_innererror:  # Allow stop from any exceptions encountered
-                output = self.process(
-                    text=text,
-                    do_check_truematch=do_check_truematch,
-                    buffer=buffer,
-                    lookup=lookup,
-                    keyword_obj=keyobj,
-                    do_verbose=do_verbose,
-                    do_verbose_deep=do_verbose_deep,
-                )
-            else:  # Otherwise, print any exceptions and keep moving forward
-                try:
-                    output = self.process(
-                        text=text,
-                        do_check_truematch=do_check_truematch,
-                        buffer=buffer,
-                        lookup=lookup,
-                        keyword_obj=keyobj,
-                        do_verbose=do_verbose,
-                        do_verbose_deep=do_verbose_deep,
-                    )
-
-                # Catch any exceptions and force-print some notes
-                except Exception as err:
-                    dict_verdicts = config.results.dictverdict_error.copy()
-                    print("-\nThe following err. was encountered in operate:")
-                    print(repr(err))
-                    print("Error was noted. Returning error as verdict.\n-")
-                    dict_verdicts["modif"] = "<PROCESSING ERROR:\n{0}>".format(repr(err))
-                    dict_verdicts["modif_none"] = None
-                    return dict_verdicts
+            try:
+                output = self.process(text, keyword_obj=keyword, do_check_truematch=do_check_truematch, buffer=buffer)
+            except Exception as err:
+                verdicts = config.results.dictverdict_error.copy()
+                logger.error("-\nThe following err. was encountered in operate:")
+                logger.error(err)
+                logger.error("Error was noted. Returning error as verdict.\n-")
+                verdicts["modif"] = f"<PROCESSING ERROR:\n{err}>"
+                verdicts["modif_none"] = None
+                return verdicts
 
             # Fetch the generated output
             modif = output["modif"]
             modif_none = output["modif_none"]
-            forest = output["forest"]
 
             # Print some notes
-            if do_verbose:
-                print("Text has been processed into modif.")
-
-        # Otherwise, use given modif
-        else:
-            # Print some notes
-            if do_verbose:
-                print("Modif given. No text processing will be done.")
-            #
-            modif_none = None
-            pass
+            if self.verbose:
+                logger.info("Text has been processed into modif.")
 
         # Set rejected verdict if empty text
         if modif.strip() == "":
-            if do_verbose:
-                print("No text found matching keyword object.")
-                print("Returning rejection verdict.")
+            if self.verbose:
+                logger.info("No text found matching keyword object.")
+                logger.info("Returning rejection verdict.")
 
-            dict_verdicts = config.results.dictverdict_rejection.copy()
-
+            verdicts = config.results.dictverdict_rejection.copy()
         # Set not-classified verdict if flagged for no classification
-        elif keyobj._get_info("do_not_classify"):
-            dict_verdicts = config.results.dictverdict_donotclassify.copy()
-
-        # Classify the text using stored classifier with raised error
-        elif do_raise_innererror:  # If True, allow raising of inner errors
-            dict_verdicts = classifier.classify_text(
-                text=modif,
-                do_check_truematch=do_check_truematch,
-                forest=forest,
-                keyword_obj=keyobj,
-                do_verbose=do_verbose,
-            )
-
-        # Otherwise, run classification while ignoring inner errors
+        elif keyword._get_info("do_not_classify"):
+            verdicts = config.results.dictverdict_donotclassify.copy()
         else:
-            # Try running classification
             try:
-                dict_verdicts = classifier.classify_text(
-                    text=modif,
-                    do_check_truematch=do_check_truematch,
-                    forest=forest,
-                    keyword_obj=keyobj,
-                    do_verbose=do_verbose,
-                )
-
-            # Catch certain exceptions and force-print some notes
+                verdicts = self.classifier.classify_text(text=modif)
             except Exception as err:
-                dict_verdicts = config.results.dictverdict_error.copy()
-                print("-\nThe following err. was encountered in operate:")
-                print(repr(err))
-                print("Error was noted. Continuing.\n-")
+                verdicts = config.results.dictverdict_error.copy()
+                logger.error("-\nThe following err. was encountered in operate:")
+                logger.error(err)
+                logger.error("Error was noted. Continuing.\n-")
 
         # Return the verdict with modif included
-        dict_verdicts["modif"] = modif
-        dict_verdicts["modif_none"] = modif_none
-        return dict_verdicts
+        verdicts["modif"] = modif
+        verdicts["modif_none"] = modif_none
+        return verdicts
 
     # Classify set of texts as false target or give classifications
-    def classify_set(
-        self,
-        texts: list[str] | None,
-        threshold: float,
-        do_check_truematch: bool,
-        do_raise_innererror: bool,
-        modifs: list[str] | None = None,
-        forests: list[str] | None = None,
-        buffer: int = 0,
-        print_freq: int = 25,
-        do_verbose: bool | None = None,
-        do_verbose_deep: bool | None = None,
-    ) -> list[dict[str, Any] | Any]:
-        """
-        Method: classify_set
-        Purpose:
-          - !
-          - Accept text and process it into modifs (using Grammar, Paper classes).
-          - Classify that text (using stored classifier).
-        Arguments:
-          - !
-          - do_verbose [bool (default=False)]:
-            - Whether or not to print surface-level log information and tests.
-          - do_verbose_deep [bool (default=False)]:
-            - Whether or not to print inner log information and tests.
-        Returns:
-          - List of dicts, each containing:
-            - 'modif': the modif.
-            - 'verdict': the classification.
-            - 'scores_comb': the final score.
-            - 'scores_indiv': the individual scores.
-            - 'uncertainty': the uncertainty of the classification.
-        """
-        # Fetch global variables
-        if do_verbose is None:
-            do_verbose = self._get_info("do_verbose")
-        if do_verbose_deep is None:
-            do_verbose_deep = self._get_info("do_verbose_deep")
+    def classify_set(self, texts: list[str] | None, modifs: list[str] | None = None,
+                     do_check_truematch: bool = False, buffer: int = 0, print_freq: int = 25) -> list[dict[str, Any] | Any]:
+        """ Classify a set of texts
 
-        all_kobjs = self._get_info("keyword_objs")
-        num_kobjs = len(all_kobjs)
+        Classify a list of texts against the list of all mission keywords.
+
+        Parameters
+        ----------
+        texts : list[str] | None
+            a list of texts to classify
+        modifs : list[str] | None, optional
+            a list of modifs to classify, by default None
+        do_check_truematch : bool, optional
+            Flag to check that mission phrases found in text are known true vs. false matches, by default False
+        buffer : int, optional
+            Number of +/- sentences around a sentence containing a target mission to include in the paragraph, by default 0
+        print_freq : int, optional
+            The frequency to print updates, by default 25
+
+        Returns
+        -------
+        list[dict[str, Any] | Any]
+            the output classification results for each text
+
+        Raises
+        ------
+        ValueError
+            when both texts and modifs are given
+        """
 
         # Throw error if both texts and modifs given
         if (texts is not None) and (modifs is not None):
             raise ValueError("Err: texts OR modifs should be given, not both.")
-        elif texts is not None:
+
+        # get the number of texts
+        if texts is not None:
             num_texts = len(texts)
         elif modifs is not None:
             num_texts = len(modifs)
 
         # Print some notes
-        if do_verbose:
-            print("\n> Running classify_set()!")
+        if self.verbose:
+            logger.info("\n> Running classify_set()!")
 
         # Classify every text against every mission
-        list_results: list[dict[str, Any] | Any] = [{} for _ in range(num_texts)]
-        curr_text: str | None = None
-        curr_modif: str | None = None
-        curr_forest: str | None = None
+        results = [{}] * num_texts
+
         # Iterate through texts
-        for ii in range(0, num_texts):
-            curr_dict: dict[str, Any] | Any = {}  # Dictionary to hold set of results
-            list_results[ii] = curr_dict  # Store this dictionary
-            # Extract current text if given in raw (not processed) form
-            if texts is not None:
-                curr_text = texts[ii]  # Current text dict to classify
+        for ii, text in enumerate(texts):
+            item = {}  # Dictionary to hold set of results
+            results[ii] = item  # Store this dictionary
 
-            # Extract current modifs and forests if already processed text
-            if modifs is not None:
-                curr_modif = modifs[ii]
-
-            if forests is not None:
-                curr_forest = forests[ii]
+            # Extract current modifs if already processed text
+            modif = modifs[ii] if modifs else None
 
             # Iterate through keyword objects
-            for jj in range(0, num_kobjs):
-                curr_kobj = all_kobjs[jj]
-                curr_name = curr_kobj._get_info("name")
+            for kobj in self.keyword_objs:
+                name = kobj._get_info("name")
                 # Classify current text for current mission
-                curr_result = self.classify(
-                    text=curr_text,
-                    lookup=curr_name,
-                    modif=curr_modif,
-                    forest=curr_forest,
-                    buffer=buffer,
-                    do_check_truematch=do_check_truematch,
-                    do_raise_innererror=do_raise_innererror,
-                    do_verbose=do_verbose_deep,
-                )
+                result = self.classify(text=text, keyword=kobj, modif=modif, do_check_truematch=do_check_truematch,
+                                       buffer=buffer)
 
                 # Store current result
-                curr_dict[curr_name] = curr_result
+                item[name] = result
 
             # Print some notes at given frequency, if requested
-            if do_verbose and (((ii % print_freq) == 0) or (ii == (num_texts-1))):
-                print("Classification for text #{0} of {1} complete...".format((ii + 1), num_texts))
+            if self.verbose and (((ii % print_freq) == 0) or (ii == (num_texts-1))):
+                logger.info(f"Classification for text #{(ii + 1)} of {num_texts} complete...")
 
         # Return the classification results
-        if do_verbose:
-            print("\nRun of classify_set() complete!\n")
+        if self.verbose:
+            logger.info("\nRun of classify_set() complete!\n")
 
-        return list_results
+        return results
 
     # Process text into modifs
-    def process(
-        self, text, do_check_truematch, buffer=0, lookup=None, keyword_obj=None, do_verbose=None, do_verbose_deep=None
-    ):
-        """
-        Method: process
-        Purpose:
-          - Accept text and process it into modifs (using Grammar, Paper classes).
-          - Classify that text (using stored classifier).
-        Arguments:
-          - buffer [int (default=0)]:
-            - Number of +/- sentences around a sentence containing a target mission to include in the paragraph.
-          - do_check_truematch [bool]:
-            - Whether or not to check that mission phrases found in text are known true vs. false matches. (E.g., 'Edwin Hubble' as false match for the Hubble Space Telescope).
-          - keyword_obj [<Keyword object> or None]:
-            - Target Keyword instance. If None, the input variable lookup will be used to look up the Keyword instance.
-          - lookup [str or None]:
-            - A term for looking up the target Keyword instance (e.g. 'HST'). Required if keyobj is None.
-          - text [str]:
-            - The text to classify.
-          - do_verbose [bool (default=False)]:
-            - Whether or not to print surface-level log information and tests.
-          - do_verbose_deep [bool (default=False)]:
-            - Whether or not to print inner log information and tests.
-        Returns:
-          - dict:
-            - 'modif': the modif.
-            - 'forest': the output from internal text processing.
+    def process(self, text: str, lookup: str = None, keyword_obj: Keyword = None, do_check_truematch: bool = False,
+                buffer: int = 0) -> dict:
+        """ Process text into modifs
+
+        Processes the text using the Grammar and Paper classes into modifs.  A "modif" is a modified version of the text
+        that has been processed to identify and remove references to the target keyword mission, i.e. ambiguates the text.
+
+        Parameters
+        ----------
+        text : str
+            the text to classify
+        lookup : str, optional
+            a term for looking up the target Keyword instance (e.g. HST), by default None
+        keyword_obj : Keyword, optional
+            a target Keyword instance, by default None
+        do_check_truematch : bool, optional
+            Flag to check that mission phrases found in text are known true vs. false matches, by default False
+        buffer : int, optional
+            Number of +/- sentences around a sentence containing a target mission to include in the paragraph, by default 0
+
+        Returns
+        -------
+        dict
+            the output modif and forest (internal text processing output)
         """
 
-        # Fetch global variables
-        if do_verbose is None:
-            do_verbose = self._get_info("do_verbose")
-        if do_verbose_deep is None:
-            do_verbose_deep = self._get_info("do_verbose_deep")
-
-        mode = self._get_info("mode")
-        dict_ambigs = self._get_info("dict_ambigs")
+        if self.verbose:
+            logger.info("\nRunning Grammar on the text...")
 
         # Fetch keyword object matching to the given keyword
         if keyword_obj is None:
-            keyword_obj = self._fetch_keyword_object(lookup=lookup, do_verbose=do_verbose_deep)
-            if do_verbose:
-                print("Best matching Keyword object for keyword {0}:\n{1}".format(lookup, keyword_obj))
+            keyword_obj = self._fetch_keyword_object(lookup=lookup)
+            if self.verbose:
+                logger.info(f"Best matching Keyword object for keyword {lookup}:\n{keyword_obj}")
 
         # Process text into modifs using Grammar class
-        if do_verbose:
-            print("\nRunning Grammar on the text...")
-        use_these_modes = list(set([mode, "none"]))
-        grammar = Grammar(
-            text=text,
-            keyword_obj=keyword_obj,
-            do_check_truematch=do_check_truematch,
-            dict_ambigs=dict_ambigs,
-            do_verbose=do_verbose_deep,
-            buffer=buffer,
-        )
+        use_these_modes = [self.mode, "none"]
+        grammar = Grammar(text=text, keyword_obj=keyword_obj, do_check_truematch=do_check_truematch, dict_ambigs=self.dict_ambigs,
+                          do_verbose=self.deep_verbose, buffer=buffer)
         grammar.run_modifications(which_modes=use_these_modes)
         output = grammar.get_modifs()
-        modif = output["modifs"][mode]
+
+        # update outputs
+        modif = output["modifs"][self.mode]
         modif_none = output["modifs"]["none"]  # Include unmodified vers. as well
         forest = output["_forest"]
 
         # Print some notes
-        if do_verbose:
-            print("Text has been processed into modifs.")
+        if self.verbose:
+            logger.info("Text has been processed into modifs.")
 
         # Return the modif and internal processing output
         return {"modif": modif, "modif_none": modif_none, "forest": forest}
 
     # Process text into modifs and then train ML model on the modifs
+    # TODO - this is too complicated
     def train_model_ML(
         self,
         dir_model,
@@ -446,14 +378,11 @@ class Operator(Base):
         mapper,
         do_check_truematch,
         seed_TVT=10,
-        seed_ML=8,
         buffer=0,
         fraction_TVT=[0.8, 0.1, 0.1],
         mode_TVT="uniform",
         do_shuffle=True,
-        print_freq=25,
-        do_verbose=None,
-        do_verbose_deep=None,
+        print_freq=25
     ):
         """
         Method: train_model_ML
@@ -469,10 +398,6 @@ class Operator(Base):
             - Whether or not to check that mission phrases found in text are known true vs. false matches. (E.g., 'Edwin Hubble' as false match for the Hubble Space Telescope).
           - do_shuffle [bool]:
             - Whether or not to shuffle texts when generating training, validation, and testing directories.
-          - do_verbose [bool (default=False)]:
-            - Whether or not to print surface-level log information and tests.
-          - do_verbose_deep [bool (default=False)]:
-            - Whether or not to print inner log information and tests.
         Returns:
           - dict:
             - 'modif': the modif.
@@ -481,22 +406,17 @@ class Operator(Base):
             - 'scores_indiv': the individual scores.
             - 'uncertainty': the uncertainty of the classification.
         """
-        # Fetch global variables
-        if do_verbose is None:
-            do_verbose = self._get_info("do_verbose")
-        if do_verbose_deep is None:
-            do_verbose_deep = self._get_info("do_verbose_deep")
 
         dataset = dict_texts
-        classifier = self._get_info("classifier")
+        classifier = self.classifier
         folders_TVT = config.output.folders_TVT
         savename_ML = config.output.tfoutput_prefix + name_model
         savename_model = name_model + ".npy"
         filepath_dicterrors = config.paths.modiferrors
 
         # Print some notes
-        if do_verbose:
-            print(f"\n> Running train_model_ML()for {name_model}!")
+        if self.verbose:
+            logger.info(f"\n> Running train_model_ML()for {name_model}!")
 
         # Throw error if invalid classifier given
         allowed_types = ["MachineLearningClassifier"]
@@ -512,29 +432,25 @@ class Operator(Base):
         if is_exist:
             str_err = ""  # Placeholder
             # Print some notes
-            if do_verbose:
-                print("Previous training/validation directories already exist.")
+            if self.verbose:
+                logger.info("Previous training/validation directories already exist.")
 
             # Skip ahead if previous data should be reused
             if do_reuse_run:
-                print("Reusing the existing training/validation data in {0}.".format(dir_data))
+                logger.info(f"Reusing the existing training/validation data in {dir_data}.")
                 pass
 
             # Otherwise, raise error if not to reuse previous run data
             else:
-                raise ValueError(
-                    (
-                        "Err: Training/validation data already exists"
-                        + " in {0}. Either delete it, or rerun method"
-                        + " with do_reuse_run=True."
-                    ).format(dir_data)
-                )
+                raise ValueError("Err: Training/validation data already exists "
+                                 f"in {dir_data}. Either delete it, or rerun method "
+                                 "with do_reuse_run=True.")
 
         # Otherwise, preprocess the text and store in TVT directories
         else:
             # Print some notes
-            if do_verbose:
-                print("Processing text data into modifs...")
+            if self.verbose:
+                logger.info("Processing text data into modifs...")
 
             # Process each text within the database into a modif
             dict_errors = {}  # Container for modifs with caught processing errors
@@ -550,23 +466,17 @@ class Operator(Base):
                 # Extract modif for current text
                 if do_check_truematch:  # Catch and print unknown ambig. phrases
                     try:
-                        curr_res = self.process(
-                            text=old_dict["text"],
-                            do_check_truematch=do_check_truematch,
-                            buffer=buffer,
-                            lookup=old_dict["mission"],
-                            keyword_obj=None,
-                            do_verbose=do_verbose_deep,
-                            do_verbose_deep=do_verbose_deep,
-                        )
+                        curr_res = self.process(text=old_dict["text"],
+                                                lookup=old_dict["mission"],
+                                                keyword_obj=None,
+                                                do_check_truematch=do_check_truematch,
+                                                buffer=buffer)
                     except NotImplementedError as err:
-                        curr_str = (
-                            "\n-\n" + "Printing Error:\nID: {0}\nBibcode: {1}\n" + "Mission: {2}\nMasked class: {3}\n"
-                        ).format(old_dict["id"], old_dict["bibcode"], old_dict["mission"], masked_class)
+                        curr_str = ("\n-\n" + f'Printing Error:\nID: {old_dict["id"]}\nBibcode: {old_dict["bibcode"]}\n" + "Mission: {old_dict["mission"]}\nMasked class: {masked_class}\n')
                         curr_str += "The following err. was encountered" + " in train_model_ML:\n"
                         curr_str += repr(err)
                         curr_str += "\nError was noted. Skipping this paper.\n-"
-                        print(curr_str)  # Print current error
+                        logger.info(curr_str)  # Print current error
                         #
                         # Store this error-modif
                         err_dict = {
@@ -586,15 +496,11 @@ class Operator(Base):
                         continue
 
                 else:  # Otherwise, run without ambig. phrase check
-                    curr_res = self.process(
-                        text=old_dict["text"],
-                        do_check_truematch=do_check_truematch,
-                        buffer=buffer,
-                        lookup=old_dict["mission"],
-                        keyword_obj=None,
-                        do_verbose=do_verbose_deep,
-                        do_verbose_deep=do_verbose_deep,
-                    )
+                    curr_res = self.process(text=old_dict["text"],
+                                            lookup=old_dict["mission"],
+                                            keyword_obj=None,
+                                            do_check_truematch=do_check_truematch,
+                                            buffer=buffer)
 
                 # Store the modif and previous classification information
                 new_dict = {
@@ -611,15 +517,15 @@ class Operator(Base):
                 i_track += 1
 
                 # Print some notes at desired frequency
-                if do_verbose and ((i_track % print_freq) == 0):
-                    print("{0} of {1} total texts have been processed...".format(i_track, num_data))
+                if self.verbose and ((i_track % print_freq) == 0):
+                    logger.info(f"{i_track} of {num_data} total texts have been processed...")
 
             # Print some notes
-            if do_verbose:
-                print("{0} texts have been processed into modifs.".format(i_track))
+            if self.verbose:
+                logger.info(f"{i_track} texts have been processed into modifs.")
                 if do_check_truematch:
-                    print("{0} texts skipped due to unknown ambig. phrases.".format(i_skipped))
-                print("Storing the data in train+validate+test directories...")
+                    logger.info(f"{i_skipped} texts skipped due to unknown ambig. phrases.")
+                logger.info("Storing the data in train+validate+test directories...")
 
             # Store the modifs in new TVT directories
             generate_directory_TVT(
@@ -629,13 +535,13 @@ class Operator(Base):
                 dict_texts=dict_modifs,
                 do_shuffle=do_shuffle,
                 seed=seed_TVT,
-                do_verbose=do_verbose,
+                do_verbose=self.verbose,
             )
             # Save the modifs with caught processing errors
             np.save(filepath_dicterrors, dict_errors)
             # Print some notes
-            if do_verbose:
-                print("Train+validate+test directories created in {0}.".format(dir_model))
+            if self.verbose:
+                logger.info(f"Train+validate+test directories created in {dir_model}.")
 
         # Train a new machine learning (ML) model
         is_exist = os.path.exists(os.path.join(dir_model, savename_model)) or os.path.exists(
@@ -644,47 +550,36 @@ class Operator(Base):
         # If ML model or output already exists, either print note or raise error
         if is_exist:
             # Print some notes
-            if do_verbose:
-                print("ML model already exists for {0} in {1}.".format(name_model, dir_model))
+            if self.verbose:
+                logger.info(f"ML model already exists for {name_model} in {dir_model}.")
 
             # Skip ahead if previous data should be reused
             if do_reuse_run:
-                print("Reusing the existing ML model in {0}.".format(dir_model))
+                logger.info(f"Reusing the existing ML model in {dir_model}.")
                 pass
 
             # Otherwise, raise error if not to reuse previous run data
             else:
-                raise ValueError(
-                    (
-                        "Err: ML model/output already exists"
-                        + " in {0}. Either delete it, or rerun method"
-                        + " with do_reuse_run=True."
-                    ).format(dir_model)
-                )
+                raise ValueError("Err: ML model/output already exists "
+                                 f"in {dir_model}. Either delete it, or rerun method "
+                                 "with do_reuse_run=True.")
 
         # Otherwise, train new ML model on the TVT directories
         else:
             # Print some notes
-            if do_verbose:
-                print("Training new ML model on training data in {0}...".format(dir_model))
+            if self.verbose:
+                logger.info(f"Training new ML model on training data in {dir_model}...")
 
             # Train new ML model
-            classifier.train_ML(
-                dir_model=dir_model,
-                dir_data=dir_data,
-                name_model=name_model,
-                seed=seed_ML,
-                do_verbose=do_verbose,
-                do_return_model=True,
-            )
+            classifier.run()
 
             # Print some notes
-            if do_verbose:
-                print("New ML model trained and stored in {0}.".format(dir_model))
+            if self.verbose:
+                logger.info(f"New ML model trained and stored in {dir_model}.")
 
         # Exit the method with error string
         # Print some notes
-        if do_verbose:
-            print("Run of train_model_ML() complete!\nError string returned.")
+        if self.verbose:
+            logger.info("Run of train_model_ML() complete!\nError string returned.")
 
         return str_err

@@ -66,7 +66,7 @@ def streamline_dataset(source_dataset: Dict, operator_ML: Operator, do_verbose_t
 
             # Otherwise, check if this mission is a target mission
             fetched_kobj = operator_ML._fetch_keyword_object(
-                lookup=curr_key, do_verbose=False, do_raise_emptyerror=False
+                lookup=curr_key, do_raise_emptyerror=False
             )
             # Skip if not a target
             if fetched_kobj is None:

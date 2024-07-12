@@ -44,13 +44,8 @@ def classify_papers(classifier_name: str = "ML") -> None:
         when an invalid classifier name is provided
     """
 
-    # Fetch filepath for model
-    name_model = config.output.name_model
-    dir_model = os.path.join(config.paths.models, name_model)
-    filepath_model = os.path.join(dir_model, (name_model + ".npy"))
-    fileloc_ML = os.path.join(dir_model, (config.output.tfoutput_prefix + name_model))
-
     # Fetch filepath for output or create the directory if not exists.
+    name_model = config.output.name_model
     dir_output = os.path.join(config.paths.output, name_model)
     os.makedirs(dir_output, exist_ok=True)
 
@@ -63,7 +58,7 @@ def classify_papers(classifier_name: str = "ML") -> None:
     # initialize classifiers
 
     # Machine-Learning Classifier
-    classifier_ML = ml.MachineLearningClassifier(filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True)
+    classifier_ML = ml.MachineLearningClassifier(load=True, verbose=True)
 
     # CLI option
     if classifier_name == "ML":
@@ -80,13 +75,11 @@ def classify_papers(classifier_name: str = "ML") -> None:
         keyword_objs=params.all_kobjs,
         mode_modif=config.textprocessing.mode_modif,
         buffer=config.textprocessing.buffer,
-        threshold=config.performance.threshold,
         print_freq=25,
         filepath_output=dir_output,
         fileroot_class_results=config.results.fileroot_class_results + f"{classifier_name}",
         is_text_processed=False,
         load_check_truematch=True,
-        do_verbose=True,
-        do_verbose_deep=False,
-        do_raise_innererror=False,
+        verbose=True,
+        deep_verbose=False,
     )

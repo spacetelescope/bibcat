@@ -9,6 +9,7 @@ This module applies a given classifier method on the input data for classificati
 
 import json
 import os
+import pathlib
 
 from bibcat.core import operator
 from bibcat.utils.logger_config import setup_logger
@@ -19,24 +20,11 @@ logger = setup_logger(__name__)
 # Store texts for each operator and its internal classifier
 # For operator ML, Dictionary of texts to classify
 
-
-def operate_classifier(
-    classifier_name: str,
-    classifier: object,
-    dict_texts: dict,  # this dict is very complex so a proper type annotation can be determined later
-    keyword_objs: list,
-    buffer: int,
-    threshold: float,
-    print_freq: int,
-    filepath_output: str,
-    fileroot_class_results: str,
-    mode_modif: str,
-    is_text_processed: bool = False,
-    load_check_truematch: bool = True,
-    do_verbose: bool = True,
-    do_verbose_deep: bool = False,
-    do_raise_innererror: bool = False,
-):
+# TODO - do we need this?
+def operate_classifier(classifier_name: str, classifier: object, dict_texts: dict,   keyword_objs: list,
+                       buffer: int, print_freq: int, filepath_output: str,
+                       fileroot_class_results: str, mode_modif: str, is_text_processed: bool = False,
+                       load_check_truematch: bool = True, verbose: bool = True, deep_verbose: bool = False):
     """
     Method: operate_classifiers
     Purpose:
@@ -57,47 +45,30 @@ def operate_classifier(
     """
 
     # Initialize operators by loading models into instances of the Operator class
-    op = operator.Operator(
-        classifier=classifier,
-        name=classifier_name,
-        mode=mode_modif,
-        keyword_objs=keyword_objs,
-        load_check_truematch=load_check_truematch,
-        do_verbose=do_verbose,
-        do_verbose_deep=do_verbose_deep,
-    )
+    op = operator.Operator(classifier=classifier, name=classifier_name, mode=mode_modif, keyword_objs=keyword_objs,
+                           load_check_truematch=load_check_truematch, verbose=verbose, deep_verbose=deep_verbose)
 
     # Print some notes
-    if do_verbose:
+    if verbose:
         logger.info(f"Classifying with Operator {classifier_name}...")
 
     # Load in as either raw or preprocessed data
     if is_text_processed:  # If given text preprocessed
         curr_texts = None
         curr_modifs = [dict_texts[key]["text"] for key in dict_texts]
-        curr_forests = [dict_texts[key]["forest"] for key in dict_texts]
+        #curr_forests = [dict_texts[key]["forest"] for key in dict_texts]
     else:  # If raw text given, text needs to be preprocessed
         # curr_texts = [dict_texts[keys[jj]]["text"] for jj in range(0, len(keys))]
         curr_texts = [dict_texts[key]["text"] for key in dict_texts]
         curr_modifs = None
-        curr_forests = None
+        #curr_forests = None
 
     # Classify texts with current operator
-    results = op.classify_set(
-        texts=curr_texts,
-        modifs=curr_modifs,
-        forests=curr_forests,
-        threshold=threshold,
-        buffer=buffer,
-        do_check_truematch=load_check_truematch,
-        do_raise_innererror=do_raise_innererror,
-        print_freq=print_freq,
-        do_verbose=do_verbose,
-        do_verbose_deep=do_verbose_deep,
-    )
+    results = op.classify_set(curr_texts, modifs=curr_modifs, buffer=buffer, do_check_truematch=load_check_truematch,
+                              print_freq=print_freq)
 
     # Print some notes
-    if do_verbose:
+    if verbose:
         logger.info(f"Classification complete for Operator {classifier_name}...")
         logger.info("Generating the performance counter...")
 
@@ -105,7 +76,7 @@ def operate_classifier(
     text_ids = [{"id": index} for index in dict_texts]
     text_bibcodes = [{"bibcode": dict_texts[index]["bibcode"]} for index in dict_texts]
 
-    if do_verbose:
+    if verbose:
         logger.info(f"{classifier_name} results: \n")
         for index, dict_content in enumerate(results):
             logger.info(f"\nText {index+1}: \n")
@@ -124,7 +95,11 @@ def operate_classifier(
 
     # set file save location and filename
     tmp_filepath = os.path.join(filepath_output, f"{fileroot_class_results}.json")
-    if do_verbose:
+
+    if not pathlib.Path(tmp_filepath).exists():
+        pathlib.Path(tmp_filepath).parent.mkdir(parents=True, exist_ok=True)
+
+    if verbose:
         logger.info(f"Saving '{fileroot_class_results}.json' under '{filepath_output}/'!")
     json_dump = convert_sets(classification_results)  # converts any sets in the results to lists
     with open(tmp_filepath, "w") as f:

@@ -8,7 +8,7 @@ inputs:
 
 output:
   root_path: $BIBCAT_OUTPUT_DIR
-  name_model: my_test_run
+  name_model: tf_bert_run
   folders_TVT: {train: dir_train, validate: dir_validate, test: dir_test}
   tfoutput_prefix: tfoutput_
   path_not_in_papertext: $BIBCAT_DATA_DIR/bibcodes_notin_papertext.txt  # file for bibcodes not in papertrack
@@ -243,6 +243,10 @@ textprocessing:
   - [AnyMission, AnyMission treasury, 'TRUE']
 
 ml:
+  ML_library: "tensorflow"  # Options: "tensorflow", "pytorch"
+  ML_model_type: "bert"  # Options: "bert", "custom"
+  ML_custom_model_path: null  # Path to custom model if ML_model_type is "custom"
+  ML_custom_preprocessor_path: null  # Path to custom preprocessor if ML_model_type is "custom"
   # Set machine learning variables
   ML_label_model: "categorical"
   ML_activation_dense: "softmax"
@@ -251,7 +255,7 @@ ml:
   # ML_model_key: "bert_en_uncased_L-12_H-768_A-12" #Fancier language model
   ML_name_optimizer: "LAMB"  # "AdamWeightDecay"
   ML_frac_dropout: 0.2
-  ML_num_epochs: 5
+  ML_num_epochs: 20
   ML_init_lr: !!float 3e-5
   seed_ML: 8  # Random seed for ML model
   bert:
@@ -325,6 +329,13 @@ ml:
         "experts_wiki_books": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
         "talking-heads_base": "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
     }
+  roberta:
+    dict_ml_model_encoders: {
+        "roberta_encased": "https://www.kaggle.com/models/kaggle/roberta/TensorFlow2/en-cased-l-12-h-768-a-12/1",
+        }
+    dict_ml_model_preprocessors: {
+        "roberta_encased": "https://kaggle.com/models/kaggle/roberta/TensorFlow2/en-cased-preprocess/1",
+        }
 
 performance:
   fileroot_confusion_matrix_plot: "performance_confmatr_basic_"

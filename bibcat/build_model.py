@@ -30,13 +30,13 @@ settings = config.dataprep
 logger = setup_logger(__name__)
 
 
-# Fetch filepath for model
-name_model = config.output.name_model
-dir_data = os.path.join(config.paths.partitioned, name_model)
-dir_model = os.path.join(config.paths.models, name_model)
-
-
 def build_model() -> None:
+
+    # Fetch filepath for model
+    name_model = config.output.name_model
+    dir_data = os.path.join(config.paths.partitioned, name_model)
+    dir_model = os.path.join(config.paths.models, name_model)
+
     logger.info(f"Starting buiding and train {dir_model}!")
     if os.path.exists(dir_model):
         logger.info(
@@ -47,17 +47,13 @@ def build_model() -> None:
     filesave_error = os.path.join(dir_model, f"{name_model}_processing_errors.txt")
 
     # Initialize an empty ML classifier
-    classifier_ML = ml.MachineLearningClassifier(filepath_model=None, fileloc_ML=None, do_verbose=True)
+    classifier_ML = ml.MachineLearningClassifier(verbose=True)
 
     # Initialize an Operator
-    tabby_ML = operator.Operator(
-        classifier=classifier_ML,
-        mode=config.textprocessing.mode_modif,
-        keyword_objs=params.all_kobjs,
-        do_verbose=True,
-        load_check_truematch=config.textprocessing.do_verify_truematch,
-        do_verbose_deep=False,
-    )
+    tabby_ML = operator.Operator(classifier=classifier_ML, name='ML', mode=config.textprocessing.mode_modif,
+                                 keyword_objs=params.all_kobjs, verbose=True,
+                                 load_check_truematch=config.textprocessing.do_verify_truematch, deep_verbose=False)
+
     # load source dataset
     source_dataset = load_source_dataset(do_verbose=True)
 
@@ -79,7 +75,6 @@ def build_model() -> None:
         name_model=name_model,
         do_reuse_run=config.dataprep.do_reuse_run,
         do_check_truematch=config.textprocessing.do_verify_truematch,
-        seed_ML=config.ml.seed_ML,
         seed_TVT=settings.seed_TVT,
         dict_texts=dict_texts,
         mapper=params.map_papertypes,  # For masking of classes (e.g., masking 'supermention' as 'mention')
@@ -87,8 +82,6 @@ def build_model() -> None:
         fraction_TVT=settings.fraction_TVT,
         mode_TVT=settings.mode_TVT,
         do_shuffle=config.textprocessing.do_shuffle,  # do_shuffle: Whether or not to shuffle contents of training vs. validation vs. testing datasets
-        do_verbose=True,
-        do_verbose_deep=False,
     )
 
     logger.info(f"Time to train the model with run = {time.time()-start} seconds.")

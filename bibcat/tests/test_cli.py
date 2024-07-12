@@ -22,7 +22,7 @@ def test_train() -> None:
     """test the cli train help command"""
     runner = CliRunner()
     result = runner.invoke(cli, ["train", "--help"])
-    assert "train or retrain a classical ML model" in result.output
+    assert "Build or train a classical NLP ML model" in result.output
 
 
 def test_classify() -> None:

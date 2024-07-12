@@ -113,6 +113,9 @@ class Keyword(Base):
 
         return
 
+    def __repr__(self):
+        return f"<Keyword (name='{self.get_name()}')"
+
     # Generate string representation of this class instance
     def __str__(self):
         """
@@ -123,11 +126,11 @@ class Keyword(Base):
         # Build string of characteristics of this instance
         print_str = (
             "Keyword Object:\n"
-            + "Name: {0}\n".format(self.get_name())
-            + "Keywords: {0}\n".format(self._get_info("keywords"))
-            + ("Acronyms (Case-Insensitive): {0}\n".format(self._get_info("acronyms_caseinsensitive")))
-            + ("Acronyms (Case-Sensitive): {0}\n".format(self._get_info("acronyms_casesensitive")))
-            + "Banned Overlap: {0}\n".format(self._get_info("banned_overlap"))
+            + f"Name: {self.get_name()}\n"
+            + f'Keywords: {self._get_info("keywords")}\n'
+            + f'Acronyms (Case-Insensitive): {self._get_info("acronyms_caseinsensitive")}\n'
+            + f'Acronyms (Case-Sensitive): {self._get_info("acronyms_casesensitive")}\n'
+            + f'Banned Overlap: {self._get_info("banned_overlap")}\n'
         )
 
         # Return the completed string for printing

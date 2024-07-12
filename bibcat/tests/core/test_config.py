@@ -10,8 +10,8 @@ from bibcat.core.config import get_config, get_default_config
 def test_get_config_nouser() -> None:
     """test we can get the default config"""
     cc = get_default_config()
-    assert cc["output"]["name_model"] == "my_test_run"
-    assert cc.output.name_model == "my_test_run"
+    assert cc["output"]["name_model"] == "tf_bert_run"
+    assert cc.output.name_model == "tf_bert_run"
 
 
 @pytest.fixture

@@ -12,6 +12,7 @@ from bibcat.core.base import Base
 from bibcat.core.grammar import Grammar
 
 
+# TODO - remove this ; not needed
 class ClassifierBase(Base):
     """
     WARNING! This class is *not* meant to be used directly by users.
