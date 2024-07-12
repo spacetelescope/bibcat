@@ -75,7 +75,6 @@ def build_model() -> None:
         name_model=name_model,
         do_reuse_run=config.dataprep.do_reuse_run,
         do_check_truematch=config.textprocessing.do_verify_truematch,
-        seed_ML=config.ml.seed_ML,
         seed_TVT=settings.seed_TVT,
         dict_texts=dict_texts,
         mapper=params.map_papertypes,  # For masking of classes (e.g., masking 'supermention' as 'mention')

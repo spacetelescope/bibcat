@@ -112,8 +112,6 @@ class TensorFlow(AbstractModel):
         self.num_dense = None
         self.init_lr = config.ml.ML_init_lr
         self.num_epochs = config.ml.ML_num_epochs
-        self.num_steps_train = None
-        self.num_steps_warmup = None
 
         # model and outputs
         self.model = None
@@ -287,13 +285,8 @@ class TensorFlow(AbstractModel):
 
         init_loss = tf.keras.losses.CategoricalCrossentropy()
         metrics = [tf.keras.metrics.CategoricalAccuracy("accuracy")]
-        stepsize_epoch = tf.data.experimental.cardinality(self.dataset_train).numpy()
 
         # setup optimizer and fitting parameters
-        frac_steps_warmup = config.ml.ML_frac_steps_warmup
-        self.num_steps_train = stepsize_epoch * self.num_epochs
-        self.num_steps_warmup = int(frac_steps_warmup * self.num_steps_train)
-
         # TODO - revisit the type of optimizer, lamb vs adam vs others
         optimizer = tf.keras.optimizers.Adam(learning_rate=self.init_lr)
 
