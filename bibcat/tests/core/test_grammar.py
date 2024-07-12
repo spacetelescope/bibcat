@@ -45,7 +45,7 @@ class TestGrammar(unittest.TestCase):
                     if key1 in ["kobj"]:
                         continue
                     # Otherwise, check generated modif
-                    test_res = testbase.get_modifs()[key1]
+                    test_res = testbase.get_modifs()["modifs"][key1]
                     curr_answer = dict_acts[phrase][key1]
 
                     # Check answer
@@ -101,7 +101,7 @@ class TestGrammar(unittest.TestCase):
                     if key1 in ["kobj"]:
                         continue
                     # Otherwise, check generated modif
-                    test_res = testbase.get_modifs()[key1]
+                    test_res = testbase.get_modifs()["modifs"][key1]
                     curr_answer = dict_acts[phrase][key1]
                     #
 
@@ -152,7 +152,7 @@ class TestGrammar(unittest.TestCase):
                     if key1 in ["kobj"]:
                         continue
                     # Otherwise, check generated modif
-                    test_res = testbase.get_modifs()[key1]
+                    test_res = testbase.get_modifs()["modifs"][key1]
                     curr_answer = dict_acts[phrase][key1]
 
                     # Check answer
@@ -204,7 +204,7 @@ class TestGrammar(unittest.TestCase):
                     if key1 in ["kobj"]:
                         continue
                     # Otherwise, check generated modif
-                    test_res = testbase.get_modifs()[key1]
+                    test_res = testbase.get_modifs()["modifs"][key1]
                     curr_answer = dict_acts[phrase][key1]
                     #
 
@@ -260,7 +260,7 @@ class TestGrammar(unittest.TestCase):
                     if key1 in ["kobj"]:
                         continue
                     # Otherwise, check generated modif
-                    test_res = testbase.get_modifs()[key1]
+                    test_res = testbase.get_modifs()["modifs"][key1]
                     curr_answer = dict_acts[phrase][key1]
                     #
 
@@ -317,7 +317,7 @@ class TestGrammar(unittest.TestCase):
                     if key1 in ["kobj"]:
                         continue
                     # Otherwise, check generated modif
-                    test_res = testbase.get_modifs()[key1]
+                    test_res = testbase.get_modifs()["modifs"][key1]
                     curr_answer = dict_acts[phrase][key1]
                     #
 

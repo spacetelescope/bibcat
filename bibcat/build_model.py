@@ -52,7 +52,7 @@ def build_model() -> None:
     # Initialize an Operator
     tabby_ML = operator.Operator(classifier=classifier_ML, name='ML', mode=config.textprocessing.mode_modif,
                                  keyword_objs=params.all_kobjs, verbose=True,
-                                 load_check_truematch=config.textprocessing.do_check_truematch, deep_verbose=False)
+                                 load_check_truematch=config.textprocessing.do_verify_truematch, deep_verbose=False)
 
     # load source dataset
     source_dataset = load_source_dataset(do_verbose=True)
@@ -74,7 +74,8 @@ def build_model() -> None:
         dir_data=dir_data,
         name_model=name_model,
         do_reuse_run=config.dataprep.do_reuse_run,
-        do_check_truematch=config.textprocessing.do_check_truematch,
+        do_check_truematch=config.textprocessing.do_verify_truematch,
+        seed_ML=config.ml.seed_ML,
         seed_TVT=settings.seed_TVT,
         dict_texts=dict_texts,
         mapper=params.map_papertypes,  # For masking of classes (e.g., masking 'supermention' as 'mention')

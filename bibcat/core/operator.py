@@ -7,8 +7,6 @@ Using its `classify` method, the Operator class internally handles all calls to
 the other classes (Paper, Grammar, and the given classifier).
 
 The primary methods and use cases of Operator are:
-* `_fetch_keyword_object`: A hidden method for fetching the stored Keyword instance
-   that matches a given term.
 * `classify`: A method designed for users that prepares and runs the entire 'bibcat' workflow,
    from input raw text to classified output.
 * `process`: A method designed for users that processes given text into modifs,
