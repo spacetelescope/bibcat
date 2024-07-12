@@ -249,10 +249,8 @@ ml:
   ML_batch_size: 32
   ML_model_key: "small_bert/bert_en_uncased_L-4_H-512_A-8"  # Simpler language model
   # ML_model_key: "bert_en_uncased_L-12_H-768_A-12" #Fancier language model
-  ML_type_optimizer: "lamb"  # "adamw"
   ML_name_optimizer: "LAMB"  # "AdamWeightDecay"
   ML_frac_dropout: 0.2
-  ML_frac_steps_warmup: 0.1
   ML_num_epochs: 5
   ML_init_lr: !!float 3e-5
   seed_ML: 8  # Random seed for ML model
