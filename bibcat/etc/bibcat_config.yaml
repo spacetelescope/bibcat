@@ -33,7 +33,7 @@ dataprep:
   seed_TVT: 10  # Random seed for generating train vs valid. vs test datasets
 
 textprocessing:
-  do_check_truematch: true  # used in Performance class
+  do_verify_truematch: true  # used in Performance class
   do_raise_innererror: false  # do_raise_innererror: if True, will stop if exception encountered; # if False, will print error and continue
   do_verbose_text_summary: false  # print input text data summary
   mode_modif: skim_anon  # Mode to use for text processing and generating possible modes: any combination from "skim", "trim", and "anon" or "none"

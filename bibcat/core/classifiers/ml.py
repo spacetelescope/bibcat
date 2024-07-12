@@ -294,6 +294,7 @@ class TensorFlow(AbstractModel):
         self.num_steps_train = stepsize_epoch * self.num_epochs
         self.num_steps_warmup = int(frac_steps_warmup * self.num_steps_train)
 
+        # TODO - revisit the type of optimizer, lamb vs adam vs others
         optimizer = tf.keras.optimizers.Adam(learning_rate=self.init_lr)
 
         # Print some notes
