@@ -114,7 +114,6 @@ class TensorFlow(AbstractModel):
         self.num_epochs = config.ml.ML_num_epochs
         self.num_steps_train = None
         self.num_steps_warmup = None
-        self.type_optimizer = config.ml.ML_type_optimizer
 
         # model and outputs
         self.model = None
@@ -299,8 +298,7 @@ class TensorFlow(AbstractModel):
 
         # Print some notes
         if self.verbose:
-            logger.info(f"# of training steps: {self.num_steps_train}\n# of warmup steps: {self.num_steps_warmup}")
-            logger.info(f"Type of optimizer and initial lr: {self.type_optimizer}, {self.init_lr}")
+            logger.info("Optimizer created.")
 
         # Compile the model with the loss, metric, and optimization functions
         self.model.compile(optimizer=optimizer, loss=init_loss, metrics=metrics)
@@ -400,10 +398,7 @@ class TensorFlow(AbstractModel):
             "class_names": self.class_names,
             "accuracy": self.res_accuracy,
             "init_lr": self.init_lr,
-            "num_epochs": self.num_epochs,
-            "num_steps_train": self.num_steps_train,
-            "num_steps_warmup": self.num_steps_warmup,
-            "type_optimizer": self.type_optimizer,
+            "num_epochs": self.num_epochs
         }
         self.model.save(os.path.join(self.model_dir, self.savename_ML), include_optimizer=False)
         np.save(os.path.join(self.model_dir, self.savename_model), self.outputs)

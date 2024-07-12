@@ -55,6 +55,11 @@ class Operator(Base):
         Flag to check that mission phrases found in text are known true vs. false matches, by default True
     deep_verbose : bool, optional
         Flag to turn on deep verbosity, by default False
+
+    Raises
+    ------
+    ValueError
+        when the reserved character '|' is used in the name for the Operator
     """
 
     # Initialize this class instance
@@ -68,6 +73,10 @@ class Operator(Base):
         self.verbose = verbose
         self.deep_verbose = deep_verbose
         self.load_check_truematch = load_check_truematch
+
+        # Throw an error if reserved character '|' in name
+        if "|" in name:
+            raise ValueError("Please do not use the reserved character '|' in the name for your Operator.")
 
         # keyword object info
         self.keyword_objs = keyword_objs
@@ -209,6 +218,9 @@ class Operator(Base):
                 logger.info("Returning rejection verdict.")
 
             verdicts = config.results.dictverdict_rejection.copy()
+        # Set not-classified verdict if flagged for no classification
+        elif keyword._get_info("do_not_classify"):
+            verdicts = config.results.dictverdict_donotclassify.copy()
         else:
             try:
                 verdicts = self.classifier.classify_text(text=modif)
@@ -290,7 +302,7 @@ class Operator(Base):
                 item[name] = result
 
             # Print some notes at given frequency, if requested
-            if self.verbose and ((ii % print_freq) == 0):
+            if self.verbose and (((ii % print_freq) == 0) or (ii == (num_texts-1))):
                 logger.info(f"Classification for text #{(ii + 1)} of {num_texts} complete...")
 
         # Return the classification results
@@ -340,7 +352,7 @@ class Operator(Base):
         grammar = Grammar(text=text, keyword_obj=keyword_obj, do_check_truematch=do_check_truematch, dict_ambigs=self.dict_ambigs,
                           do_verbose=self.deep_verbose, buffer=buffer)
         grammar.run_modifications(which_modes=use_these_modes)
-        output = grammar.get_modifs(do_include_forest=True)
+        output = grammar.get_modifs()
 
         # update outputs
         modif = output["modifs"][self.mode]
