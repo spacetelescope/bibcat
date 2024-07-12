@@ -19,7 +19,7 @@ import os
 
 from bibcat import config
 from bibcat import parameters as params
-from bibcat.core.classifiers import ml, rules
+from bibcat.core.classifiers import ml
 from bibcat.core.classifiers.textdata import ClassifierBase
 from bibcat.fetch_papers import fetch_papers
 from bibcat.operate_classifier import operate_classifier
@@ -62,20 +62,15 @@ def classify_papers(classifier_name: str = "ML") -> None:
     classifier: ClassifierBase
     # initialize classifiers
 
-    # Rule-Based Classifier
-    classifier_RB = rules.RuleBasedClassifier(which_classifs=None, do_verbose=True, do_verbose_deep=False)
-
     # Machine-Learning Classifier
     classifier_ML = ml.MachineLearningClassifier(filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True)
 
     # CLI option
     if classifier_name == "ML":
         classifier = classifier_ML
-    elif classifier_name == "RB":
-        classifier = classifier_RB
     else:
         raise ValueError(
-            "An invalid value! Choose either 'ML' for the machine learning classifier or 'RB' for the rule-based classifier!"
+            "An invalid value! Choose 'ML' for the machine learning classifier!"
         )
 
     operate_classifier(

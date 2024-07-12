@@ -129,10 +129,8 @@ class MachineLearningClassifier(ClassifierBase):
         # Load in ML values
         label_mode = config.ml.ML_label_model
         batch_size = config.ml.ML_batch_size
-        type_optimizer = config.ml.ML_type_optimizer
         ml_model_key = config.ml.ML_model_key
         frac_dropout = config.ml.ML_frac_dropout
-        frac_steps_warmup = config.ml.ML_frac_steps_warmup
         num_epochs = config.ml.ML_num_epochs
         init_lr = config.ml.ML_init_lr
         activation_dense = config.ml.ML_activation_dense
@@ -232,15 +230,11 @@ class MachineLearningClassifier(ClassifierBase):
         metrics = [tf.keras.metrics.CategoricalAccuracy("accuracy")]
         stepsize_epoch = tf.data.experimental.cardinality(dataset_train).numpy()
 
-        num_steps_train = stepsize_epoch * num_epochs
-        num_steps_warmup = int(frac_steps_warmup * num_steps_train)
-
         optimizer = tf.keras.optimizers.Adam(learning_rate=init_lr)
 
         # Print some notes
         if do_verbose:
-            print("# of training steps: {0}\n# of warmup steps: {1}".format(num_steps_train, num_steps_warmup))
-            print("Type of optimizer and initial lr: {0}, {1}".format(type_optimizer, init_lr))
+            print("Optimizer created.")
 
         # Compile the model with the loss, metric, and optimization functions
         model.compile(optimizer=optimizer, loss=init_loss, metrics=metrics)
@@ -267,15 +261,12 @@ class MachineLearningClassifier(ClassifierBase):
             "accuracy": res_accuracy,
             "init_lr": init_lr,
             "num_epochs": num_epochs,
-            "num_steps_train": num_steps_train,
-            "num_steps_warmup": num_steps_warmup,
-            "type_optimizer": type_optimizer,
         }
         model.save(os.path.join(dir_model, savename_ML), include_optimizer=False)
         np.save(os.path.join(dir_model, savename_model), save_dict)
 
         # Plot the results
-        self._plot_ML(model=model, history=history.history, dict_info=save_dict, folder_save=dir_model)
+        self._plot_ML(history=history.history, dict_info=save_dict, folder_save=dir_model)
 
         # Below Section: Exit the method
         if do_verbose:
@@ -286,26 +277,8 @@ class MachineLearningClassifier(ClassifierBase):
         else:
             return
 
-    # Run trained ML model on given text
-    def _run_ML(self, model, texts, do_verbose=False):
-        """
-        Method: _run_ML
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Use trained model to classify given text.
-        """
-
-        # Run the model on the given texts
-        results = model.predict(texts)
-
-        # Print some notes
-        if do_verbose:
-            for ii in range(0, len(texts)):
-                print("{0}:\n{1}\n".format(texts[ii], results[ii]))
-
-        return results
-
     # Plot structure and results of ML model
-    def _plot_ML(self, model, history, dict_info, folder_save):
+    def _plot_ML(self, history, dict_info, folder_save):
         """
         Method: _plot_ML
         WARNING! This method is *not* meant to be used directly by users.
@@ -347,7 +320,7 @@ class MachineLearningClassifier(ClassifierBase):
         return
 
     # Classify a single block of text
-    def classify_text(self, text, threshold, do_check_truematch=None, keyword_obj=None, do_verbose=False, forest=None):
+    def classify_text(self, text, do_check_truematch=None, keyword_obj=None, do_verbose=False, forest=None):
         """
         Method: classify_text
         Purpose: Classify given text using stored machine learning (ML) model.
@@ -356,8 +329,6 @@ class MachineLearningClassifier(ClassifierBase):
             - Unused - merely an empty placeholder for uniformity of classify_text across Classifier_* classes. Keep as None.
           - keyword_objs [list of Keyword instances, or None (default=None)]:
             - List of Keyword instances for which previously constructed paragraphs will be extracted.
-          - threshold [str]:
-            - The minimum uncertainty allowed to return a classification.
           - text [str]:
             - The text to classify.
           - do_verbose [bool (default=False)]:
@@ -392,24 +363,19 @@ class MachineLearningClassifier(ClassifierBase):
         max_ind = np.argmax(probs)
         max_verdict = list_classes[max_ind]
 
-        # Return low-uncertainty verdict if below given threshold
-        if (threshold is not None) and (probs[max_ind] < threshold):
-            dict_results = config.results.dictverdict_lowprob.copy()
-            dict_results["uncertainty"] = dict_uncertainty
-
         # Otherwise, generate dictionary of results
-        else:
-            dict_results = {
-                "verdict": max_verdict,
-                "scores_comb": None,
-                "scores_indiv": None,
-                "uncertainty": dict_uncertainty,
-            }
+        dict_results = {
+            "verdict": max_verdict,
+            "scores_comb": None,
+            "scores_indiv": None,
+            "uncertainty": dict_uncertainty,
+        }
 
         # Print some notes
         if do_verbose:
             print("\nMethod classify_text for ML classifier complete!")
             print("Max verdict: {0}\n".format(max_verdict))
+            print("Uncertainties: {0}\n".format(dict_uncertainty))
 
         # Return dictionary of results
         return dict_results

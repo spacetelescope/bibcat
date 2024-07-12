@@ -105,7 +105,7 @@ class Base:
 
     # Assemble wordchunks containing keywords from given text
     def _assemble_keyword_wordchunks(
-        self, text, keyword_objs, do_include_verbs=False, do_include_brackets=False, lookup_terms=None, do_verbose=False
+        self, text, keyword_objs, do_include_verbs=False, do_include_brackets=False, do_verbose=False
     ):
         """
         Method: _assemble_keyword_wordchunks
@@ -117,25 +117,12 @@ class Base:
         tmp_sents = list(nlp(str(text)).sents)
         list_wordchunks = []
         for curr_sent in tmp_sents:
-            # Extract keyword indices of current sentence
-            if lookup_terms is not None:  # If specific keyword terms requested
-                set_inds = [
-                    ind
-                    for ind in range(0, len(curr_sent))
-                    if any(
-                        [
-                            bool(re.search((r"\b" + item + r"\b"), curr_sent[ind].text, flags=re.IGNORECASE))
-                            for item in lookup_ambigs
-                        ]
-                    )
-                ]
-            # Otherwise, check against all keyword objects
-            else:
-                set_inds = [
-                    ind
-                    for ind in range(0, len(curr_sent))
-                    if any([item.identify_keyword(curr_sent[ind].text)["bool"] for item in keyword_objs])
-                ]
+            # Check against all keyword objects
+            set_inds = [
+                ind
+                for ind in range(0, len(curr_sent))
+                if any([item.identify_keyword(curr_sent[ind].text)["bool"] for item in keyword_objs])
+            ]
             # Print some notes
             if do_verbose:
                 print("Current sentence: '{0}'".format(curr_sent))

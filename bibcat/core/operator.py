@@ -7,8 +7,6 @@ Using its `classify` method, the Operator class internally handles all calls to
 the other classes (Paper, Grammar, and the given classifier).
 
 The primary methods and use cases of Operator are:
-* `_fetch_keyword_object`: A hidden method for fetching the stored Keyword instance
-   that matches a given term.
 * `classify`: A method designed for users that prepares and runs the entire 'bibcat' workflow,
    from input raw text to classified output.
 * `process`: A method designed for users that processes given text into modifs,
@@ -65,6 +63,10 @@ class Operator(Base):
         WARNING! This method is *not* meant to be used directly by users.
         Purpose: Initializes instance of Operator class.
         """
+        # Throw an error if reserved character '|' in name
+        if "|" in name:
+            raise ValueError("Please do not use the reserved character '|' in the name for your Operator.")
+
         # Initialize storage
         self._storage = {}
         self._store_info(classifier, "classifier")
@@ -72,7 +74,6 @@ class Operator(Base):
         self._store_info(name, "name")
         self._store_info(keyword_objs, "keyword_objs")
         self._store_info(do_verbose, "do_verbose")
-        self._store_info(load_check_truematch, "load_check_truematch")
         self._store_info(do_verbose_deep, "do_verbose_deep")
 
         # Load and process ambiguous (ambig.) data, if so requested
@@ -103,55 +104,11 @@ class Operator(Base):
 
         return
 
-    # Fetch a keyword object that matches the given lookup
-    def _fetch_keyword_object(
-        self, lookup: str, do_verbose: None | bool = None, do_raise_emptyerror: bool = True
-    ) -> Any | None:
-        """
-        Method: _fetch_keyword_object
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Finds stored Keyword instance that matches to given lookup term.
-        """
-        # Load Global variables
-        if do_verbose is None:
-            do_verbose = self._get_info("do_verbose")
-        keyword_objs = self._get_info("keyword_objs")
-        num_keyobjs = len(keyword_objs)
-        # Print some notes
-        if do_verbose:
-            print("> Running _fetch_keyword_object() for lookup term {0}.".format(lookup))
-
-        # Find keyword object that matches to given lookup term
-        match = None
-        for ii in range(0, num_keyobjs):
-            # If current keyword object matches, record and stop loop
-            if keyword_objs[ii].identify_keyword(lookup)["bool"]:
-                match = keyword_objs[ii]
-                break
-
-        # Throw error if no matching keyword object found
-        if match is None:
-            errstr = "No matching keyword object for {0}.\n".format(lookup)
-            errstr += "Available keyword objects are:\n"
-            for ii in range(0, num_keyobjs):
-                errstr += "{0}\n".format(keyword_objs[ii])
-
-            # Raise error if so requested
-            if do_raise_emptyerror:
-                raise ValueError(errstr)
-            # Otherwise, return None
-            else:
-                return None
-
-        # Return the matching keyword object
-        return match
-
     # Inspect text and either reject as false target or give classifications
     def classify(
         self,
         text: str | None,
         lookup: str,
-        threshold: float,
         do_check_truematch: bool,
         do_raise_innererror: bool,
         modif: str | None = None,
@@ -266,6 +223,10 @@ class Operator(Base):
 
             dict_verdicts = config.results.dictverdict_rejection.copy()
 
+        # Set not-classified verdict if flagged for no classification
+        elif keyobj._get_info("do_not_classify"):
+            dict_verdicts = config.results.dictverdict_donotclassify.copy()
+
         # Classify the text using stored classifier with raised error
         elif do_raise_innererror:  # If True, allow raising of inner errors
             dict_verdicts = classifier.classify_text(
@@ -274,7 +235,6 @@ class Operator(Base):
                 forest=forest,
                 keyword_obj=keyobj,
                 do_verbose=do_verbose,
-                threshold=threshold,
             )
 
         # Otherwise, run classification while ignoring inner errors
@@ -287,7 +247,6 @@ class Operator(Base):
                     forest=forest,
                     keyword_obj=keyobj,
                     do_verbose=do_verbose,
-                    threshold=threshold,
                 )
 
             # Catch certain exceptions and force-print some notes
@@ -387,7 +346,6 @@ class Operator(Base):
                     lookup=curr_name,
                     modif=curr_modif,
                     forest=curr_forest,
-                    threshold=threshold,
                     buffer=buffer,
                     do_check_truematch=do_check_truematch,
                     do_raise_innererror=do_raise_innererror,
@@ -398,7 +356,7 @@ class Operator(Base):
                 curr_dict[curr_name] = curr_result
 
             # Print some notes at given frequency, if requested
-            if do_verbose and ((ii % print_freq) == 0):
+            if do_verbose and (((ii % print_freq) == 0) or (ii == (num_texts-1))):
                 print("Classification for text #{0} of {1} complete...".format((ii + 1), num_texts))
 
         # Return the classification results
@@ -465,7 +423,7 @@ class Operator(Base):
             buffer=buffer,
         )
         grammar.run_modifications(which_modes=use_these_modes)
-        output = grammar.get_modifs(do_include_forest=True)
+        output = grammar.get_modifs()
         modif = output["modifs"][mode]
         modif_none = output["modifs"]["none"]  # Include unmodified vers. as well
         forest = output["_forest"]

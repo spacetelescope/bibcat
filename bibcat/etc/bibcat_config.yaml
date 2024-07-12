@@ -26,6 +26,7 @@ paths:
   TVTinfo: null
 
 dataprep:
+  do_reuse_run: true # whether or not to reuse saved data from previous model run
   num_papers: 100  # the number of papers to use. Set to null to use all available papers in external dataset
   fraction_TVT: [0.8, 0.1, 0.1]  # Partition fraction of training, validation, testing dataset
   mode_TVT: uniform  # Mode for splits; "uniform" = all training datasets will have the same number of entries from fraction_TVT; "available" = all training datasets will use full fraction
@@ -248,10 +249,8 @@ ml:
   ML_batch_size: 32
   ML_model_key: "small_bert/bert_en_uncased_L-4_H-512_A-8"  # Simpler language model
   # ML_model_key: "bert_en_uncased_L-12_H-768_A-12" #Fancier language model
-  ML_type_optimizer: "lamb"  # "adamw"
   ML_name_optimizer: "LAMB"  # "AdamWeightDecay"
   ML_frac_dropout: 0.2
-  ML_frac_steps_warmup: 0.1
   ML_num_epochs: 5
   ML_init_lr: !!float 3e-5
   seed_ML: 8  # Random seed for ML model
@@ -336,6 +335,7 @@ performance:
     - 20
     - 12
   print_freq: 1
+  threshold: 0.70
 
 
 results:
@@ -346,12 +346,14 @@ results:
   verdict_error: "z_error"
   verdict_lowprob: "z_lowprob"
   verdict_rejection: "z_notmatch"
-  list_other_verdicts: [verdict_error, verdict_lowprob, verdict_rejection]
+  verdict_donotclassify: "z_modifonly"
+  list_other_verdicts: [verdict_error, verdict_lowprob, verdict_rejection, verdict_donotclassify]
 
   # For preset custom verdict outputs
   dictverdict_lowprob: {"verdict": verdict_lowprob, "scores_comb": None, "scores_indiv": None, "uncertainty": None}
   dictverdict_rejection: {"verdict": verdict_rejection, "scores_comb": None, "scores_indiv": None, "uncertainty": None}
   dictverdict_error: {"verdict": verdict_error, "scores_comb": None, "scores_indiv": None, "uncertainty": None}
+  dictverdict_donotclassify: {"verdict": verdict_donotclassify, "scores_comb": None, "scores_indiv": None, "uncertainty": None}
 
 grammar:
   regex:

@@ -163,6 +163,8 @@ class Keyword(Base):
         keywords = self._get_info("keywords")
         exp_a_yescase = self._get_info("exp_acronyms_casesensitive")
         exp_a_nocase = self._get_info("exp_acronyms_caseinsensitive")
+        acronyms_casesensitive = self._get_info("acronyms_casesensitive")
+        acronyms_caseinsensitive = self._get_info("acronyms_caseinsensitive")
         banned_overlap_lowercase = self._get_info("banned_overlap_lowercase")
         do_verbose = self._get_info("do_verbose")
         allowed_modes = [None, "keyword", "acronym"]
@@ -232,8 +234,8 @@ class Keyword(Base):
         # Print some notes
         if do_verbose:
             print("Keywords: {0}\nKeyword regex:\n{1}".format(keywords, exps_k))
-            print("Acronyms (Case-Sensitive): {0}\nAcronym regex:\n{1}".format(acronyms_yescase, exp_a_yescase))
-            print("Acronyms (Case-Insensitive): {0}\nAcronym regex:\n{1}".format(acronyms_nocase, exp_a_nocase))
+            print("Acronyms (Case-Sensitive): {0}\nAcronym regex:\n{1}".format(acronyms_casesensitive, exp_a_yescase))
+            print("Acronyms (Case-Insensitive): {0}\nAcronym regex:\n{1}".format(acronyms_caseinsensitive, exp_a_nocase))
             print("Keyword bool: {0}\nAcronym bool: {1}".format(check_keywords, check_acronyms_all))
             print("Keyword char. spans: {0}\nAcronym char. spans: {1}".format(charspans_keywords, charspans_acronyms_all))
 
