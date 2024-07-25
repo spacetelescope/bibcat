@@ -24,9 +24,9 @@ def file_exists(filelist: list) -> bool:
     return any([os.path.isfile(item) for item in filelist])
 
 
-def save_text_file(path: str, bibcodes: list[str]) -> None:
+def save_text_file(filename: str, bibcodes: list[str]) -> None:
     np.savetxt(
-        path,
+        filename,
         np.asarray(bibcodes).astype(str),
         delimiter="\n",
         fmt="%s",
