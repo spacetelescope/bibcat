@@ -24,7 +24,7 @@ def file_exists(filelist: list) -> bool:
     return any([os.path.isfile(item) for item in filelist])
 
 
-def save_numpy_file(path: str, bibcodes: list[str]) -> None:
+def save_text_file(path: str, bibcodes: list[str]) -> None:
     np.savetxt(
         path,
         np.asarray(bibcodes).astype(str),
@@ -127,8 +127,8 @@ def save_files(dataset: dict, missing_papertext_bibcodes: list, missing_papertra
     # Save the combined dataset
     save_json_file(config.inputs.path_source_data, dataset)
     # Also save the bibcodes of the paper-texts not found in papertrack and papertext
-    save_numpy_file(config.output.path_not_in_papertext, missing_papertext_bibcodes)
-    save_numpy_file(config.output.path_not_in_papertrack, missing_papertrack_bibcodes)
+    save_text_file(config.output.path_not_in_papertext, missing_papertext_bibcodes)
+    save_text_file(config.output.path_not_in_papertrack, missing_papertrack_bibcodes)
 
     logger.info("Dataset generation complete.\n")
     logger.info(f"Combined .json file saved to:\n{config.inputs.path_source_data}\n")
