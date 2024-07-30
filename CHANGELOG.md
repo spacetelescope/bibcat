@@ -2,9 +2,10 @@
 
 ## [Unreleased]
 
+- [PR #29](https://github.com/spacetelescope/bibcat/pull/29) Refactored the ML classifier to allow for other `tensorflow` models, and for adding other libraries, e.g. `pytorch`, down the line.
 - PR #27
     - Added a CLI option to build the combined dataset from the papertrack data and papertext (from ADS) data and refactored `build_dataset.py`.
-    - Enabled dynamic version control 
+    - Enabled dynamic version control
     - Readme update: clarify the workflow in Quick Start; the use of fetching papers using the `do_evaluation` keyword when `bibcat classify` and `bibcat evaluate`
 - [PR # 23]
     - Setting a new config for the directory of papers for operational classification with a fake JSON file
@@ -30,7 +31,7 @@
     - The `is_keyword` method is replaced with the `identify_keyword` method.
 
 - [PR # 21]
-    - `evaluate` and `classify` are now separate CLI options. 
+    - `evaluate` and `classify` are now separate CLI options.
 
 - [PR # 19, 20]
     - `get_config()` error fix
@@ -39,7 +40,7 @@
 
 - [PR #18]
     - Fix ddict type errors
-    
+
 - [PR #16 # 17]
     - Consolidated all config into a single `bibcat_config.yaml` YAML file.
     - Moved `bibcat` output to outside the package directory
@@ -90,7 +91,7 @@
     - updated formatting and styling
 
 ### Added
-- [PR #18] 
+- [PR #18]
     - Added new `click` cli for `bibcat`
 
 - [PR #14]
