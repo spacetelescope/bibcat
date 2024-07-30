@@ -66,7 +66,7 @@ Note that other JSON files (extracted from 2018-2023) include paper track data a
 There are three user environment variables to set:
 
 - **BIBCAT_CONFIG_DIR**: a local path to your user configuration yaml file
-- **BIBCAT_OPSDATA_DIR** : a local path to the directory of operational data in JSON format. 
+- **BIBCAT_OPSDATA_DIR** : a local path to the directory of operational data in JSON format.
 - **BIBCAT_DATA_DIR**: a local path to the directory of input data, e.g the input JSON files and full text
 - **BIBCAT_OUTPUT_DIR**: a local path to a directory where the output of bibcat will be written, e.g. the output model and QA plots
 
@@ -90,6 +90,31 @@ output:
 
 For testing, you need to install the extra test dependencies.  You do this with `pip install -e ".[test]"`.  The test suite is located in `tests/`. We can recommend using `pytest` for running tests.  Navigate to `/tests/` and run `pytest`, or for extra verbosity run `pytest -vs`. `pytest` can find and run tests written with pytest or unittests.
 
+### Changing Models
+
+`bibcat` now supports the ability to use other Tensorflow models for paper classification. The default model used is `bert`.  New models are added into bibcat via the bibcat configuration yaml file, under the `ml` section, similar to the existing `bert` section.  Then, update the `ML_model_type` and `ML_model_key` keys to the new model values.
+
+For example to use the `roberta` model, with roberta-specific encoders/preprocessors, within your user `$BIBCAT_CONFIG_DIR/bibcat_config.yaml`, you would set:
+```yaml
+output:
+  name_model: tf_roberta_trial
+ml:
+  ML_model_type: "roberta"
+  ML_model_key: "roberta_encased"
+  roberta:
+    dict_ml_model_encoders: {"roberta_encased": "https://www.kaggle.com/models/kaggle/roberta/TensorFlow2/en-cased-l-12-h-768-a-12/1"}
+    dict_ml_model_preprocessors: {"roberta_encased": "https://kaggle.com/models/kaggle/roberta/TensorFlow2/en-cased-preprocess/1"}
+```
+Then run `bibcat train` and `bibcat classify` as normal.
+
+Alternatively, you can specify new models directly from the command line during `bibcat train`.  For example, to use the `roberta` model, run:
+```
+bibcat train -m roberta -n tf_roberta_trial -k roberta_encased
+```
+This assumes the preprocessors and encoders for that model are already included in the config file.  To use a different preprocessor or encoder not included in your configuration file, you can manually pass in the urls, e.g.
+```
+bibcat train -m roberta -n tf_roberta_trial -k roberta_encased -e https://www.kaggle.com/models/kaggle/roberta/TensorFlow2/en-cased-l-12-h-768-a-12/1 -p https://kaggle.com/models/kaggle/roberta/TensorFlow2/en-cased-preprocess/1
+```
 
 ## Quick start
 
@@ -100,7 +125,7 @@ for classifying papers, run `bibcat classify --help`.
 
 ### Build dataset from the papertrak and ADS papertext JSON files.
 
-- run `bibcat dataset`if you don't already have the source dataset combined from the papertrack data and the papertext data. 
+- run `bibcat dataset`if you don't already have the source dataset combined from the papertrack data and the papertext data.
 
 ### Train and evaluate the ML models
 
