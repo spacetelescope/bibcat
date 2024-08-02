@@ -27,7 +27,7 @@ def file_exists(filelist: list) -> bool:
 def save_text_file(filename: str, bibcodes: list[str]) -> None:
     np.savetxt(
         filename,
-        np.asarray(bibcodes).astype(str),
+        np.asarray(bibcodes),
         delimiter="\n",
         fmt="%s",
     )
