@@ -498,3 +498,8 @@ grammar:
       "verbclass": ["be", "has", "know", "plot", "root_nonverb", "science", "datainfluenced"],
       "verbtypes": ["FUTURE", "PASSIVE", "PAST", "POTENTIAL", "PURPOSE", "PRESENT"],
   }
+
+llms:
+  openai:
+    model: gpt-4o
+    

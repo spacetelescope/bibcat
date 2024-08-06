@@ -13,6 +13,8 @@ from bibcat.classify_papers import classify_papers
 from bibcat.data.build_dataset import build_dataset
 from bibcat.evaluate_basic_performance import evaluate_basic_performance
 
+from bibcat.llm.openai import run
+
 
 @click.group("bibcat")
 def cli():
@@ -102,6 +104,14 @@ def evaluate(name) -> None:
     Wraps the original evaluate_basic_performance script.
     """
     evaluate_basic_performance(classifier_name=name)
+
+
+@cli.command(help="run the GPT-4o model")
+@click.option("-f", "--filename", default="", type=str, show_default=True, help="The path to a file to upload")
+@click.option("-m", "--model", default="gpt-4o", type=str, show_default=True, help="The model type to use")
+@click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The name of the model training run to use")
+def run_gpt(filename, model, num_runs):
+    run(filename, run=num_runs)
 
 
 if __name__ == "__main__":
