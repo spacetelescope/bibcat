@@ -10,6 +10,7 @@ Run example: bibcat train
 
 import json
 import os
+from pathlib import Path
 
 import numpy as np
 
@@ -24,23 +25,23 @@ def file_exists(filelist: list) -> bool:
     return any([os.path.isfile(item) for item in filelist])
 
 
-def save_text_file(filename: str, bibcodes: list[str]) -> None:
+def save_text_file(path_filename: Path, bibcodes: list[str]) -> None:
     np.savetxt(
-        filename,
-        np.asarray(bibcodes),
+        path_filename,
+        np.array(bibcodes),
         delimiter="\n",
         fmt="%s",
     )
 
 
-def load_datasets(path_papertext: str, path_papertrack: str) -> tuple[list, list]:
+def load_datasets(path_papertext: Path, path_papertrack: Path) -> tuple[list[dict], list[dict]]:
     # Load paper texts and papertrack classes
     papertext_dataset = load_json_file(path_papertext)
     papertrack_dataset = load_json_file(path_papertrack)
     return papertext_dataset, papertrack_dataset
 
 
-def extract_papertext_info(dataset) -> tuple[list, str, str]:
+def extract_papertext_info(dataset) -> tuple[list[str], list[str]]:
     bibcodes = [entry["bibcode"] for entry in dataset]
     pubdates = [entry["pubdate"] for entry in dataset]
     logger.debug(f"The earliest date of papers within text database: {min(pubdates)}.")
@@ -83,7 +84,7 @@ def trim_papertext_dict(dataset: dict, keys: list) -> list[dict]:
     return storage_combined_dataset
 
 
-def combine_datasets(papertext_data, papertrack_data) -> None:
+def combine_datasets(papertext_data, papertrack_data):
     # First, store trimmed papertext dictionary down to only columns to include
     data_storage = trim_papertext_dict(papertext_data, config.inputs.keys_papertext)
 
@@ -164,4 +165,5 @@ def build_dataset() -> None:
         )
 
         # Save the combined dataset
+        save_files(storage_combined_dataset, bibcodes_notin_papertext, bibcodes_notin_papertrack)
         save_files(storage_combined_dataset, bibcodes_notin_papertext, bibcodes_notin_papertrack)

@@ -6,6 +6,7 @@ This module stores any utility functions necessary for bibcat.
 """
 
 import json
+from pathlib import Path
 
 from bibcat.utils.logger_config import setup_logger
 
@@ -25,13 +26,13 @@ def convert_sets(obj: object) -> list | dict | object:
     return obj
 
 
-def load_json_file(path: str) -> list:
+def load_json_file(path: Path) -> None:
     logger.info(f"Loading {path}!")
     with open(path, "r") as openfile:
         return json.load(openfile)
 
 
-def save_json_file(path: str, dataset: list[dict], indent: int = 2) -> list:
+def save_json_file(path: Path, dataset: list[dict], indent: int = 2) -> None:
     logger.info(f"Saving {path}!")
     with open(path, "w") as openfile:
         json.dump(dataset, openfile, indent=indent)
