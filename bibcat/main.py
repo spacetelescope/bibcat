@@ -107,11 +107,13 @@ def evaluate(name) -> None:
 
 
 @cli.command(help="run the GPT-4o model")
-@click.option("-f", "--filename", default="", type=str, show_default=True, help="The path to a file to upload")
+@click.option("-f", "--filename", default=None, type=str, show_default=True, help="The path to a file to upload")
+@click.option("-b", "--bibcode", default=None, type=str, show_default=True, help="A bibcode from the papertrack source combined_dataset")
+@click.option("-i", "--index", default=None, type=str, show_default=True, help="An array index from the papertrack source combined_dataset")
 @click.option("-m", "--model", default="gpt-4o", type=str, show_default=True, help="The model type to use")
-@click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The name of the model training run to use")
-def run_gpt(filename, model, num_runs):
-    run(filename, run=num_runs)
+@click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
+def run_gpt(filename, bibcode, index, model, num_runs):
+    run(file_path=filename, bibcode=bibcode, index=index, run=num_runs)
 
 
 if __name__ == "__main__":

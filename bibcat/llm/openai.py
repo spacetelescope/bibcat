@@ -9,6 +9,7 @@ import openai
 from openai import OpenAI
 
 from bibcat import config
+from bibcat.llm.io import get_file
 
 # Define your system prompt here
 SYSTEM_PROMPT = """You are an expert researcher and professor in astronomy, with many years of experience. You
@@ -31,11 +32,6 @@ outside the json context. You're a great astronomer and thorough reader who like
 # set up the OpenAI API client
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
-
-# Function to read the file content
-def read_file(file_path: str) -> bytes:
-    with open(file_path, 'rb') as file:
-        return file.read()
 
 
 # upload the file
@@ -117,29 +113,34 @@ def assistant_request(file_id: str) -> dict:
 
 def write_output(filepath, response):
 
+    # get the filename ; for sources, use the bibcode
     path = pathlib.Path(filepath)
+    name = path.name
+    if name.startswith('temp'):
+        name = name.rsplit('_',1)[-1].split('.json')[0]
 
     # setup the output file
     out = pathlib.Path(config.paths.output) / f'llms/openai_{config.llms.openai.model}/paper_output.json'
     out.parent.mkdir(parents=True, exist_ok=True)
 
     if not os.path.exists(out):
-        data = {path.name: [response]}
+        data = {name: [response]}
         with open(out, 'w+') as f:
             json.dump(data, f, indent=2, sort_keys=False)
     else:
         with open(out, 'r') as f:
             data = json.load(f)
-        if path.name in data:
-            data[path.name].append(response)
+        if name in data:
+            data[name].append(response)
         else:
-            data[path.name] = [response]
+            data[name] = [response]
         with open(out, 'w') as f:
             json.dump(data, f, indent=2, sort_keys=False)
 
 
-def run(file_path: str, run: int = 1):
+def run(file_path: str = None, bibcode: str = None, index: int = None, run: int = 1):
     for i in range(run):
+        file_path = get_file(filepath=file_path, bibcode=bibcode, index=index)
         file_id = upload_file(file_path)
         print(file_id)
         response = assistant_request(file_id)
