@@ -1,5 +1,3 @@
-
-import argparse
 import json
 import os
 import pathlib
@@ -7,6 +5,8 @@ import re
 
 import openai
 from openai import OpenAI
+from openai.types.beta.assistant import Assistant
+from openai.types.beta.vector_store import VectorStore
 
 from bibcat import config
 from bibcat.llm.io import get_file, get_llm_prompt
@@ -15,12 +15,26 @@ from bibcat.utils.logger_config import setup_logger
 logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
+#TODO - consolidate all openai functions into a single helper class
+
 # set up the OpenAI API client
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 
 # upload the file
 def upload_file(file_path: str) -> str:
+    """ Upload a file to the OpenAI API
+
+    Parameters
+    ----------
+    file_path : str
+        the path to a file
+
+    Returns
+    -------
+    str
+        the file id
+    """
     response = client.files.create(
         file=open(file_path, "rb"),
         purpose='assistants'
@@ -29,15 +43,41 @@ def upload_file(file_path: str) -> str:
 
 
 
-def create_vector_store(name: str = 'Papers', files: list = None) -> str:
+def create_vector_store(name: str = 'Papers', files: list = None) -> VectorStore:
+    """ Create a new vector store
+
+    Parameters
+    ----------
+    name : str, optional
+        the name of the vector store, by default 'Papers'
+    files : list, optional
+        a list of file_ids to attach to the store, by default None
+
+    Returns
+    -------
+    VectorStore
+        a new OpenAI vector store
+    """
     vector_store = client.beta.vector_stores.create(
         name=name,
-        files=files
+        file_ids=files
     )
     return vector_store
 
 
-def get_vector_store(vs_id: str) -> str:
+def get_vector_store(vs_id: str) -> VectorStore:
+    """ Get a vector store by id
+
+    Parameters
+    ----------
+    vs_id : str
+        the id of the vector store
+
+    Returns
+    -------
+    VectorStore
+        the requested vector store
+    """
     try:
         vector_store = client.beta.vector_stores.retrieve(vs_id)
     except openai.NotFoundError:
@@ -45,14 +85,54 @@ def get_vector_store(vs_id: str) -> str:
     else:
         return vector_store
 
-#vector_store = client.beta.vector_stores.create(name="Papers")
-#vector_store = client.beta.vector_stores.retrieve("vs_WQUCrr0Nw9jBOA5sFu7YurnE")
+
+def list_vector_stores() -> list[dict]:
+    """ List all vector stores
+
+    List all vector stores, and convert each response
+    to a dictionary.
+
+    Returns
+    -------
+    list[dict]
+        a list of vector store dictionaries
+    """
+    vstores = []
+    for vs in client.beta.vector_stores.list():
+        vstores.append(vs.to_dict())
+
+    return vstores
 
 
+def create_assistant(name: str = 'Paper Reader', vs_id: str = None) -> Assistant:
+    """ Create a new OpenAI assistant
 
-def create_assistant(vs_id: str = None):
+    Creates a new OpenAI assistant with file search capabilities.  The llm model
+    to use for the assistant is set in the config file by ``config.llms.openai.model``.
+    Custom instructions and behavior for the assistant is set through a custom agent prompt file,
+    or a config value, otherwise the default agent instructions will be used.
+    See ``bibcat.llm.io.get_llm_prompt`` for more information.
+
+    Parameters
+    ----------
+    name : str, optional, by default 'Paper Reader'
+        the name of the assistant
+    vs_id : str, optional
+        the vector store id to attach, by default None
+
+    Returns
+    -------
+    Assistant
+        the new OpenAI assistant
+    """
+    # create a new vector store for the assistant, if none provided
+    if not vs_id:
+        vstore = create_vector_store()
+        vs_id = vstore.id
+
+    # create the new assistant
     assistant = client.beta.assistants.create(
-        name="Paper Reader",
+        name=name,
         instructions=get_llm_prompt('agent'),
         model=config.llms.openai.model,
         tools=[{"type": "file_search"}],
@@ -61,12 +141,50 @@ def create_assistant(vs_id: str = None):
     return assistant
 
 
-def assistant_request(file_id: str) -> dict:
+def assistant_request(file_id: str, asst_id: str = None) -> dict:
+    """ Send a prompt request to an OpenAI assistant
 
-    # main paper reader, with file_search
-    assistant = client.beta.assistants.retrieve('asst_85Ay7apSmArPOMKF4iRY893b')
+    Sends a user prompt request to an OpenAI assistant to search
+    through a given file for content.  It retrieves the requested agent via
+    the assistant id, ``asst_id``.  It creates a new message thread, attaching
+    the input file id to the message thread, then submits the user prompt request.
 
-    # create a thread
+    When attaching a file to a message thread, a temporary vector store is created, where the
+    file is stored.  The assistant searches both the temporary vector store and any vector
+    store attached to the assistant to answer the user prompt.
+
+    The prompt response is then extracted and converted to JSON content.
+
+    At the end, the uploaded file and the temporary vector store are deleted.
+
+    Parameters
+    ----------
+    file_id : str
+        the file id of the uploaded file, to search on
+    asst_id : str, optional
+        the id of the assistant to use, by default None
+
+    Returns
+    -------
+    dict
+        the output respsonse from the assistant
+
+    Raises
+    ------
+    ValueError
+        when no assistant id is provided
+    """
+
+    # get an OpenAI Assistant
+    asst_id = asst_id or config.llms.openai.asst_id
+    if not asst_id:
+        raise ValueError('No assistant id provided.  Either provide or set an assistant id, or first create a new assistant.')
+    logger.info(f"Using assistant id: {asst_id}")
+    assistant = client.beta.assistants.retrieve(asst_id)
+
+    # create a new thread
+    # attach the input file id to the message thread
+    # this creates a temporary vector store for the file
     thread = client.beta.threads.create(
         messages=[
            {"role": "user", "content": get_llm_prompt('user'),

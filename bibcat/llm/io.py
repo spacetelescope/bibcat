@@ -100,7 +100,10 @@ def get_llm_prompt(prompt_type: str) -> str:
     $BIBCAT_DATA_DIR/llm_[prompt_type]_prompt.txt.  For example, place your custom user prompt
     at $BIBCAT_DATA_DIR/llm_user_prompt.txt. This file takes precendence. If no custom prompt file
     is found, the default user prompt will come from the config file field: ``llms.user_prompt``.
-    The default agent prompt will either come from the config file field: ``llms.agent_prompt``
+
+    To set an agent prompt, create a file at $BIBCAT_DATA_DIR/llm_agent_prompt.txt, and add your
+    instructions for the agent.  If no custom agent prompt is found, a default agent prompt will
+    be used. The default agent prompt will either come from the config file field: ``llms.agent_prompt``
     or from the default file at etc/default_agent_prompt.txt.
 
     Parameters
