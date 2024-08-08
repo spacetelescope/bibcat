@@ -10,10 +10,13 @@ from openai import OpenAI
 
 from bibcat import config
 from bibcat.llm.io import get_file, get_llm_prompt
+from bibcat.utils.logger_config import setup_logger
+
+logger = setup_logger(__name__)
+logger.setLevel(config.logging.level)
 
 # set up the OpenAI API client
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-
 
 
 # upload the file
@@ -74,7 +77,7 @@ def assistant_request(file_id: str) -> dict:
     )
 
     # submit the prompt request
-    print(thread.tool_resources.file_search)
+    logger.debug(f"File search thread: {thread.tool_resources.file_search}")
     run = client.beta.threads.runs.create_and_poll(
         thread_id=thread.id, assistant_id=assistant.id
     )
@@ -82,7 +85,7 @@ def assistant_request(file_id: str) -> dict:
     # get the response content
     messages = list(client.beta.threads.messages.list(thread_id=thread.id, run_id=run.id))
     message_content = messages[0].content[0].text
-    print('message', message_content.value)
+    logger.debug(f"Original response message content: {message_content.value}")
     response = check_response(message_content.value)
 
     # do some cleanup; delete the file and the temporary vector store
@@ -119,7 +122,22 @@ def check_response(value: str) -> dict:
         return {'error': 'No JSON content found in response'}
 
 
-def write_output(filepath, response):
+def write_output(filepath: str, response: dict):
+    """ Write the output response to a file
+
+    Writes the output json response to a file, located at
+    $BIBCAT_OUTPUT/output/llms/openai_[config.llms.openai.model]/paper_output.json
+
+    The output JSON file is organized by the filename or bibcode of the input file,
+    with each prompt response appended in the relevant section.
+
+    Parameters
+    ----------
+    filepath : str
+        the name of the input file
+    response : dict
+        the response from the llm agent
+    """
 
     # get the filename ; for sources, use the bibcode
     path = pathlib.Path(filepath)
@@ -131,29 +149,57 @@ def write_output(filepath, response):
     out = pathlib.Path(config.paths.output) / f'llms/openai_{config.llms.openai.model}/paper_output.json'
     out.parent.mkdir(parents=True, exist_ok=True)
 
+    # write the content
     if not os.path.exists(out):
+        # create a new file
         data = {name: [response]}
         with open(out, 'w+') as f:
             json.dump(data, f, indent=2, sort_keys=False)
     else:
+        # append to an existing file
         with open(out, 'r') as f:
             data = json.load(f)
+
+        # append response to an existing file entry, or add a new one
         if name in data:
             data[name].append(response)
         else:
             data[name] = [response]
+
+        # write the updated file
         with open(out, 'w') as f:
             json.dump(data, f, indent=2, sort_keys=False)
 
 
-def run(file_path: str = None, bibcode: str = None, index: int = None, run: int = 1):
-    for i in range(run):
+def send_prompt(file_path: str = None, bibcode: str = None, index: int = None, n_runs: int = 1):
+    """ Send a prompt to an OpenAI LLM model
+
+    _extended_summary_
+
+    Parameters
+    ----------
+    file_path : str, optional
+        a path to a local file on disk, by default None
+    bibcode : str, optional
+        the bibcode of an entry in the source papetrack combined dataset, by default None
+    index : int, optional
+        a list item array index in the source papetrack combined dataset, by default None
+    n_runs : int, optional
+        the number of runs to do, by default 1
+    """
+    # iterate for number of runs
+    for i in range(n_runs):
+        # get the file path
         file_path = get_file(filepath=file_path, bibcode=bibcode, index=index)
+        logger.info(f"Using file: {file_path}")
 
+        # upload the file to openai
         file_id = upload_file(file_path)
-        print(file_id)
+        logger.info(f"Uploaded file id: {file_id}")
 
+        # send the prompt request to the assistant
         response = assistant_request(file_id)
-        print(response)
+        logger.info(f"Output: {response}")
 
+        # write the output response to a file
         write_output(file_path, response)

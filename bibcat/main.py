@@ -12,8 +12,7 @@ from bibcat.build_model import build_model
 from bibcat.classify_papers import classify_papers
 from bibcat.data.build_dataset import build_dataset
 from bibcat.evaluate_basic_performance import evaluate_basic_performance
-
-from bibcat.llm.openai import run
+from bibcat.llm.openai import send_prompt
 
 
 @click.group("bibcat")
@@ -106,14 +105,19 @@ def evaluate(name) -> None:
     evaluate_basic_performance(classifier_name=name)
 
 
-@cli.command(help="run the GPT-4o model")
+@cli.command(help="Send a prompt to an OpenAI LLM model")
 @click.option("-f", "--filename", default=None, type=str, show_default=True, help="The path to a file to upload")
 @click.option("-b", "--bibcode", default=None, type=str, show_default=True, help="A bibcode from the papertrack source combined_dataset")
 @click.option("-i", "--index", default=None, type=str, show_default=True, help="An array index from the papertrack source combined_dataset")
 @click.option("-m", "--model", default="gpt-4o", type=str, show_default=True, help="The model type to use")
 @click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
 def run_gpt(filename, bibcode, index, model, num_runs):
-    run(file_path=filename, bibcode=bibcode, index=index, run=num_runs)
+    """ Send a prompt to an OpenAI LLM model """
+    # override the config model
+    if model:
+        config.llms.openai.model = model
+
+    send_prompt(file_path=filename, bibcode=bibcode, index=index, n_runs=num_runs)
 
 
 if __name__ == "__main__":
