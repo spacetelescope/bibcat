@@ -1,8 +1,10 @@
 
 import json
 import os
+import pathlib
 import tempfile
 
+from bibcat import config
 from bibcat.data.streamline_dataset import load_source_dataset
 from bibcat.utils.logger_config import setup_logger
 
@@ -84,4 +86,61 @@ def get_file(filepath: str = None, bibcode: str = None, index: int = None) -> st
             fp.close()
 
         return fp.name
+
+
+def get_llm_prompt(prompt_type: str) -> str:
+    """ Get an LLM prompt
+
+    Retrieve a user or agent prompt for an LLM from a file or the config. A user prompt
+    is the text to be used as the input to the LLM, while the agent, or system, prompt is
+    the text that defines the instructions or behavior of the LLM Agent to follow.  The agent
+    prompt is only used when creating a new agent for the first time.
+
+    You can define a custom user or agent prompt as a text file, located at
+    $BIBCAT_DATA_DIR/llm_[prompt_type]_prompt.txt.  For example, place your custom user prompt
+    at $BIBCAT_DATA_DIR/llm_user_prompt.txt. This file takes precendence. If no custom prompt file
+    is found, the default user prompt will come from the config file field: ``llms.user_prompt``.
+    The default agent prompt will either come from the config file field: ``llms.agent_prompt``
+    or from the default file at etc/default_agent_prompt.txt.
+
+    Parameters
+    ----------
+    prompt_type : str
+        The type of prompt to retrieve, either 'user' or 'agent'
+
+    Returns
+    -------
+    str
+        the text prompt
+
+    Raises
+    ------
+    ValueError
+        when an invalid prompt type is provided
+    """
+
+    if prompt_type not in {'user', 'agent'}:
+        raise ValueError('Prompt type must be either "user" or "agent".')
+
+    # if a prompt file exists, use it
+    path = pathlib.Path(config.inputs[f'llm_{prompt_type}_prompt'])
+    if path.exists():
+        with open(path, 'r') as f:
+            prompt = f.read()
+            return prompt
+
+    # otherwise, use the config user prompt and default agent prompt
+    if prompt_type == 'user':
+        prompt = config.llms.user_prompt
+    elif prompt_type == 'agent':
+        # see if there's a config agent prompt
+        prompt = config.llms.agent_prompt
+
+        # otherwise use the default
+        if not prompt:
+            default_agent = pathlib.Path(__file__).parent.parent / 'etc/default_agent_prompt.txt'
+            with open(default_agent, 'r') as f:
+                prompt = f.read()
+
+    return prompt
 

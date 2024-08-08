@@ -5,6 +5,8 @@ inputs:
   path_papertext: $BIBCAT_DATA_DIR/ST_Request2018-2023.json  # papertext corpus text
   path_source_data: $BIBCAT_DATA_DIR/dataset_combined_all_2018-2023.json  # combined JSON file for training
   keys_papertext: [abstract, author, bibcode, body, keyword, keyword_norm, pubdate, title]  # metadata keys for ADS papertext required for building input
+  llm_user_prompt: $BIBCAT_DATA_DIR/llm_user_prompt.txt  # file that can be used for the input user prompt
+  llm_agent_prompt: $BIBCAT_DATA_DIR/llm_agent_prompt.txt  # file that can be used for the agent instructions
 
 output:
   root_path: $BIBCAT_OUTPUT_DIR
@@ -500,6 +502,8 @@ grammar:
   }
 
 llms:
+  user_prompt: "What is this dataset?"
+  agent_prompt: null
   openai:
     model: gpt-4o
-    
+

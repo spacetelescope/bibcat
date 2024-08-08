@@ -1,33 +1,15 @@
 
-
 import argparse
 import json
 import os
 import pathlib
+import re
 
 import openai
 from openai import OpenAI
 
 from bibcat import config
-from bibcat.llm.io import get_file
-
-# Define your system prompt here
-SYSTEM_PROMPT = """You are an expert researcher and professor in astronomy, with many years of experience. You
-understand the academic paper.  Your job is to read papers and extract information about the observational datasets.
-
-In addition, you should always report two things: one, the primary mission or survey the dataset used in the paper comes
-from, and two, any other mission or survey that has been mentioned in the paper.  Every request should come with a
-new paper attached.  If not prompt the user to attach the paper and wait for them.
-
-Always structure your response the same for every paper, as a JSON response with the following fields:
-"title": the title of the paper; "summary": a one-line summary of the paper"; "primary_mission_or_survey": a list of primary
-missions or surveys the dataset used in the paper comes from, with one item per mission or survey;
-"other_missions_or_surveys_mentioned": a list of other missions or surveys mentioned
-in the paper, with one item per mission or survey; and "notes", any other miscellaneous notes or thoughts you have. If no
-observational dataset can be identified then say so, put it in the "notes" section, and leave those fields blank.
-Always include the title though. Don't make up answers. Anything else you have to say should go in the "notes" section, and not
-outside the json context. You're a great astronomer and thorough reader who likes to be correct."""
-
+from bibcat.llm.io import get_file, get_llm_prompt
 
 # set up the OpenAI API client
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
@@ -68,7 +50,7 @@ def get_vector_store(vs_id: str) -> str:
 def create_assistant(vs_id: str = None):
     assistant = client.beta.assistants.create(
         name="Paper Reader",
-	instructions=SYSTEM_PROMPT,
+        instructions=get_llm_prompt('agent'),
         model=config.llms.openai.model,
         tools=[{"type": "file_search"}],
         tool_resources={"file_search": {"vector_store_ids": [vs_id]}}
@@ -84,7 +66,7 @@ def assistant_request(file_id: str) -> dict:
     # create a thread
     thread = client.beta.threads.create(
         messages=[
-           {"role": "user", "content": "What is this dataset?",
+           {"role": "user", "content": get_llm_prompt('user'),
             "attachments": [
                { "file_id": file_id, "tools": [{"type": "file_search"}] }],
            }
@@ -97,18 +79,44 @@ def assistant_request(file_id: str) -> dict:
         thread_id=thread.id, assistant_id=assistant.id
     )
 
-    # extract the response
+    # get the response content
     messages = list(client.beta.threads.messages.list(thread_id=thread.id, run_id=run.id))
     message_content = messages[0].content[0].text
     print('message', message_content.value)
-    response =  message_content.value.strip('```').strip('json')
+    response = check_response(message_content.value)
 
     # do some cleanup; delete the file and the temporary vector store
     vs = thread.tool_resources.file_search.vector_store_ids[0]
     client.beta.vector_stores.delete(vs)
     client.files.delete(file_id)
 
-    return json.loads(response)
+    return response
+
+
+def check_response(value: str) -> dict:
+    """ Check the agent response
+
+    Check the agent response for proper JSON content and
+    extract.  If no JSON content is found, return an error message.
+
+    Parameters
+    ----------
+    value : str
+        the original agent response message_content.value
+
+    Returns
+    -------
+    dict
+        the extracted JSON content
+    """
+    # extract the json content
+    response = re.search(r'```json\n(.*?)\n```', value, re.DOTALL)
+
+    if response:
+        response = response.group(1)
+        return json.loads(response)
+    else:
+        return {'error': 'No JSON content found in response'}
 
 
 def write_output(filepath, response):
@@ -141,8 +149,10 @@ def write_output(filepath, response):
 def run(file_path: str = None, bibcode: str = None, index: int = None, run: int = 1):
     for i in range(run):
         file_path = get_file(filepath=file_path, bibcode=bibcode, index=index)
+
         file_id = upload_file(file_path)
         print(file_id)
+
         response = assistant_request(file_id)
         print(response)
 
