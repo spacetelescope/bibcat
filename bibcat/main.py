@@ -5,6 +5,8 @@
 Main entry point into bibcat
 """
 
+import os
+
 import click
 
 from bibcat import config
@@ -12,31 +14,62 @@ from bibcat.build_model import build_model
 from bibcat.classify_papers import classify_papers
 from bibcat.data.build_dataset import build_dataset
 from bibcat.evaluate_basic_performance import evaluate_basic_performance
+from bibcat.utils.logger_config import setup_logger
+
+logger = setup_logger(__name__)
 
 
 @click.group("bibcat")
-def cli():
+def cli() -> None:
     """Command-line tool for running the bibcat package"""
 
 
-@cli.command(help="build a combined dataset ")
-def dataset():
+@cli.command(help="Build a combined dataset")
+def dataset() -> None:
     """build a combined dataset from the papertrack data and the ADS fulltext data
 
     Wraps the original build_dataset script.
     """
-    build_dataset()
+
+    def file_exists(filelist: list) -> bool:
+        "Check if any file exists among the list of files"
+        return any([os.path.isfile(item) for item in filelist])
+
+    file_list = [
+        config.inputs.path_source_data,
+        config.output.path_not_in_papertext,
+        config.output.path_not_in_papertrack,
+    ]
+
+    if file_exists(file_list):
+        logger.warning(
+            "File in the following list already exists and will not be overwritten."
+            + f"\nPlease change the save destination for the notebook file(s) or move the existing files.\n{file_list}"
+        )
+        return
+
+    else:
+        build_dataset(file_list)
 
 
 @cli.command(help="Build or train a classical NLP ML model")
 @click.option("-l", "--library", default="tensorflow", type=str, show_default=True, help="The model library to use")
 @click.option("-m", "--model", default="bert", type=str, show_default=True, help="The model type to use")
-@click.option("-n", "--name", default=None, type=str, show_default=True, help="The name of the model training run to use")
-@click.option("-k", "--key", default=None, type=str, show_default=True, help="The model key to use in the in preprocess/encoder mapping")
+@click.option(
+    "-n", "--name", default=None, type=str, show_default=True, help="The name of the model training run to use"
+)
+@click.option(
+    "-k",
+    "--key",
+    default=None,
+    type=str,
+    show_default=True,
+    help="The model key to use in the in preprocess/encoder mapping",
+)
 @click.option("-p", "--preprocessor", default=None, type=str, show_default=True, help="The model preprocessor to use")
 @click.option("-e", "--encoder", default=None, type=str, show_default=True, help="The model encoder to use")
-def train(library, model, name, key, preprocessor, encoder):
-    """ Build and train a classical ML model
+def train(library, model, name, key, preprocessor, encoder) -> None:
+    """Build and train a classical ML model
 
     Wraps the original build_model script. CLI inputs are used to override the user or default configuration settings.
     Alternatively, just edit your user configuration file directly.
@@ -53,9 +86,9 @@ def train(library, model, name, key, preprocessor, encoder):
 
     # hack the preprocessors and encoders into the config
     if preprocessor or encoder:
-        config.ml.ML_model_key = f'custom_{config.ml.ML_model_type}_key'
-        config.ml[model]['dict_ml_model_encoders'][config.ml.ML_model_key] = encoder
-        config.ml[model]['dict_ml_model_preprocessors'][config.ml.ML_model_key] = preprocessor
+        config.ml.ML_model_key = f"custom_{config.ml.ML_model_type}_key"
+        config.ml[model]["dict_ml_model_encoders"][config.ml.ML_model_key] = encoder
+        config.ml[model]["dict_ml_model_preprocessors"][config.ml.ML_model_key] = preprocessor
 
     build_model()
 
