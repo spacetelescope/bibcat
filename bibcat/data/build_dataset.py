@@ -28,7 +28,7 @@ def file_exists(filelist: list) -> bool:
 
 def save_text_file(path_filename: Path, bibcodes: list[str]) -> None:
     try:
-        with path_filename.open(mode="w") as file:
+        with open(path_filename, mode="w") as file:
             file.write("\n".join(bibcodes))
     except IOError as e:
         print(f"An error occurred while saving the file: {e}")

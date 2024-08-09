@@ -49,7 +49,7 @@ def dataset() -> None:
         return
 
     else:
-        build_dataset(file_list)
+        build_dataset()
 
 
 @cli.command(help="Build or train a classical NLP ML model")
