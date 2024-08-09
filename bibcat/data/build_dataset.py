@@ -101,9 +101,10 @@ def combine_datasets(trimmed_papertext_data: list[dict], papertrack_data: list[d
     bibcodes_notin_papertext = missing_bibcodes_in_papertext(bibcodes_papertext, bibcodes_papertrack)
 
     bibcodes_notin_papertrack = []
+    papertext_index_notin_papertrack = []
     combined_dataset = []
     new_dict = {}
-    for _, curr_dict in enumerate(trimmed_papertext_data):
+    for curr_index, curr_dict in enumerate(trimmed_papertext_data):
         # Extract information for current paper within text database
         curr_bibcode = curr_dict["bibcode"]
 
@@ -121,6 +122,8 @@ def combine_datasets(trimmed_papertext_data: list[dict], papertrack_data: list[d
         else:
             logger.warning(f"Bibcode ({curr_dict['bibcode']}) not in papertrack database. Continuing...")
             bibcodes_notin_papertrack.append(curr_bibcode)
+            papertext_index_notin_papertrack.append(curr_index)
+
     logger.info(f"NOTE: {len(bibcodes_notin_papertrack)} papers in text data that were not in papertrack.")
     logger.info("Done generating dictionaries of combined papertrack+text data.")
 
@@ -128,18 +131,15 @@ def combine_datasets(trimmed_papertext_data: list[dict], papertrack_data: list[d
         combined_dataset,
         bibcodes_notin_papertext,
         bibcodes_notin_papertrack,
+        papertext_index_notin_papertrack,
     )
 
 
-def save_files(dataset: dict, missing_papertext_bibcodes: list, missing_papertrack_bibcodes: list):
-    # Save the combined dataset
-    save_json_file(config.inputs.path_source_data, dataset)
+def save_text_files(missing_papertext_bibcodes: list, missing_papertrack_bibcodes: list):
     # Also save the bibcodes of the paper-texts not found in papertrack and papertext
     save_text_file(config.output.path_not_in_papertext, missing_papertext_bibcodes)
     save_text_file(config.output.path_not_in_papertrack, missing_papertrack_bibcodes)
 
-    logger.info("Dataset generation complete.\n")
-    logger.info(f"Combined .json file saved to:\n{config.inputs.path_source_data}\n")
     logger.info(f"Bibcodes not in papertext saved to:\n{config.output.path_not_in_papertext}\n")
     logger.info(f"Bibcodes not in papertrack saved to:\n{config.output.path_not_in_papertrack}\n")
 
@@ -154,10 +154,23 @@ def build_dataset() -> None:
     # First, store trimmed papertext dictionary down to only columns to include
     trimmed_papertext_dataset = trim_dict(dataset_papertext_orig, config.inputs.keys_papertext)
     # combine the papertrack and papertext into one dataset
-    combined_dataset, bibcodes_notin_papertext, bibcodes_notin_papertrack = combine_datasets(
-        trimmed_papertext_dataset,
-        dataset_papertrack_orig,
+    combined_dataset, bibcodes_notin_papertext, bibcodes_notin_papertrack, papertext_index_notin_papertrack = (
+        combine_datasets(
+            trimmed_papertext_dataset,
+            dataset_papertrack_orig,
+        )
     )
-    # Save the combined dataset
-    save_files(combined_dataset, bibcodes_notin_papertext, bibcodes_notin_papertrack)
-    logger.info("The combined dataset is created as well as bibcodes_notin_papertext and bibcodes_notin_papertrack!")
+    # Save the combined dataset and other files
+    save_json_file(config.inputs.path_source_data, combined_dataset)
+    logger.info("The combined dataset is saved!")
+
+    # Save papertext data missing in the papertrack dataset; this may be used for ChatGPT use cases
+    save_json_file(
+        config.output.path_papertext_not_in_papertrack,
+        [dataset_papertext_orig[index] for index in papertext_index_notin_papertrack],
+    )
+    logger.info("Saved the papertext data not in papertrack!")
+    # Save missing bibcodes from the datasets.
+    save_text_files(bibcodes_notin_papertext, bibcodes_notin_papertrack)
+
+    logger.info("Saved bibcodes_notin_papertext and bibcodes_notin_papertrack!")

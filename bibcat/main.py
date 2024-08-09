@@ -39,12 +39,13 @@ def dataset() -> None:
         config.inputs.path_source_data,
         config.output.path_not_in_papertext,
         config.output.path_not_in_papertrack,
+        config.output.path_papertext_not_in_papertrack,
     ]
 
     if file_exists(file_list):
         logger.warning(
-            "File in the following list already exists and will not be overwritten."
-            + f"\nPlease change the save destination for the notebook file(s) or move the existing files.\n{file_list}"
+            "One or more files in the following list already exist and will not be overwritten."
+            + f"\nPlease change the save destination for these file(s) or move the existing files.\n{file_list}"
         )
         return
 
