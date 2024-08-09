@@ -141,6 +141,57 @@ def create_assistant(name: str = 'Paper Reader', vs_id: str = None) -> Assistant
     return assistant
 
 
+def list_assistants() -> list[dict]:
+    """ List all assistants
+
+    List all OpenAI Assistants, and convert each response
+    to a dictionary.
+
+    Returns
+    -------
+    list[dict]
+        a list of assistant dictionaries
+    """
+    assistants = []
+    for aa in client.beta.assistants.list():
+        assistants.append(aa.to_dict())
+
+    return assistants
+
+
+def get_assistant(asst_id: str) -> Assistant:
+    """ Get an OpenAI Assistant
+
+    Parameters
+    ----------
+    asst_id : str
+        the assistant id
+
+    Returns
+    -------
+    Assistant
+        the requested assistant
+
+    Raises
+    ------
+    ValueError
+        when no assistant id is provided
+    ValueError
+        when the assistant for the given id is not found
+    """
+    asst_id = asst_id or config.llms.openai.asst_id
+    if not asst_id:
+        raise ValueError('No assistant id provided.  Either provide or set an assistant id, or first create a new assistant.')
+    logger.info(f"Using assistant id: {asst_id}")
+
+    try:
+        assistant = client.beta.assistants.retrieve(asst_id)
+    except openai.NotFoundError as e:
+        raise ValueError(f"Assistant id {asst_id} not found.") from e
+    else:
+        return assistant
+
+
 def assistant_request(file_id: str, asst_id: str = None) -> dict:
     """ Send a prompt request to an OpenAI assistant
 
@@ -176,11 +227,7 @@ def assistant_request(file_id: str, asst_id: str = None) -> dict:
     """
 
     # get an OpenAI Assistant
-    asst_id = asst_id or config.llms.openai.asst_id
-    if not asst_id:
-        raise ValueError('No assistant id provided.  Either provide or set an assistant id, or first create a new assistant.')
-    logger.info(f"Using assistant id: {asst_id}")
-    assistant = client.beta.assistants.retrieve(asst_id)
+    assistant = get_assistant(asst_id)
 
     # create a new thread
     # attach the input file id to the message thread

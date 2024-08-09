@@ -12,7 +12,7 @@ from bibcat.build_model import build_model
 from bibcat.classify_papers import classify_papers
 from bibcat.data.build_dataset import build_dataset
 from bibcat.evaluate_basic_performance import evaluate_basic_performance
-from bibcat.llm.openai import send_prompt
+from bibcat.llm.openai import send_prompt, create_assistant, list_assistants, get_assistant
 
 
 @click.group("bibcat")
@@ -59,11 +59,6 @@ def train(library, model, name, key, preprocessor, encoder):
         config.ml[model]['dict_ml_model_preprocessors'][config.ml.ML_model_key] = preprocessor
 
     build_model()
-
-
-@cli.command(help="fine-tune a LLM model")
-def finetune() -> None:
-    pass
 
 
 @cli.command(help="classify a paper using a trained model")
@@ -118,6 +113,38 @@ def run_gpt(filename, bibcode, index, model, num_runs):
         config.llms.openai.model = model
 
     send_prompt(file_path=filename, bibcode=bibcode, index=index, n_runs=num_runs)
+
+
+@cli.group('openai', short_help='OpenAI LLM commands')
+def oacli():
+    """ General OpenAI LLM commands """
+    pass
+
+
+@oacli.command('create_assistant', short_help="Create a new OpenAI Assistant",
+               help="Create a new OpenAI Assistant.  See bibcat.llm.openai.create_assistant for more information.")
+@click.option("-n", "--name", default=None, type=str, show_default=True, help="The name of the assistant")
+@click.option("-i", "--vectorid", default=None, type=str, show_default=True, help="The id of the vector database to attach")
+def create_oa_assistant(name, vectorid):
+    """ Create a new assistant
+
+    Creates a new OpenAI assistant with file search capabilities.  The llm model
+    to use for the assistant is set in the config file by ``config.llms.openai.model``.
+    Custom instructions and behavior for the assistant is set through a custom agent prompt file,
+    or a config value, otherwise the default agent instructions will be used.
+    See ``bibcat.llm.io.get_llm_prompt`` for more information.
+
+    """
+    asst = create_assistant(name=name, vs_id=vectorid)
+    click.echo(f'Assistant created: {asst.name} - {asst.id}')
+
+
+@oacli.command('list_assistants', help="List all OpenAI Assistants")
+def list_oa_assistants():
+    """ List all assistants you have created """
+    assts = list_assistants()
+    for i in assts:
+        click.echo(f"Assistant: {i['name']} - {i['id']}")
 
 
 if __name__ == "__main__":
