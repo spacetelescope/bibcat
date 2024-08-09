@@ -9,6 +9,8 @@ from bibcat import parameters as params
 
 mapper = params.map_papertypes
 
+# NEED TO REVISE OR UPDATE THIS SCRIPT.
+
 
 def file_exists(file_path):
     return os.path.exists(file_path)
