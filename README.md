@@ -59,8 +59,6 @@ We refer
 - the papertrack export JSON file ([papertrack_export_2023-11-06.json](https://stsci.box.com/s/zadlr8dixw8706o9k9smlxdk99yohw4d)) to `papertrack data`, and
 - the ADS fulltext data file ([ST_Request2018-2023.json](https://stsci.box.com/s/ym9pbt2iz7cqc8m1gbbd2slo0lwbwlr8)) to `papertext data`.
 
-Note that other JSON files (extracted from 2018-2023) include paper track data and full texts later than 2021.
-
 ### User Configuration and Data Filepaths
 
 There are three user environment variables to set:
