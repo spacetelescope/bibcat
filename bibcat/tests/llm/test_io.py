@@ -1,9 +1,9 @@
 import re
+
 import pytest
 
 from bibcat import config
 from bibcat.llm.io import get_file, get_llm_prompt, get_source
-
 
 # expected data
 data = [{
