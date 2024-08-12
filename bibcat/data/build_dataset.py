@@ -35,6 +35,22 @@ def save_text_file(path_filename: Path, bibcodes: list[str]) -> None:
 
 
 def load_datasets(path_papertext: Path, path_papertrack: Path) -> tuple[list[dict], list[dict]]:
+    """Load the papertrack and papertext JSON datasets
+
+    Loads the papertrack and papertext datasets and returns a tuple of the lists of dictionaries.
+
+    Parameters
+    ----------
+    path_papertext: Path
+        the path to the papertext data file
+    path_papertrack: Path
+        the path to the papertrack data file
+
+    Returns
+    -------
+    tuple[list[dict], list[dict]]
+        the tuple of the lists of the papertext and papertrack datasets
+    """
     # Load paper texts and papertrack classes
     logger.info("Loading papertext and papertrack datasets!")
     papertext_dataset = load_json_file(path_papertext)
@@ -43,7 +59,22 @@ def load_datasets(path_papertext: Path, path_papertrack: Path) -> tuple[list[dic
     return papertext_dataset, papertrack_dataset
 
 
-def extract_papertext_info(dataset) -> tuple[list[str], list[str]]:
+def extract_papertext_info(dataset: list[dict]) -> tuple[list[str], list[str]]:
+    """Extract the papertext bibcodes and publish dates
+
+    Extracts and returns the papertext ``bibcodes`` and ``pubdates``.
+
+    Parameters
+    ----------
+    dataset: list[dict]
+        the papertext dataset
+
+    Returns
+    -------
+    tuple[list[str], list[str]]
+        the tuple of a list of the ``bibbodes`` dict and the ``pubdates`` dict
+    """
+
     bibcodes = [entry["bibcode"] for entry in dataset]
     pubdates = [entry["pubdate"] for entry in dataset]
     logger.info(f"The earliest date of papers within text database: {min(pubdates)}.")
@@ -52,7 +83,27 @@ def extract_papertext_info(dataset) -> tuple[list[str], list[str]]:
     return bibcodes, pubdates
 
 
-def extract_papertrack_info(dataset) -> tuple[list[None | dict], list[None | str], list[None | dict]]:
+def extract_papertrack_info(dataset: list[dict]) -> tuple[list[None | dict], list[None | str], list[None | dict]]:
+    """Extract papertrack info
+
+    Extracts and returns the papertrack values: searches, bibcodes, and missions and papertypes.
+
+    Parameters
+    ----------
+    dataset: list[dict]
+        the papertrack dataset
+
+    Returns
+    -------
+    tuple[list[None | dict], list[None | str], list[None | dict]]
+        the tuple of a list of the ``searches`` dict, the ``bibcode`` dict, and the ``missions_and_papertypes`` dict
+
+    Raises
+    ------
+    ValueError
+        when the set of the bibcodes is different from the number of all the bibcodes
+    """
+
     searches = [entry["searches"] for entry in dataset]
     bibcodes = [entry["bibcode"] for entry in dataset]
     missions_and_papertypes = [entry["class_missions"] for entry in dataset]
@@ -68,6 +119,23 @@ def missing_bibcodes_in_papertext(
     bibcodes_papertext: list[str],
     bibcodes_papertrack: list[str],
 ) -> list[str] | None:
+    """Return the papertrack bibcodes are not in the papertext
+
+    Returns the list of the papertrack bibcodes not in the papertext.
+
+    Parameters
+    ----------
+    bibcodes_papertext: list[str]
+        the bibcodes in papertext
+    bibcodes_papertrack: list[str]
+        the bibcodes in papertrack
+
+    Returns
+    -------
+    list[str] | None
+        the list of the bibcodes are not in the papertext
+    """
+
     # Verify that all papers within papertrack are within the papertext database
     bibcodes_notin_papertext = [val for val in np.unique(bibcodes_papertrack) if (val not in bibcodes_papertext)]
     if len(bibcodes_notin_papertext) > 0:
@@ -78,7 +146,26 @@ def missing_bibcodes_in_papertext(
     return bibcodes_notin_papertext
 
 
-def trim_dict(dataset: dict, keys: list) -> list[dict]:
+def trim_dict(dataset: list[dict], keys: list) -> list[dict]:
+    """Trim the papertext data with the only required keys
+
+    Trims the papertext data so that the dataset only has the values of
+    [abstract, author, bibcode, body, keyword, keyword_norm, pubdate, title].
+
+    Parameters
+    ----------
+    dataset: list[dict]
+        the papertext data
+    keys: list
+        the list of the necessary keys
+
+    Returns
+    -------
+    list[dict]
+        the list of the only dictionary required for the source dataset
+
+    """
+
     logger.info(f"trimming the papertext dict with {keys}")
     logger.debug(f"the first entry of the loaded_papertext = {dataset[0]}")
 
@@ -90,6 +177,26 @@ def trim_dict(dataset: dict, keys: list) -> list[dict]:
 
 
 def combine_datasets(trimmed_papertext_data: list[dict], papertrack_data: list[dict]):
+    """Combine the papertrack and papertext data
+
+    Combines two datasets into a source dataset to be used for llm models or transformer training models.
+
+    Parameters
+    ----------
+    trimmed_papertext_data: list[dict]
+        the trimmed papertext data with only necessary keys
+    papertrack_data: list[dict]
+        the papertrack data
+
+    Returns
+    -------
+    tuple
+        a tuple of the list of the dictionary of the combined data,
+        the list of the papertrack bibcodes not in the papertext data,
+        the list of the papertext bibcodes not in the papertrack data,
+        the list of the dictionary of the papertext not in the papertrack data
+    """
+
     logger.info("Start combining the two datasets.")
     # Extract information from the papertrack classification dataset
     ads_searches, bibcodes_papertrack, missions_and_papertypes = extract_papertrack_info(papertrack_data)
@@ -135,7 +242,21 @@ def combine_datasets(trimmed_papertext_data: list[dict], papertrack_data: list[d
     )
 
 
-def save_text_files(missing_papertext_bibcodes: list, missing_papertrack_bibcodes: list):
+def save_text_files(missing_papertext_bibcodes: list, missing_papertrack_bibcodes: list) -> None:
+    """Save the text files of the missing bibcodes
+
+    Save the missing bibcodes in the papertext and papertrack files as text files.
+
+    Parameters:
+    -----------
+    missing_papertext_bibcodes: list
+        the list of the missing papertext bibcodes
+    missing_papertrack_bibcodes: list
+        the list of the missing papertrack bibcodes
+
+    Returns:
+    None
+    """
     # Also save the bibcodes of the paper-texts not found in papertrack and papertext
     save_text_file(config.output.path_not_in_papertext, missing_papertext_bibcodes)
     save_text_file(config.output.path_not_in_papertrack, missing_papertrack_bibcodes)
@@ -145,6 +266,12 @@ def save_text_files(missing_papertext_bibcodes: list, missing_papertrack_bibcode
 
 
 def build_dataset() -> None:
+    """Building the source dataset
+
+    This data is used for transformer models or llm models by combining the papertrack data and the ADS full papertext data.
+
+    """
+
     logger.info("The script is building the dataset for bibcat!")
 
     # Load paper texts and papertrack classes
