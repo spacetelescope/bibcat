@@ -6,7 +6,7 @@ import tempfile
 import pytest
 
 from bibcat import setup_paths
-from bibcat.core.config import get_default_config
+from bibcat.core.config import get_default_config, get_config
 
 
 def pytest_sessionstart(session):
@@ -43,3 +43,12 @@ def setconfig(mocker):
         return cfg
     yield _setconfig
 
+
+@pytest.fixture()
+def reconfig(mocker):
+    """ fixture to patch the global config object in a particular module directory """
+    cfg = setup_paths(get_config())
+    def _setconfig(moddir):
+        mocker.patch(moddir, new=cfg)
+        return cfg
+    yield _setconfig
