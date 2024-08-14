@@ -12,7 +12,7 @@ from bibcat.build_model import build_model
 from bibcat.classify_papers import classify_papers
 from bibcat.data.build_dataset import build_dataset
 from bibcat.evaluate_basic_performance import evaluate_basic_performance
-from bibcat.llm.openai import send_prompt, create_assistant, list_assistants, get_assistant
+from bibcat.llm.openai import send_prompt, OpenAIHelper
 
 
 @click.group("bibcat")
@@ -135,14 +135,16 @@ def create_oa_assistant(name, vectorid):
     See ``bibcat.llm.io.get_llm_prompt`` for more information.
 
     """
-    asst = create_assistant(name=name, vs_id=vectorid)
+    oa = OpenAIHelper()
+    asst = oa.create_assistant(name=name, vs_id=vectorid)
     click.echo(f'Assistant created: {asst.name} - {asst.id}')
 
 
 @oacli.command('list_assistants', help="List all OpenAI Assistants")
 def list_oa_assistants():
     """ List all assistants you have created """
-    assts = list_assistants()
+    oa = OpenAIHelper()
+    assts = oa.list_assistants()
     for i in assts:
         click.echo(f"Assistant: {i['name']} - {i['id']}")
 
