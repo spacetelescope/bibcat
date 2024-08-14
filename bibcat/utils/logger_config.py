@@ -24,14 +24,3 @@ def setup_logger(name: str, level: int = logging.DEBUG) -> logging.Logger:
     logger.addHandler(f_handler)
 
     return logger
-
-
-# Example of creating a logger instance
-# This can be commented out or removed if you don't want it to run during import
-if __name__ == "__main__":
-    logger = setup_logger(__name__)
-    logger.debug("This is a debug message")
-    logger.info("This is an info message")
-    logger.warning("This is a warning message")
-    logger.error("This is an error message")
-    logger.critical("This is a critical message")

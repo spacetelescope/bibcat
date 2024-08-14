@@ -16,4 +16,5 @@ dependencies:
     - tensorflow-macos
     - pytest
     - pytest-doctestplus
+    - pytest-mock
     - deepmerge

@@ -18,6 +18,14 @@ def test_bibcat_cli() -> None:
     assert "Command-line tool for running the bibcat package" in result.output
 
 
+def test_dataset() -> None:
+    """test the cli dataset help command"""
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["dataset", "--help"])
+    assert "Build a combined dataset" in result.output
+
+
 def test_train() -> None:
     """test the cli train help command"""
     runner = CliRunner()

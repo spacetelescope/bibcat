@@ -1,19 +1,13 @@
 Data directory
 ==============
 
-This directory contains a script to build the ML input text data file. 
-Due to the copyright license issues, we are not able to provide the original
-full text data. We assume you have your own text file in JSON. 
+This directory contains scripts to build the machine learning (ML) input text data file, streamline the dataset, and partition the dataset into training, validation, and testing sets.
 
-To construct the input text JSON file, you need two sets of data: 
-the MAST Papertrack DB data for paper classification (a label, `papertype` per bibcode) 
-and the ADS full text data (a full text per bibcode). 
-They both should be in the JSON format. 
+Due to copyright and licensing issues, we are unable to provide the original full-text data. We assume that you have your own text file in JSON format.
 
-The metadata keys for the MAST papertrack data, the ADS full text data, 
-and the combined data are following though we only need ["abstract", "author", 
-"bibcode", "body", "keyword", "keyword_norm", "pubdate", "title"] from 
-the ADS text metadata to construct the final input data.
+To construct the input text JSON file, you need two sets of data: a full-text dataset and its corresponding classified label data. For the MAST bibliography, we used the MAST Papertrack DB data for paper classification (with a label, papertype, per bibcode) and the ADS full-text data (a full text per bibcode). Both datasets should be in JSON format.
+
+The metadata keys for the MAST Papertrack data, the ADS full-text data, and the combined data are as follows. However, we only need the following keys from the ADS text metadata to construct the final input data: ["abstract", "author", "bibcode", "body", "keyword", "keyword_norm", "pubdate", "title"].
 
 - keys_papertext (from ADS):
   ['bibcode', 'abstract', 'author', 'bibstem', 'identifier', 'keyword', 
