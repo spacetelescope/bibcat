@@ -20,7 +20,7 @@ class OpenAIHelper:
     Parameters
     ----------
     use_assistant : bool, optional
-        Flag to use the OpenAI Assistant or not, by default None
+        Flag to use the file-search OpenAI Assistant or not, by default None
     """
 
     def __init__(self, use_assistant: bool = None):
@@ -448,7 +448,8 @@ def write_output(filepath: str, response: dict):
             json.dump(data, f, indent=2, sort_keys=False)
 
 
-def send_prompt(file_path: str = None, bibcode: str = None, index: int = None, n_runs: int = 1):
+def send_prompt(file_path: str = None, bibcode: str = None, index: int = None, n_runs: int = 1,
+                use_assistant: bool = None):
     """ Send a prompt to an OpenAI LLM model
 
     Parameters
@@ -461,8 +462,10 @@ def send_prompt(file_path: str = None, bibcode: str = None, index: int = None, n
         a list item array index in the source papetrack combined dataset, by default None
     n_runs : int, optional
         the number of runs to do, by default 1
+    use_assistant : bool, optional
+        Flag to use the OpenAI file-search Assistant or not, by default None
     """
-    oa = OpenAIHelper()
+    oa = OpenAIHelper(use_assistant=use_assistant)
 
     # iterate for number of runs
     for i in range(n_runs):

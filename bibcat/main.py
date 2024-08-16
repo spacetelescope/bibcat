@@ -104,15 +104,16 @@ def evaluate(name) -> None:
 @click.option("-f", "--filename", default=None, type=str, show_default=True, help="The path to a file to upload")
 @click.option("-b", "--bibcode", default=None, type=str, show_default=True, help="A bibcode from the papertrack source combined_dataset")
 @click.option("-i", "--index", default=None, type=str, show_default=True, help="An array index from the papertrack source combined_dataset")
-@click.option("-m", "--model", default="gpt-4o", type=str, show_default=True, help="The model type to use")
+@click.option("-m", "--model", default="gpt-4o-mini", type=str, show_default=True, help="The model type to use")
 @click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
-def run_gpt(filename, bibcode, index, model, num_runs):
+@click.option("--assistant", is_flag=True, show_default=True, default=False, help="Set to use the file-search assistant")
+def run_gpt(filename, bibcode, index, model, num_runs, assistant):
     """ Send a prompt to an OpenAI LLM model """
     # override the config model
     if model:
         config.llms.openai.model = model
 
-    send_prompt(file_path=filename, bibcode=bibcode, index=index, n_runs=num_runs)
+    send_prompt(file_path=filename, bibcode=bibcode, index=index, n_runs=num_runs, use_assistant=assistant)
 
 
 @cli.group('openai', short_help='OpenAI LLM commands')
