@@ -16,10 +16,18 @@ logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
 class OpenAIHelper:
-    """ Helper class for interacting with the OpenAI API """
+    """ Helper class for interacting with the OpenAI API
 
-    def __init__(self):
+    Parameters
+    ----------
+    use_assistant : bool, optional
+        Flag to use the OpenAI Assistant or not, by default None
+    """
+
+    def __init__(self, use_assistant: bool = None):
         """ init """
+        self.use_assistant = use_assistant or config.llm.openai.use_assistant
+
         self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         self.assistant = None
         self.vector_store = None
@@ -198,7 +206,9 @@ class OpenAIHelper:
         file is stored.  The assistant searches both the temporary vector store and any vector
         store attached to the assistant to answer the user prompt.
 
-        The prompt response is then extracted and converted to JSON content.
+        The prompt response is then extracted and converted to JSON content. The response is
+        stored in the instance ``response`` attribute.  The original message content
+        can be found in the ``original_response`` attribute.
 
         At the end, the uploaded file and the temporary vector store are deleted.
 
@@ -255,6 +265,58 @@ class OpenAIHelper:
 
         return self.response
 
+    def populate_user_template(self, paper: dict) -> str:
+        """ Format a user prompt template with paper data
+
+        Parameters
+        ----------
+        paper : dict
+            the input JSON paper content
+
+        Returns
+        -------
+        str
+            the fully formatted user prompt
+
+        Raises
+        ------
+        ValueError
+            when the prompt fields are missing from the paper data
+        """
+        user = get_llm_prompt('user')
+
+        # check the user template fields match the paper dictionary keys
+        fields = re.findall(r'{(.*?)}', user)
+        missing = set(fields) - set(paper.keys())
+        if missing:
+            raise ValueError(f"Missing user template fields in input paper data: {missing}")
+
+        # format the user prompt the paper content
+        return user.format(**paper)
+
+    def send_message(self, user_prompt: str = None):
+        """ Send a straight chat message to the LLM
+
+        This
+        Can pass a custom user prompt into method, otherwise it uses the prompt
+        pulled from ``get_llm_prompt``.  The response is stored in the instance
+        ``response`` attribute.  The original message content can be found in the
+        ``original_response`` attribute.
+
+        Parameters
+        ----------
+        user_prompt : str, optional
+            A customized user prompt, by default None
+
+        """
+        result = self.client.chat.completions.create(
+            model=config.llms.openai.model,
+            messages=[{"role": "system", "content": user_prompt or get_llm_prompt('agent')},
+                      {'role': 'user', 'content': get_llm_prompt('user')}])
+
+        self.original_response = result.choices[0].message.content
+        self.response = check_response(self.original_response)
+
 
 def check_response(value: str) -> dict:
     """ Check the agent response
@@ -272,6 +334,9 @@ def check_response(value: str) -> dict:
     dict
         the extracted JSON content
     """
+    if "```json" not in value:
+        return value
+
     # extract the json content
     response = re.search(r'```json\n(.*?)\n```', value, re.DOTALL)
 

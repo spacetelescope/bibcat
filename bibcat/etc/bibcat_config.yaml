@@ -510,4 +510,5 @@ llms:
   openai:
     model: gpt-4o
     asst_id: null
+    use_assistant: false
 
