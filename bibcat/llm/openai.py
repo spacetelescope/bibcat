@@ -6,10 +6,9 @@ import re
 import openai
 from openai import OpenAI
 from openai.types.beta.assistant import Assistant
-from openai.types.beta.vector_store import VectorStore
 
 from bibcat import config
-from bibcat.llm.io import get_file, get_llm_prompt
+from bibcat.llm.io import get_source, get_file, get_llm_prompt
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
@@ -294,7 +293,7 @@ class OpenAIHelper:
         # format the user prompt the paper content
         return user.format(**paper)
 
-    def send_message(self, user_prompt: str = None):
+    def send_message(self, user_prompt: str = None) -> dict | str:
         """ Send a straight chat message to the LLM
 
         This
@@ -308,6 +307,10 @@ class OpenAIHelper:
         user_prompt : str, optional
             A customized user prompt, by default None
 
+        Returns
+        -------
+        dict | str
+            the output respsonse from the model
         """
         result = self.client.chat.completions.create(
             model=config.llms.openai.model,
@@ -316,6 +319,55 @@ class OpenAIHelper:
 
         self.original_response = result.choices[0].message.content
         self.response = check_response(self.original_response)
+
+        return self.response
+
+    def submit_paper(self, file_path: str = None, bibcode: str = None, index: int = None) -> dict | str:
+        """ Submit a paper to the OpenAI LLM model
+
+        Submit a paper to the OpenAI LLM model for processing, either using an AI Assistant
+        with file-search capability, or a straight chat message.
+
+        Parameters
+        ----------
+        file_path : str, optional
+            a path to a local file on disk, by default None
+        bibcode : str, optional
+            the bibcode of an entry in the source papetrack combined dataset, by default None
+        index : int, optional
+            a list item array index in the source papetrack combined dataset, by default None
+
+        Returns
+        -------
+        dict | str
+            The output response from the model for the given paper
+
+        Raises
+        ------
+        ValueError
+            when a file_path is given and the AI Assistant is not being used
+        """
+
+        if not self.use_assistant and file_path:
+            raise ValueError("Cannot use a local file when not using the AI Assistant.")
+
+        if self.use_assistant:
+            # get the file path
+            file_path = get_file(filepath=file_path, bibcode=bibcode, index=index)
+            logger.info(f"Using file: {file_path}")
+
+            # upload the file to openai
+            self.upload_file(file_path)
+            logger.info(f"Uploaded file id: {self.file.id}")
+
+            # send the prompt request to the assistant
+            response = self.send_assistant_request(self.file.id)
+        else:
+            paper = get_source(bibcode=bibcode, index=index)
+            user_prompt = self.populate_user_template(paper)
+            response = self.send_message(user_prompt=user_prompt)
+
+        return response
 
 
 def check_response(value: str) -> dict:
