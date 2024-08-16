@@ -199,7 +199,7 @@ def combine_datasets(trimmed_papertext_data: list[dict], papertrack_data: list[d
 
     logger.info("Start combining the two datasets.")
     # Extract information from the papertrack classification dataset
-    ads_searches, bibcodes_papertrack, missions_and_papertypes = extract_papertrack_info(papertrack_data)
+    papertrack_searches, bibcodes_papertrack, missions_and_papertypes = extract_papertrack_info(papertrack_data)
 
     # Extract information from the paper text dataset
     bibcodes_papertext, _ = extract_papertext_info(trimmed_papertext_data)
@@ -210,8 +210,9 @@ def combine_datasets(trimmed_papertext_data: list[dict], papertrack_data: list[d
     bibcodes_notin_papertrack = []
     papertext_index_notin_papertrack = []
     combined_dataset = []
-    new_dict = {}
+
     for curr_index, curr_dict in enumerate(trimmed_papertext_data):
+        new_dict = {}
         # Extract information for current paper within text database
         curr_bibcode = curr_dict["bibcode"]
 
@@ -222,7 +223,7 @@ def combine_datasets(trimmed_papertext_data: list[dict], papertrack_data: list[d
                 for mission in missions_and_papertypes[index]
             }
 
-            for search in ads_searches[index]:
+            for search in papertrack_searches[index]:
                 new_dict[f"is_ignored_{search['search_key']}"] = search["ignored"]
 
             combined_dataset.append({**curr_dict, **new_dict})
