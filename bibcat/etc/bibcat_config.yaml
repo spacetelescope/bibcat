@@ -507,8 +507,9 @@ grammar:
 llms:
   user_prompt: "What is this dataset?"
   agent_prompt: null
+  prompt_output_file: paper_output.json
   openai:
-    model: gpt-4o
+    model: gpt-4o-mini
     asst_id: null
     use_assistant: false
 

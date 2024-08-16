@@ -26,7 +26,7 @@ class OpenAIHelper:
 
     def __init__(self, use_assistant: bool = None):
         """ init """
-        self.use_assistant = use_assistant or config.llm.openai.use_assistant
+        self.use_assistant = use_assistant or config.llms.openai.use_assistant
 
         self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         self.assistant = None
@@ -371,7 +371,7 @@ def write_output(filepath: str, response: dict):
         name = name.rsplit('_',1)[-1].split('.json')[0]
 
     # setup the output file
-    out = pathlib.Path(config.paths.output) / f'llms/openai_{config.llms.openai.model}/paper_output.json'
+    out = pathlib.Path(config.paths.output) / f'llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}'
     out.parent.mkdir(parents=True, exist_ok=True)
 
     # write the content

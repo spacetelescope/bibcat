@@ -11,7 +11,7 @@ from bibcat.utils.logger_config import setup_logger
 logger = setup_logger(__name__)
 
 
-def get_source(bibcode: str = None, index: int = None, body_only: bool = False) -> dict | str:
+def get_source(bibcode: str | None = None, index: int | None = None, body_only: bool = False) -> dict | str:
     """ Get the source dataset for a given bibcode or index.
 
     Retrieve the entry from the combined source dataset for a given bibcode or list index.
