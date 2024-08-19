@@ -5,6 +5,7 @@
 Main entry point into bibcat
 """
 
+import os
 import click
 
 from bibcat import config
@@ -114,6 +115,24 @@ def run_gpt(filename, bibcode, index, model, num_runs, assistant):
         config.llms.openai.model = model
 
     send_prompt(file_path=filename, bibcode=bibcode, index=index, n_runs=num_runs, use_assistant=assistant)
+
+
+@cli.command(help="Batch submit papers to an OpenAI LLM model")
+@click.option("-f", "--files", default=None, type=str, show_default=True, multiple=True, help="A list of files or bibcodes to upload")
+@click.option("-p", "--filename", default=None, type=click.File('rb'), show_default=True, help="The path to a file of bibcodes or papers to read in")
+def batch_submit(files, filename):
+    # get the list of files
+    files = files or filename.read().splitlines()
+
+    # iterate over the files
+    for file in files:
+        # check if file, bibcode, or index
+        source = 'file' if os.path.isfile(file) else 'index' if file.isnumeric() else 'bibcode'
+
+        send_prompt(file_path=file if source == 'file' else None,
+                    bibcode=file if source == 'bibcode' else None,
+                    index=file if source == 'index' else None,
+                    n_runs=1, use_assistant=True if source == 'file' else False)
 
 
 @cli.group('openai', short_help='OpenAI LLM commands')
