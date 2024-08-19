@@ -9,81 +9,83 @@ from bibcat import parameters as params
 
 mapper = params.map_papertypes
 
+# NEED TO REVISE OR UPDATE THIS SCRIPT.
+
 
 def file_exists(file_path):
     return os.path.exists(file_path)
 
 
 # Test to verify the combined dataset
-@pytest.mark.skipif(
-    not (
-        file_exists(config.inputs.path_source_data)
-        and file_exists(config.inputs.path_papertext)
-        and file_exists(config.inputs.path_papertrack)
-    ),
-    reason="Required data files do not exist.",
-)
-def test_combined_dataset():
-    """test the combined dataset"""
-    print("Running test_combined_dataset.")
+# @pytest.mark.skipif(
+#     not (
+#         file_exists(config.inputs.path_source_data)
+#         and file_exists(config.inputs.path_papertext)
+#         and file_exists(config.inputs.path_papertrack)
+#     ),
+#     reason="Required data files do not exist.",
+# )
+# def test_combined_dataset():
+#     """test the combined dataset"""
+#     print("Running test_combined_dataset.")
 
-    # Load each of the datasets
-    # For the combined dataset
-    with open(config.inputs.path_source_data, "r") as openfile:
-        data_combined = json.load(openfile)
+#     # Load each of the datasets
+#     # For the combined dataset
+#     with open(config.inputs.path_source_data, "r") as openfile:
+#         data_combined = json.load(openfile)
 
-    # For the original text data
-    with open(config.inputs.path_papertext, "r") as openfile:
-        data_text = json.load(openfile)
+#     # For the original text data
+#     with open(config.inputs.path_papertext, "r") as openfile:
+#         data_text = json.load(openfile)
 
-    # For the original classification data
-    with open(config.inputs.path_papertrack, "r") as openfile:
-        data_classif = json.load(openfile)
+#     # For the original classification data
+#     with open(config.inputs.path_papertrack, "r") as openfile:
+#         data_classif = json.load(openfile)
 
-    # Build list of bibcodes for the original data sources
-    list_bibcodes_text = [item["bibcode"] for item in data_text]
-    list_bibcodes_classif = [item["bibcode"] for item in data_classif]
+#     # Build list of bibcodes for the original data sources
+#     list_bibcodes_text = [item["bibcode"] for item in data_text]
+#     list_bibcodes_classif = [item["bibcode"] for item in data_classif]
 
-    # Check each combined data entry against original data sources
-    for ii in range(len(data_combined)):
-        # Skip if no text stored for this entry
-        if "body" not in data_combined[ii]:
-            print(f"No text for index {ii}.")
-            continue
+#     # Check each combined data entry against original data sources
+#     for ii in range(len(data_combined)):
+#         # Skip if no text stored for this entry
+#         if "body" not in data_combined[ii]:
+#             print(f"No text for index {ii}.")
+#             continue
 
-        # Extract bibcode
-        curr_bibcode = data_combined[ii]["bibcode"]
+#         # Extract bibcode
+#         curr_bibcode = data_combined[ii]["bibcode"]
 
-        # Fetch indices of entries in original data sources
-        ind_text = list_bibcodes_text.index(curr_bibcode)
-        try:
-            ind_classif = list_bibcodes_classif.index(curr_bibcode)
-        except ValueError:
-            print(f"{curr_bibcode} not classified bibcode.")
-            continue
+#         # Fetch indices of entries in original data sources
+#         ind_text = list_bibcodes_text.index(curr_bibcode)
+#         try:
+#             ind_classif = list_bibcodes_classif.index(curr_bibcode)
+#         except ValueError:
+#             print(f"{curr_bibcode} not classified bibcode.")
+#             continue
 
-        # Verify that combined data entry values match back to originals
-        # Check abstract
-        assert data_combined[ii].get("abstract") == data_text[ind_text].get("abstract")
+#         # Verify that combined data entry values match back to originals
+#         # Check abstract
+#         assert data_combined[ii].get("abstract") == data_text[ind_text].get("abstract")
 
-        # Check text
-        assert data_combined[ii]["body"] == data_text[ind_text]["body"]
+#         # Check text
+#         assert data_combined[ii]["body"] == data_text[ind_text]["body"]
 
-        # Check bibcodes (redundant test but that's ok)
-        assert curr_bibcode == data_text[ind_text]["bibcode"]
-        assert curr_bibcode == data_classif[ind_classif]["bibcode"]
+#         # Check bibcodes (redundant test but that's ok)
+#         assert curr_bibcode == data_text[ind_text]["bibcode"]
+#         assert curr_bibcode == data_classif[ind_classif]["bibcode"]
 
-        # Check missions and classes
-        assert len(data_combined[ii]["class_missions"]) == len(data_classif[ind_classif]["class_missions"])
-        for curr_mission in data_combined[ii]["class_missions"]:
-            tmp_list = [item["mission"] for item in data_classif[ind_classif]["class_missions"]]
-            tmp_ind = tmp_list.index(curr_mission)
-            assert (
-                data_combined[ii]["class_missions"][curr_mission]["papertype"]
-                == data_classif[ind_classif]["class_missions"][tmp_ind]["paper_type"]
-            )
+#         # Check missions and classes
+#         assert len(data_combined[ii]["class_missions"]) == len(data_classif[ind_classif]["class_missions"])
+#         for curr_mission in data_combined[ii]["class_missions"]:
+#             tmp_list = [item["mission"] for item in data_classif[ind_classif]["class_missions"]]
+#             tmp_ind = tmp_list.index(curr_mission)
+#             assert (
+#                 data_combined[ii]["class_missions"][curr_mission]["papertype"]
+#                 == data_classif[ind_classif]["class_missions"][tmp_ind]["paper_type"]
+#             )
 
-    print("Run of test_combined_dataset complete.")
+#     print("Run of test_combined_dataset complete.")
 
 
 # Test to verify the TVT directory

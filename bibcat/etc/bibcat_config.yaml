@@ -15,6 +15,7 @@ output:
   tfoutput_prefix: tfoutput_
   path_not_in_papertext: $BIBCAT_DATA_DIR/bibcodes_notin_papertext.txt  # file for bibcodes not in papertrack
   path_not_in_papertrack: $BIBCAT_DATA_DIR/bibcodes_notin_papertrack.txt # file for bibcodes not in ADS papertext
+  path_papertext_not_in_papertrack: $BIBCAT_DATA_DIR/papertext_notin_papertrack.json
 
 logging:
   level: "INFO"
