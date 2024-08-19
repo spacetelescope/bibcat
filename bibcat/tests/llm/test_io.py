@@ -39,7 +39,7 @@ def make_tempfile(monkeypatch, tmp_path):
         d.mkdir()
         p = d / f"llm_{prompt}_prompt.txt"
         p.write_text(content)
-        monkeypatch.setitem(config.inputs, f'llm_{prompt}_prompt', str(p))
+        monkeypatch.setitem(config.llms, f'llm_{prompt}_prompt', str(p))
         return str(p)
 
     yield _make_temp
