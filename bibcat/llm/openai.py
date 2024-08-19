@@ -37,6 +37,7 @@ class OpenAIHelper:
         self.assistants = []
         self.original_response = None
         self.response = None
+        self.response_classes = None
 
         # paper attributes
         self.source = None
@@ -376,6 +377,7 @@ class OpenAIHelper:
             self.bibcode = self.paper.get('bibcode')
             user_prompt = self.populate_user_template(self.paper)
             response = self.send_message(user_prompt=user_prompt)
+            self.response_classes = convert_to_classification(output=response, bibcode=self.bibcode)
 
         return response
 
@@ -415,17 +417,45 @@ def check_response(value: str) -> dict:
     dict
         the extracted JSON content
     """
-    if "```json" not in value:
-        return value
-
     # extract the json content
     response = re.search(r'```json\n(.*?)\n```', value, re.DOTALL)
 
     if response:
         response = response.group(1)
-        return json.loads(response)
+        try:
+            return json.loads(response)
+        except json.JSONDecodeError as e:
+            return {'error': f'Error decoding JSON content: "{e}"'}
     else:
         return {'error': 'No JSON content found in response'}
+
+
+def convert_to_classification(output: dict, bibcode: str, threshold: float = 0.5) -> dict:
+    """ Convert response to classification format
+
+    Converts the JSON response to conform to the format from the
+    data source ``class_missions`` field.
+
+    Parameters
+    ----------
+    output : dict
+        the JSON response
+    bibcode : str
+        the bibcode of the paper
+    threshold : float, optional
+        the threshold for rejection, by default 0.5
+
+    Returns
+    -------
+    dict
+        the formatted classification output
+    """
+    class_missions = {
+        k: {'bibcode': bibcode, 'papertype': papertype}
+        for k, [papertype, p] in output.items()
+        if p >= threshold
+    }
+    return class_missions
 
 
 def write_output(key: str, response: dict):
