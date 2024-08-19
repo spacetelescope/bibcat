@@ -25,8 +25,10 @@ class OpenAIHelper:
 
     def __init__(self, use_assistant: bool = None):
         """ init """
+        # input parameters
         self.use_assistant = use_assistant or config.llms.openai.use_assistant
 
+        # llm attributes
         self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         self.assistant = None
         self.vector_store = None
@@ -36,8 +38,15 @@ class OpenAIHelper:
         self.original_response = None
         self.response = None
 
+        # paper attributes
+        self.source = None
+        self.filename = None
+        self.bibcode = None
+        self.paper = None
+
     def __repr__(self) -> str:
-        return (f'<OpenAIHelper asst_id="{self.assistant.id if self.assistant else None}",'
+        return (f'<OpenAIHelper use_assistant="{self.use_assistant}",'
+                f'asst_id="{self.assistant.id if self.assistant else None}",'
                 f'vs_id="{self.vector_store.id if self.vector_store else None}">')
 
     # upload the file
@@ -322,7 +331,7 @@ class OpenAIHelper:
 
         return self.response
 
-    def submit_paper(self, file_path: str = None, bibcode: str = None, index: int = None) -> dict | str:
+    def submit_paper(self, filepath: str = None, bibcode: str = None, index: int = None) -> dict | str:
         """ Submit a paper to the OpenAI LLM model
 
         Submit a paper to the OpenAI LLM model for processing, either using an AI Assistant
@@ -330,7 +339,7 @@ class OpenAIHelper:
 
         Parameters
         ----------
-        file_path : str, optional
+        filepath : str, optional
             a path to a local file on disk, by default None
         bibcode : str, optional
             the bibcode of an entry in the source papetrack combined dataset, by default None
@@ -348,26 +357,46 @@ class OpenAIHelper:
             when a file_path is given and the AI Assistant is not being used
         """
 
-        if not self.use_assistant and file_path:
+        if not self.use_assistant and filepath:
             raise ValueError("Cannot use a local file when not using the AI Assistant.")
 
         if self.use_assistant:
             # get the file path
-            file_path = get_file(filepath=file_path, bibcode=bibcode, index=index)
-            logger.info(f"Using file: {file_path}")
+            self.filename = get_file(filepath=filepath, bibcode=bibcode, index=index)
+            logger.info(f"Using file: {self.filename}")
 
             # upload the file to openai
-            self.upload_file(file_path)
+            self.upload_file(self.filename)
             logger.info(f"Uploaded file id: {self.file.id}")
 
             # send the prompt request to the assistant
             response = self.send_assistant_request(self.file.id)
         else:
-            paper = get_source(bibcode=bibcode, index=index)
-            user_prompt = self.populate_user_template(paper)
+            self.paper = get_source(bibcode=bibcode, index=index)
+            self.bibcode = self.paper.get('bibcode')
+            user_prompt = self.populate_user_template(self.paper)
             response = self.send_message(user_prompt=user_prompt)
 
         return response
+
+    def get_output_key(self):
+        """ Get the output key for writing the response to a file
+
+        Returns either the name of a file or the bibcode of a paper source.
+        This key is used to organize the output JSON file content.
+
+        """
+        if self.bibcode:
+            return self.bibcode
+
+        if self.filename:
+            path = pathlib.Path(self.filename)
+            name = path.name
+            # extract bibcode from temp file
+            if name.startswith('temp'):
+                name = name.rsplit('_',1)[-1].split('.json')[0]
+
+            return name
 
 
 def check_response(value: str) -> dict:
@@ -399,28 +428,22 @@ def check_response(value: str) -> dict:
         return {'error': 'No JSON content found in response'}
 
 
-def write_output(filepath: str, response: dict):
+def write_output(key: str, response: dict):
     """ Write the output response to a file
 
     Writes the output json response to a file, located at
-    $BIBCAT_OUTPUT/output/llms/openai_[config.llms.openai.model]/paper_output.json
+    $BIBCAT_OUTPUT/output/llms/openai_[config.llms.openai.model]/[config.llms.prompt_output_file]
 
     The output JSON file is organized by the filename or bibcode of the input file,
     with each prompt response appended in the relevant section.
 
     Parameters
     ----------
-    filepath : str
-        the name of the input file
+    key : str
+        the JSON key to append the response to, e.g. the bibcode or filename
     response : dict
         the response from the llm agent
     """
-
-    # get the filename ; for sources, use the bibcode
-    path = pathlib.Path(filepath)
-    name = path.name
-    if name.startswith('temp'):
-        name = name.rsplit('_',1)[-1].split('.json')[0]
 
     # setup the output file
     out = pathlib.Path(config.paths.output) / f'llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}'
@@ -429,7 +452,7 @@ def write_output(filepath: str, response: dict):
     # write the content
     if not os.path.exists(out):
         # create a new file
-        data = {name: [response]}
+        data = {key: [response]}
         with open(out, 'w+') as f:
             json.dump(data, f, indent=2, sort_keys=False)
     else:
@@ -438,10 +461,10 @@ def write_output(filepath: str, response: dict):
             data = json.load(f)
 
         # append response to an existing file entry, or add a new one
-        if name in data:
-            data[name].append(response)
+        if key in data:
+            data[key].append(response)
         else:
-            data[name] = [response]
+            data[key] = [response]
 
         # write the updated file
         with open(out, 'w') as f:
@@ -469,17 +492,10 @@ def send_prompt(file_path: str = None, bibcode: str = None, index: int = None, n
 
     # iterate for number of runs
     for i in range(n_runs):
-        # get the file path
-        file_path = get_file(filepath=file_path, bibcode=bibcode, index=index)
-        logger.info(f"Using file: {file_path}")
-
-        # upload the file to openai
-        oa.upload_file(file_path)
-        logger.info(f"Uploaded file id: {oa.file.id}")
-
-        # send the prompt request to the assistant
-        response = oa.send_assistant_request(oa.file.id)
+        # submit the paper to the LLM
+        response = oa.submit_paper(filepath=file_path, bibcode=bibcode, index=index)
         logger.info(f"Output: {response}")
 
         # write the output response to a file
-        write_output(file_path, response)
+        key = oa.get_output_key()
+        write_output(key, response)

@@ -34,6 +34,7 @@ def get_source(bibcode: str | None = None, index: int | None = None, body_only: 
     source_dataset = load_source_dataset(do_verbose=False)
     n_sources = len(source_dataset)
 
+    text = None
     if bibcode:
         # get the source by bibcode
         res = [i for i in source_dataset if i['bibcode'] == bibcode]
@@ -127,7 +128,7 @@ def get_llm_prompt(prompt_type: str) -> str:
         raise ValueError('Prompt type must be either "user" or "agent".')
 
     # if a prompt file exists, use it
-    path = pathlib.Path(config.inputs[f'llm_{prompt_type}_prompt'])
+    path = pathlib.Path(config.inputs[f'llm_{prompt_type}_base']) / config.llms[f'llm_{prompt_type}_prompt']
     if path.exists():
         with open(path, 'r') as f:
             prompt = f.read()
