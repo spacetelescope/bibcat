@@ -80,8 +80,8 @@ def test_get_file(mocker, make_paper, filepath, bibcode, index, expfile):
 
 
 @pytest.mark.parametrize("prompt, exp", [
-    ('user', 'What is this dataset?'),
-    ('agent', 'You are an expert researcher and professor in astronomy')
+    ('user', 'Carefully follow these two instructions to classify papers for MAST bibliometric record-keeping'),
+    ('agent', 'You are an assistant with expertise in astronomical bibliographic and library systems')
 ])
 def test_default_get_llm_prompt(prompt, exp):
     """ test we get the correct prompt from the default config """
