@@ -141,19 +141,41 @@ def evaluate(name) -> None:
 @click.option("-m", "--model", default="gpt-4o-mini", type=str, show_default=True, help="The model type to use")
 @click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
 @click.option("--assistant", is_flag=True, show_default=True, default=False, help="Set to use the file-search assistant")
-def run_gpt(filename, bibcode, index, model, num_runs, assistant):
+@click.option("-u", "--user-prompt-file", default=None, type=str, show_default=True, help="The name of a custom user prompt file")
+@click.option("-a", "--agent-prompt-file", default=None, type=str, show_default=True, help="The name of a custom agent prompt file")
+def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_file, agent_prompt_file):
     """ Send a prompt to an OpenAI LLM model """
     # override the config model
     if model:
         config.llms.openai.model = model
+    # override the config user prompt file
+    if user_prompt_file:
+        config.llms.llm_user_prompt = user_prompt_file
+    # override the config agent prompt file
+    if agent_prompt_file:
+        config.llms.llm_agent_prompt = agent_prompt_file
 
+    breakpoint()
     send_prompt(file_path=filename, bibcode=bibcode, index=index, n_runs=num_runs, use_assistant=assistant)
 
 
 @cli.command(help="Batch submit papers to an OpenAI LLM model")
 @click.option("-f", "--files", default=None, type=str, show_default=True, multiple=True, help="A list of files or bibcodes to upload")
 @click.option("-p", "--filename", default=None, type=click.File('rb'), show_default=True, help="The path to a file of bibcodes or papers to read in")
-def batch_submit(files, filename):
+@click.option("-m", "--model", default="gpt-4o-mini", type=str, show_default=True, help="The model type to use")
+@click.option("-u", "--user-prompt-file", default=None, type=str, show_default=True, help="The name of a custom user prompt file")
+@click.option("-a", "--agent-prompt-file", default=None, type=str, show_default=True, help="The name of a custom agent prompt file")
+def batch_submit(files, filename, model, user_prompt_file, agent_prompt_file):
+    # override the config model
+    if model:
+        config.llms.openai.model = model
+    # override the config user prompt file
+    if user_prompt_file:
+        config.llms.llm_user_prompt = user_prompt_file
+    # override the config agent prompt file
+    if agent_prompt_file:
+        config.llms.llm_agent_prompt = agent_prompt_file
+
     # get the list of files
     files = files or filename.read().splitlines()
 
