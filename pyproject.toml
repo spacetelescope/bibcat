@@ -27,6 +27,8 @@ dependencies = [
   "tensorflow >=2.15.0",
   "tensorflow-text >=2.15.0",
   "deepmerge >=1.1.1",
+  "matplotlib >= 3.8.2",
+  "openai >= 1.40.0"
 ]
 dynamic = ["version"]
 
