@@ -507,7 +507,7 @@ grammar:
   }
 
 llms:
-  user_prompt: "What is this dataset?"
+  user_prompt: null
   agent_prompt: null
   prompt_output_file: paper_output.json
   llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt

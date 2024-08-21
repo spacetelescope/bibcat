@@ -135,17 +135,33 @@ def get_llm_prompt(prompt_type: str) -> str:
             return prompt
 
     # otherwise, use the config user prompt and default agent prompt
-    if prompt_type == 'user':
-        prompt = config.llms.user_prompt
-    elif prompt_type == 'agent':
-        # see if there's a config agent prompt
-        prompt = config.llms.agent_prompt
+    prompt = config.llms[f'{prompt_type}_prompt']
 
-        # otherwise use the default
-        if not prompt:
-            default_agent = pathlib.Path(__file__).parent.parent / 'etc/default_agent_prompt.txt'
-            with open(default_agent, 'r') as f:
-                prompt = f.read()
+    # otherise, use the defaults
+    if not prompt:
+        default_prompt = pathlib.Path(__file__).parent.parent / f'etc/default_{prompt_type}_prompt.txt'
+        with open(default_prompt, 'r') as f:
+            prompt = f.read()
+
+    # # otherwise, use the config user prompt and default agent prompt
+    # if prompt_type == 'user':
+    #     prompt = config.llms.user_prompt
+
+    #     # otherwise use the default
+    #     if not prompt:
+    #         default_agent = pathlib.Path(__file__).parent.parent / 'etc/default_agent_prompt.txt'
+    #         with open(default_agent, 'r') as f:
+    #             prompt = f.read()
+
+    # elif prompt_type == 'agent':
+    #     # see if there's a config agent prompt
+    #     prompt = config.llms.agent_prompt
+
+    #     # otherwise use the default
+    #     if not prompt:
+    #         default_agent = pathlib.Path(__file__).parent.parent / 'etc/default_agent_prompt.txt'
+    #         with open(default_agent, 'r') as f:
+    #             prompt = f.read()
 
     return prompt
 
