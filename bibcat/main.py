@@ -143,7 +143,8 @@ def evaluate(name) -> None:
 @click.option("--assistant", is_flag=True, show_default=True, default=False, help="Set to use the file-search assistant")
 @click.option("-u", "--user-prompt-file", default=None, type=str, show_default=True, help="The name of a custom user prompt file")
 @click.option("-a", "--agent-prompt-file", default=None, type=str, show_default=True, help="The name of a custom agent prompt file")
-def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_file, agent_prompt_file):
+@click.option('-v', '--verbose', is_flag=True, show_default=True, help="Set to print verbose output")
+def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_file, agent_prompt_file, verbose):
     """ Send a prompt to an OpenAI LLM model """
     # override the config model
     if model:
@@ -155,8 +156,7 @@ def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_fi
     if agent_prompt_file:
         config.llms.llm_agent_prompt = agent_prompt_file
 
-    breakpoint()
-    send_prompt(file_path=filename, bibcode=bibcode, index=index, n_runs=num_runs, use_assistant=assistant)
+    send_prompt(file_path=filename, bibcode=bibcode, index=index, n_runs=num_runs, use_assistant=assistant, verbose=verbose)
 
 
 @cli.command(help="Batch submit papers to an OpenAI LLM model")
@@ -165,7 +165,8 @@ def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_fi
 @click.option("-m", "--model", default="gpt-4o-mini", type=str, show_default=True, help="The model type to use")
 @click.option("-u", "--user-prompt-file", default=None, type=str, show_default=True, help="The name of a custom user prompt file")
 @click.option("-a", "--agent-prompt-file", default=None, type=str, show_default=True, help="The name of a custom agent prompt file")
-def batch_submit(files, filename, model, user_prompt_file, agent_prompt_file):
+@click.option('-v', '--verbose', is_flag=True, show_default=True, help="Set to print verbose output")
+def batch_submit(files, filename, model, user_prompt_file, agent_prompt_file, verbose):
     # override the config model
     if model:
         config.llms.openai.model = model
@@ -187,7 +188,8 @@ def batch_submit(files, filename, model, user_prompt_file, agent_prompt_file):
         send_prompt(file_path=file if source == 'file' else None,
                     bibcode=file if source == 'bibcode' else None,
                     index=file if source == 'index' else None,
-                    n_runs=1, use_assistant=True if source == 'file' else False)
+                    n_runs=1, use_assistant=True if source == 'file' else False,
+                    verbose=verbose)
 
 
 @cli.group('openai', short_help='OpenAI LLM commands')

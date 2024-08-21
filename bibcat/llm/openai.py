@@ -21,12 +21,15 @@ class OpenAIHelper:
     ----------
     use_assistant : bool, optional
         Flag to use the file-search OpenAI Assistant or not, by default None
+    verbose : bool, optional
+        Flag to turn on verbose logging, by default None
     """
 
-    def __init__(self, use_assistant: bool = None):
+    def __init__(self, use_assistant: bool = None, verbose: bool = None):
         """ init """
         # input parameters
         self.use_assistant = use_assistant or config.llms.openai.use_assistant
+        self.verbose = verbose or config.logging.verbose
 
         # llm attributes
         self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
@@ -38,6 +41,8 @@ class OpenAIHelper:
         self.original_response = None
         self.response = None
         self.response_classes = None
+        self.user_prompt = None
+        self.agent_prompt = None
 
         # paper attributes
         self.source = None
@@ -361,6 +366,10 @@ class OpenAIHelper:
         if not self.use_assistant and filepath:
             raise ValueError("Cannot use a local file when not using the AI Assistant.")
 
+        # set the user / agent prompts
+        self.user_prompt = get_llm_prompt('user')
+        self.agent_prompt = get_llm_prompt('agent')
+
         if self.use_assistant:
             # get the file path
             self.filename = get_file(filepath=filepath, bibcode=bibcode, index=index)
@@ -373,10 +382,16 @@ class OpenAIHelper:
             # send the prompt request to the assistant
             response = self.send_assistant_request(self.file.id)
         else:
+            # get the paper source
             self.paper = get_source(bibcode=bibcode, index=index)
             self.bibcode = self.paper.get('bibcode')
-            user_prompt = self.populate_user_template(self.paper)
-            response = self.send_message(user_prompt=user_prompt)
+            logger.info(f'Using paper bibcode: {self.bibcode}')
+
+            # populate the user template with paper data
+            self.user_prompt = self.populate_user_template(self.paper)
+
+            # send the prompt
+            response = self.send_message(user_prompt=self.user_prompt)
             self.response_classes = convert_to_classification(output=response, bibcode=self.bibcode)
 
         return response
@@ -506,7 +521,7 @@ def write_output(key: str, response: dict):
 
 
 def send_prompt(file_path: str = None, bibcode: str = None, index: int = None, n_runs: int = 1,
-                use_assistant: bool = None):
+                use_assistant: bool = None, verbose: bool = None):
     """ Send a prompt to an OpenAI LLM model
 
     Parameters
@@ -521,13 +536,21 @@ def send_prompt(file_path: str = None, bibcode: str = None, index: int = None, n
         the number of runs to do, by default 1
     use_assistant : bool, optional
         Flag to use the OpenAI file-search Assistant or not, by default None
+    verbose : bool, optional
+        Flag to turn on verbose logging, by default None
     """
-    oa = OpenAIHelper(use_assistant=use_assistant)
+    oa = OpenAIHelper(use_assistant=use_assistant, verbose=verbose)
 
     # iterate for number of runs
     for i in range(n_runs):
         # submit the paper to the LLM
         response = oa.submit_paper(filepath=file_path, bibcode=bibcode, index=index)
+
+        # log the prompts if verbosity set
+        if oa.verbose:
+            logger.info(f"Agent Prompt: {oa.agent_prompt}")
+            logger.info(f"User Prompt: {oa.user_prompt}")
+
         logger.info(f"Output: {response}")
 
         # write the output response to a file

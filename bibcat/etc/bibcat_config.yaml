@@ -19,6 +19,7 @@ output:
 
 logging:
   level: "INFO"
+  verbose: false
 
 paths:
   root: null
