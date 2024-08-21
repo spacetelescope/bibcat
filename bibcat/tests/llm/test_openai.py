@@ -14,6 +14,12 @@ def test_convert_to_classes():
     assert res['JWST'] == {'bibcode': '12345', 'papertype': 'SCIENCE'}
 
 
+def test_convert_error():
+    """ test convert fails correctly  """
+    data = {'error': 'No JSON content found in response'}
+    res = convert_to_classification(output=data, bibcode='12345')
+    assert res is None
+
 
 @pytest.mark.parametrize('data, exp',
                     [('\nOUTPUT:\n```json\n{\n    "HST": [\n        "MENTION",\n        0.8\n    ],\n    "JWST": [\n        "SCIENCE",\n        0.95\n    ]\n}\n```',

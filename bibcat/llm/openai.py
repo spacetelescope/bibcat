@@ -450,6 +450,10 @@ def convert_to_classification(output: dict, bibcode: str, threshold: float = 0.5
     dict
         the formatted classification output
     """
+    if 'error' in output:
+        logger.warning('Error in prompt JSON response. Cannot convert output.')
+        return None
+
     class_missions = {
         k: {'bibcode': bibcode, 'papertype': papertype}
         for k, [papertype, p] in output.items()
