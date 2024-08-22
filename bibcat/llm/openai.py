@@ -8,7 +8,7 @@ from openai import OpenAI
 from openai.types.beta.assistant import Assistant
 
 from bibcat import config
-from bibcat.llm.io import get_source, get_file, get_llm_prompt
+from bibcat.llm.io import get_source, get_file, get_llm_prompt, write_output
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
@@ -474,49 +474,6 @@ def convert_to_classification(output: dict, bibcode: str, threshold: float = 0.5
         if p >= threshold
     }
     return class_missions
-
-
-def write_output(key: str, response: dict):
-    """ Write the output response to a file
-
-    Writes the output json response to a file, located at
-    $BIBCAT_OUTPUT/output/llms/openai_[config.llms.openai.model]/[config.llms.prompt_output_file]
-
-    The output JSON file is organized by the filename or bibcode of the input file,
-    with each prompt response appended in the relevant section.
-
-    Parameters
-    ----------
-    key : str
-        the JSON key to append the response to, e.g. the bibcode or filename
-    response : dict
-        the response from the llm agent
-    """
-
-    # setup the output file
-    out = pathlib.Path(config.paths.output) / f'llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}'
-    out.parent.mkdir(parents=True, exist_ok=True)
-
-    # write the content
-    if not os.path.exists(out):
-        # create a new file
-        data = {key: [response]}
-        with open(out, 'w+') as f:
-            json.dump(data, f, indent=2, sort_keys=False)
-    else:
-        # append to an existing file
-        with open(out, 'r') as f:
-            data = json.load(f)
-
-        # append response to an existing file entry, or add a new one
-        if key in data:
-            data[key].append(response)
-        else:
-            data[key] = [response]
-
-        # write the updated file
-        with open(out, 'w') as f:
-            json.dump(data, f, indent=2, sort_keys=False)
 
 
 def send_prompt(file_path: str = None, bibcode: str = None, index: int = None, n_runs: int = 1,

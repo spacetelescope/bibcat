@@ -143,25 +143,48 @@ def get_llm_prompt(prompt_type: str) -> str:
         with open(default_prompt, 'r') as f:
             prompt = f.read()
 
-    # # otherwise, use the config user prompt and default agent prompt
-    # if prompt_type == 'user':
-    #     prompt = config.llms.user_prompt
-
-    #     # otherwise use the default
-    #     if not prompt:
-    #         default_agent = pathlib.Path(__file__).parent.parent / 'etc/default_agent_prompt.txt'
-    #         with open(default_agent, 'r') as f:
-    #             prompt = f.read()
-
-    # elif prompt_type == 'agent':
-    #     # see if there's a config agent prompt
-    #     prompt = config.llms.agent_prompt
-
-    #     # otherwise use the default
-    #     if not prompt:
-    #         default_agent = pathlib.Path(__file__).parent.parent / 'etc/default_agent_prompt.txt'
-    #         with open(default_agent, 'r') as f:
-    #             prompt = f.read()
-
     return prompt
+
+
+def write_output(paper_key: str, response: dict):
+    """ Write the output response to a file
+
+    Writes the output json response to a file, located at
+    $BIBCAT_OUTPUT/output/llms/openai_[config.llms.openai.model]/[config.llms.prompt_output_file]
+
+    The output JSON file is organized by the filename or bibcode of the input file,
+    with each prompt response appended in the relevant section.
+
+    Parameters
+    ----------
+    paper_key : str
+        the JSON key to append the response to, e.g. the bibcode or filename
+    response : dict
+        the response from the llm agent
+    """
+
+    # setup the output file
+    out = pathlib.Path(config.paths.output) / f'llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}'
+    out.parent.mkdir(parents=True, exist_ok=True)
+
+    # write the content
+    if not os.path.exists(out):
+        # create a new file
+        data = {paper_key: [response]}
+        with open(out, 'w+') as f:
+            json.dump(data, f, indent=2, sort_keys=False)
+    else:
+        # append to an existing file
+        with open(out, 'r') as f:
+            data = json.load(f)
+
+        # append response to an existing file entry, or add a new one
+        if paper_key in data:
+            data[paper_key].append(response)
+        else:
+            data[paper_key] = [response]
+
+        # write the updated file
+        with open(out, 'w') as f:
+            json.dump(data, f, indent=2, sort_keys=False)
 
