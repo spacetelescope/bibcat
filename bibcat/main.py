@@ -161,7 +161,7 @@ def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_fi
 
 @cli.command(help="Batch submit papers to an OpenAI LLM model")
 @click.option("-f", "--files", default=None, type=str, show_default=True, multiple=True, help="A list of files or bibcodes to upload")
-@click.option("-p", "--filename", default=None, type=click.File('rb'), show_default=True, help="The path to a file of bibcodes or papers to read in")
+@click.option("-p", "--filename", default=None, type=click.File('r'), show_default=True, help="The path to a file of bibcodes or papers to read in")
 @click.option("-m", "--model", default="gpt-4o-mini", type=str, show_default=True, help="The model type to use")
 @click.option("-u", "--user-prompt-file", default=None, type=str, show_default=True, help="The name of a custom user prompt file")
 @click.option("-a", "--agent-prompt-file", default=None, type=str, show_default=True, help="The name of a custom agent prompt file")

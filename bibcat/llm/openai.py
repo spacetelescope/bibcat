@@ -467,12 +467,17 @@ def convert_to_classification(output: dict, bibcode: str, threshold: float = 0.5
         logger.warning('Error in prompt JSON response. Cannot convert output.')
         return None
 
-    class_missions = {
-        k: {'bibcode': bibcode, 'papertype': papertype}
-        for k, [papertype, p] in output.items()
-        if p >= threshold
-    }
-    return class_missions
+    try:
+        class_missions = {
+            k: {'bibcode': bibcode, 'papertype': papertype}
+            for k, [papertype, p] in output.items()
+            if p >= threshold
+        }
+    except ValueError as e:
+        logger.warning(f"Error converting output to classification format: {e}")
+        return None
+    else:
+        return class_missions
 
 
 def classify_paper(file_path: str = None, bibcode: str = None, index: int = None, n_runs: int = 1,
@@ -505,6 +510,7 @@ def classify_paper(file_path: str = None, bibcode: str = None, index: int = None
         if oa.verbose:
             logger.info(f"Agent Prompt: {oa.agent_prompt}")
             logger.info(f"User Prompt: {oa.user_prompt}")
+            logger.info(f"Original Prompt Response: {oa.original_response}")
 
         logger.info(f"Output: {response}")
 
