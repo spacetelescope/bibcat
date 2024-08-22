@@ -45,7 +45,6 @@ class OpenAIHelper:
         self.agent_prompt = None
 
         # paper attributes
-        self.source = None
         self.filename = None
         self.bibcode = None
         self.paper = None
@@ -270,7 +269,7 @@ class OpenAIHelper:
         message_content = messages[0].content[0].text
         logger.debug(f"Original response message content: {message_content.value}")
         self.original_response = message_content.value
-        self.response = check_response(message_content.value)
+        self.response = extract_response(message_content.value)
 
         # do some cleanup; delete the file and the temporary vector store
         vs = thread.tool_resources.file_search.vector_store_ids[0]
@@ -332,7 +331,7 @@ class OpenAIHelper:
                       {'role': 'user', 'content': user_prompt or get_llm_prompt('user')}])
 
         self.original_response = result.choices[0].message.content
-        self.response = check_response(self.original_response)
+        self.response = extract_response(self.original_response)
 
         return self.response
 
@@ -415,8 +414,8 @@ class OpenAIHelper:
             return name
 
 
-def check_response(value: str) -> dict:
-    """ Check the agent response
+def extract_response(value: str) -> dict:
+    """ Extract the agent response
 
     Check the agent response for proper JSON content and
     extract.  If no JSON content is found, return an error message.
