@@ -14,7 +14,7 @@ from bibcat.build_model import build_model
 from bibcat.classify_papers import classify_papers
 from bibcat.data.build_dataset import build_dataset
 from bibcat.evaluate_basic_performance import evaluate_basic_performance
-from bibcat.llm.openai import OpenAIHelper, send_prompt
+from bibcat.llm.openai import OpenAIHelper, classify_paper
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
@@ -156,7 +156,7 @@ def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_fi
     if agent_prompt_file:
         config.llms.llm_agent_prompt = agent_prompt_file
 
-    send_prompt(file_path=filename, bibcode=bibcode, index=index, n_runs=num_runs, use_assistant=assistant, verbose=verbose)
+    classify_paper(file_path=filename, bibcode=bibcode, index=index, n_runs=num_runs, use_assistant=assistant, verbose=verbose)
 
 
 @cli.command(help="Batch submit papers to an OpenAI LLM model")
@@ -166,7 +166,7 @@ def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_fi
 @click.option("-u", "--user-prompt-file", default=None, type=str, show_default=True, help="The name of a custom user prompt file")
 @click.option("-a", "--agent-prompt-file", default=None, type=str, show_default=True, help="The name of a custom agent prompt file")
 @click.option('-v', '--verbose', is_flag=True, show_default=True, help="Set to print verbose output")
-def batch_submit(files, filename, model, user_prompt_file, agent_prompt_file, verbose):
+def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, verbose):
     # override the config model
     if model:
         config.llms.openai.model = model
@@ -185,11 +185,11 @@ def batch_submit(files, filename, model, user_prompt_file, agent_prompt_file, ve
         # check if file, bibcode, or index
         source = 'file' if os.path.isfile(file) else 'index' if file.isnumeric() else 'bibcode'
 
-        send_prompt(file_path=file if source == 'file' else None,
-                    bibcode=file if source == 'bibcode' else None,
-                    index=file if source == 'index' else None,
-                    n_runs=1, use_assistant=True if source == 'file' else False,
-                    verbose=verbose)
+        classify_paper(file_path=file if source == 'file' else None,
+                       bibcode=file if source == 'bibcode' else None,
+                       index=file if source == 'index' else None,
+                       n_runs=1, use_assistant=True if source == 'file' else False,
+                       verbose=verbose)
 
 
 @cli.group('openai', short_help='OpenAI LLM commands')

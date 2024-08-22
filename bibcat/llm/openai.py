@@ -476,9 +476,9 @@ def convert_to_classification(output: dict, bibcode: str, threshold: float = 0.5
     return class_missions
 
 
-def send_prompt(file_path: str = None, bibcode: str = None, index: int = None, n_runs: int = 1,
-                use_assistant: bool = None, verbose: bool = None):
-    """ Send a prompt to an OpenAI LLM model
+def classify_paper(file_path: str = None, bibcode: str = None, index: int = None, n_runs: int = 1,
+                   use_assistant: bool = None, verbose: bool = None):
+    """ Send a prompt to an OpenAI LLM model to classify a paper
 
     Parameters
     ----------
