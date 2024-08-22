@@ -99,7 +99,7 @@ If no custom prompt file is found, the code defaults to the prompts found in `co
 
 ### Testing New Prompts
 
-When no custom config prompts or prompt files are found, the default user prompt (`etc/default_user_prompt.txt`) and system prompt (`etc/default_agent_prompt.txt`) is used.
+When no custom config prompts or prompt files are found, the default user prompt (`etc/default_user_prompt.txt`) and system prompt (`etc/default_agent_prompt.txt`) is used.  There are three ways to change the default prompts used, to create custom prompts for trial and testing.
 
 **Note:** The following are silly examples exploiting the use of `bibcat`, and are not indicative of package use.
 
