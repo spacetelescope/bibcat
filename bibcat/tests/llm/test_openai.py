@@ -1,7 +1,7 @@
 
 import pytest
 
-from bibcat.llm.openai import check_response, convert_to_classification
+from bibcat.llm.openai import convert_to_classification, extract_response
 
 
 def test_convert_to_classes():
@@ -21,6 +21,13 @@ def test_convert_error():
     assert res is None
 
 
+def test_convert_failure(caplog):
+    """ test convert fails correctly """
+    res = convert_to_classification(output={"good": "but", "bad": "json"}, bibcode='12345')
+    assert res is None
+    assert "Error converting output to classification format" in caplog.record_tuples[0][2]
+
+
 @pytest.mark.parametrize('data, exp',
                     [('\nOUTPUT:\n```json\n{\n    "HST": [\n        "MENTION",\n        0.8\n    ],\n    "JWST": [\n        "SCIENCE",\n        0.95\n    ]\n}\n```',
                       {'HST': ['MENTION', 0.8], 'JWST': ['SCIENCE', 0.95]}),
@@ -32,6 +39,6 @@ def test_convert_error():
 def test_extract_json(data, exp):
     """ test we can extract some json content """
 
-    output = check_response(data)
+    output = extract_response(data)
     assert output == exp
 
