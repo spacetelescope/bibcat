@@ -311,7 +311,6 @@ class OpenAIHelper:
     def send_message(self, user_prompt: str = None) -> dict | str:
         """ Send a straight chat message to the LLM
 
-        This
         Can pass a custom user prompt into method, otherwise it uses the prompt
         pulled from ``get_llm_prompt``.  The response is stored in the instance
         ``response`` attribute.  The original message content can be found in the
@@ -329,8 +328,8 @@ class OpenAIHelper:
         """
         result = self.client.chat.completions.create(
             model=config.llms.openai.model,
-            messages=[{"role": "system", "content": user_prompt or get_llm_prompt('agent')},
-                      {'role': 'user', 'content': get_llm_prompt('user')}])
+            messages=[{"role": "system", "content": get_llm_prompt('agent')},
+                      {'role': 'user', 'content': user_prompt or get_llm_prompt('user')}])
 
         self.original_response = result.choices[0].message.content
         self.response = check_response(self.original_response)
