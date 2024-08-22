@@ -133,7 +133,9 @@ for classifying papers, run `bibcat classify --help`.
 ### Paper classification for operation
 - To classify papers, run `bibcat classify`. Copy `etc/fakedata.json` to your local OPSDATA folder to test `bibcat classify`. Check out `etc/fakedata.json` to see the necessary contents for operational papers in JSON. You use any texts with their bibcode in a JSON file by pointing `inputs.path_ops_data`in `bibcat_config.yaml` to your JSON file. fetch_papers.py (with with `do_evaluation=False` will fetch the JSON file for classification )
 
+## LLM Prompting
 
+You can submit paper content to OpenAI's gpt models.  Please see the following [Quick Start Guide](bibcat/llm/README.md) to get started.
 
 
 ## License
