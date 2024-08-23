@@ -239,7 +239,9 @@ You should see some output similar to
 Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
 INFO - Evaluating output for 2022Sci...377.1211L
 INFO - Number of runs: 10
-INFO - 'Output Stats by LLM Mission and Paper Type:'
+INFO - Human Classifications:
+ TESS: SCIENCE
+INFO - Output Stats by LLM Mission and Paper Type:
 llm_mission llm_papertype  mean_llm_confidence  count  n_runs  accuracy  in_human_class
        JWST       MENTION                 0.50      2      10       0.0           False
        JWST       SCIENCE                 0.80      1      10       0.0           False
