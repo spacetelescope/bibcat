@@ -93,6 +93,8 @@ def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:
 
     # get the human paper classifications
     paper_classes = paper['class_missions']
+    formatted_output = "\n".join([f"{mission}: {info['papertype']}" for mission, info in paper_classes.items()])
+    logger.info(f"Human Classifications:\n {formatted_output}")
 
     # compute accuracy of matches to human classification
     vv = [(k, v['papertype']) for k, v in paper_classes.items()]
@@ -104,7 +106,7 @@ def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:
     missing_by_llm = set(paper_classes)-set(grouped_df['llm_mission'])
 
     # log the output
-    logger.info("'Output Stats by LLM Mission and Paper Type:'\n" + grouped_df.to_string(index=False))
+    logger.info("Output Stats by LLM Mission and Paper Type:\n" + grouped_df.to_string(index=False))
     logger.info('Missing missions by humans: ' + ', '.join(missing_by_human))
     logger.info('Missing missions by LLM: ' + ', '.join(missing_by_llm))
 
