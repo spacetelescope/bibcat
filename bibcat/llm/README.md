@@ -237,13 +237,16 @@ bibcat evaluate-llm -i 2000
 You should see some output similar to
 ```bash
 Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
-INFO - Evaluating output for 2023Natur.616..266L
+INFO - Evaluating output for 2022Sci...377.1211L
 INFO - Number of runs: 10
 INFO - 'Output Stats by LLM Mission and Paper Type:'
 llm_mission llm_papertype  mean_llm_confidence  count  n_runs  accuracy  in_human_class
-        HST       MENTION                 0.75     10      10       0.0           False
-       JWST       SCIENCE                 0.91     10      10     100.0            True
-INFO - Missing missions by humans: HST
+       JWST       MENTION                 0.50      2      10       0.0           False
+       JWST       SCIENCE                 0.80      1      10       0.0           False
+         K2       MENTION                 0.60      2      10       0.0           False
+     KEPLER       MENTION                 0.55      4      10       0.0           False
+       TESS       SCIENCE                 0.90     10      10     100.0            True
+INFO - Missing missions by humans: JWST, KEPLER, K2
 INFO - Missing missions by LLM:
 ```
 
