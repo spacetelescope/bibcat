@@ -220,4 +220,37 @@ For example, running `bibcat run-gpt -b 2023Natur.616..266L` produces the follow
 
 ## Evaluating Output
 
-Coming Soon
+To assess how well an LLM might be doing, we can try to evaulate it by running repeated trial runs, collecting the output, and comparing
+to the human classifications from the source dataset.
+
+First, run bibcat run-gpt with the `-n` flag to specify to run repeated submissions of the paper, and record all outputs in the output JSON file.
+
+To submit paper index 2000, 10 times, run:
+```bash
+bibcat run-gpt -i 2000 -n 10
+```
+Once it's finished, you can evaluate the LLM output with:
+```
+bibcat evaluate-llm -i 2000
+```
+
+You should see some output similar to
+```bash
+Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
+INFO - Evaluating output for 2023Natur.616..266L
+INFO - Number of runs: 10
+INFO - 'Output Stats by LLM Mission and Paper Type:'
+llm_mission llm_papertype  mean_llm_confidence  count  n_runs  accuracy  in_human_class
+        HST       MENTION                 0.75     10      10       0.0           False
+       JWST       SCIENCE                 0.91     10      10     100.0            True
+INFO - Missing missions by humans: HST
+INFO - Missing missions by LLM:
+```
+
+For now this produces a Pandas dataframe, grouped by the LLM predicted mission and papertype, with its mean confidence score, the number of times that combination was output by the LLM, the total number of trial runs, an accuracy score of how well it matched the human classification, and a boolean flag if that combination appears in the human classification.  The human classication comes from the "class_missions" field in the source dataset file.
+
+
+
+
+
+

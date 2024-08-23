@@ -15,6 +15,7 @@ from bibcat.classify_papers import classify_papers
 from bibcat.data.build_dataset import build_dataset
 from bibcat.evaluate_basic_performance import evaluate_basic_performance
 from bibcat.llm.openai import OpenAIHelper, classify_paper
+from bibcat.llm.evaluate import evaluate_output
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
@@ -190,6 +191,14 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
                        index=file if source == 'index' else None,
                        n_runs=1, use_assistant=True if source == 'file' else False,
                        verbose=verbose)
+
+
+@cli.command(help='Evaluate the LLM output')
+@click.option("-b", "--bibcode", default=None, type=str, show_default=True, help="A bibcode from the papertrack source combined_dataset")
+@click.option("-i", "--index", default=None, type=str, show_default=True, help="An array index from the papertrack source combined_dataset")
+def evaluate_llm(bibcode, index):
+    """ Evaluate the ouput JSON from a LLM model """
+    evaluate_output(bibcode=bibcode, index=index)
 
 
 @cli.group('openai', short_help='OpenAI LLM commands')
