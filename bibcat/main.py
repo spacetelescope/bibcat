@@ -196,8 +196,17 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
 @cli.command(help='Evaluate the LLM output')
 @click.option("-b", "--bibcode", default=None, type=str, show_default=True, help="A bibcode from the papertrack source combined_dataset")
 @click.option("-i", "--index", default=None, type=str, show_default=True, help="An array index from the papertrack source combined_dataset")
-def evaluate_llm(bibcode, index):
+@click.option('-s', '--submit', is_flag=True, show_default=True, help="Flag to submit the paper for classification")
+@click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute for classification")
+@click.pass_context
+def evaluate_llm(ctx, bibcode, index, submit, num_runs):
     """ Evaluate the ouput JSON from a LLM model """
+
+    # submit the paper for classification, if requested
+    if submit:
+        ctx.invoke(run_gpt, bibcode=bibcode, index=index, num_runs=num_runs)
+
+    # evaluate the output
     evaluate_output(bibcode=bibcode, index=index)
 
 

@@ -254,6 +254,34 @@ INFO - Missing missions by LLM:
 
 For now this produces a Pandas dataframe, grouped by the LLM predicted mission and papertype, with its mean confidence score, the number of times that combination was output by the LLM, the total number of trial runs, an accuracy score of how well it matched the human classification, and a boolean flag if that combination appears in the human classification.  The human classication comes from the "class_missions" field in the source dataset file.
 
+Alternatively, you can submit a paper for classfication and evaluate it in a single command using the `-s`, `--submit` flag.  In combination with the `-n` flag,
+this will classify the paper `num_runs` time before evaluation.
+
+This example first classifies paper index 1000, 20 times, then evaluates the output.
+```base
+bibcat evaluate-llm -i 1000 -s -n 20
+```
+
+```bash
+Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
+2024-08-26 14:42:06,854 - bibcat.llm.openai - INFO - Using paper bibcode: 2022SPIE12184E..24M
+2024-08-26 14:42:10,201 - bibcat.llm.openai - INFO - Output: {'JWST': ['MENTION', 0.7]}
+2024-08-26 14:42:10,204 - bibcat.llm.openai - INFO - Using paper bibcode: 2022SPIE12184E..24M
+2024-08-26 14:42:12,650 - bibcat.llm.openai - INFO - Output: {'JWST': ['MENTION', 0.5]}
+2024-08-26 14:42:12,654 - bibcat.llm.openai - INFO - Using paper bibcode: 2022SPIE12184E..24M
+2024-08-26 14:42:15,191 - bibcat.llm.openai - INFO - Output: {'JWST': ['MENTION', 0.7]}
+...
+2024-08-26 14:42:58,120 - bibcat.llm.evaluate - INFO - Evaluating output for 2022SPIE12184E..24M
+2024-08-26 14:42:58,120 - bibcat.llm.evaluate - INFO - Number of runs: 20
+2024-08-26 14:42:58,128 - bibcat.llm.evaluate - INFO - Human Classifications:
+ JWST: MENTION
+2024-08-26 14:42:58,132 - bibcat.llm.evaluate - INFO - Output Stats by LLM Mission and Paper Type:
+llm_mission llm_papertype  mean_llm_confidence  count  n_runs  accuracy  in_human_class
+       JWST       MENTION                  0.5     20      20     100.0            True
+2024-08-26 14:42:58,132 - bibcat.llm.evaluate - INFO - Missing missions by humans:
+2024-08-26 14:42:58,132 - bibcat.llm.evaluate - INFO - Missing missions by LLM:
+```
+
 
 
 
