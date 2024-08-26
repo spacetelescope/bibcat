@@ -1,5 +1,6 @@
 import json
 from typing import Dict
+from functools import lru_cache
 
 from bibcat import config
 from bibcat import parameters as params
@@ -9,6 +10,7 @@ from bibcat.core.operator import Operator
 settings = config.dataprep
 
 
+@lru_cache
 def load_source_dataset(do_verbose: bool):
     """
     Load the original source dataset that is a combined set of papertrack classification and ADS full text. Return a dictionary of the JSON content.

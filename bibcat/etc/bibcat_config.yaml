@@ -5,6 +5,8 @@ inputs:
   path_papertext: $BIBCAT_DATA_DIR/ST_Request2018-2023.json  # papertext corpus text
   path_source_data: $BIBCAT_DATA_DIR/dataset_combined_all_2018-2023.json  # combined JSON file for training
   keys_papertext: [abstract, author, bibcode, body, keyword, keyword_norm, pubdate, title]  # metadata keys for ADS papertext required for building input
+  llm_user_base: $BIBCAT_DATA_DIR  # llm user prompt base
+  llm_agent_base: $BIBCAT_DATA_DIR  # llm agent prompt base
 
 output:
   root_path: $BIBCAT_OUTPUT_DIR
@@ -14,6 +16,10 @@ output:
   path_not_in_papertext: $BIBCAT_DATA_DIR/bibcodes_notin_papertext.txt  # file for bibcodes not in papertrack
   path_not_in_papertrack: $BIBCAT_DATA_DIR/bibcodes_notin_papertrack.txt # file for bibcodes not in ADS papertext
   path_papertext_not_in_papertrack: $BIBCAT_DATA_DIR/papertext_notin_papertrack.json
+
+logging:
+  level: "INFO"
+  verbose: false
 
 paths:
   root: null
@@ -499,3 +505,15 @@ grammar:
       "verbclass": ["be", "has", "know", "plot", "root_nonverb", "science", "datainfluenced"],
       "verbtypes": ["FUTURE", "PASSIVE", "PAST", "POTENTIAL", "PURPOSE", "PRESENT"],
   }
+
+llms:
+  user_prompt: null
+  agent_prompt: null
+  prompt_output_file: paper_output.json
+  llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
+  llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
+  openai:
+    model: gpt-4o-mini
+    asst_id: null
+    use_assistant: false
+

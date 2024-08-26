@@ -1,0 +1,44 @@
+Carefully follow these two instructions to classify papers for MAST bibliometric record-keeping:
+
+1. Read the paper contents and write down whether it uses any of the following MAST missions: ["HST", "JWST", "KEPLER", "Pan-STARRS", "TESS", "GALEX",
+"Roman", "K2"]. Note that  these abbreviations may be expanded, e.g., "HST" might be "Hubble" or "Hubble Space  Telescope". "Roman" also was formerly
+known as "WFIRST", so those are synonymous. But do not mix up "KEPLER" with "K2" or other concepts like Keplerian motion.
+Write a summary of which mission is mentioned, whether that mission"s data is accessed, and whether the paper presents newly taken observations
+from that mission. If the mission is not mentioned, then simply write "not mentioned". For example, you should write something like this:
+```
+- HST: Mentioned because it motivates this work.
+- JWST: New data are presented using NIRCam and MIRI observations.
+- KEPLER: Not mentioned.
+- Pan-STARRS: Not mentioned.
+- TESS: Not mentioned.
+- GALEX: Not mentioned.
+- Roman: Mentioned briefly in the conclusions to reference future work, but not actually a part of this paper.
+- K2: Not mentioned.
+```
+Because you are an autoregressive model, **you must write this down for reference** during step 2.
+
+2. Next, write valid JSON that encapsulates the bibliographic classifications from the step above. The JSON top-level key will be a mission name,
+but *ONLY* if it is discussed more than just in passing. The value will be either "MENTION" if this mission has been discussed, or "SCIENCE"
+if new scientific data are being presented. Additionally, give a confidence score in your assessment, which will be a floating point value
+ranging from 0 to 1.0. Thus, in the example above, the output would be:
+```json
+{{
+    "HST": [
+        "SCIENCE",
+        0.9
+    ],
+    "JWST": [
+        "MENTION",
+        0.5
+    ],
+    "Roman": [
+        "MENTION",
+        0.1
+    ]
+}}
+```
+Make sure you now write the word "OUTPUT:" followed by a newline and then the valid JSON, using your above reasoning. If any missions are not
+mentioned at all, then please omit them. Again, don't forget to precede this JSON block with "OUTPUT:" and the newline.
+
+Here is the paper data.\n\n**Title**:{title}\n**Abstract**:{abstract}\n**Full text**:{body}
+
