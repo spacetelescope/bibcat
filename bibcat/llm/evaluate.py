@@ -92,18 +92,18 @@ def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:
     grouped_df['n_runs'] = n_runs
 
     # get the human paper classifications
-    paper_classes = paper['class_missions']
-    formatted_output = "\n".join([f"{mission}: {info['papertype']}" for mission, info in paper_classes.items()])
+    human_classes = paper['class_missions']
+    formatted_output = "\n".join([f"{mission}: {info['papertype']}" for mission, info in human_classes.items()])
     logger.info(f"Human Classifications:\n {formatted_output}")
 
     # compute accuracy of matches to human classification
-    vv = [(k, v['papertype']) for k, v in paper_classes.items()]
+    vv = [(k, v['papertype']) for k, v in human_classes.items()]
     grouped_df['accuracy'] = grouped_df.apply(lambda x: (x['count']/x['n_runs']) * 100 if (x['llm_mission'], x['llm_papertype']) in vv else 0, axis=1)
     grouped_df['in_human_class'] = grouped_df.apply(lambda x: (x['llm_mission'], x['llm_papertype']) in vv, axis=1)
 
     # get missing missions
-    missing_by_human = set(grouped_df['llm_mission']) - set(paper_classes)
-    missing_by_llm = set(paper_classes)-set(grouped_df['llm_mission'])
+    missing_by_human = set(grouped_df['llm_mission']) - set(human_classes)
+    missing_by_llm = set(human_classes)-set(grouped_df['llm_mission'])
 
     # log the output
     logger.info("Output Stats by LLM Mission and Paper Type:\n" + grouped_df.to_string(index=False))
