@@ -87,7 +87,7 @@ def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:
     # group by mission and paper type,
     # get the mean confidence and the count in each group
     grouped_df = df.groupby(['mission', 'papertype']).\
-        agg(mean_llm_confidence=('llm_confidence', 'mean'), count=('llm_confidence', 'size')).reset_index().\
+        agg(mean_llm_confidence=('llm_confidence', 'mean'), std_llm_confidence=('llm_confidence', 'std'), count=('llm_confidence', 'size')).reset_index().\
             rename(columns={'mission':'llm_mission', 'papertype':'llm_papertype'})
     grouped_df['n_runs'] = n_runs
 
