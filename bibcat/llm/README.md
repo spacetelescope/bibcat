@@ -242,13 +242,13 @@ INFO - Number of runs: 10
 INFO - Human Classifications:
  TESS: SCIENCE
 INFO - Output Stats by LLM Mission and Paper Type:
-llm_mission llm_papertype  mean_llm_confidence  count  n_runs  accuracy  in_human_class
-       JWST       MENTION                 0.50      2      10       0.0           False
-       JWST       SCIENCE                 0.80      1      10       0.0           False
-         K2       MENTION                 0.60      2      10       0.0           False
-     KEPLER       MENTION                 0.55      4      10       0.0           False
-       TESS       SCIENCE                 0.90     10      10     100.0            True
-INFO - Missing missions by humans: JWST, KEPLER, K2
+llm_mission llm_papertype  mean_llm_confidence  std_llm_confidence  count  n_runs  consistency  in_human_class
+       JWST       MENTION                 0.50            0.000000      2      10          0.0           False
+       JWST       SCIENCE                 0.80                 NaN      1      10          0.0           False
+         K2       MENTION                 0.60            0.141421      2      10          0.0           False
+     KEPLER       MENTION                 0.55            0.057735      4      10          0.0           False
+       TESS       SCIENCE                 0.90            0.000000     10      10        100.0            True
+INFO - Missing missions by humans: KEPLER, JWST, K2
 INFO - Missing missions by LLM:
 ```
 
@@ -276,10 +276,10 @@ Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined
 2024-08-26 14:42:58,128 - bibcat.llm.evaluate - INFO - Human Classifications:
  JWST: MENTION
 2024-08-26 14:42:58,132 - bibcat.llm.evaluate - INFO - Output Stats by LLM Mission and Paper Type:
-llm_mission llm_papertype  mean_llm_confidence  count  n_runs  accuracy  in_human_class
-       JWST       MENTION                  0.5     20      20     100.0            True
-2024-08-26 14:42:58,132 - bibcat.llm.evaluate - INFO - Missing missions by humans:
-2024-08-26 14:42:58,132 - bibcat.llm.evaluate - INFO - Missing missions by LLM:
+llm_mission llm_papertype  mean_llm_confidence  std_llm_confidence  count  n_runs  consistency  in_human_class
+       JWST       MENTION                  0.5            0.107606     20      20        100.0            True
+2024-08-27 17:47:06,714 - bibcat.llm.evaluate - INFO - Missing missions by humans:
+2024-08-27 17:47:06,714 - bibcat.llm.evaluate - INFO - Missing missions by LLM:
 ```
 
 
