@@ -96,9 +96,9 @@ def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:
     formatted_output = "\n".join([f"{mission}: {info['papertype']}" for mission, info in human_classes.items()])
     logger.info(f"Human Classifications:\n {formatted_output}")
 
-    # compute accuracy of matches to human classification
+    # compute consistency of matches to human classification
     vv = [(k, v['papertype']) for k, v in human_classes.items()]
-    grouped_df['accuracy'] = grouped_df.apply(lambda x: (x['count']/x['n_runs']) * 100 if (x['llm_mission'], x['llm_papertype']) in vv else 0, axis=1)
+    grouped_df['consistency'] = grouped_df.apply(lambda x: (x['count']/x['n_runs']) * 100 if (x['llm_mission'], x['llm_papertype']) in vv else 0, axis=1)
     grouped_df['in_human_class'] = grouped_df.apply(lambda x: (x['llm_mission'], x['llm_papertype']) in vv, axis=1)
 
     # get missing missions
