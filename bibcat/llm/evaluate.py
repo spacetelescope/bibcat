@@ -1,39 +1,11 @@
-
-import json
-import pathlib
-
 import pandas as pd
 
 from bibcat import config
-from bibcat.llm.io import get_source
+from bibcat.llm.io import get_source, read_output
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
-
-
-def read_output(bibcode: str = None) -> list:
-    """ Read in the output for a given bibcode
-
-    Returns the content from the output JSON file
-    for the given bibcode.
-
-    Parameters
-    ----------
-    bibcode : str, optional
-        The paper bibcode, by default None
-
-    Returns
-    -------
-    list
-        The output data from the LLM response
-    """
-    out = pathlib.Path(config.paths.output) / f'llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}'
-
-    with open(out, 'r') as f:
-        data = json.load(f)
-        return data.get(bibcode) if bibcode else data
-
 
 
 def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:

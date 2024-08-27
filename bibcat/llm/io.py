@@ -188,3 +188,25 @@ def write_output(paper_key: str, response: dict):
         with open(out, 'w') as f:
             json.dump(data, f, indent=2, sort_keys=False)
 
+
+def read_output(bibcode: str = None) -> list:
+    """ Read in the output for a given bibcode
+
+    Returns the content from the output JSON file
+    for the given bibcode.
+
+    Parameters
+    ----------
+    bibcode : str, optional
+        The paper bibcode, by default None
+
+    Returns
+    -------
+    list
+        The output data from the LLM response
+    """
+    out = pathlib.Path(config.paths.output) / f'llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}'
+
+    with open(out, 'r') as f:
+        data = json.load(f)
+        return data.get(bibcode) if bibcode else data
