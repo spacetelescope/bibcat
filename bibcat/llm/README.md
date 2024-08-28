@@ -252,6 +252,7 @@ INFO - Missing missions by humans: K2, JWST, KEPLER
 INFO - Missing missions by LLM:
 INFO - Writing output to /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4o-mini/summary_output.json
 ```
+The output is also written to a file specified by `config.llms.eval_output_file`, e.g. "summary_output.json".
 
 For now this produces a Pandas dataframe, grouped by the LLM predicted mission and papertype, with its mean confidence score, the number of times that combination was output by the LLM, the total number of trial runs, an accuracy score of how well it matched the human classification, and a boolean flag if that combination appears in the human classification.  The human classication comes from the "class_missions" field in the source dataset file.
 
