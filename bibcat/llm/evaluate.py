@@ -1,14 +1,24 @@
+import json
+import pathlib
+
 import pandas as pd
 
 from bibcat import config
-from bibcat.llm.io import get_source, read_output
+from bibcat import parameters as params
+from bibcat.core.operator import Operator
+from bibcat.core.paper import Paper
+from bibcat.llm.io import get_source, read_output, write_summary
 from bibcat.utils.logger_config import setup_logger
 
+# set up global operator
+op = Operator(classifier='ML', mode=None, keyword_objs=params.all_kobjs)
+
+# set up logger
 logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
 
-def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:
+def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0.5) -> pd.DataFrame:
     """ Evaluate the output from the LLM model
 
     For a given paper bibcode, reads in the output from the LLM model and
@@ -30,6 +40,8 @@ def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:
         the paper bibcode, by default None
     index : int, optional
         the dataset array index, by default None
+    threshold : float, optional
+        the threshold for rejection, by default 0.5
 
     Returns
     -------
@@ -77,12 +89,64 @@ def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:
     missing_by_human = set(grouped_df['llm_mission']) - set(human_classes)
     missing_by_llm = set(human_classes)-set(grouped_df['llm_mission'])
 
+    # check if missions are in the paper text body
+    in_text = identify_missions_in_text(grouped_df['llm_mission'], paper['body'])
+    grouped_df['mission_in_text'] = in_text
+
     # log the output
     logger.info("Output Stats by LLM Mission and Paper Type:\n" + grouped_df.to_string(index=False))
     logger.info('Missing missions by humans: ' + ', '.join(missing_by_human))
     logger.info('Missing missions by LLM: ' + ', '.join(missing_by_llm))
 
+    # write the summary output
+    llm = [{i['llm_mission']: i['llm_papertype']} for i in grouped_df.to_dict(orient='records') if i['mean_llm_confidence'] >= threshold]
+    output = {bibcode: {'human': {k:v['papertype'] for k, v in human_classes.items()}, 'threshold': threshold, 'llm': llm,
+              'missing_by_human': list(missing_by_human), 'missing_by_llm': list(missing_by_llm),
+              'df': grouped_df.to_dict(orient='records')}}
+    write_summary(output)
+
+    # return the dataframe
     return grouped_df
 
+
+def identify_missions_in_text(missions: list, text: str) -> list:
+    """ Check if a mission is in the paper text body
+
+    Checks if a list of missions names are present in the body of
+    the paper text.  The text comes from the "body" field of the
+    source dataset.  First, it loads the text into the bibcat Paper object,
+    parses, and retrieves all the paragraphs matching the input mission
+    keywords.  Then it iterates over each item in the input mission list, e.g.
+    all the missions from the LLM output response, identifies the correct
+    keyword object, and checks if there is a corresponding paper paragraph.
+
+    Parameters
+    ----------
+    missions : list
+        a list of missions
+    text : str
+        the paper text body
+
+    Returns
+    -------
+    list
+        a list of boolean values indicating if the mission is in the text
+    """
+    # get the paper object
+    # this is slow, only do this once for all missions
+    paper = Paper(text, keyword_objs=params.all_kobjs, do_check_truematch=True)
+    paper.process_paragraphs()
+    paragraphs = paper.get_paragraphs()
+
+    in_text = []
+    for mission in missions:
+
+        # get the relevant mission keyword
+        keyword = op._fetch_keyword_object(mission)
+
+        # identify the keyword in the text
+        in_text.append(True if paragraphs.get(keyword.get_name()) else False)
+
+    return in_text
 
 

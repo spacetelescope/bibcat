@@ -210,3 +210,36 @@ def read_output(bibcode: str = None) -> list:
     with open(out, 'r') as f:
         data = json.load(f)
         return data.get(bibcode) if bibcode else data
+
+
+def write_summary(output: dict):
+    """ Write summary output from evaluation to a file
+
+    Write the output summary statistics and info from
+    evaluation into a JSON file. Writes the file, located at
+    $BIBCAT_OUTPUT/output/llms/openai_[config.llms.openai.model]/[config.llms.eval_output_file]
+
+    Parameters
+    ----------
+    output : dict
+        the output summary data
+    """
+    out = pathlib.Path(config.paths.output) / f'llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}'
+    logger.info(f"Writing output to {out}")
+
+    # write the content
+    if not os.path.exists(out):
+        # create a new file
+        with open(out, 'w+') as f:
+            json.dump(output, f, indent=2, sort_keys=False)
+    else:
+        # append to an existing file
+        with open(out, 'r') as f:
+            data = json.load(f)
+
+        # update response to an existing bibcode, or add a new one
+        data.update(output)
+
+        # write the updated file
+        with open(out, 'w') as f:
+            json.dump(data, f, indent=2, sort_keys=False)
