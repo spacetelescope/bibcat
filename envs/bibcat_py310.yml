@@ -18,3 +18,5 @@ dependencies:
     - pytest-doctestplus
     - pytest-mock
     - deepmerge
+    - pandas
+    - openai
