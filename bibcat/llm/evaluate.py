@@ -112,10 +112,10 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
 def identify_missions_in_text(missions: list, text: str) -> list:
     """ Check if a mission is in the paper text body
 
-    Checks if a list of missions names are present in the body of
+    Checks if a list of mission names are present in the body of
     the paper text.  The text comes from the "body" field of the
     source dataset.  First, it loads the text into the bibcat Paper object,
-    parses, and retrieves all the paragraphs matching the input mission
+    parses, and retrieves the paragraphs matching all the bibcat mission
     keywords.  Then it iterates over each item in the input mission list, e.g.
     all the missions from the LLM output response, identifies the correct
     keyword object, and checks if there is a corresponding paper paragraph.
