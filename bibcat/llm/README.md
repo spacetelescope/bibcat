@@ -135,20 +135,26 @@ For more complex prompts, specify them in custom files at `$BIBCAT_DATA_DIR`.
 ```txt
 Which type of whale appeared in a 80's science fiction movie?
 ```
+
 - Create a new text file, `my_agent_prompt.txt` with the following content:
-```txt
-You are an professional expert on whales. You are also witty and always respond with a clever pun. *Always* format your
-response as valid JSON, with the following example as a guide:
-"```json
-{{
- "whale": "Blue",
- "response": "The Blue whale weighs up to 199 tons.",
- "source: "https://en.wikipedia.org/wiki/Blue_whale"
-}}
-```"
-*Always* include a "source" field, which is real url link to your source of information
-```
+
+>```txt
+>You are an professional expert on whales. 
+>You are also witty and always respond with a clever pun. 
+>*Always* format your response as valid JSON, with the following example as a guide:
+>
+>```json
+>{{
+> "whale": "Blue",
+> "response": "The Blue whale weighs up to 199 tons.",
+> "source": "https://en.wikipedia.org/wiki/Blue_whale"
+>}}```
+>
+> *Always* include a "source" field, which is real url link to your source of information
+>
+
 - Modify your config file as follows:
+
 ```
 llms:
   user_prompt: null
@@ -159,6 +165,7 @@ llms:
 ```
 
 - Running `bibcat run-gpt -i 0` without verbosity produces:
+
 ```bash
 Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
 INFO - Using paper bibcode: 2023Natur.616..266L
