@@ -69,6 +69,7 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
     )
     df = df.sort_values("mission").reset_index(drop=True)
 
+    ## TODO: The mean and std need to be recalculated so that missing confidence (NaN) should be treated as zero.
     # group by mission and paper type,
     # get the mean confidence and the count in each group
     grouped_df = (
@@ -101,8 +102,7 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
 
     # check if missions are in the paper text body
     in_text = identify_missions_in_text(
-        grouped_df["llm_mission"],
-        "Title: " + paper["title"] + "\nAbstract: " + paper["abstract"] + "\nFull Text: " + paper["body"],
+        grouped_df["llm_mission"], " ".join(paper["title"]) + " ".join(paper["abstract"]) + " ".join(paper["body"])
     )
     grouped_df["mission_in_text"] = in_text
 
