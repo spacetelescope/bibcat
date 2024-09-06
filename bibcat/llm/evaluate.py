@@ -69,7 +69,7 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
     )
     df = df.sort_values("mission").reset_index(drop=True)
 
-    ## TODO: The mean and std need to be recalculated so that missing confidence (NaN) should be treated as zero.
+    ## TODO: Need to reconsider how to handle the missing confidence (NaN) for mean and std.
     # group by mission and paper type,
     # get the mean confidence and the count in each group
     grouped_df = (
@@ -106,10 +106,24 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
     )
     grouped_df["mission_in_text"] = in_text
 
+    # check if llm hallucinates mission classification
+    grouped_df["hallucination_by_llm"] = [
+        False if mission_in_text else True for mission_in_text in grouped_df["mission_in_text"]
+    ]
+
+    # TODO: tomorrow fix this
+    hallucinated_missions = []
+    hallucinated_missions = [
+        grouped_df["llm_mission"][index]
+        for index, hallucination in enumerate(grouped_df["hallucination_by_llm"])
+        if hallucination
+    ]
+
     # log the output
     logger.info("Output Stats by LLM Mission and Paper Type:\n" + grouped_df.to_string(index=False))
     logger.info("Missing missions by humans: " + ", ".join(missing_by_human))
     logger.info("Missing missions by LLM: " + ", ".join(missing_by_llm))
+    logger.info("Hallucination by LLM: " + ", ".join(hallucinated_missions))
 
     # write the summary output
     llm = [
@@ -124,6 +138,7 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
             "llm": llm,
             "missing_by_human": list(missing_by_human),
             "missing_by_llm": list(missing_by_llm),
+            "hallucinated_missions": hallucinated_missions,
             "df": grouped_df.to_dict(orient="records"),
         }
     }
