@@ -1,4 +1,3 @@
-import json
 import pathlib
 
 import pandas as pd
@@ -49,9 +48,10 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
         an output pandas dataframe
     """
     # get the output
+    out = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
     paper = get_source(bibcode=bibcode, index=index)
     bibcode = paper["bibcode"]
-    response = read_output(bibcode)
+    response = read_output(filename=out, bibcode=bibcode)
 
     # exit if no bibcode found in output
     if not response:
@@ -184,5 +184,7 @@ def identify_missions_in_text(missions: list, text: str) -> list:
 
         # identify the keyword in the text
         in_text.append(True if paragraphs.get(keyword.get_name()) else False)
+
+    return in_text
 
     return in_text
