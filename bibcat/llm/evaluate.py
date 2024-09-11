@@ -111,8 +111,6 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
         False if mission_in_text else True for mission_in_text in grouped_df["mission_in_text"]
     ]
 
-    # TODO: tomorrow fix this
-    hallucinated_missions = []
     hallucinated_missions = [
         grouped_df["llm_mission"][index]
         for index, hallucination in enumerate(grouped_df["hallucination_by_llm"])

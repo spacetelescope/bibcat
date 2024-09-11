@@ -511,6 +511,7 @@ llms:
   agent_prompt: null
   prompt_output_file: paper_output.json
   eval_output_file: summary_output.json
+  cm_plot: confusion_matrix_llm.png
   llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
   llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
   openai:
