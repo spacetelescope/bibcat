@@ -521,4 +521,7 @@ llms:
     asst_id: null
     use_assistant: false
   classifications: ["SCIENCE", "MENTION"]
+  performance:
+    threshold: 0.6
+
 
