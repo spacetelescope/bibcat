@@ -32,6 +32,9 @@ paths:
   modiferrors: null
   TVTinfo: null
 
+# Ambiguous missions ["FIRST", "Copernicus"] need to be revisited
+missions: ["HST", "JWST", "Roman", "HLA", "HSC", "TESS", "KEPLER", "K2", "GALEX", "PanSTARRS", "FUSE", "IUE", "HUT", "UIT", "WUPPE", "BEFS", "TUES", "IMAPS", "EUVE"]
+
 dataprep:
   do_reuse_run: true # whether or not to reuse saved data from previous model run
   num_papers: 100  # the number of papers to use. Set to null to use all available papers in external dataset
@@ -355,7 +358,6 @@ performance:
   print_freq: 1
   threshold: 0.70
 
-
 results:
   # Result file name root
   fileroot_class_results: "classification_results_"
@@ -518,4 +520,5 @@ llms:
     model: gpt-4o-mini
     asst_id: null
     use_assistant: false
+  classifications: ["SCIENCE", "MENTION"]
 
