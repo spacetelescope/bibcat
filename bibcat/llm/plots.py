@@ -42,7 +42,7 @@ def confusion_matrix_plot(missions: list[str]) -> None:
 
     bbox_args = dict(boxstyle="round", fc="0.8")
 
-    labels = ["SCIENCE", "MENTION"]
+    labels = config.llms.classifications
 
     # Absolute label counts
     ax[0].set_title("Count")
@@ -70,6 +70,8 @@ def confusion_matrix_plot(missions: list[str]) -> None:
     # Suptitle
     if len(missions) < 5:
         fig.suptitle(f"Confusion Matrix\nMissions: {missions}", fontsize=14)
+    elif missions == config.missions:
+        fig.suptitle(f"Confusion Matrix\nAll missions", fontsize=14)
     else:
         fig.suptitle(f"Confusion Matrix\nMulti-missions", fontsize=14)
 

@@ -294,10 +294,35 @@ def evaluate_llm(ctx, bibcode, index, submit, num_runs):
 
 
 @cli.command(help="Create evaulation plots")
-@click.option("-c", "--cm", is_flag=True, show_default=False, help="Create confusion matrix plot")
-@click.option("-m", "--missions", type=str, multiple=True, default=None, show_default=True, help="Name of mission(s)")
-def eval_plot(cm: bool, missions: str):
+@click.option(
+    "-c",
+    "--cm",
+    is_flag=True,
+    show_default=False,
+    help="Create a confusion matrix plot. This flag works with the '-m' flag with a mission name, for example, 'bibcat eval-plot -c -m JWST'",
+)
+@click.option(
+    "-m",
+    "--missions",
+    type=str,
+    multiple=True,
+    default=None,
+    show_default=True,
+    help="List mission names; this flag works with the '-c' flag, for instance, 'bibcat -c -m JWST -m HST -m TESS' ",
+)
+@click.option(
+    "-a",
+    "--all-missions",
+    is_flag=True,
+    show_default=False,
+    help="Create a confusion matrix plot for all missions, command: 'bibcat eval-plot -a'",
+)
+def eval_plot(cm: bool, missions: str, all_missions: bool = False):
     """Create the evaluation plots from a LLM model"""
+    if all_missions:
+        missions = config.missions
+        confusion_matrix_plot(missions=missions)
+
     if cm and missions:
         confusion_matrix_plot(missions=list(missions))
 

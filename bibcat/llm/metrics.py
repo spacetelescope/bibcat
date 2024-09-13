@@ -27,6 +27,7 @@ def missions_classes(data: dict, missions: list[str]):
     human_labels = []
     llm_labels = []
     logger.debug(f"data dict = {data}")
+
     logger.info(f"Missions for Classes = {missions}")
 
     for bibcode, item in data.items():
