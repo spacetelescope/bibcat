@@ -17,26 +17,15 @@ from that mission. If the mission is not mentioned, then simply write "not menti
 ```
 Because you are an autoregressive model, **you must write this down for reference** during step 2.
 
-2. Next, write valid JSON that encapsulates the bibliographic classifications from the step above. The JSON top-level key will be a mission name,
-but *ONLY* if it is discussed more than just in passing. The value will be either "MENTION" if this mission has been discussed, or "SCIENCE"
-if new scientific data are being presented. Additionally, give a confidence score in your assessment, which will be a floating point value
-ranging from 0 to 1.0. Thus, in the example above, the output would be:
+2. Next, write valid JSON that encapsulates the bibliographic classifications from the step above. The JSON top-level key will be a mission name, but *ONLY* if it is discussed more than just in passing. The value will be either "MENTION" if this mission has been discussed, or "SCIENCE" if this mission data are being presented or used for analysis. Additionally, always provide confidence values for both "SCIENCE" and "MENTION", in that order [“SCIENCE”, “MENTION”], regardless of which class applies. Thus, even if a mission is only 'MENTION', it should have confidence values for both, such as confidence: [0.3, 0.7].  Thus, in the example above, the output would be:
+
 ```json
 {{
-    "HST": [
-        "SCIENCE",
-        0.9
-    ],
-    "JWST": [
-        "MENTION",
-        0.5
-    ],
-    "Roman": [
-        "MENTION",
-        0.1
-    ]
+    "HST": ["SCIENCE", [0.9, 0.1]],
+    "JWST": ["MENTION", [0.3, 0.7]],
 }}
 ```
+
 Make sure you now write the word "OUTPUT:" followed by a newline and then the valid JSON, using your above reasoning. If any missions are not
 mentioned at all, then please omit them. Again, don't forget to precede this JSON block with "OUTPUT:" and the newline.
 
