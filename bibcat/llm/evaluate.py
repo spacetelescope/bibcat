@@ -63,21 +63,25 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
     logger.info(f"Evaluating output for {bibcode}")
     logger.info(f"Number of runs: {n_runs}")
 
-    # convert output to a dataframe
+    # convert output to a dataframe (v[1] is a list of two confidences)
     df = pd.DataFrame(
-        [(k, v[0], v[1]) for i in response for k, v in i.items()], columns=["mission", "papertype", "llm_confidence"]
+        [(k, v[0], v[1][0], v[1][1]) for i in response for k, v in i.items()],
+        columns=["mission", "papertype", "llm_science_confidence", "llm_mention_confidence"],
     )
     df = df.sort_values("mission").reset_index(drop=True)
 
-    ## TODO: Need to reconsider how to handle the missing confidence (NaN) for mean and std.
     # group by mission and paper type,
-    # get the mean confidence and the count in each group
+    # get the mean/std confidence and the count of llm_mission
+    # by replacing missing values with zeros.
     grouped_df = (
-        df.groupby(["mission", "papertype"])
+        df.fillna(0)
+        .groupby(["mission", "papertype"])
         .agg(
-            mean_llm_confidence=("llm_confidence", "mean"),
-            std_llm_confidence=("llm_confidence", "std"),
-            count=("llm_confidence", "size"),
+            mean_llm_science_confidence=("llm_science_confidence", "mean"),
+            mean_llm_mention_confidence=("llm_mention_confidence", "mean"),
+            std_llm_science_confidence=("llm_science_confidence", "std"),
+            std_llm_mention_confidence=("llm_mention_confidence", "std"),
+            count=("mission", "size"),
         )
         .reset_index()
         .rename(columns={"mission": "llm_mission", "papertype": "llm_papertype"})
@@ -92,7 +96,8 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
     # compute consistency of matches to human classification
     vv = [(k, v["papertype"]) for k, v in human_classes.items()]
     grouped_df["consistency"] = grouped_df.apply(
-        lambda x: (x["count"] / x["n_runs"]) * 100 if (x["llm_mission"], x["llm_papertype"]) in vv else 0, axis=1
+        lambda x: (x["count"] / x["n_runs"]) * 100 if (x["llm_mission"], x["llm_papertype"]) in vv else 0,
+        axis=1,
     )
     grouped_df["in_human_class"] = grouped_df.apply(lambda x: (x["llm_mission"], x["llm_papertype"]) in vv, axis=1)
 
@@ -127,7 +132,8 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
     llm = [
         {i["llm_mission"]: i["llm_papertype"]}
         for i in grouped_df.to_dict(orient="records")
-        if i["mean_llm_confidence"] >= threshold
+        if max(i["mean_llm_science_confidence"], i["mean_llm_mention_confidence"]) >= threshold
+        or max(i["mean_llm_science_confidence"], i["mean_llm_mention_confidence"]) == 0.5
     ]
     output = {
         bibcode: {
