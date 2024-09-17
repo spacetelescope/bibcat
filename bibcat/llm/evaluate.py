@@ -75,17 +75,27 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
     # by replacing missing values with zeros.
     grouped_df = (
         df.fillna(0)
-        .groupby(["mission", "papertype"])
+        .groupby(["mission"])
         .agg(
             mean_llm_science_confidence=("llm_science_confidence", "mean"),
             mean_llm_mention_confidence=("llm_mention_confidence", "mean"),
             std_llm_science_confidence=("llm_science_confidence", "std"),
             std_llm_mention_confidence=("llm_mention_confidence", "std"),
-            count=("mission", "size"),
         )
         .reset_index()
-        .rename(columns={"mission": "llm_mission", "papertype": "llm_papertype"})
+        .rename(columns={"mission": "llm_mission"})
     )
+    grouped_df["llm_papertype"] = grouped_df.apply(
+        lambda x: "SCIENCE" if x["mean_llm_science_confidence"] >= x["mean_llm_mention_confidence"] else "MENTION",
+        axis=1,
+    )
+
+    # counting science and mention papertypes
+    for papertype in ["science", "mention"]:
+        grouped_df[papertype + "_count"] = grouped_df.apply(
+            lambda x: len(df[(df["mission"] == x["llm_mission"]) & (df["papertype"] == papertype.upper())]), axis=1
+        )
+
     grouped_df["n_runs"] = n_runs
 
     # get the human paper classifications
@@ -96,7 +106,9 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
     # compute consistency of matches to human classification
     vv = [(k, v["papertype"]) for k, v in human_classes.items()]
     grouped_df["consistency"] = grouped_df.apply(
-        lambda x: (x["count"] / x["n_runs"]) * 100 if (x["llm_mission"], x["llm_papertype"]) in vv else 0,
+        lambda x: (x[str(x["llm_papertype"]).lower() + "_count"] / x["n_runs"]) * 100
+        if (x["llm_mission"], x["llm_papertype"]) in vv
+        else 0,
         axis=1,
     )
     grouped_df["in_human_class"] = grouped_df.apply(lambda x: (x["llm_mission"], x["llm_papertype"]) in vv, axis=1)
