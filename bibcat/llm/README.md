@@ -19,20 +19,21 @@ Here is a quick start guide.
    2. or: `bibcat run-gpt -i 50`
 3. Check the response output `paper_output.json` file.
 
-You should see something like `INFO - Output: {'HST': ['MENTION', 0.8], 'JWST': ['SCIENCE', 0.9]}`. See [Response Output](#response-output) for details about the response output.  [Submitting a paper](#submitting-a-paper) describes the command for sending papers to OpenAI. For customizing and trialing new gpt prompts, see [User Configuration](#user-configuration) and [User and Agent (System) Prompts](#user-and-agent-system-prompts).
+You should see something like `INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], 'JWST': ['SCIENCE', [0.9, 0.1]]}`. See [Response Output](#response-output) for details about the response output.  [Submitting a paper](#submitting-a-paper) describes the command for sending papers to OpenAI. For customizing and trialing new gpt prompts, see [User Configuration](#user-configuration) and [User and Agent (System) Prompts](#user-and-agent-system-prompts).
 
 
 ## Submitting a paper
 
 The cli `bibcat run-gpt` submits a prompt with paper content.  The paper content can either be a local filepath on disk, or a bibcode or array list index from source dataset ``dataset_combined_all_2018-2023.json``.  When specifying a bibcode or list array index, the paper data is pulled from the source JSON dataset.
 
-The `run-gpt` command submits a single paper.
+The `run-gpt` command submits a single paper. Note that when submitting any paper whose bibcode contains `&`, double quotes `" "` are needed for the bibcode in the command line. 
 ```python
 # submit a paper
 bibcat run-gpt -f /Users/bcherinka/Downloads/2406.15083v1.pdf
 
 # use a bibcode from the source dataset
 bibcat run-gpt -b 2023Natur.616..266L
+bibcat run-gpt -b "2022A&A...668A..63R"
 
 # submit with entry 101 from the papertrack source dataset
 bibcat run-gpt -i 101
@@ -70,7 +71,7 @@ which gives output
 ```bash
 Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
 2024-08-22 15:49:50,634 - bibcat.llm.openai - INFO - Using paper bibcode: 2023MNRAS.518..456D
-2024-08-22 15:49:56,781 - bibcat.llm.openai - INFO - Output: {'HST': ['MENTION', 0.7], 'JWST': ['SCIENCE', 0.9]}
+2024-08-22 15:49:56,781 - bibcat.llm.openai - INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], 'JWST': ['SCIENCE', [0.9, 0.1]]}
 ```
 
 ## User Configuration
@@ -207,22 +208,25 @@ The Assistant supports uploading PDF or JSON files.  `bibcat` will accept either
 
 The output response from the LLM prompt is written to a file, specified by `config.llms.prompt_output_file`, e.g. "paper_output.json".  The response output is organized by the name of the file, or the bibcode of the paper.  Repeated prompts using the same paper will be appended to the entry for that paper.
 
-For example, running `bibcat run-gpt -b 2023Natur.616..266L` produces the following output:
+For example, running `bibcat run-gpt -b "2023Natur.616..266L"` produces the following output:
 ```json
-{
   "2023Natur.616..266L": [
     {
       "HST": [
         "MENTION",
-        0.8
+        [
+          0.3,
+          0.7
+        ]
       ],
       "JWST": [
         "SCIENCE",
-        0.95
+        [
+          0.9,
+          0.1
+        ]
       ]
-    }
-  ]
-}
+    },
 ```
 
 ## Evaluating Output
@@ -296,14 +300,39 @@ llm_mission llm_papertype  mean_llm_confidence  std_llm_confidence  count  n_run
 Definitions of the output columns from the evaluation.
 
 - **llm_mission**: The mission from the LLM output
+- **mean_llm_science_confidence**: The mean SCIENCE confidence number across all trial runs, for each mission + papertype combination
+- **mean_llm_mention_confidence**: The mean MENTION confidence number across all trial runs, for each mission + papertype combination
+- **std_llm_science_confidence**: The standard deviation of the SCIENCE confidence number across all trial runs
+- **std_llm_mention_confidence**: The standard deviation of the MENTION confidence number across all trial runs
+- **science_count**: The number of times a mission + papertype="SCIENCE" combo was included in the LLM response, across all trial runs
+- **mention_count**: The number of times a mission + papertype="MENTION" combo was included in the LLM response, across all trial runs
 - **llm_papertype**: The papertype from the LLM output
-- **mean_llm_confidence**: The mean confidence number across all trial runs, for each mission + papertype combination
-- **std_llm_confidence**: The standard deviation of the confidence number across all trial runs
-- **count**: The number of times a mission + papertype combo was included in the LLM response, across all trial runs
 - **n_runs**: The total number of trial runs
 - **consistency**: The percentage of how often the LLM mission + papertype matched the human classification
 - **in_human_class**: Flag whether or not the mission + papertype was included in the set of human classifications
 - **mission_in_text**: Flag whether or not the mission keyword is in the source paper text
+- **hallucination_by_llm**: Flag whether or not the mission keyword is hallucinated by LLM
 
 
+## Plotting Evaluation Plots
 
+You can assess model performance using confusion matrix plots or ROC curves.
+
+### Confusion Matrix Plot
+To plot a confusion matrix for specific missions, run:
+```bash
+bibcat eval-plot -c -m HST -m JWST
+```
+To plot a confusion matrix for all missions, run:
+```bash
+bibcat eval-plot -c -a
+```
+### Reciever Operating Characteristic (ROC) Plot
+To plot a confusion matrix for specific missions, run:
+```bash
+bibcat eval-plot -r -m HST -m JWST
+```
+To plot a confusion matrix for all missions, run:
+```bash
+bibcat eval-plot -r -a
+```

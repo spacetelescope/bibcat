@@ -85,6 +85,7 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
         .reset_index()
         .rename(columns={"mission": "llm_mission"})
     )
+
     grouped_df["llm_papertype"] = grouped_df.apply(
         lambda x: "SCIENCE" if x["mean_llm_science_confidence"] >= x["mean_llm_mention_confidence"] else "MENTION",
         axis=1,

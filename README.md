@@ -10,20 +10,14 @@ There are two main branches for bibcat work:
 
 ## Installation
 ### Required packages and versions
-- Python 3.10
-- click
-- deepmerge
-- spacy
-- nltk
-- pytest
-- pytest-doctestplus
 - tensorflow 2.15.0
 - tensorflow-hub
 - tensorflow-text
+- See more packages found in the conda evn file in the next section.
 
 ### Conda env installation
 Change `env_name` below with whatever you want to name the environment.
-- Download conda installation yml file [here](envs/bibcat_py310.yml).
+- Download the conda installation yml file [here](envs/bibcat_py310.yml).
 - In the terminal, run these commands.
 ```shell
 conda env create -n env_name -f bibcat_py310.yml

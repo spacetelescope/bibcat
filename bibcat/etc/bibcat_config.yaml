@@ -18,7 +18,7 @@ output:
   path_papertext_not_in_papertrack: $BIBCAT_DATA_DIR/papertext_notin_papertrack.json
 
 logging:
-  level: "INFO"
+  level: "DEBUG"
   verbose: false
 
 paths:
@@ -514,6 +514,7 @@ llms:
   prompt_output_file: paper_output.json
   eval_output_file: summary_output.json
   cm_plot: confusion_matrix_llm.png
+  roc_plot: roc_plot.png
   llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
   llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
   openai:

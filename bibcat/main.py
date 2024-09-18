@@ -17,7 +17,7 @@ from bibcat.data.build_dataset import build_dataset
 from bibcat.evaluate_basic_performance import evaluate_basic_performance
 from bibcat.llm.evaluate import evaluate_output
 from bibcat.llm.openai import OpenAIHelper, classify_paper
-from bibcat.llm.plots import confusion_matrix_plot
+from bibcat.llm.plots import confusion_matrix_plot, roc_plot
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
@@ -302,6 +302,13 @@ def evaluate_llm(ctx, bibcode, index, submit, num_runs):
     help="Create a confusion matrix plot. This flag works with the '-m' flag with a mission name, for example, 'bibcat eval-plot -c -m JWST'",
 )
 @click.option(
+    "-r",
+    "--roc",
+    is_flag=True,
+    show_default=False,
+    help="Create ROC curves. This flag works with the '-m' flag with a mission name, for example, 'bibcat eval-plot -r -m JWST'",
+)
+@click.option(
     "-m",
     "--missions",
     type=str,
@@ -315,16 +322,23 @@ def evaluate_llm(ctx, bibcode, index, submit, num_runs):
     "--all-missions",
     is_flag=True,
     show_default=False,
-    help="Create a confusion matrix plot for all missions, command: 'bibcat eval-plot -a'",
+    help="Create plots for all missions, command example for a confusion matrix plot for all missions: 'bibcat eval-plot -c -a'",
 )
-def eval_plot(cm: bool, missions: str, all_missions: bool = False):
+def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
     """Create the evaluation plots from a LLM model"""
-    if all_missions:
+    if cm and all_missions:
         missions = config.missions
         confusion_matrix_plot(missions=missions)
 
-    if cm and missions:
+    elif cm and missions:
         confusion_matrix_plot(missions=list(missions))
+
+    if roc and all_missions:
+        missions = config.missions
+        roc_plot(missions=missions)
+
+    elif roc and missions:
+        roc_plot(missions=list(missions))
 
 
 @cli.group("openai", short_help="OpenAI LLM commands")
