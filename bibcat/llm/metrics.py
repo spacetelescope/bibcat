@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 from sklearn.metrics import auc, roc_curve
 from sklearn.preprocessing import LabelBinarizer
 
@@ -76,39 +77,7 @@ def prepare_roc_inputs(missions: list[str], data: dict):
     return llm_confidences, binarized_human_labels, n_classes
 
 
-# def roc_curve(n_classes: int, binarized_true_labels: list[int], probabilities):
-#     """Compute ROC curve and ROC AUC (area under curve)
-
-
-#     Parameters
-#     ----------
-#     n_classes : int
-#         the number of classes
-#     binarized_true_labels: list[int]
-#         list of the mission names to extract the classification labels.
-
-#     Returns
-#     -------
-#     tuple
-#         a tuple of the list of human labels, llm labels, and a threshold value.
-
-#     """
-
-#     # compute ROC curve and ROC AUC (area under curve) for each class
-#     fpr = dict()  # false positive rate
-#     tpr = dict()  # true positive rate
-#     roc_auc = dict()
-
-#     for i in range(n_classes):
-#         fpr[i], tpr[i], _ = roc_curve(binarized_true_labels, probabilities[:, i])
-#         roc_auc[i] = auc(fpr[i], tpr[i])
-#         logger.debug(f"fpr[{i}]={fpr[i]}, tpr[{i}]={tpr[i]}")
-#         logger.debug(f"auc ={roc_auc[i]}")
-
-#     return fpr, tpr, roc_auc
-
-
-def get_roc_metrics(llm_confidences, binarized_human_labels, n_classes):
+def get_roc_metrics(llm_confidences: npt.NDArray[np.float64], binarized_human_labels: list, n_classes: int):
     """Compute ROC curve and ROC AUC (area under curve)
 
     Parameters
@@ -131,8 +100,10 @@ def get_roc_metrics(llm_confidences, binarized_human_labels, n_classes):
     roc_auc = dict()
 
     for i in range(n_classes):
+        logger.debug(f"human_labels = {binarized_human_labels}, confidences = {llm_confidences[:, i]}")
         fpr[i], tpr[i], _ = roc_curve(binarized_human_labels, llm_confidences[:, i])
         roc_auc[i] = auc(fpr[i], tpr[i])
-        logger.debug(f"fpr[{i}]={fpr[i]}, tpr[{i}]={tpr[i]}")
-        logger.debug(f"auc ={roc_auc[i]}")
+    logger.debug(f"fpr={fpr}, tpr[{i}]={tpr}")
+    logger.debug(f"auc ={roc_auc}")
+
     return fpr, tpr, roc_auc
