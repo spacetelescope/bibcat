@@ -98,7 +98,7 @@ def train(library, model, name, key, preprocessor, encoder) -> None:
     build_model()
 
 
-@cli.command(help="classify a paper using a trained model")
+@cli.command(help="Classify a paper using a trained model")
 @click.option(
     "-n",
     "--name",
@@ -115,12 +115,12 @@ def classify(name) -> None:
     classify_papers(classifier_name=name)
 
 
-@cli.command(help="update the training dataset JSON file")
+@cli.command(help="Update the training dataset JSON file")
 def update() -> None:
     pass
 
 
-@cli.command(help="evaluate a trained model on efficacy and performance")
+@cli.command(help="Evaluate a trained model on efficacy and performance")
 @click.option(
     "-n",
     "--name",
