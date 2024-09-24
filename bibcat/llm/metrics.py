@@ -63,6 +63,22 @@ def extract_eval_data(data: dict, missions: list[str]):
 
 
 def prepare_roc_inputs(missions: list[str], data: dict):
+    """Prepare input data for ROC and AUC (area under curve)
+
+    Parameters
+    ----------
+    missions : list[str]
+        the list of mission names
+    data: dict
+        the dict of the evaluation data of `config.llms.eval_output_file (summary_output.json)`
+
+    Returns
+    -------
+    tuple
+        a tuple of confidences, binarized_human_labels, and n_classes.
+
+    """
+
     human_labels, _, _, llm_confidences = extract_eval_data(missions=missions, data=data)
 
     # prep data for the roc plot
@@ -82,15 +98,15 @@ def get_roc_metrics(llm_confidences: npt.NDArray[np.float64], binarized_human_la
 
     Parameters
     ----------
-    n_classes : int
-        the number of classes
+    llm_confidences : npt.NDArray[np.float64]
+        the numpy array of llm_confidences
     binarized_true_labels: list[int]
-        list of the mission names to extract the classification labels.
+        binarized_human_labels, e.g., [[0] [1] [1] [0][0]]
 
     Returns
     -------
     tuple
-        a tuple of the list of human labels, llm labels, and a threshold value.
+        a tuple of false positive rate(fpr), true positive rate(tpr), and roc_auc
 
     """
 
