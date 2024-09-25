@@ -18,7 +18,7 @@ logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
 
-def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0.5) -> pd.DataFrame:
+def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0.5, write_file: bool = False) -> pd.DataFrame:
     """ Evaluate the output from the LLM model
 
     For a given paper bibcode, reads in the output from the LLM model and
@@ -42,6 +42,8 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
         the dataset array index, by default None
     threshold : float, optional
         the threshold for rejection, by default 0.5
+    write_file : bool, optional
+        Flag to write the summary output to a file, by default False
 
     Returns
     -------
@@ -99,11 +101,12 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
     logger.info('Missing missions by LLM: ' + ', '.join(missing_by_llm))
 
     # write the summary output
-    llm = [{i['llm_mission']: i['llm_papertype']} for i in grouped_df.to_dict(orient='records') if i['mean_llm_confidence'] >= threshold]
-    output = {bibcode: {'human': {k:v['papertype'] for k, v in human_classes.items()}, 'threshold': threshold, 'llm': llm,
-              'missing_by_human': list(missing_by_human), 'missing_by_llm': list(missing_by_llm),
-              'df': grouped_df.to_dict(orient='records')}}
-    write_summary(output)
+    if write_file:
+        llm = [{i['llm_mission']: i['llm_papertype']} for i in grouped_df.to_dict(orient='records') if i['mean_llm_confidence'] >= threshold]
+        output = {bibcode: {'human': {k:v['papertype'] for k, v in human_classes.items()}, 'threshold': threshold, 'llm': llm,
+                'missing_by_human': list(missing_by_human), 'missing_by_llm': list(missing_by_llm),
+                'df': grouped_df.to_dict(orient='records')}}
+        write_summary(output)
 
     # return the dataframe
     return grouped_df
