@@ -490,6 +490,7 @@ def classify_paper(
     n_runs: int = 1,
     use_assistant: bool = None,
     verbose: bool = None,
+    ops: bool = False,
 ):
     """Send a prompt to an OpenAI LLM model to classify a paper
 
@@ -525,4 +526,4 @@ def classify_paper(
 
         # write the output response to a file
         key = oa.get_output_key()
-        write_output(key, response)
+        write_output(key, response, ops)

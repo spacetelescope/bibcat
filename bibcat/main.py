@@ -54,6 +54,7 @@ def dataset() -> None:
         return
 
     else:
+        logger.info("CLI option: 'dataset' selected")
         build_dataset()
 
 
@@ -112,6 +113,7 @@ def classify(name) -> None:
 
     Wraps the original classify_papers script.
     """
+    logger.info("Selected ML classification!")
     classify_papers(classifier_name=name)
 
 
@@ -125,7 +127,7 @@ def update() -> None:
     "-n",
     "--name",
     default="ML",
-    type=click.Choice(["ML", "RB"]),
+    type=click.Choice(["ML", "RB"]),  # TODO: delete "RB"
     show_default=True,
     help="The type of classifier to use.  Either machine-learning (ML) or rule-based (RB).",
 )
@@ -172,10 +174,12 @@ def evaluate(name) -> None:
     help="The name of a custom agent prompt file",
 )
 @click.option("-v", "--verbose", is_flag=True, show_default=True, help="Set to print verbose output")
-def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_file, agent_prompt_file, verbose):
+@click.option("-o", "--ops", is_flag=True, show_default=False, help="Set to operational classification mode")
+def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_file, agent_prompt_file, verbose, ops):
     """Send a prompt to an OpenAI LLM model"""
     # override the config model
     start_time = time.time()
+    logger.info("CLI option: 'run_gpt' selected")
     if model:
         config.llms.openai.model = model
     # override the config user prompt file
@@ -186,7 +190,13 @@ def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_fi
         config.llms.llm_agent_prompt = agent_prompt_file
 
     classify_paper(
-        file_path=filename, bibcode=bibcode, index=index, n_runs=num_runs, use_assistant=assistant, verbose=verbose
+        file_path=filename,
+        bibcode=bibcode,
+        index=index,
+        n_runs=num_runs,
+        use_assistant=assistant,
+        verbose=verbose,
+        ops=ops,
     )
     elapsed_time = time.time() - start_time
     logger.info(f"Elapsed time for run_gpt for {num_runs} papers: {elapsed_time} seconds.")
@@ -223,8 +233,10 @@ def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_fi
     help="The name of a custom agent prompt file",
 )
 @click.option("-v", "--verbose", is_flag=True, show_default=True, help="Set to print verbose output")
-def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, verbose):
+@click.option("-o", "--ops", is_flag=True, show_default=False, help="Set to operational classification mode")
+def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, verbose, ops):
     start_time = time.time()
+    logger.info("CLI option: 'run_gpt_batch' selected")
     # override the config model
     if model:
         config.llms.openai.model = model
@@ -234,6 +246,8 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
     # override the config agent prompt file
     if agent_prompt_file:
         config.llms.llm_agent_prompt = agent_prompt_file
+    if ops:
+        logger.info("Run in the OPS MODE!")
 
     # get the list of files
     files = files or filename.read().splitlines()
@@ -250,6 +264,7 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
             n_runs=1,
             use_assistant=True if source == "file" else False,
             verbose=verbose,
+            ops=ops,
         )
     elapsed_time = time.time() - start_time
     logger.info(f"Elapsed time for run_gpt_batch for {len(files)} papers: {elapsed_time} seconds.")

@@ -203,5 +203,3 @@ def identify_missions_in_text(missions: list, text: str) -> list:
         in_text.append(True if paragraphs.get(keyword.get_name()) else False)
 
     return in_text
-
-    return in_text
