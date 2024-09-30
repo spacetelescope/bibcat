@@ -17,7 +17,7 @@ logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
 
-def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0.5) -> pd.DataFrame:
+def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0.6) -> pd.DataFrame:
     """Evaluate the output from the LLM model
 
     For a given paper bibcode, reads in the output from the LLM model and
@@ -40,7 +40,7 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
     index : int, optional
         the dataset array index, by default None
     threshold : float, optional
-        the threshold for rejection, by default 0.5
+        the threshold for rejection, by default 0.6
 
     Returns
     -------
@@ -73,6 +73,7 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
     # group by mission and paper type,
     # get the mean/std confidence and the count of llm_mission
     # by replacing missing values with zeros.
+    # TODO: is there a better way to assigning confidence column names than hard-coding.
     grouped_df = (
         df.fillna(0)
         .groupby(["mission"])
@@ -85,7 +86,8 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
         .reset_index()
         .rename(columns={"mission": "llm_mission"})
     )
-
+    # TODO: assigning the paper_type shouldn't hard-coded. This needs a fix with a better logic the using threshould value
+    # Assign the llm paper_type based on the mean confidence
     grouped_df["llm_papertype"] = grouped_df.apply(
         lambda x: "SCIENCE" if x["mean_llm_science_confidence"] >= x["mean_llm_mention_confidence"] else "MENTION",
         axis=1,
@@ -112,6 +114,7 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
         else 0,
         axis=1,
     )
+    # whether the mission is in human classification
     grouped_df["in_human_class"] = grouped_df.apply(lambda x: (x["llm_mission"], x["llm_papertype"]) in vv, axis=1)
 
     # get missing missions
@@ -129,6 +132,7 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
         False if mission_in_text else True for mission_in_text in grouped_df["mission_in_text"]
     ]
 
+    # Capture the hallucinated missions
     hallucinated_missions = [
         grouped_df["llm_mission"][index]
         for index, hallucination in enumerate(grouped_df["hallucination_by_llm"])
@@ -147,7 +151,8 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
         for i in grouped_df.to_dict(orient="records")
         if max(i["mean_llm_science_confidence"], i["mean_llm_mention_confidence"]) >= threshold
         or max(i["mean_llm_science_confidence"], i["mean_llm_mention_confidence"]) == 0.5
-    ]
+    ]  # Confirm the llm_papertype is what we want based on the threshold value
+
     output = {
         bibcode: {
             "human": {k: v["papertype"] for k, v in human_classes.items()},
