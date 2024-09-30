@@ -94,17 +94,17 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
 
     # write the summary output
     if write_file:
-      output = prepare_output(
-          bibcode,
-          threshold,
-          inspection,
-          grouped_df,
-          human_classes,
-          missing_by_human,
-          missing_by_llm,
-          hallucinated_missions,
-      )
-      write_summary(output)
+        output = prepare_output(
+            bibcode,
+            threshold,
+            inspection,
+            grouped_df,
+            human_classes,
+            missing_by_human,
+            missing_by_llm,
+            hallucinated_missions,
+        )
+        write_summary(output)
 
     # return the dataframe
     return grouped_df
@@ -186,6 +186,7 @@ def compute_consistency(paper: dict | str, grouped_df: pd.DataFrame, human_class
     grouped_df["consistency"] = grouped_df.apply(
         lambda x: (x["count"] / x["n_runs"]) * 100 if (x["llm_mission"], x["llm_papertype"]) in vv else 0, axis=1
     )
+    # whether the mission is in human classification
     grouped_df["in_human_class"] = grouped_df.apply(lambda x: (x["llm_mission"], x["llm_papertype"]) in vv, axis=1)
 
     # get missing missions
@@ -221,6 +222,7 @@ def check_hallucination(grouped_df):
         False if mission_in_text else True for mission_in_text in grouped_df["mission_in_text"]
     ]
 
+    # Capture the hallucinated missions
     hallucinated_missions = [
         grouped_df["llm_mission"][index]
         for index, hallucination in enumerate(grouped_df["hallucination_by_llm"])
