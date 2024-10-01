@@ -1,5 +1,6 @@
 import pathlib
 
+import numpy as np
 import pandas as pd
 
 from bibcat import config
@@ -17,7 +18,7 @@ logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
 
-def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0.5) -> pd.DataFrame:
+def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:
     """Evaluate the output from the LLM model
 
     For a given paper bibcode, reads in the output from the LLM model and
@@ -40,7 +41,7 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
     index : int, optional
         the dataset array index, by default None
     threshold : float, optional
-        the threshold for rejection, by default 0.5
+        the threshold for rejection, by default 0.6
 
     Returns
     -------
@@ -49,6 +50,9 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
     """
     # get the output
     out = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
+    threshold = config.llms.performance.threshold
+    inspection = config.llms.performance.inspection
+
     paper = get_source(bibcode=bibcode, index=index)
     bibcode = paper["bibcode"]
     response = read_output(filename=out, bibcode=bibcode)
@@ -65,52 +69,172 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
 
     # convert output to a dataframe (v[1] is a list of two confidences)
     df = pd.DataFrame(
-        [(k, v[0], v[1][0], v[1][1]) for i in response for k, v in i.items()],
-        columns=["mission", "papertype", "llm_science_confidence", "llm_mention_confidence"],
+        [(k, v[0], v[1]) for i in response for k, v in i.items()],
+        columns=["mission", "papertype", "llm_confidences"],
     )
     df = df.sort_values("mission").reset_index(drop=True)
 
     # group by mission and paper type,
-    # get the mean/std confidence and the count of llm_mission
-    # by replacing missing values with zeros.
-    grouped_df = (
-        df.fillna(0)
-        .groupby(["mission"])
-        .agg(
-            mean_llm_science_confidence=("llm_science_confidence", "mean"),
-            mean_llm_mention_confidence=("llm_mention_confidence", "mean"),
-            std_llm_science_confidence=("llm_science_confidence", "std"),
-            std_llm_mention_confidence=("llm_mention_confidence", "std"),
-        )
-        .reset_index()
-        .rename(columns={"mission": "llm_mission"})
-    )
-
-    grouped_df["llm_papertype"] = grouped_df.apply(
-        lambda x: "SCIENCE" if x["mean_llm_science_confidence"] >= x["mean_llm_mention_confidence"] else "MENTION",
-        axis=1,
-    )
-
-    # counting science and mention papertypes
-    for papertype in ["science", "mention"]:
-        grouped_df[papertype + "_count"] = grouped_df.apply(
-            lambda x: len(df[(df["mission"] == x["llm_mission"]) & (df["papertype"] == papertype.upper())]), axis=1
-        )
-
+    grouped_df = group_by_mission_papertype(df)
     grouped_df["n_runs"] = n_runs
 
     # get the human paper classifications
+    human_classes = get_human_classification(paper)
+
+    # compute consistency of matches to human classification and identify missing missions
+    missing_by_human, missing_by_llm = compute_consistency(paper, grouped_df, human_classes)
+
+    # check if llm hallucinates mission classification
+    hallucinated_missions = check_hallucination(grouped_df)
+
+    # log the output
+    logging(grouped_df, missing_by_human, missing_by_llm, hallucinated_missions)
+
+    # write the summary output
+    output = prepare_output(
+        bibcode,
+        threshold,
+        inspection,
+        grouped_df,
+        human_classes,
+        missing_by_human,
+        missing_by_llm,
+        hallucinated_missions,
+    )
+    write_summary(output)
+
+    # return the dataframe
+    return grouped_df
+
+
+# Custom aggregation functions for element-wise mean, std, and count for lists
+def mean_func(series: pd.Series):
+    """compute the element-wise mean value of the lists of mean llm confidences
+
+    Compute the element-wise mean values of the lists of two llm confidence values (science, mention).
+
+    Parameters
+    ==========
+    series: pd.Series
+
+    Returns
+    =======
+    float
+        a two digit mean value
+
+    """
+    return np.round(np.mean(np.stack(series), axis=0), 2)
+
+
+def std_func(series: pd.Series):
+    """compute the element-wise standard deviation (std) value of the lists of mean llm confidences
+
+    Compute the element-wise standard deviation values of the lists of two llm confidence values (science, mention)
+
+    Parameters
+    ==========
+    series: pd.Series
+
+    Returns
+    =======
+    float
+        a two digit std value
+
+    """
+    return np.round(np.std(np.stack(series), axis=0), 2)
+
+
+def cts_func(series: pd.Series):
+    """compute counts of the lists of mean llm confidences
+
+    Parameters
+    ==========
+    series: pd.Series
+
+    Returns
+    =======
+    np.float
+        a two digit std value
+
+    """
+    return len(series)
+
+
+def group_by_mission_papertype(df: pd.DataFrame):
+    """Create a Pandas grouped_by data frame
+
+    Group by distict mission and papertype and add the mean/std confidence by filling NaN with zeros
+    for missing missions/papertypes and the count of llm_mission
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        paper ouput pandas data frame
+
+    Returns
+    -------
+    pd.DataFrame
+        pandas data frame grouped by mission and papertype
+
+    """
+    grouped_df = (
+        df.fillna(0)
+        .groupby(["mission", "papertype"])
+        .agg(
+            mean_llm_confidences=("llm_confidences", mean_func),
+            std_llm_confidences=("llm_confidences", std_func),
+            count=("llm_confidences", cts_func),
+        )
+        .reset_index()
+        .rename(columns={"mission": "llm_mission", "papertype": "llm_papertype"})
+    )
+
+    return grouped_df
+
+
+def get_human_classification(paper: dict | str):
+    """Get human's mission and paper types
+
+    Parameters
+    ==========
+    paper: dict | str
+        dictionary or text (a row from the source dataset)
+
+    Returns
+    =======
+    dict
+        human's mission and paper type
+    """
     human_classes = paper["class_missions"]
     formatted_output = "\n".join([f"{mission}: {info['papertype']}" for mission, info in human_classes.items()])
     logger.info(f"Human Classifications:\n {formatted_output}")
+    return human_classes
 
+
+def compute_consistency(paper: dict | str, grouped_df: pd.DataFrame, human_classes: dict):
+    """Compare consistency between llm's and human's classification
+
+    Compare llm classification with human's, get missing missions from human and llm,
+    check if mission names are found in the text body.
+
+    Parameters
+    ==========
+    paper: dict | str
+        dictionary or text (a row from the source dataset)
+    grouped_df: pd.DataFrame
+        pandas data frame grouped by mission and papertype
+    human_classes: dict
+        human's mission and paper type
+
+    Returns
+    =======
+    tuple
+        missing missions by human and those by llm
+    """
     # compute consistency of matches to human classification
     vv = [(k, v["papertype"]) for k, v in human_classes.items()]
     grouped_df["consistency"] = grouped_df.apply(
-        lambda x: (x[str(x["llm_papertype"]).lower() + "_count"] / x["n_runs"]) * 100
-        if (x["llm_mission"], x["llm_papertype"]) in vv
-        else 0,
-        axis=1,
+        lambda x: (x["count"] / x["n_runs"]) * 100 if (x["llm_mission"], x["llm_papertype"]) in vv else 0, axis=1
     )
     grouped_df["in_human_class"] = grouped_df.apply(lambda x: (x["llm_mission"], x["llm_papertype"]) in vv, axis=1)
 
@@ -123,8 +247,22 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
         grouped_df["llm_mission"], " ".join(paper["title"]) + " ".join(paper["abstract"]) + " ".join(paper["body"])
     )
     grouped_df["mission_in_text"] = in_text
+    return missing_by_human, missing_by_llm
 
-    # check if llm hallucinates mission classification
+
+def check_hallucination(grouped_df):
+    """Find missions by llm hallucination
+
+    Parameters
+    ==========
+    grouped_df: pd.DataFrame
+        pandas data frame grouped by mission and papertype
+
+    Returns
+    =======
+    list
+        list of hallucinated missions
+    """
     grouped_df["hallucination_by_llm"] = [
         False if mission_in_text else True for mission_in_text in grouped_df["mission_in_text"]
     ]
@@ -135,34 +273,98 @@ def evaluate_output(bibcode: str = None, index: int = None, threshold: float = 0
         if hallucination
     ]
 
-    # log the output
+    return hallucinated_missions
+
+
+def logging(grouped_df: pd.DataFrame, missing_by_human: set, missing_by_llm: set, hallucinated_missions: list):
+    """Logging output summary
+
+    Parameters
+    ==========
+    grouped_df: pd.DataFrame
+        pandas dataframe grouped by mission and papertype
+    missing_by_human: set
+        set of missing missions by human
+    missing_by_llm: set
+        set of missing missions by llm
+    hallucinated_missions: list
+        list of missions by llm hallucination
+
+    Returns
+    =======
+
+    """
     logger.info("Output Stats by LLM Mission and Paper Type:\n" + grouped_df.to_string(index=False))
     logger.info("Missing missions by humans: " + ", ".join(missing_by_human))
     logger.info("Missing missions by LLM: " + ", ".join(missing_by_llm))
-    logger.info("Hallucination by LLM: " + ", ".join(hallucinated_missions))
+    logger.info("Hallucination by LLM: " + ", ".join(set(hallucinated_missions)))
 
-    # write the summary output
+
+def prepare_output(
+    bibcode: str,
+    threshold: float,
+    inspection: float,
+    grouped_df: pd.DataFrame,
+    human_classes: dict,
+    missing_by_human: set,
+    missing_by_llm: set,
+    hallucinated_missions: list,
+):
+    """Prepare output and write summary
+
+    Preparing output by gathering information.
+
+    Parameters
+    ==========
+    bibcode: str
+        paper bibcode
+    threshold: float
+        threshold value to decide if llm paper_type is accepted
+    inspection: float
+        a fiducial value to filter out llm paper_type for human inspection
+    grouped_df: pd.DataFrame
+        pandas dataframe grouped by mission and papertype
+    human classes: dict
+        human classifed missions and papertypes
+    missing_by_human: set
+        set of missions missed by human
+    missing_by_llm: set
+        set of missions missed by llm
+
+    Returns
+    =======
+    dict[str, dict[str, Any]]
+        dictionary of paper, missions, and papertypes, pandas dataframe of llm assessment, and other
+
+    """
+    # pass its llm's classification if the maximum confindence value is higher than the threshold
     llm = [
         {i["llm_mission"]: i["llm_papertype"]}
         for i in grouped_df.to_dict(orient="records")
-        if max(i["mean_llm_science_confidence"], i["mean_llm_mention_confidence"]) >= threshold
-        or max(i["mean_llm_science_confidence"], i["mean_llm_mention_confidence"]) == 0.5
+        if max(i["mean_llm_confidences"]) >= threshold
     ]
+
+    # human inspection list for ambiguous classification
+    inspection_missions = [
+        {i["llm_mission"]: i["llm_papertype"]}
+        for i in grouped_df.to_dict(orient="records")
+        if max(i["mean_llm_confidences"]) >= inspection and max(i["mean_llm_confidences"]) < threshold
+    ]
+
     output = {
         bibcode: {
             "human": {k: v["papertype"] for k, v in human_classes.items()},
             "threshold": threshold,
             "llm": llm,
+            "inspection": inspection_missions,
             "missing_by_human": list(missing_by_human),
             "missing_by_llm": list(missing_by_llm),
-            "hallucinated_missions": hallucinated_missions,
+            "hallucinated_missions": list(set(hallucinated_missions)),
             "df": grouped_df.to_dict(orient="records"),
         }
     }
-    write_summary(output)
 
-    # return the dataframe
-    return grouped_df
+    return output
 
 
 def identify_missions_in_text(missions: list, text: str) -> list:

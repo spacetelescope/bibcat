@@ -524,5 +524,6 @@ llms:
   classifications: ["SCIENCE", "MENTION"]
   performance:
     threshold: 0.6
+    inspection: 0.4
 
 

@@ -6,6 +6,7 @@ import tempfile
 from bibcat import config
 from bibcat.data.streamline_dataset import load_source_dataset
 from bibcat.utils.logger_config import setup_logger
+from bibcat.utils.utils import NumpyEncoder
 
 logger = setup_logger(__name__)
 
@@ -227,7 +228,7 @@ def write_summary(output: dict):
     if not os.path.exists(out):
         # create a new file
         with open(out, "w+") as f:
-            json.dump(output, f, indent=2, sort_keys=False)
+            json.dump(output, f, indent=2, sort_keys=False, cls=NumpyEncoder)
     else:
         # append to an existing file
         with open(out, "r") as f:
@@ -238,4 +239,4 @@ def write_summary(output: dict):
 
         # write the updated file
         with open(out, "w") as f:
-            json.dump(data, f, indent=2, sort_keys=False)
+            json.dump(data, f, indent=2, sort_keys=False, cls=NumpyEncoder)
