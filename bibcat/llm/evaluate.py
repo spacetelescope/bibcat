@@ -354,7 +354,8 @@ def prepare_output(
     output = {
         bibcode: {
             "human": {k: v["papertype"] for k, v in human_classes.items()},
-            "threshold": threshold,
+            "threshold_acceptance": threshold,
+            "threshold_inspection": inspection,
             "llm": llm,
             "inspection": inspection_missions,
             "missing_by_human": list(missing_by_human),

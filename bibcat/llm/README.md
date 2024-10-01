@@ -242,26 +242,25 @@ bibcat run-gpt -i 2000 -n 10
 ```
 Once it's finished, you can evaluate the LLM output with:
 ```
-bibcat evaluate-llm -i 2000
+bibcat evaluate-llm -b "2020A&A...642A.105K"
 ```
 
 You should see some output similar to
 ```bash
-Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
-INFO - Evaluating output for 2022Sci...377.1211L
-INFO - Number of runs: 11
-INFO - Human Classifications:
- TESS: SCIENCE
-INFO - Output Stats by LLM Mission and Paper Type:
-llm_mission llm_papertype  mean_llm_confidence  std_llm_confidence  count  n_runs  consistency  in_human_class  mission_in_text
-       JWST       MENTION             0.500000            0.000000      2      11          0.0           False            False
-       JWST       SCIENCE             0.800000                 NaN      1      11          0.0           False            False
-         K2       MENTION             0.466667            0.251661      3      11          0.0           False            False
-     KEPLER       MENTION             0.550000            0.057735      4      11          0.0           False            False
-       TESS       SCIENCE             0.900000            0.000000     11      11        100.0            True             True
-INFO - Missing missions by humans: K2, JWST, KEPLER
-INFO - Missing missions by LLM:
-INFO - Writing output to /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4o-mini/summary_output.json
+Loading source dataset: /Users/jyoon/Documents/asb/bibliography_automation/bibcat_datasets//dataset_combined_all_2018-2023.json
+2024-10-01 14:02:44,447 - bibcat.llm.evaluate - INFO - Evaluating output for 2020A&A...642A.105K
+2024-10-01 14:02:44,447 - bibcat.llm.evaluate - INFO - Number of runs: 3
+2024-10-01 14:02:44,457 - bibcat.llm.evaluate - INFO - Human Classifications:
+ KEPLER: SCIENCE
+2024-10-01 14:02:45,064 - bibcat.llm.evaluate - INFO - Output Stats by LLM Mission and Paper Type:
+llm_mission llm_papertype mean_llm_confidences std_llm_confidences  count  n_runs  consistency  in_human_class  mission_in_text  hallucination_by_llm
+         K2       MENTION           [0.2, 0.8]          [0.0, 0.0]      1       3          0.0           False            False                  True
+         K2       SCIENCE         [0.85, 0.15]        [0.05, 0.05]      2       3          0.0           False            False                  True
+     KEPLER       SCIENCE         [0.92, 0.08]        [0.02, 0.02]      3       3        100.0            True             True                 False
+2024-10-01 14:02:45,064 - bibcat.llm.evaluate - INFO - Missing missions by humans: K2
+2024-10-01 14:02:45,064 - bibcat.llm.evaluate - INFO - Missing missions by LLM: 
+2024-10-01 14:02:45,064 - bibcat.llm.evaluate - INFO - Hallucination by LLM: K2
+2024-10-01 14:02:45,066 - bibcat.llm.io - INFO - Writing output to /Users/jyoon/GitHub/bibcat/output/output/llms/openai_gpt-4o-mini/summary_output.json
 ```
 The output is also written to a file specified by `config.llms.eval_output_file`, e.g. "summary_output.json".
 
@@ -298,14 +297,21 @@ llm_mission llm_papertype  mean_llm_confidence  std_llm_confidence  count  n_run
 ### Output Columns
 
 Definitions of the output columns from the evaluation.
+#### Summary output
+- **human**: Human classifications
+- **threshold_acceptance**: The threshold value to accept the llm's classifications
+- **threshold_inspection**: The threshold value to require human inspection
+- **llm**: llm's classification whose confidence value is higher than or equal to the threshold value
+- **inspection**: The list of missions/papertypes for human inspection due to the edge-case confidence values (e.g, 0.5)
+- **missing_by_human**: The set of missing missions by human classification
+- **missing_by_llm**: The set of missing missions by llm classification
+- **hallucinated_missions**: The list of missions halluciated by llm
 
+#### Each mission/papertype DataFrame output
 - **llm_mission**: The mission from the LLM output
-- **mean_llm_science_confidence**: The mean SCIENCE confidence number across all trial runs, for each mission + papertype combination
-- **mean_llm_mention_confidence**: The mean MENTION confidence number across all trial runs, for each mission + papertype combination
-- **std_llm_science_confidence**: The standard deviation of the SCIENCE confidence number across all trial runs
-- **std_llm_mention_confidence**: The standard deviation of the MENTION confidence number across all trial runs
-- **science_count**: The number of times a mission + papertype="SCIENCE" combo was included in the LLM response, across all trial runs
-- **mention_count**: The number of times a mission + papertype="MENTION" combo was included in the LLM response, across all trial runs
+- **mean_llm_confidence**: The list of the mean confidence values of SCIENCE and MENTION across all trial runs, for each mission + papertype combination
+- **std_llm_confidence**: The standard deviation of the confidence values of SCIENCE and MENTION  across all trial runs
+- **count**: The number of times a mission + papertype combo was included in the LLM response, across all trial runs
 - **llm_papertype**: The papertype from the LLM output
 - **n_runs**: The total number of trial runs
 - **consistency**: The percentage of how often the LLM mission + papertype matched the human classification

@@ -1,16 +1,8 @@
 # Change Log
 
 ## [Unreleased]
-
-- [PR #29](https://github.com/spacetelescope/bibcat/pull/29) Refactored the ML classifier to allow for other `tensorflow` models, and for adding other libraries, e.g. `pytorch`, down the line.
-- PR #27
-    - Added a CLI option to build the combined dataset from the papertrack data and papertext (from ADS) data and refactored `build_dataset.py`.
-    - Enabled dynamic version control
-    - Readme update: clarify the workflow in Quick Start; the use of fetching papers using the `do_evaluation` keyword when `bibcat classify` and `bibcat evaluate`
-- [PR # 23]
-    - Setting a new config for the directory of papers for operational classification with a fake JSON file
-    - Refactored `fetch_paper.py`
-    - Other relevant updates and minor updates
+- [PR #35]
+    - Implement performance evaluation metrics and plots
 
 - Bibcat to do list
     - Refactor performance.py
@@ -26,7 +18,12 @@
     - Deleted all previous codes and files for a fresh start
 
 ### Changed
+- [PR #29](https://github.com/spacetelescope/bibcat/pull/29) Refactored the ML classifier to allow for other `tensorflow` models, and for adding other libraries, e.g. `pytorch`, down the line.
 
+- [PR # 23](https://github.com/spacetelescope/bibcat/pull/23)
+    - Setting a new config for the directory of papers for operational classification with a fake JSON file
+    - Refactored `fetch_paper.py`
+    - Other relevant updates and minor updates
 - [PR # 22, 23]
     - The `is_keyword` method is replaced with the `identify_keyword` method.
 
@@ -91,6 +88,18 @@
     - updated formatting and styling
 
 ### Added
+- [PR #34]
+    - Added a summary output code for evaluation
+- [PR #32]
+    - Added unit test for `build_dataset.py`
+- [PR #31]
+    - Implemented ChatGPT agent prompt engineering approach to classify papers
+    - Added a basic classification output
+- [PR #27](https://github.com/spacetelescope/bibcat/pull/27)
+    - Added a CLI option to build the combined dataset from the papertrack data and papertext (from ADS) data and refactored `build_dataset.py`.
+    - Enabled dynamic version control
+    - Readme update: clarify the workflow in Quick Start; the use of fetching papers using the `do_evaluation` keyword when `bibcat classify` and `bibcat evaluate`
+
 - [PR #18]
     - Added new `click` cli for `bibcat`
 
