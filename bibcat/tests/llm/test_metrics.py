@@ -9,21 +9,9 @@ data = {
         "threshold": 0.7,
         "llm": [{"JWST": "SCIENCE"}, {"Roman": "MENTION"}, {"GALEX": "SCIENCE"}],
         "df": [
-            {
-                "llm_mission": "JWST",
-                "mean_llm_science_confidence": 0.8,
-                "mean_llm_mention_confidence": 0.2,
-            },
-            {
-                "llm_mission": "Roman",
-                "mean_llm_science_confidence": 0.3,
-                "mean_llm_mention_confidence": 0.7,
-            },
-            {
-                "llm_mission": "GALEX",
-                "mean_llm_science_confidence": 0.4,
-                "mean_llm_mention_confidence": 0.6,
-            },
+            {"llm_mission": "JWST", "mean_llm_confidences": [0.8, 0.2]},
+            {"llm_mission": "Roman", "mean_llm_confidences": [0.3, 0.7]},
+            {"llm_mission": "GALEX", "mean_llm_confidences": [0.4, 0.6]},
         ],
     }
 }
