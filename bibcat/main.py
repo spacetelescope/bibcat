@@ -7,6 +7,7 @@ Main entry point into bibcat
 
 import os
 import time
+from pathlib import Path
 
 import click
 
@@ -18,6 +19,7 @@ from bibcat.evaluate_basic_performance import evaluate_basic_performance
 from bibcat.llm.evaluate import evaluate_output
 from bibcat.llm.openai import OpenAIHelper, classify_paper
 from bibcat.llm.plots import confusion_matrix_plot, roc_plot
+from bibcat.stats.stats_llm import save_evaluation_stats
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
@@ -25,7 +27,10 @@ logger = setup_logger(__name__)
 
 @click.group("bibcat")
 def cli() -> None:
-    """Command-line tool for running the bibcat package"""
+    """Command-line tool for running the bibcat package
+    To see more options for each command, you can use `--help` after each command.
+    For instance, `bibcat run-gpt --help`
+    """
 
 
 @cli.command(help="Build a combined dataset")
@@ -308,7 +313,7 @@ def evaluate_llm(ctx, bibcode, index, submit, num_runs):
     evaluate_output(bibcode=bibcode, index=index)
 
 
-@cli.command(help="Create evaulation plots")
+@cli.command(help="Create evaulation plots for llm performance")
 @click.option(
     "-c",
     "--cm",
@@ -354,6 +359,20 @@ def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
 
     elif roc and missions:
         roc_plot(missions=list(missions))
+
+
+@cli.command(help="Create a statisics table for classification")
+@click.option(
+    "-e",
+    "--eval",
+    is_flag=True,
+    show_default=False,
+    help="Create a statistics table for llm and human mission-papertype pairs. This flag works with the '-e' flag. e.g., 'bibcat statistics -e'",
+)
+def statistics(llm: bool):
+    if llm:
+        filepath = Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_stats_file}"
+        save_evaluation_stats(filepath)
 
 
 @cli.group("openai", short_help="OpenAI LLM commands")

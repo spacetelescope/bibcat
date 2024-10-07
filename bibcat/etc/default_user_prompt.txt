@@ -9,7 +9,7 @@ from that mission. If the mission is not mentioned, then simply write "not menti
 - HST: Mentioned because it motivates this work.
 - JWST: New data are presented using NIRCam and MIRI observations.
 - KEPLER: Not mentioned.
-- Pan-STARRS: Not mentioned.
+- PanSTARRS: Not mentioned.
 - TESS: Not mentioned.
 - GALEX: Not mentioned.
 - Roman: Mentioned briefly in the conclusions to reference future work, but not actually a part of this paper.
