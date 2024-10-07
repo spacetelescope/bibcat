@@ -513,6 +513,8 @@ llms:
   agent_prompt: null
   prompt_output_file: paper_output.json
   eval_output_file: summary_output.json
+  eval_stats_file: evaluation_stats.json
+  papertype_stats_file: papertype_stats.json
   cm_plot: confusion_matrix_llm.png
   roc_plot: roc_plot.png
   llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
