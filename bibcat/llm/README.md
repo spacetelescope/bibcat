@@ -305,7 +305,7 @@ Definitions of the output columns from the evaluation.
 - **inspection**: The list of missions/papertypes for human inspection due to the edge-case confidence values (e.g, 0.5)
 - **missing_by_human**: The set of missing missions by human classification
 - **missing_by_llm**: The set of missing missions by llm classification
-- **hallucinated_missions**: The list of missions halluciated by llm
+- **hallucinated_missions**: The list of missions hallucinated by llm
 
 #### Each mission/papertype DataFrame output
 - **llm_mission**: The mission from the LLM output
