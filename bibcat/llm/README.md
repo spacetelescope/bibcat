@@ -333,7 +333,7 @@ To plot a confusion matrix for all missions, run:
 ```bash
 bibcat eval-plot -c -a
 ```
-### Reciever Operating Characteristic (ROC) Plot
+### Receiver Operating Characteristic (ROC) Plot
 To plot a confusion matrix for specific missions, run:
 ```bash
 bibcat eval-plot -r -m HST -m JWST
