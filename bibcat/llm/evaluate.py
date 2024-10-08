@@ -183,7 +183,7 @@ def group_by_mission_papertype(df: pd.DataFrame):
         .agg(
             mean_llm_confidences=("llm_confidences", mean_func),
             std_llm_confidences=("llm_confidences", std_func),
-            count=("llm_confidences", cts_func),
+            count=('mission', 'size'),
         )
         .reset_index()
         .rename(columns={"mission": "llm_mission", "papertype": "llm_papertype"})
