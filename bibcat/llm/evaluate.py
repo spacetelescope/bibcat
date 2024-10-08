@@ -107,59 +107,6 @@ def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:
     return grouped_df
 
 
-# Custom aggregation functions for element-wise mean, std, and count for lists
-def mean_func(series: pd.Series):
-    """compute the element-wise mean value of the lists of mean llm confidences
-
-    Compute the element-wise mean values of the lists of two llm confidence values (science, mention).
-
-    Parameters
-    ==========
-    series: pd.Series
-
-    Returns
-    =======
-    float
-        a two digit mean value
-
-    """
-    return np.round(np.mean(np.stack(series), axis=0), 2)
-
-
-def std_func(series: pd.Series):
-    """compute the element-wise standard deviation (std) value of the lists of mean llm confidences
-
-    Compute the element-wise standard deviation values of the lists of two llm confidence values (science, mention)
-
-    Parameters
-    ==========
-    series: pd.Series
-
-    Returns
-    =======
-    float
-        a two digit std value
-
-    """
-    return np.round(np.std(np.stack(series), axis=0), 2)
-
-
-def cts_func(series: pd.Series):
-    """compute counts of the lists of mean llm confidences
-
-    Parameters
-    ==========
-    series: pd.Series
-
-    Returns
-    =======
-    np.float
-        a two digit std value
-
-    """
-    return len(series)
-
-
 def group_by_mission_papertype(df: pd.DataFrame):
     """Create a Pandas grouped_by data frame
 
@@ -181,9 +128,9 @@ def group_by_mission_papertype(df: pd.DataFrame):
         df.fillna(0)
         .groupby(["mission", "papertype"])
         .agg(
-            mean_llm_confidences=("llm_confidences", lambda x: np.round(np.mean(np.stack(x), axis=0), 2))),
-            std_llm_confidences=("llm_confidences", lambda x: np.round(np.std(np.stack(x), axis=0), 2))),
-            count=('mission', 'size'),
+            mean_llm_confidences=("llm_confidences", lambda x: np.round(np.mean(np.stack(x), axis=0), 2)),
+            std_llm_confidences=("llm_confidences", lambda x: np.round(np.std(np.stack(x), axis=0), 2)),
+            count=("mission", "size"),
         )
         .reset_index()
         .rename(columns={"mission": "llm_mission", "papertype": "llm_papertype"})
