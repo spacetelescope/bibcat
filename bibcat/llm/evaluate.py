@@ -181,8 +181,8 @@ def group_by_mission_papertype(df: pd.DataFrame):
         df.fillna(0)
         .groupby(["mission", "papertype"])
         .agg(
-            mean_llm_confidences=("llm_confidences", mean_func),
-            std_llm_confidences=("llm_confidences", std_func),
+            mean_llm_confidences=("llm_confidences", lambda x: np.round(np.mean(np.stack(x), axis=0), 2))),
+            std_llm_confidences=("llm_confidences", lambda x: np.round(np.std(np.stack(x), axis=0), 2))),
             count=('mission', 'size'),
         )
         .reset_index()
