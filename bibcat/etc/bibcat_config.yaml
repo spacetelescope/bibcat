@@ -18,7 +18,7 @@ output:
   path_papertext_not_in_papertrack: $BIBCAT_DATA_DIR/papertext_notin_papertrack.json
 
 logging:
-  level: "DEBUG"
+  level: "INFO"
   verbose: false
 
 paths:

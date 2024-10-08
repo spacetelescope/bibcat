@@ -50,8 +50,6 @@ def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:
     """
     # get the output
     out = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
-    threshold = config.llms.performance.threshold
-    inspection = config.llms.performance.inspection
 
     paper = get_source(bibcode=bibcode, index=index)
     bibcode = paper["bibcode"]
@@ -75,7 +73,7 @@ def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:
     df = df.sort_values("mission").reset_index(drop=True)
 
     # group by mission and paper type,
-    grouped_df = group_by_mission_papertype(df)
+    grouped_df = group_by_mission_papertype(df, n_runs)
     grouped_df["n_runs"] = n_runs
 
     # get the human paper classifications
@@ -88,7 +86,13 @@ def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:
     hallucinated_missions = check_hallucination(grouped_df)
 
     # log the output
-    logging(grouped_df, missing_by_human, missing_by_llm, hallucinated_missions)
+    logger.info("Output Stats by LLM Mission and Paper Type:\n" + grouped_df.to_string(index=False))
+    logger.info("Missing missions by humans: " + ", ".join(missing_by_human))
+    logger.info("Missing missions by LLM: " + ", ".join(missing_by_llm))
+    logger.info("Hallucination by LLM: " + ", ".join(set(hallucinated_missions)))
+
+    threshold = config.llms.performance.threshold
+    inspection = config.llms.performance.inspection
 
     # write the summary output
     output = prepare_output(
@@ -276,30 +280,6 @@ def check_hallucination(grouped_df):
     return hallucinated_missions
 
 
-def logging(grouped_df: pd.DataFrame, missing_by_human: set, missing_by_llm: set, hallucinated_missions: list):
-    """Logging output summary
-
-    Parameters
-    ==========
-    grouped_df: pd.DataFrame
-        pandas dataframe grouped by mission and papertype
-    missing_by_human: set
-        set of missing missions by human
-    missing_by_llm: set
-        set of missing missions by llm
-    hallucinated_missions: list
-        list of missions by llm hallucination
-
-    Returns
-    =======
-
-    """
-    logger.info("Output Stats by LLM Mission and Paper Type:\n" + grouped_df.to_string(index=False))
-    logger.info("Missing missions by humans: " + ", ".join(missing_by_human))
-    logger.info("Missing missions by LLM: " + ", ".join(missing_by_llm))
-    logger.info("Hallucination by LLM: " + ", ".join(set(hallucinated_missions)))
-
-
 def prepare_output(
     bibcode: str,
     threshold: float,
@@ -404,7 +384,5 @@ def identify_missions_in_text(missions: list, text: str) -> list:
 
         # identify the keyword in the text
         in_text.append(True if paragraphs.get(keyword.get_name()) else False)
-
-    return in_text
 
     return in_text
