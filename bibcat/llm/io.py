@@ -188,7 +188,7 @@ def write_output(paper_key: str, response: dict):
             json.dump(data, f, indent=2, sort_keys=False)
 
 
-def read_output(filename: str, bibcode: str | None = None) -> list:
+def read_output(bibcode: str | None, filename: str) -> list:
     """Read in the output for a given bibcode
 
     Returns the content from the output JSON file

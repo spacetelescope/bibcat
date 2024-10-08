@@ -40,20 +40,16 @@ def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:
         the paper bibcode, by default None
     index : int, optional
         the dataset array index, by default None
-    threshold : float, optional
-        the threshold for rejection, by default 0.6
 
     Returns
     -------
     pd.DataFrame
         an output pandas dataframe
     """
-    # get the output
     out = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
-
     paper = get_source(bibcode=bibcode, index=index)
     bibcode = paper["bibcode"]
-    response = read_output(filename=out, bibcode=bibcode)
+    response = read_output(bibcode=bibcode, filename=out)
 
     # exit if no bibcode found in output
     if not response:
@@ -73,7 +69,7 @@ def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:
     df = df.sort_values("mission").reset_index(drop=True)
 
     # group by mission and paper type,
-    grouped_df = group_by_mission_papertype(df, n_runs)
+    grouped_df = group_by_mission_papertype(df)
     grouped_df["n_runs"] = n_runs
 
     # get the human paper classifications
@@ -247,10 +243,14 @@ def compute_consistency(paper: dict | str, grouped_df: pd.DataFrame, human_class
     missing_by_llm = set(human_classes) - set(grouped_df["llm_mission"])
 
     # check if missions are in the paper text body
-    in_text = identify_missions_in_text(
-        grouped_df["llm_mission"], " ".join(paper["title"]) + " ".join(paper["abstract"]) + " ".join(paper["body"])
-    )
+
+    text = " ".join(paper["title"]) + " ".join(paper["abstract"]) + " ".join(paper["body"])
+    in_text = identify_missions_in_text(grouped_df["llm_mission"], text)
     grouped_df["mission_in_text"] = in_text
+    # in_text = identify_missions_in_text(
+    #     grouped_df["llm_mission"], " ".join(paper["title"]) + " ".join(paper["abstract"]) + " ".join(paper["body"])
+    # )
+    # grouped_df["mission_in_text"] = in_text
     return missing_by_human, missing_by_llm
 
 
@@ -298,10 +298,6 @@ def prepare_output(
     ==========
     bibcode: str
         paper bibcode
-    threshold: float
-        threshold value to decide if llm paper_type is accepted
-    inspection: float
-        a fiducial value to filter out llm paper_type for human inspection
     grouped_df: pd.DataFrame
         pandas dataframe grouped by mission and papertype
     human classes: dict
