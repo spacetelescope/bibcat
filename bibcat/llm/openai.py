@@ -434,7 +434,7 @@ def extract_response(value: str) -> dict:
         the extracted JSON content
     """
     # extract the json content
-    response = re.search(r"```json\n(.*?)\n```", value, re.DOTALL)
+    response = re.search(r'```json\n(.*?)\n```', value.replace(' ', ''), re.DOTALL)
 
     if response:
         response = response.group(1)

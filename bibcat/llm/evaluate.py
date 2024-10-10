@@ -18,7 +18,7 @@ logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
 
-def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:
+def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = False) -> pd.DataFrame:
     """Evaluate the output from the LLM model
 
     For a given paper bibcode, reads in the output from the LLM model and
@@ -40,6 +40,8 @@ def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:
         the paper bibcode, by default None
     index : int, optional
         the dataset array index, by default None
+    write_file : bool, optional
+        Flag to write the summary output to a file, by default False
 
     Returns
     -------
@@ -91,17 +93,18 @@ def evaluate_output(bibcode: str = None, index: int = None) -> pd.DataFrame:
     inspection = config.llms.performance.inspection
 
     # write the summary output
-    output = prepare_output(
-        bibcode,
-        threshold,
-        inspection,
-        grouped_df,
-        human_classes,
-        missing_by_human,
-        missing_by_llm,
-        hallucinated_missions,
-    )
-    write_summary(output)
+    if write_file:
+      output = prepare_output(
+          bibcode,
+          threshold,
+          inspection,
+          grouped_df,
+          human_classes,
+          missing_by_human,
+          missing_by_llm,
+          hallucinated_missions,
+      )
+      write_summary(output)
 
     # return the dataframe
     return grouped_df
