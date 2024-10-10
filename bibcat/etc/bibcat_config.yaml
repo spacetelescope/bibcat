@@ -32,6 +32,9 @@ paths:
   modiferrors: null
   TVTinfo: null
 
+# Ambiguous missions ["FIRST", "Copernicus"] need to be revisited
+missions: ["HST", "JWST", "Roman", "HLA", "HSC", "TESS", "KEPLER", "K2", "GALEX", "PanSTARRS", "FUSE", "IUE", "HUT", "UIT", "WUPPE", "BEFS", "TUES", "IMAPS", "EUVE"]
+
 dataprep:
   do_reuse_run: true # whether or not to reuse saved data from previous model run
   num_papers: 100  # the number of papers to use. Set to null to use all available papers in external dataset
@@ -355,7 +358,6 @@ performance:
   print_freq: 1
   threshold: 0.70
 
-
 results:
   # Result file name root
   fileroot_class_results: "classification_results_"
@@ -511,10 +513,17 @@ llms:
   agent_prompt: null
   prompt_output_file: paper_output.json
   eval_output_file: summary_output.json
+  cm_plot: confusion_matrix_llm.png
+  roc_plot: roc_plot.png
   llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
   llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
   openai:
     model: gpt-4o-mini
     asst_id: null
     use_assistant: false
+  classifications: ["SCIENCE", "MENTION"]
+  performance:
+    threshold: 0.6
+    inspection: 0.4
+
 

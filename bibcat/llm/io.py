@@ -1,4 +1,3 @@
-
 import json
 import os
 import pathlib
@@ -7,12 +6,13 @@ import tempfile
 from bibcat import config
 from bibcat.data.streamline_dataset import load_source_dataset
 from bibcat.utils.logger_config import setup_logger
+from bibcat.utils.utils import NumpyEncoder
 
 logger = setup_logger(__name__)
 
 
 def get_source(bibcode: str | None = None, index: int | None = None, body_only: bool = False) -> dict | str:
-    """ Get the source dataset for a given bibcode or index.
+    """Get the source dataset for a given bibcode or index.
 
     Retrieve the entry from the combined source dataset for a given bibcode or list index.
 
@@ -37,22 +37,21 @@ def get_source(bibcode: str | None = None, index: int | None = None, body_only: 
     text = None
     if bibcode:
         # get the source by bibcode
-        res = [i for i in source_dataset if i['bibcode'] == bibcode]
+        res = [i for i in source_dataset if i["bibcode"] == bibcode]
         text = res[0] if res else None
         if not res:
-            logger.warning('Requested bibcode not found in source datasets.')
+            logger.warning("Requested bibcode not found in source datasets.")
     elif index is not None:
         index = int(index)
         # get the source by index
         text = source_dataset[index] if index < n_sources else None
         if index > n_sources:
-            logger.warning('Requested index is out of range of the number of source datasets.')
-
-    return text['body'] if text and body_only else text
+            logger.warning("Requested index is out of range of the number of source datasets.")
+    return text["body"] if text and body_only else text
 
 
 def get_file(filepath: str = None, bibcode: str = None, index: int = None) -> str:
-    """ Get a file path for paper data
+    """Get a file path for paper data
 
     Get a file path of a paper to upload to an LLM.  If a file path is provided, e.g.
     a local pdf file, it is returned.  If a bibcode or index is provided, retrieves the
@@ -80,10 +79,10 @@ def get_file(filepath: str = None, bibcode: str = None, index: int = None) -> st
     # if source dataset file, extract and create temporary file
     if bibcode or index is not None:
         source = get_source(bibcode=bibcode, index=index)
-        bc = source['bibcode']
+        bc = source["bibcode"]
 
         # create temporary file
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, prefix='temp_', suffix=f'_{bc}.json') as fp:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, prefix="temp_", suffix=f"_{bc}.json") as fp:
             fp.write(json.dumps(source, indent=2))
             fp.close()
 
@@ -91,7 +90,7 @@ def get_file(filepath: str = None, bibcode: str = None, index: int = None) -> st
 
 
 def get_llm_prompt(prompt_type: str) -> str:
-    """ Get an LLM prompt
+    """Get an LLM prompt
 
     Retrieve a user or agent prompt for an LLM from a file or the config. A user prompt
     is the text to be used as the input to the LLM, while the agent, or system, prompt is
@@ -124,30 +123,30 @@ def get_llm_prompt(prompt_type: str) -> str:
         when an invalid prompt type is provided
     """
 
-    if prompt_type not in {'user', 'agent'}:
+    if prompt_type not in {"user", "agent"}:
         raise ValueError('Prompt type must be either "user" or "agent".')
 
     # if a prompt file exists, use it
-    path = pathlib.Path(config.inputs[f'llm_{prompt_type}_base']) / config.llms[f'llm_{prompt_type}_prompt']
+    path = pathlib.Path(config.inputs[f"llm_{prompt_type}_base"]) / config.llms[f"llm_{prompt_type}_prompt"]
     if path.exists():
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             prompt = f.read()
             return prompt
 
     # otherwise, use the config user prompt and default agent prompt
-    prompt = config.llms[f'{prompt_type}_prompt']
+    prompt = config.llms[f"{prompt_type}_prompt"]
 
     # otherise, use the defaults
     if not prompt:
-        default_prompt = pathlib.Path(__file__).parent.parent / f'etc/default_{prompt_type}_prompt.txt'
-        with open(default_prompt, 'r') as f:
+        default_prompt = pathlib.Path(__file__).parent.parent / f"etc/default_{prompt_type}_prompt.txt"
+        with open(default_prompt, "r") as f:
             prompt = f.read()
 
     return prompt
 
 
 def write_output(paper_key: str, response: dict):
-    """ Write the output response to a file
+    """Write the output response to a file
 
     Writes the output json response to a file, located at
     $BIBCAT_OUTPUT/output/llms/openai_[config.llms.openai.model]/[config.llms.prompt_output_file]
@@ -164,18 +163,18 @@ def write_output(paper_key: str, response: dict):
     """
 
     # setup the output file
-    out = pathlib.Path(config.paths.output) / f'llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}'
+    out = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
     out.parent.mkdir(parents=True, exist_ok=True)
 
     # write the content
     if not os.path.exists(out):
         # create a new file
         data = {paper_key: [response]}
-        with open(out, 'w+') as f:
+        with open(out, "w+") as f:
             json.dump(data, f, indent=2, sort_keys=False)
     else:
         # append to an existing file
-        with open(out, 'r') as f:
+        with open(out, "r") as f:
             data = json.load(f)
 
         # append response to an existing file entry, or add a new one
@@ -185,12 +184,12 @@ def write_output(paper_key: str, response: dict):
             data[paper_key] = [response]
 
         # write the updated file
-        with open(out, 'w') as f:
+        with open(out, "w") as f:
             json.dump(data, f, indent=2, sort_keys=False)
 
 
-def read_output(bibcode: str = None) -> list:
-    """ Read in the output for a given bibcode
+def read_output(bibcode: str | None, filename: str) -> list:
+    """Read in the output for a given bibcode
 
     Returns the content from the output JSON file
     for the given bibcode.
@@ -205,15 +204,13 @@ def read_output(bibcode: str = None) -> list:
     list
         The output data from the LLM response
     """
-    out = pathlib.Path(config.paths.output) / f'llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}'
-
-    with open(out, 'r') as f:
+    with open(filename, "r") as f:
         data = json.load(f)
         return data.get(bibcode) if bibcode else data
 
 
 def write_summary(output: dict):
-    """ Write summary output from evaluation to a file
+    """Write summary output from evaluation to a file
 
     Write the output summary statistics and info from
     evaluation into a JSON file. Writes the file, located at
@@ -224,22 +221,22 @@ def write_summary(output: dict):
     output : dict
         the output summary data
     """
-    out = pathlib.Path(config.paths.output) / f'llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}'
+    out = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}"
     logger.info(f"Writing output to {out}")
 
     # write the content
     if not os.path.exists(out):
         # create a new file
-        with open(out, 'w+') as f:
-            json.dump(output, f, indent=2, sort_keys=False)
+        with open(out, "w+") as f:
+            json.dump(output, f, indent=2, sort_keys=False, cls=NumpyEncoder)
     else:
         # append to an existing file
-        with open(out, 'r') as f:
+        with open(out, "r") as f:
             data = json.load(f)
 
         # update response to an existing bibcode, or add a new one
         data.update(output)
 
         # write the updated file
-        with open(out, 'w') as f:
-            json.dump(data, f, indent=2, sort_keys=False)
+        with open(out, "w") as f:
+            json.dump(data, f, indent=2, sort_keys=False, cls=NumpyEncoder)

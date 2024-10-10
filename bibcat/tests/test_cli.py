@@ -37,11 +37,39 @@ def test_classify() -> None:
     """test the cli classify help command"""
     runner = CliRunner()
     result = runner.invoke(cli, ["classify", "--help"])
-    assert "classify a paper using a trained model" in result.output
+    assert "Classify a paper using a trained model" in result.output
 
 
 def test_evaluate() -> None:
     """test the cli evaluate help command"""
     runner = CliRunner()
     result = runner.invoke(cli, ["evaluate", "--help"])
-    assert "evaluate a trained model on efficacy and performance" in result.output
+    assert "Evaluate a trained model on efficacy and performance" in result.output
+
+
+def test_evaluate_llm() -> None:
+    """test the cli evaluate help command"""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["evaluate-llm", "--help"])
+    assert "Evaluate the LLM output" in result.output
+
+
+def test_run_gpt() -> None:
+    """test the cli run-gpt help command"""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["run-gpt", "--help"])
+    assert "Send a prompt to an OpenAI LLM model" in result.output
+
+
+def test_run_gpt_batch() -> None:
+    """test the cli run-gpt help command"""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["run-gpt-batch", "--help"])
+    assert "Batch submit papers to an OpenAI LLM model" in result.output
+
+
+def test_eval_plot() -> None:
+    """test the cli eval-plot help command"""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["eval-plot", "--help"])
+    assert "Create evaulation plots" in result.output

@@ -8,14 +8,15 @@ from openai import OpenAI
 from openai.types.beta.assistant import Assistant
 
 from bibcat import config
-from bibcat.llm.io import get_source, get_file, get_llm_prompt, write_output
+from bibcat.llm.io import get_file, get_llm_prompt, get_source, write_output
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
+
 class OpenAIHelper:
-    """ Helper class for interacting with the OpenAI API
+    """Helper class for interacting with the OpenAI API
 
     Parameters
     ----------
@@ -26,13 +27,13 @@ class OpenAIHelper:
     """
 
     def __init__(self, use_assistant: bool = None, verbose: bool = None):
-        """ init """
+        """init"""
         # input parameters
         self.use_assistant = use_assistant or config.llms.openai.use_assistant
         self.verbose = verbose or config.logging.verbose
 
         # llm attributes
-        self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.assistant = None
         self.vector_store = None
         self.file = None
@@ -50,13 +51,15 @@ class OpenAIHelper:
         self.paper = None
 
     def __repr__(self) -> str:
-        return (f'<OpenAIHelper use_assistant="{self.use_assistant}",'
-                f'asst_id="{self.assistant.id if self.assistant else None}",'
-                f'vs_id="{self.vector_store.id if self.vector_store else None}">')
+        return (
+            f'<OpenAIHelper use_assistant="{self.use_assistant}",'
+            f'asst_id="{self.assistant.id if self.assistant else None}",'
+            f'vs_id="{self.vector_store.id if self.vector_store else None}">'
+        )
 
     # upload the file
     def upload_file(self, file_path: str):
-        """ Upload a file to the OpenAI API
+        """Upload a file to the OpenAI API
 
         Parameters
         ----------
@@ -68,13 +71,10 @@ class OpenAIHelper:
         str
             the file id
         """
-        self.file = self.client.files.create(
-            file=open(file_path, "rb"),
-            purpose='assistants'
-        )
+        self.file = self.client.files.create(file=open(file_path, "rb"), purpose="assistants")
 
-    def create_vector_store(self, name: str = 'Papers', files: list = None):
-        """ Create a new vector store
+    def create_vector_store(self, name: str = "Papers", files: list = None):
+        """Create a new vector store
 
         Parameters
         ----------
@@ -88,13 +88,10 @@ class OpenAIHelper:
         VectorStore
             a new OpenAI vector store
         """
-        self.vector_store = self.client.beta.vector_stores.create(
-            name=name,
-            file_ids=files
-        )
+        self.vector_store = self.client.beta.vector_stores.create(name=name, file_ids=files)
 
     def get_vector_store(self, vs_id: str):
-        """ Get a vector store by id
+        """Get a vector store by id
 
         Parameters
         ----------
@@ -112,7 +109,7 @@ class OpenAIHelper:
             pass
 
     def list_vector_stores(self) -> list[dict]:
-        """ List all vector stores
+        """List all vector stores
 
         List all vector stores, and convert each response
         to a dictionary.
@@ -126,8 +123,8 @@ class OpenAIHelper:
             self.stores.append(vs.to_dict())
         return self.stores
 
-    def create_assistant(self, name: str = 'Paper Reader', vs_id: str = None) -> Assistant:
-        """ Create a new OpenAI assistant
+    def create_assistant(self, name: str = "Paper Reader", vs_id: str = None) -> Assistant:
+        """Create a new OpenAI assistant
 
         Creates a new OpenAI assistant with file search capabilities.  The llm model
         to use for the assistant is set in the config file by ``config.llms.openai.model``.
@@ -155,14 +152,14 @@ class OpenAIHelper:
         # create the new assistant
         self.assistant = self.client.beta.assistants.create(
             name=name,
-            instructions=get_llm_prompt('agent'),
+            instructions=get_llm_prompt("agent"),
             model=config.llms.openai.model,
             tools=[{"type": "file_search"}],
-            tool_resources={"file_search": {"vector_store_ids": [vs_id]}}
+            tool_resources={"file_search": {"vector_store_ids": [vs_id]}},
         )
 
     def list_assistants(self) -> list[dict]:
-        """ List all assistants
+        """List all assistants
 
         List all OpenAI Assistants, and convert each response
         to a dictionary.
@@ -178,7 +175,7 @@ class OpenAIHelper:
         return self.assistants
 
     def get_assistant(self, asst_id: str = None):
-        """ Get an OpenAI Assistant
+        """Get an OpenAI Assistant
 
         Parameters
         ----------
@@ -199,7 +196,9 @@ class OpenAIHelper:
         """
         asst_id = asst_id or config.llms.openai.asst_id
         if not asst_id:
-            raise ValueError('No assistant id provided.  Either provide or set an assistant id, or first create a new assistant.')
+            raise ValueError(
+                "No assistant id provided.  Either provide or set an assistant id, or first create a new assistant."
+            )
         logger.info(f"Using assistant id: {asst_id}")
 
         try:
@@ -208,7 +207,7 @@ class OpenAIHelper:
             raise ValueError(f"Assistant id {asst_id} not found.") from e
 
     def send_assistant_request(self, file_id: str, asst_id: str = None) -> dict:
-        """ Send a prompt request to an OpenAI assistant
+        """Send a prompt request to an OpenAI assistant
 
         Sends a user prompt request to an OpenAI assistant to search
         through a given file for content.  It retrieves the requested agent via
@@ -251,18 +250,17 @@ class OpenAIHelper:
         # this creates a temporary vector store for the file
         thread = self.client.beta.threads.create(
             messages=[
-            {"role": "user", "content": get_llm_prompt('user'),
-                "attachments": [
-                { "file_id": file_id, "tools": [{"type": "file_search"}] }],
-            }
+                {
+                    "role": "user",
+                    "content": get_llm_prompt("user"),
+                    "attachments": [{"file_id": file_id, "tools": [{"type": "file_search"}]}],
+                }
             ]
         )
 
         # submit the prompt request
         logger.debug(f"File search thread: {thread.tool_resources.file_search}")
-        run = self.client.beta.threads.runs.create_and_poll(
-            thread_id=thread.id, assistant_id=self.assistant.id
-        )
+        run = self.client.beta.threads.runs.create_and_poll(thread_id=thread.id, assistant_id=self.assistant.id)
 
         # get the response content
         messages = list(self.client.beta.threads.messages.list(thread_id=thread.id, run_id=run.id))
@@ -279,7 +277,7 @@ class OpenAIHelper:
         return self.response
 
     def populate_user_template(self, paper: dict) -> str:
-        """ Format a user prompt template with paper data
+        """Format a user prompt template with paper data
 
         Parameters
         ----------
@@ -296,10 +294,10 @@ class OpenAIHelper:
         ValueError
             when the prompt fields are missing from the paper data
         """
-        user = get_llm_prompt('user')
+        user = get_llm_prompt("user")
 
         # check the user template fields match the paper dictionary keys
-        fields = re.findall(r'{(.*?)}', user)
+        fields = re.findall(r"{(.*?)}", user)
         missing = set(fields) - set(paper.keys())
         if missing:
             raise ValueError(f"Missing user template fields in input paper data: {missing}")
@@ -308,7 +306,7 @@ class OpenAIHelper:
         return user.format(**paper)
 
     def send_message(self, user_prompt: str = None) -> dict | str:
-        """ Send a straight chat message to the LLM
+        """Send a straight chat message to the LLM
 
         Can pass a custom user prompt into method, otherwise it uses the prompt
         pulled from ``get_llm_prompt``.  The response is stored in the instance
@@ -327,8 +325,11 @@ class OpenAIHelper:
         """
         result = self.client.chat.completions.create(
             model=config.llms.openai.model,
-            messages=[{"role": "system", "content": get_llm_prompt('agent')},
-                      {'role': 'user', 'content': user_prompt or get_llm_prompt('user')}])
+            messages=[
+                {"role": "system", "content": get_llm_prompt("agent")},
+                {"role": "user", "content": user_prompt or get_llm_prompt("user")},
+            ],
+        )
 
         self.original_response = result.choices[0].message.content
         self.response = extract_response(self.original_response)
@@ -336,7 +337,7 @@ class OpenAIHelper:
         return self.response
 
     def submit_paper(self, filepath: str = None, bibcode: str = None, index: int = None) -> dict | str:
-        """ Submit a paper to the OpenAI LLM model
+        """Submit a paper to the OpenAI LLM model
 
         Submit a paper to the OpenAI LLM model for processing, either using an AI Assistant
         with file-search capability, or a straight chat message.
@@ -365,8 +366,8 @@ class OpenAIHelper:
             raise ValueError("Cannot use a local file when not using the AI Assistant.")
 
         # set the user / agent prompts
-        self.user_prompt = get_llm_prompt('user')
-        self.agent_prompt = get_llm_prompt('agent')
+        self.user_prompt = get_llm_prompt("user")
+        self.agent_prompt = get_llm_prompt("agent")
 
         if self.use_assistant:
             # get the file path
@@ -382,20 +383,22 @@ class OpenAIHelper:
         else:
             # get the paper source
             self.paper = get_source(bibcode=bibcode, index=index)
-            self.bibcode = self.paper.get('bibcode')
-            logger.info(f'Using paper bibcode: {self.bibcode}')
+            self.bibcode = self.paper.get("bibcode")
+            logger.info(f"Using paper bibcode: {self.bibcode}")
 
             # populate the user template with paper data
             self.user_prompt = self.populate_user_template(self.paper)
 
             # send the prompt
             response = self.send_message(user_prompt=self.user_prompt)
-            self.response_classes = convert_to_classification(output=response, bibcode=self.bibcode)
+            self.response_classes = convert_to_classification(
+                output=response, bibcode=self.bibcode, threshold=config.llms.performance.threshold
+            )
 
         return response
 
     def get_output_key(self):
-        """ Get the output key for writing the response to a file
+        """Get the output key for writing the response to a file
 
         Returns either the name of a file or the bibcode of a paper source.
         This key is used to organize the output JSON file content.
@@ -408,14 +411,14 @@ class OpenAIHelper:
             path = pathlib.Path(self.filename)
             name = path.name
             # extract bibcode from temp file
-            if name.startswith('temp'):
-                name = name.rsplit('_',1)[-1].split('.json')[0]
+            if name.startswith("temp"):
+                name = name.rsplit("_", 1)[-1].split(".json")[0]
 
             return name
 
 
 def extract_response(value: str) -> dict:
-    """ Extract the agent response
+    """Extract the agent response
 
     Check the agent response for proper JSON content and
     extract.  If no JSON content is found, return an error message.
@@ -438,13 +441,13 @@ def extract_response(value: str) -> dict:
         try:
             return json.loads(response)
         except json.JSONDecodeError as e:
-            return {'error': f'Error decoding JSON content: "{e}"'}
+            return {"error": f'Error decoding JSON content: "{e}"'}
     else:
-        return {'error': 'No JSON content found in response'}
+        return {"error": "No JSON content found in response"}
 
 
 def convert_to_classification(output: dict, bibcode: str, threshold: float = 0.5) -> dict:
-    """ Convert response to classification format
+    """Convert response to classification format
 
     Converts the JSON response to conform to the format from the
     data source ``class_missions`` field.
@@ -463,15 +466,15 @@ def convert_to_classification(output: dict, bibcode: str, threshold: float = 0.5
     dict
         the formatted classification output
     """
-    if 'error' in output:
-        logger.warning('Error in prompt JSON response. Cannot convert output.')
+    if "error" in output:
+        logger.warning("Error in prompt JSON response. Cannot convert output.")
         return None
 
-    try:
+    try:  # NEED to REVISIT what to do when max(p[0], p[1]) == 0.5
         class_missions = {
-            k: {'bibcode': bibcode, 'papertype': papertype}
+            k: {"bibcode": bibcode, "papertype": papertype}
             for k, [papertype, p] in output.items()
-            if p >= threshold
+            if max(p[0], p[1]) >= threshold or max(p[0], p[1]) == 0.5
         }
     except ValueError as e:
         logger.warning(f"Error converting output to classification format: {e}")
@@ -480,9 +483,15 @@ def convert_to_classification(output: dict, bibcode: str, threshold: float = 0.5
         return class_missions
 
 
-def classify_paper(file_path: str = None, bibcode: str = None, index: int = None, n_runs: int = 1,
-                   use_assistant: bool = None, verbose: bool = None):
-    """ Send a prompt to an OpenAI LLM model to classify a paper
+def classify_paper(
+    file_path: str = None,
+    bibcode: str = None,
+    index: int = None,
+    n_runs: int = 1,
+    use_assistant: bool = None,
+    verbose: bool = None,
+):
+    """Send a prompt to an OpenAI LLM model to classify a paper
 
     Parameters
     ----------

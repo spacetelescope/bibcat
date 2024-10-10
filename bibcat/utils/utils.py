@@ -6,8 +6,9 @@ This module stores any utility functions necessary for bibcat.
 """
 
 import json
-import os
 from pathlib import Path
+
+import numpy as np
 
 from bibcat.utils.logger_config import setup_logger
 
@@ -43,3 +44,11 @@ def save_json_file(path: Path, dataset: list[dict], indent: int = 2) -> None:
             json.dump(dataset, openfile, indent=indent)
     except IOError as e:
         logger.error(f"An error occurred while saving the file: {e}")
+
+
+# Create a class for numpy encoder to convert a numpy array into a list
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NumpyEncoder, self).default(obj)

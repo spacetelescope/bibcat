@@ -19,20 +19,21 @@ Here is a quick start guide.
    2. or: `bibcat run-gpt -i 50`
 3. Check the response output `paper_output.json` file.
 
-You should see something like `INFO - Output: {'HST': ['MENTION', 0.8], 'JWST': ['SCIENCE', 0.9]}`. See [Response Output](#response-output) for details about the response output.  [Submitting a paper](#submitting-a-paper) describes the command for sending papers to OpenAI. For customizing and trialing new gpt prompts, see [User Configuration](#user-configuration) and [User and Agent (System) Prompts](#user-and-agent-system-prompts).
+You should see something like `INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], 'JWST': ['SCIENCE', [0.9, 0.1]]}`. See [Response Output](#response-output) for details about the response output.  [Submitting a paper](#submitting-a-paper) describes the command for sending papers to OpenAI. For customizing and trialing new gpt prompts, see [User Configuration](#user-configuration) and [User and Agent (System) Prompts](#user-and-agent-system-prompts).
 
 
 ## Submitting a paper
 
 The cli `bibcat run-gpt` submits a prompt with paper content.  The paper content can either be a local filepath on disk, or a bibcode or array list index from source dataset ``dataset_combined_all_2018-2023.json``.  When specifying a bibcode or list array index, the paper data is pulled from the source JSON dataset.
 
-The `run-gpt` command submits a single paper.
+The `run-gpt` command submits a single paper. Note that when submitting any paper whose bibcode contains `&`, double quotes `" "` are needed for the bibcode in the command line. 
 ```python
 # submit a paper
 bibcat run-gpt -f /Users/bcherinka/Downloads/2406.15083v1.pdf
 
 # use a bibcode from the source dataset
 bibcat run-gpt -b 2023Natur.616..266L
+bibcat run-gpt -b "2022A&A...668A..63R"
 
 # submit with entry 101 from the papertrack source dataset
 bibcat run-gpt -i 101
@@ -70,7 +71,7 @@ which gives output
 ```bash
 Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
 2024-08-22 15:49:50,634 - bibcat.llm.openai - INFO - Using paper bibcode: 2023MNRAS.518..456D
-2024-08-22 15:49:56,781 - bibcat.llm.openai - INFO - Output: {'HST': ['MENTION', 0.7], 'JWST': ['SCIENCE', 0.9]}
+2024-08-22 15:49:56,781 - bibcat.llm.openai - INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], 'JWST': ['SCIENCE', [0.9, 0.1]]}
 ```
 
 ## User Configuration
@@ -135,20 +136,26 @@ For more complex prompts, specify them in custom files at `$BIBCAT_DATA_DIR`.
 ```txt
 Which type of whale appeared in a 80's science fiction movie?
 ```
+
 - Create a new text file, `my_agent_prompt.txt` with the following content:
-```txt
-You are an professional expert on whales. You are also witty and always respond with a clever pun. *Always* format your
-response as valid JSON, with the following example as a guide:
-"```json
-{{
- "whale": "Blue",
- "response": "The Blue whale weighs up to 199 tons.",
- "source: "https://en.wikipedia.org/wiki/Blue_whale"
-}}
-```"
-*Always* include a "source" field, which is real url link to your source of information
-```
+
+>```txt
+>You are an professional expert on whales. 
+>You are also witty and always respond with a clever pun. 
+>*Always* format your response as valid JSON, with the following example as a guide:
+>
+>```json
+>{{
+> "whale": "Blue",
+> "response": "The Blue whale weighs up to 199 tons.",
+> "source": "https://en.wikipedia.org/wiki/Blue_whale"
+>}}```
+>
+> *Always* include a "source" field, which is real url link to your source of information
+>
+
 - Modify your config file as follows:
+
 ```
 llms:
   user_prompt: null
@@ -159,6 +166,7 @@ llms:
 ```
 
 - Running `bibcat run-gpt -i 0` without verbosity produces:
+
 ```bash
 Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
 INFO - Using paper bibcode: 2023Natur.616..266L
@@ -200,22 +208,25 @@ The Assistant supports uploading PDF or JSON files.  `bibcat` will accept either
 
 The output response from the LLM prompt is written to a file, specified by `config.llms.prompt_output_file`, e.g. "paper_output.json".  The response output is organized by the name of the file, or the bibcode of the paper.  Repeated prompts using the same paper will be appended to the entry for that paper.
 
-For example, running `bibcat run-gpt -b 2023Natur.616..266L` produces the following output:
+For example, running `bibcat run-gpt -b "2023Natur.616..266L"` produces the following output:
 ```json
-{
   "2023Natur.616..266L": [
     {
       "HST": [
         "MENTION",
-        0.8
+        [
+          0.3,
+          0.7
+        ]
       ],
       "JWST": [
         "SCIENCE",
-        0.95
+        [
+          0.9,
+          0.1
+        ]
       ]
-    }
-  ]
-}
+    },
 ```
 
 ## Evaluating Output
@@ -231,26 +242,25 @@ bibcat run-gpt -i 2000 -n 10
 ```
 Once it's finished, you can evaluate the LLM output with:
 ```
-bibcat evaluate-llm -i 2000
+bibcat evaluate-llm -b "2020A&A...642A.105K"
 ```
 
 You should see some output similar to
 ```bash
-Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
-INFO - Evaluating output for 2022Sci...377.1211L
-INFO - Number of runs: 11
+Loading source dataset: /Users/jyoon/Documents/asb/bibliography_automation/bibcat_datasets//dataset_combined_all_2018-2023.json
+INFO - Evaluating output for 2020A&A...642A.105K
+INFO - Number of runs: 3
 INFO - Human Classifications:
- TESS: SCIENCE
-INFO - Output Stats by LLM Mission and Paper Type:
-llm_mission llm_papertype  mean_llm_confidence  std_llm_confidence  count  n_runs  consistency  in_human_class  mission_in_text
-       JWST       MENTION             0.500000            0.000000      2      11          0.0           False            False
-       JWST       SCIENCE             0.800000                 NaN      1      11          0.0           False            False
-         K2       MENTION             0.466667            0.251661      3      11          0.0           False            False
-     KEPLER       MENTION             0.550000            0.057735      4      11          0.0           False            False
-       TESS       SCIENCE             0.900000            0.000000     11      11        100.0            True             True
-INFO - Missing missions by humans: K2, JWST, KEPLER
-INFO - Missing missions by LLM:
-INFO - Writing output to /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4o-mini/summary_output.json
+ KEPLER: SCIENCE
+Output Stats by LLM Mission and Paper Type:
+llm_mission llm_papertype mean_llm_confidences std_llm_confidences  count  n_runs  consistency  in_human_class  mission_in_text  hallucination_by_llm
+         K2       MENTION           [0.2, 0.8]          [0.0, 0.0]      1       3          0.0           False            False                  True
+         K2       SCIENCE         [0.85, 0.15]        [0.05, 0.05]      2       3          0.0           False            False                  True
+     KEPLER       SCIENCE         [0.92, 0.08]        [0.02, 0.02]      3       3        100.0            True             True                 False
+INFO - Missing missions by humans: K2
+INFO - Missing missions by LLM: 
+INFO - Hallucination by LLM: K2
+Writing output to /Users/jyoon/GitHub/bibcat/output/output/llms/openai_gpt-4o-mini/summary_output.json
 ```
 The output is also written to a file specified by `config.llms.eval_output_file`, e.g. "summary_output.json".
 
@@ -266,37 +276,69 @@ bibcat evaluate-llm -i 1000 -s -n 20
 
 ```bash
 Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
-2024-08-26 14:42:06,854 - bibcat.llm.openai - INFO - Using paper bibcode: 2022SPIE12184E..24M
-2024-08-26 14:42:10,201 - bibcat.llm.openai - INFO - Output: {'JWST': ['MENTION', 0.7]}
-2024-08-26 14:42:10,204 - bibcat.llm.openai - INFO - Using paper bibcode: 2022SPIE12184E..24M
-2024-08-26 14:42:12,650 - bibcat.llm.openai - INFO - Output: {'JWST': ['MENTION', 0.5]}
-2024-08-26 14:42:12,654 - bibcat.llm.openai - INFO - Using paper bibcode: 2022SPIE12184E..24M
-2024-08-26 14:42:15,191 - bibcat.llm.openai - INFO - Output: {'JWST': ['MENTION', 0.7]}
+INFO - Using paper bibcode: 2022SPIE12184E..24M
+INFO - Output: {'JWST': ['MENTION', 0.7]}
+INFO - Using paper bibcode: 2022SPIE12184E..24M
+INFO - Output: {'JWST': ['MENTION', 0.5]}
+INFO - Using paper bibcode: 2022SPIE12184E..24M
+INFO - Output: {'JWST': ['MENTION', 0.7]}
 ...
-2024-08-26 14:42:58,120 - bibcat.llm.evaluate - INFO - Evaluating output for 2022SPIE12184E..24M
-2024-08-26 14:42:58,120 - bibcat.llm.evaluate - INFO - Number of runs: 20
-2024-08-26 14:42:58,128 - bibcat.llm.evaluate - INFO - Human Classifications:
+INFO - Evaluating output for 2022SPIE12184E..24M
+INFO - Number of runs: 20
+INFO - Human Classifications:
  JWST: MENTION
-2024-08-26 14:42:58,132 - bibcat.llm.evaluate - INFO - Output Stats by LLM Mission and Paper Type:
+INFO - Output Stats by LLM Mission and Paper Type:
 llm_mission llm_papertype  mean_llm_confidence  std_llm_confidence  count  n_runs  consistency  in_human_class   mission_in_text
        JWST       MENTION                  0.5            0.107606     20      20        100.0            True            True
-2024-08-27 17:47:06,714 - bibcat.llm.evaluate - INFO - Missing missions by humans:
-2024-08-27 17:47:06,714 - bibcat.llm.evaluate - INFO - Missing missions by LLM:
+INFO - Missing missions by humans:
+INFO - Missing missions by LLM:
 ```
 
 ### Output Columns
 
 Definitions of the output columns from the evaluation.
+#### Summary output
+- **human**: Human classifications
+- **threshold_acceptance**: The threshold value to accept the llm's classifications
+- **threshold_inspection**: The threshold value to require human inspection
+- **llm**: llm's classification whose confidence value is higher than or equal to the threshold value
+- **inspection**: The list of missions/papertypes for human inspection due to the edge-case confidence values (e.g, 0.5)
+- **missing_by_human**: The set of missing missions by human classification
+- **missing_by_llm**: The set of missing missions by llm classification
+- **hallucinated_missions**: The list of missions hallucinated by llm
 
+#### Each mission/papertype DataFrame output
 - **llm_mission**: The mission from the LLM output
-- **llm_papertype**: The papertype from the LLM output
-- **mean_llm_confidence**: The mean confidence number across all trial runs, for each mission + papertype combination
-- **std_llm_confidence**: The standard deviation of the confidence number across all trial runs
+- **mean_llm_confidence**: The list of the mean confidence values of SCIENCE and MENTION across all trial runs, for each mission + papertype combination
+- **std_llm_confidence**: The standard deviation of the confidence values of SCIENCE and MENTION  across all trial runs
 - **count**: The number of times a mission + papertype combo was included in the LLM response, across all trial runs
+- **llm_papertype**: The papertype from the LLM output
 - **n_runs**: The total number of trial runs
 - **consistency**: The percentage of how often the LLM mission + papertype matched the human classification
 - **in_human_class**: Flag whether or not the mission + papertype was included in the set of human classifications
 - **mission_in_text**: Flag whether or not the mission keyword is in the source paper text
+- **hallucination_by_llm**: Flag whether or not the mission keyword is hallucinated by LLM
 
 
+## Plotting Evaluation Plots
 
+You can assess model performance using confusion matrix plots or Receiver Operating Characteristic (ROC) curves. A [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) plot helps evaluation classification model performance by showing true positives ($TP$), true negatives ($TN$), false positives ($FP$), and false negatives ($FN$), making it useful for understanding evaluation metrics such as accuracy ($\frac{TP+TN}{TP+TB+FP+FN}$), precision ($\frac{TP}{TP+FP}$), recall (sensitivity, $\frac{TP}{(TP+FN)}$), and F1 score ($2\times \frac{precision \times recall}{ precison + recall}$). A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curve evaluates a model's ability to distinguish between classes by plotting the true positive rate against the false positive rate at various thresholds, with the area under the curve (AUC) which represents the degree of separability between classes. For instance, AUC=1.0 indicates perfect and AUC =0.5 is as good as random guessing. To provide more reliable and stable performance metrics, larger datasets (hundreds or thousands) are recommended. With small datasets, you make interpreations less reliable.
+
+### Confusion Matrix Plot
+To plot a confusion matrix for specific missions, run:
+```bash
+bibcat eval-plot -c -m HST -m JWST
+```
+To plot a confusion matrix for all missions, run:
+```bash
+bibcat eval-plot -c -a
+```
+### Receiver Operating Characteristic (ROC) Plot
+To plot a confusion matrix for specific missions, run:
+```bash
+bibcat eval-plot -r -m HST -m JWST
+```
+To plot a confusion matrix for all missions, run:
+```bash
+bibcat eval-plot -r -a
+```
