@@ -91,7 +91,7 @@ kobj_panstarrs = keyword.Keyword(
         "PanSTARRS1",
     ],
     acronyms_casesensitive=[],
-    acronyms_caseinsensitive=["PanSTARRS", "PanSTARRS1", "PS1"],
+    acronyms_caseinsensitive=["PanSTARRS", "PanSTARRS1", "PS1", "Pan-STARRS"],
     do_not_classify=False,
     banned_overlap=[],
     ambig_words=[],

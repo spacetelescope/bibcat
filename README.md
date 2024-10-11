@@ -13,7 +13,7 @@ There are two main branches for bibcat work:
 - tensorflow 2.15.0
 - tensorflow-hub
 - tensorflow-text
-- See more packages found in the conda evn file in the next section.
+- See more packages found in the [conda evn file](envs/bibcat_py310.yml).
 
 ### Conda env installation
 Change `env_name` below with whatever you want to name the environment.

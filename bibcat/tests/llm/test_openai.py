@@ -27,30 +27,15 @@ def test_convert_failure(caplog):
     assert "Error converting output to classification format" in caplog.record_tuples[0][2]
 
 
-@pytest.mark.parametrize(
-    "data, exp",
-    [
-        (
-            '\nOUTPUT:\n```json\n{\n    "HST": [\n        "MENTION",\n        [0.8, 0.2]\n    ],\n    "JWST": [\n        "SCIENCE",\n        [0.95, 0.05]\n    ]\n}\n```',
-            {"HST": ["MENTION", [0.8, 0.2]], "JWST": ["SCIENCE", [0.95, 0.05]]},
-        ),
-        (
-            '```json\n{\n  "title": "Damping wings in the Lyman-α forest",\n  "primary_mission_or_survey": ["X-Shooter"],\n  "other_missions_or_surveys_mentioned": ["Planck"],\n  "notes": ""\n}\n```',
-            {
-                "title": "Damping wings in the Lyman-α forest",
-                "primary_mission_or_survey": ["X-Shooter"],
-                "other_missions_or_surveys_mentioned": ["Planck"],
-                "notes": "",
-            },
-        ),
-        ("There is no json here.", {"error": "No JSON content found in response"}),
-        (
-            '```json\n{"field": ["A", "B", "C",]}\n```',
-            {"error": 'Error decoding JSON content: "Expecting value: line 1 column 26 (char 25)"'},
-        ),
-    ],
-    ids=["json1", "json2", "nojson", "badjson"],
-)
+
+@pytest.mark.parametrize('data, exp',
+                    [('\nOUTPUT:\n```json\n{\n    "HST": [\n        "MENTION",\n        0.8\n    ],\n    "JWST": [\n        "SCIENCE",\n        0.95\n    ]\n}\n```',
+                      {'HST': ['MENTION', 0.8], 'JWST': ['SCIENCE', 0.95]}),
+                     ('```json\n{\n  "title": "DampingwingsintheLyman-αforest",\n  "primary_mission_or_survey": ["X-Shooter"],\n  "other_missions_or_surveys_mentioned": ["Planck"],\n  "notes": ""\n}\n```',
+                      {'title': 'DampingwingsintheLyman-αforest', 'primary_mission_or_survey': ['X-Shooter'], 'other_missions_or_surveys_mentioned': ['Planck'], 'notes': ''}),
+                     ('There is no json here.', {'error': 'No JSON content found in response'}),
+                     ('```json\n{"field": ["A", "B", "C",]}\n```', {'error': 'Error decoding JSON content: "Expecting value: line 1 column 23 (char 22)"'})
+                     ], ids=['json1', 'json2', 'nojson', 'badjson'])
 def test_extract_json(data, exp):
     """test we can extract some json content"""
 

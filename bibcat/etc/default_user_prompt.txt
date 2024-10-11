@@ -1,7 +1,6 @@
 Carefully follow these two instructions to classify papers for MAST bibliometric record-keeping:
 
-1. Read the paper contents and write down whether it uses any of the following MAST missions: ["HST", "JWST", "KEPLER", "Pan-STARRS", "TESS", "GALEX",
-"Roman", "K2"]. Note that  these abbreviations may be expanded, e.g., "HST" might be "Hubble" or "Hubble Space  Telescope". "Roman" also was formerly
+1. Read the paper contents and write down whether it uses any of the following MAST missions: ["HST", "JWST", "Roman", "HLA", "HSC", "TESS", "KEPLER", "K2", "GALEX", "PanSTARRS", "FUSE", "IUE", "HUT", "UIT", "WUPPE", "BEFS", "TUES", "IMAPS", "EUVE"]. Note that  these abbreviations may be expanded, e.g., "HST" might be "Hubble" or "Hubble Space  Telescope". "Roman" also was formerly
 known as "WFIRST", so those are synonymous. But do not mix up "KEPLER" with "K2" or other concepts like Keplerian motion.
 Write a summary of which mission is mentioned, whether that mission"s data is accessed, and whether the paper presents newly taken observations
 from that mission. If the mission is not mentioned, then simply write "not mentioned". For example, you should write something like this:

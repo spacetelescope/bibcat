@@ -248,19 +248,19 @@ bibcat evaluate-llm -b "2020A&A...642A.105K"
 You should see some output similar to
 ```bash
 Loading source dataset: /Users/jyoon/Documents/asb/bibliography_automation/bibcat_datasets//dataset_combined_all_2018-2023.json
-2024-10-01 14:02:44,447 - bibcat.llm.evaluate - INFO - Evaluating output for 2020A&A...642A.105K
-2024-10-01 14:02:44,447 - bibcat.llm.evaluate - INFO - Number of runs: 3
-2024-10-01 14:02:44,457 - bibcat.llm.evaluate - INFO - Human Classifications:
+INFO - Evaluating output for 2020A&A...642A.105K
+INFO - Number of runs: 3
+INFO - Human Classifications:
  KEPLER: SCIENCE
-2024-10-01 14:02:45,064 - bibcat.llm.evaluate - INFO - Output Stats by LLM Mission and Paper Type:
+Output Stats by LLM Mission and Paper Type:
 llm_mission llm_papertype mean_llm_confidences std_llm_confidences  count  n_runs  consistency  in_human_class  mission_in_text  hallucination_by_llm
          K2       MENTION           [0.2, 0.8]          [0.0, 0.0]      1       3          0.0           False            False                  True
          K2       SCIENCE         [0.85, 0.15]        [0.05, 0.05]      2       3          0.0           False            False                  True
      KEPLER       SCIENCE         [0.92, 0.08]        [0.02, 0.02]      3       3        100.0            True             True                 False
-2024-10-01 14:02:45,064 - bibcat.llm.evaluate - INFO - Missing missions by humans: K2
-2024-10-01 14:02:45,064 - bibcat.llm.evaluate - INFO - Missing missions by LLM: 
-2024-10-01 14:02:45,064 - bibcat.llm.evaluate - INFO - Hallucination by LLM: K2
-2024-10-01 14:02:45,066 - bibcat.llm.io - INFO - Writing output to /Users/jyoon/GitHub/bibcat/output/output/llms/openai_gpt-4o-mini/summary_output.json
+INFO - Missing missions by humans: K2
+INFO - Missing missions by LLM: 
+INFO - Hallucination by LLM: K2
+Writing output to /Users/jyoon/GitHub/bibcat/output/output/llms/openai_gpt-4o-mini/summary_output.json
 ```
 The output is also written to a file specified by `config.llms.eval_output_file`, e.g. "summary_output.json".
 
@@ -276,22 +276,22 @@ bibcat evaluate-llm -i 1000 -s -n 20
 
 ```bash
 Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
-2024-08-26 14:42:06,854 - bibcat.llm.openai - INFO - Using paper bibcode: 2022SPIE12184E..24M
-2024-08-26 14:42:10,201 - bibcat.llm.openai - INFO - Output: {'JWST': ['MENTION', 0.7]}
-2024-08-26 14:42:10,204 - bibcat.llm.openai - INFO - Using paper bibcode: 2022SPIE12184E..24M
-2024-08-26 14:42:12,650 - bibcat.llm.openai - INFO - Output: {'JWST': ['MENTION', 0.5]}
-2024-08-26 14:42:12,654 - bibcat.llm.openai - INFO - Using paper bibcode: 2022SPIE12184E..24M
-2024-08-26 14:42:15,191 - bibcat.llm.openai - INFO - Output: {'JWST': ['MENTION', 0.7]}
+INFO - Using paper bibcode: 2022SPIE12184E..24M
+INFO - Output: {'JWST': ['MENTION', 0.7]}
+INFO - Using paper bibcode: 2022SPIE12184E..24M
+INFO - Output: {'JWST': ['MENTION', 0.5]}
+INFO - Using paper bibcode: 2022SPIE12184E..24M
+INFO - Output: {'JWST': ['MENTION', 0.7]}
 ...
-2024-08-26 14:42:58,120 - bibcat.llm.evaluate - INFO - Evaluating output for 2022SPIE12184E..24M
-2024-08-26 14:42:58,120 - bibcat.llm.evaluate - INFO - Number of runs: 20
-2024-08-26 14:42:58,128 - bibcat.llm.evaluate - INFO - Human Classifications:
+INFO - Evaluating output for 2022SPIE12184E..24M
+INFO - Number of runs: 20
+INFO - Human Classifications:
  JWST: MENTION
-2024-08-26 14:42:58,132 - bibcat.llm.evaluate - INFO - Output Stats by LLM Mission and Paper Type:
+INFO - Output Stats by LLM Mission and Paper Type:
 llm_mission llm_papertype  mean_llm_confidence  std_llm_confidence  count  n_runs  consistency  in_human_class   mission_in_text
        JWST       MENTION                  0.5            0.107606     20      20        100.0            True            True
-2024-08-27 17:47:06,714 - bibcat.llm.evaluate - INFO - Missing missions by humans:
-2024-08-27 17:47:06,714 - bibcat.llm.evaluate - INFO - Missing missions by LLM:
+INFO - Missing missions by humans:
+INFO - Missing missions by LLM:
 ```
 
 ### Output Columns
@@ -305,7 +305,7 @@ Definitions of the output columns from the evaluation.
 - **inspection**: The list of missions/papertypes for human inspection due to the edge-case confidence values (e.g, 0.5)
 - **missing_by_human**: The set of missing missions by human classification
 - **missing_by_llm**: The set of missing missions by llm classification
-- **hallucinated_missions**: The list of missions halluciated by llm
+- **hallucinated_missions**: The list of missions hallucinated by llm
 
 #### Each mission/papertype DataFrame output
 - **llm_mission**: The mission from the LLM output
@@ -322,7 +322,7 @@ Definitions of the output columns from the evaluation.
 
 ## Plotting Evaluation Plots
 
-You can assess model performance using confusion matrix plots or ROC curves.
+You can assess model performance using confusion matrix plots or Receiver Operating Characteristic (ROC) curves. A [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) plot helps evaluation classification model performance by showing true positives ($TP$), true negatives ($TN$), false positives ($FP$), and false negatives ($FN$), making it useful for understanding evaluation metrics such as accuracy ($\frac{TP+TN}{TP+TB+FP+FN}$), precision ($\frac{TP}{TP+FP}$), recall (sensitivity, $\frac{TP}{(TP+FN)}$), and F1 score ($2\times \frac{precision \times recall}{ precison + recall}$). A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curve evaluates a model's ability to distinguish between classes by plotting the true positive rate against the false positive rate at various thresholds, with the area under the curve (AUC) which represents the degree of separability between classes. For instance, AUC=1.0 indicates perfect and AUC =0.5 is as good as random guessing. To provide more reliable and stable performance metrics, larger datasets (hundreds or thousands) are recommended. With small datasets, you make interpreations less reliable.
 
 ### Confusion Matrix Plot
 To plot a confusion matrix for specific missions, run:
@@ -333,7 +333,7 @@ To plot a confusion matrix for all missions, run:
 ```bash
 bibcat eval-plot -c -a
 ```
-### Reciever Operating Characteristic (ROC) Plot
+### Receiver Operating Characteristic (ROC) Plot
 To plot a confusion matrix for specific missions, run:
 ```bash
 bibcat eval-plot -r -m HST -m JWST
