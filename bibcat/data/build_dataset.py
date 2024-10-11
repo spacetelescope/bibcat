@@ -228,12 +228,15 @@ def combine_datasets(trimmed_papertext_data: list[dict], papertrack_data: list[d
 
             combined_dataset.append({**curr_dict, **new_dict})
         else:
-            logger.warning(f"Bibcode ({curr_dict['bibcode']}) not in papertrack database. Continuing...")
+            logger.warning(
+                f"current papertext index = {curr_index}, Bibcode ({curr_dict['bibcode']}) not in papertrack database. Continuing..."
+            )
             bibcodes_notin_papertrack.append(curr_bibcode)
             papertext_index_notin_papertrack.append(curr_index)
 
     logger.info(f"NOTE: {len(bibcodes_notin_papertrack)} papers in text data that were not in papertrack.")
     logger.info("Done generating dictionaries of combined papertrack+text data.")
+    logger.info(f"papertext index not found in papertrack = {papertext_index_notin_papertrack}")
 
     return (
         combined_dataset,

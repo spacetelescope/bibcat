@@ -88,11 +88,17 @@ def mockjson(tmp_path: Path):
             "is_ignored_jwst": False,
         }
     ]
-
     path_papertext = tmp_path / "papertext.json"
     path_papertrack = tmp_path / "papertrack.json"
 
-    yield path_papertext, papertext, path_papertrack, papertrack, trimmed_papertext, combined_dataset
+    yield (
+        path_papertext,
+        papertext,
+        path_papertrack,
+        papertrack,
+        trimmed_papertext,
+        combined_dataset,
+    )
 
 
 def test_build_datasets(mockjson: Any) -> None:
@@ -117,8 +123,8 @@ def test_build_datasets(mockjson: Any) -> None:
     trimmed_papertext = bd.trim_dict(loaded_papertext, ["bibcode", "pubdate", "body"])
     assert trimmed_papertext == expected_trimmed_papertext, "trimmed papertext doesn't match the expected output"
 
-    combined_dataset, bibcodes_notin_papertext, bibcodes_notin_papertrack = bd.combine_datasets(
-        trimmed_papertext, loaded_papertrack
+    combined_dataset, bibcodes_notin_papertext, bibcodes_notin_papertrack, papertext_index_notin_papertrack = (
+        bd.combine_datasets(trimmed_papertext, loaded_papertrack)
     )
     assert combined_dataset == expected_combined_dataset, "combinned dataset doesn't match the expected output"
     np.testing.assert_array_equal(
@@ -131,3 +137,4 @@ def test_build_datasets(mockjson: Any) -> None:
         ["2023ApJ.200.4008B"],
         err_msg="Bibcodes not in papertrack do not match expected values.",
     )
+    assert papertext_index_notin_papertrack == [1], "papertext data not in papertrack data does not match the expected"
