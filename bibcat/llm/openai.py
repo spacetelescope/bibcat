@@ -345,7 +345,7 @@ class OpenAIHelper:
         Parameters
         ----------
         filepath : str, optional
-            a path to a local file on disk, by default None
+            a path to a local input paper file on disk, by default None
         bibcode : str, optional
             the bibcode of an entry in the source papetrack combined dataset, by default None
         index : int, optional
@@ -434,7 +434,7 @@ def extract_response(value: str) -> dict:
         the extracted JSON content
     """
     # extract the json content
-    response = re.search(r'```json\n(.*?)\n```', value.replace(' ', ''), re.DOTALL)
+    response = re.search(r"```json\n(.*?)\n```", value.replace(" ", ""), re.DOTALL)
 
     if response:
         response = response.group(1)

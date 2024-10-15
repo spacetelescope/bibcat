@@ -189,7 +189,7 @@ def write_output(paper_key: str, response: dict, ops: bool = False):
             json.dump(data, f, indent=2, sort_keys=False)
 
 
-def read_output(bibcode: str | None, filename: str) -> list:
+def read_output(bibcode: str | None, filename: pathlib.Path) -> list:
     """Read in the output for a given bibcode
 
     Returns the content from the output JSON file
@@ -199,6 +199,8 @@ def read_output(bibcode: str | None, filename: str) -> list:
     ----------
     bibcode : str, optional
         The paper bibcode, by default None
+    filename: Path, optional
+        The prompt output file path
 
     Returns
     -------
@@ -210,7 +212,7 @@ def read_output(bibcode: str | None, filename: str) -> list:
         return data.get(bibcode) if bibcode else data
 
 
-def write_summary(output: dict):
+def write_summary(output: dict, filename: pathlib.Path):
     """Write summary output from evaluation to a file
 
     Write the output summary statistics and info from
@@ -221,23 +223,25 @@ def write_summary(output: dict):
     ----------
     output : dict
         the output summary data
+
+    filename: pathlib.Path
+        the filename to save the summary
     """
-    out = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}"
-    logger.info(f"Writing output to {out}")
+    logger.info(f"Writing output to {filename}")
 
     # write the content
-    if not os.path.exists(out):
+    if not os.path.exists(filename):
         # create a new file
-        with open(out, "w+") as f:
+        with open(filename, "w+") as f:
             json.dump(output, f, indent=2, sort_keys=False, cls=NumpyEncoder)
     else:
         # append to an existing file
-        with open(out, "r") as f:
+        with open(filename, "r") as f:
             data = json.load(f)
 
         # update response to an existing bibcode, or add a new one
         data.update(output)
 
         # write the updated file
-        with open(out, "w") as f:
+        with open(filename, "w") as f:
             json.dump(data, f, indent=2, sort_keys=False, cls=NumpyEncoder)

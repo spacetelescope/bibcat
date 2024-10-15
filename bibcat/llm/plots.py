@@ -85,11 +85,9 @@ def confusion_matrix_plot(missions: list[str]) -> None:
     logger.info(f"The confusion matrix plot is saved on {cm_plot}!")
 
 
-# create a confusion matrix plot
+# create a ROC curve plot
 def roc_plot(missions: list[str]) -> None:
-    """Create a confusion matrix figure
-
-    Create confusion matrix plots (counts and normalized) given a threshold value.
+    """Create a Receiver Operating Characteristic (ROC) curve plot
 
     Parameters
     ----------
