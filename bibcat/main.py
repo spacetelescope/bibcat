@@ -185,8 +185,8 @@ def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_fi
 @click.option("-u", "--user-prompt-file", default=None, type=str, show_default=True, help="The name of a custom user prompt file")
 @click.option("-a", "--agent-prompt-file", default=None, type=str, show_default=True, help="The name of a custom agent prompt file")
 @click.option('-v', '--verbose', is_flag=True, show_default=True, help="Set to print verbose output")
-
-def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, verbose):
+@click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
+def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, verbose, num_runs):
     start_time = time.time()
     # override the config model
     if model:
@@ -210,7 +210,7 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
             file_path=file if source == "file" else None,
             bibcode=file if source == "bibcode" else None,
             index=file if source == "index" else None,
-            n_runs=1,
+            n_runs=num_runs,
             use_assistant=True if source == "file" else False,
             verbose=verbose,
         )
