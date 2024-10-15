@@ -1,10 +1,12 @@
 import json
 import os
-from pathlib import Path
+import pathlib
 from typing import Any, Dict, Set, Tuple
 
+import pandas as pd
+
 from bibcat import config
-from bibcat.llm.io import read_output
+from bibcat.llm.io import read_output, write_summary
 from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import save_json_file
 
@@ -119,41 +121,143 @@ def create_stats_table(data: Dict[str, Any], target_key: str) -> Dict[str, float
     """
     threshold = get_threshold(data)
     stats_dict = {"threshold": threshold}
+
+    # Update stats_dict
     unique_types = unique_mission_papertypes(data, target_key=target_key)
     for mission, papertype in unique_types:
         count = count_mission_papertype_occurences(data, target_key, mission, papertype)
-        stats_dict.update({target_key + "_" + mission + "_" + papertype: count})
+        stats_dict.update({target_key + "_" + mission.lower() + "_" + papertype.lower(): count})
     logger.info(f"Mission stats table = {stats_dict}")
     return stats_dict
 
 
-def save_evaluation_stats(filepath: Path) -> None:
+def save_evaluation_stats(filepath: pathlib.Path) -> None:
     """Save the evaluation stats in a json file
 
     Parameters
     ==========
-    filepath: Path
-        filepath to save the JSON file named 'config.llms.eval_stats_file'.
+    filepath: pathlib.Path
+        filename path to save the JSON file.
 
     Returns
     =======
     """
 
     # read the evaluation summary output file
-    eval_output = Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}"
+    eval_output = (
+        pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}"
+    )
     logger.info(f"reading {eval_output}")
-    data = read_output(filename=eval_output)
+    data = read_output(bibcode=None, filename=eval_output)
 
     stats_table = create_stats_table(data, target_key="llm")
     stats_table.update(create_stats_table(data, target_key="human"))
 
     # writing the stats table JSON
+    write_stats(filepath, stats_table)
+
+
+def save_operation_stats(filepath: pathlib.Path):
+    """Save the operation stats in a json file
+
+    Parameters
+    ==========
+    filepath: pathlib.Path
+        file name path to save the JSON file.
+
+    Returns
+    =======
+    """
+
+    # read the evaluation summary output file
+    filename = (
+        pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
+    )
+    logger.info(f"reading {filename}")
+    data = read_output(bibcode=None, filename=filename)
+
+    # Build Pandas DataFrame
+    df = pd.DataFrame(
+        [
+            (bibcode, mission, classification[0], classification[1])
+            for bibcode, assessment in data.items()
+            for mission_item in assessment
+            for mission, classification in mission_item.items()
+        ],
+        columns=["bibcode", "mission", "papertype", "llm_confidence"],
+    )
+
+    df = df.sort_values(["mission", "papertype"]).reset_index(drop=True)
+
+    threshold_inspection = config.llms.performance.inspection
+    threshold_acceptance = config.llms.performance.threshold
+    logger.info(f"threshold for accepting llm classification: {threshold_acceptance} ")
+    logger.info(f"threshold for inspecting llm classification: {threshold_inspection} ")
+
+    def inspection_condition(confidence: list):
+        return (max(confidence) >= threshold_inspection) and (max(confidence) < threshold_acceptance)
+
+    def acceptance_condition(confidence: list):
+        return max(confidence) >= threshold_acceptance
+
+    grouped_df = (
+        df.fillna(0)
+        .groupby(["mission", "papertype"])
+        .agg(
+            total_count=("mission", "size"),
+            accepted_count=("llm_confidence", lambda x: sum(1 for i in x if max(i) >= threshold_acceptance)),
+            inspection_count=(
+                "llm_confidence",
+                lambda x: sum(1 for i in x if inspection_condition(i)),
+            ),
+            inspection_bibcodes=(
+                "bibcode",
+                lambda x: [
+                    df.loc[i, "bibcode"]
+                    for i in range(len(x))
+                    if inspection_condition(df.loc[x.index[i], "llm_confidence"])
+                ],
+            ),
+            accepted_bibcodes=(
+                "bibcode",
+                lambda x: [
+                    df.loc[i, "bibcode"]
+                    for i in range(len(x))
+                    if acceptance_condition(df.loc[x.index[i], "llm_confidence"])
+                ],
+            ),
+        )
+        .reset_index()
+    )
+
+    logger.info("Production counts by LLM Mission and Paper Type:\n" + grouped_df.iloc[:, :-2].to_string(index=False))
+
+    grouped_df.to_dict(orient="records")
+
+    # writing the stats table JSON
+    write_stats(filepath, grouped_df.to_dict(orient="records"))
+    logger.info(f"bibcode lists for both acceptance and inspection were generated in {filepath}")
+
+
+def write_stats(filepath: pathlib.Path, stats: Dict | list[Dict, Any]):
+    """Write a statistics table for mission-papertype pairs
+
+    Parameters
+    ==========
+    filepath: pathlib.Path
+        filename path to save the stats results
+    stats: dict | list[Dict, Any]
+        statistics results
+
+    Returns
+    =======
+    """
     if not os.path.exists(filepath):
         save_json_file(
             filepath,
-            stats_table,
+            stats,
         )
     else:
         raise FileExistsError(
-            f"{filepath} already exists. Are you sure you want to overwrite the file? Choose a different name for the output in 'config.llms.eval_stats_file', if you want to keep the existing file"
+            f"{filepath} already exists. Are you sure you want to overwrite the file? Choose a different name for the output in 'bibcat_config.yaml', if you want to keep the existing file"
         )

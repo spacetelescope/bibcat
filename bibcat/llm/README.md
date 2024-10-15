@@ -266,7 +266,7 @@ The output is also written to a file specified by `config.llms.eval_output_file`
 
 For now this produces a Pandas dataframe, grouped by the LLM predicted mission and papertype, with its mean confidence score, the number of times that combination was output by the LLM, the total number of trial runs, an accuracy score of how well it matched the human classification, and a boolean flag if that combination appears in the human classification.  The human classication comes from the "class_missions" field in the source dataset file.
 
-Alternatively, you can submit a paper for classfication and evaluate it in a single command using the `-s`, `--submit` flag.  In combination with the `-n` flag,
+Alternatively, you can both submit a paper for classfication and evaluate it in a single command using the `-s`, `--submit` flag.  In combination with the `-n` flag,
 this will classify the paper `num_runs` time before evaluation.
 
 This example first classifies paper index 1000, 20 times, then evaluates the output.

@@ -19,7 +19,7 @@ from bibcat.evaluate_basic_performance import evaluate_basic_performance
 from bibcat.llm.evaluate import evaluate_output
 from bibcat.llm.openai import OpenAIHelper, classify_paper
 from bibcat.llm.plots import confusion_matrix_plot, roc_plot
-from bibcat.stats.stats_llm import save_evaluation_stats
+from bibcat.stats.stats_llm import save_evaluation_stats, save_operation_stats
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
@@ -386,16 +386,26 @@ def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
 
 @cli.command(help="Create a statisics table for classification")
 @click.option(
-    "-e",
-    "--eval",
+    "-o",
+    "--ops",
     is_flag=True,
     show_default=False,
-    help="Create a statistics table for llm and human mission-papertype pairs. This flag works with the '-e' flag. e.g., 'bibcat statistics -e'",
+    help="Create a OPS statistics table for llm mission-papertype pairs. This flag works with the '-o' flag. e.g., 'bibcat stat_llm -o'",
 )
-def statistics(llm: bool):
-    if llm:
+@click.option(
+    "-e",
+    "--evaluation",
+    is_flag=True,
+    show_default=False,
+    help="Create an Evaluation statistics table for llm and human mission-papertype pairs. This flag works with the '-e' flag. e.g., 'bibcat stat_llm -e'",
+)
+def stats_llm(evaluation: bool, ops: bool):
+    if evaluation:
         filepath = Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_stats_file}"
         save_evaluation_stats(filepath)
+    if ops:
+        filepath = Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.ops_stats_file}"
+        save_operation_stats(filepath)
 
 
 @cli.group("openai", short_help="OpenAI LLM commands")

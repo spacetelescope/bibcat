@@ -511,12 +511,12 @@ grammar:
 llms:
   user_prompt: null
   agent_prompt: null
-  prompt_output_file: paper_output.json
-  eval_output_file: summary_output.json
-  eval_stats_file: evaluation_stats.json
-  papertype_stats_file: papertype_stats.json
-  cm_plot: confusion_matrix_llm.png
-  roc_plot: roc_plot.png
+  prompt_output_file: paper_output.json # llm classification primary output
+  eval_output_file: summary_output.json # llm classification summary output
+  eval_stats_file: evaluation_stats_llm.json  # llm evaluation high-level statistics output
+  ops_stats_file: operation_stats_llm.json  # llm operation high-level statistics output
+  cm_plot: confusion_matrix_llm.png # confusion matrix plot 
+  roc_plot: roc_plot_llm.png # receiver operating charateristic curve 
   llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
   llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
   openai:

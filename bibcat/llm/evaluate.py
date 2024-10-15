@@ -48,10 +48,16 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     pd.DataFrame
         an output pandas dataframe
     """
-    out = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
+    summary_filename = (
+        pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}"
+    )
+
+    paper_output = (
+        pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
+    )
     paper = get_source(bibcode=bibcode, index=index)
     bibcode = paper["bibcode"]
-    response = read_output(bibcode=bibcode, filename=out)
+    response = read_output(bibcode=bibcode, filename=paper_output)
 
     # exit if no bibcode found in output
     if not response:
@@ -94,17 +100,17 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
 
     # write the summary output
     if write_file:
-      output = prepare_output(
-          bibcode,
-          threshold,
-          inspection,
-          grouped_df,
-          human_classes,
-          missing_by_human,
-          missing_by_llm,
-          hallucinated_missions,
-      )
-      write_summary(output)
+        output = prepare_output(
+            bibcode,
+            threshold,
+            inspection,
+            grouped_df,
+            human_classes,
+            missing_by_human,
+            missing_by_llm,
+            hallucinated_missions,
+        )
+        write_summary(output, summary_filename)
 
     # return the dataframe
     return grouped_df
