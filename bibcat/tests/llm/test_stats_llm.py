@@ -1,5 +1,6 @@
 import pytest
 
+from bibcat import config
 from bibcat.stats.stats_llm import (
     count_mission_papertype_occurences,
     create_stats_table,
@@ -65,18 +66,10 @@ def test_create_stats_table():
     assert human_table["human_roman_mention"] == 1
 
 
-@pytest.fixture
-def temp_input_filepath(tmp_path):
-    return tmp_path / "input.json"
-
-
-@pytest.fixture
-def temp_output_filepath(tmp_path):
-    return tmp_path / "output.json"
-
-
-def test_save_evaluation_stats(temp_input_filepath, temp_output_filepath):
+def test_save_evaluation_stats(tmp_path):
     """Test for saving the evaluation stats"""
+    temp_input_filepath = tmp_path / "input.json"
+    temp_output_filepath = tmp_path / "output.json"
 
     save_json_file(temp_input_filepath, eval_data)
     save_evaluation_stats(temp_input_filepath, temp_output_filepath)
@@ -85,16 +78,23 @@ def test_save_evaluation_stats(temp_input_filepath, temp_output_filepath):
     assert temp_output_filepath.is_file(), f"{temp_output_filepath} is not a file."
 
 
-def test_save_operation_stats(temp_input_filepath, temp_output_filepath):
+def test_save_operation_stats(tmp_path):
+    temp_input_filepath = tmp_path / "input.json"
+    temp_output_filepath = tmp_path / "output.json"
+
     """Test for saving the evaluation stats"""
     save_json_file(temp_input_filepath, ops_data)
     save_operation_stats(temp_input_filepath, temp_output_filepath)
 
     stats_table = load_json_file(temp_output_filepath)
-    assert len(stats_table) == 2, f"the length of stats table is wrong"
+    assert len(stats_table) == 3, f"the length of stats table is wrong"
     assert stats_table[0]["mission"] == "K2"
+    assert stats_table[0]["accepted_count"] == 1
     assert stats_table[1]["total_count"] == 1
+    assert stats_table[1]["inspection_count"] == 0
     assert stats_table[1]["accepted_bibcodes"] == ["2020A&A...642A.105K"]
+    assert stats_table[-1]["threshold_acceptance"] == config.llms.performance.threshold
+    assert stats_table[-1]["threshold_inspection"] == config.llms.performance.inspection
 
     assert temp_output_filepath.exists(), f"{temp_output_filepath} was not created."
     assert temp_output_filepath.is_file(), f"{temp_output_filepath} is not a file."

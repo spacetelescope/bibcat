@@ -224,10 +224,11 @@ def save_operation_stats(input_filepath: pathlib.Path, output_filepath: pathlib.
 
     logger.info("Production counts by LLM Mission and Paper Type:\n" + grouped_df.iloc[:, :-2].to_string(index=False))
 
-    grouped_df.to_dict(orient="records")
+    list_of_dicts = grouped_df.to_dict(orient="records")
+    list_of_dicts.append({"threshold_acceptance": threshold_acceptance, "threshold_inspection": threshold_inspection})
 
     # writing the stats table JSON
-    write_stats(output_filepath, grouped_df.to_dict(orient="records"))
+    write_stats(output_filepath, list_of_dicts)
     logger.info(f"bibcode lists for both acceptance and inspection were generated in {output_filepath}")
 
 
