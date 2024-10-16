@@ -402,11 +402,26 @@ def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
 )
 def stats_llm(evaluation: bool, ops: bool):
     if evaluation:
-        filepath = Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_stats_file}"
-        save_evaluation_stats(filepath)
+        # read the evaluation summary output file
+        logger.info(f"reading {input_filepath}")
+        input_filepath = (
+            Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}"
+        )
+        output_filepath = (
+            Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_stats_file}"
+        )
+        save_evaluation_stats(input_filepath, output_filepath)
     if ops:
-        filepath = Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.ops_stats_file}"
-        save_operation_stats(filepath)
+        # read the operational paper_output file
+        input_filepath = (
+            Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
+        )
+        logger.info(f"reading {input_filepath}")
+
+        output_filepath = (
+            Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.ops_stats_file}"
+        )
+        save_operation_stats(input_filepath, output_filepath)
 
 
 @cli.group("openai", short_help="OpenAI LLM commands")

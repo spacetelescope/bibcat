@@ -131,33 +131,30 @@ def create_stats_table(data: Dict[str, Any], target_key: str) -> Dict[str, float
     return stats_dict
 
 
-def save_evaluation_stats(filepath: pathlib.Path) -> None:
+def save_evaluation_stats(input_filepath: pathlib.Path, output_filepath: pathlib.Path) -> None:
     """Save the evaluation stats in a json file
 
     Parameters
     ==========
-    filepath: pathlib.Path
-        filename path to save the JSON file.
+    input_filepath: pathlib.Path
+        input filename path to read a summary_output JSON file.
+    output_filepath: pathlib.Path
+        output filename path to save a JSON file.
 
     Returns
     =======
     """
 
-    # read the evaluation summary output file
-    eval_output = (
-        pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}"
-    )
-    logger.info(f"reading {eval_output}")
-    data = read_output(bibcode=None, filename=eval_output)
+    data = read_output(bibcode=None, filename=input_filepath)
 
     stats_table = create_stats_table(data, target_key="llm")
     stats_table.update(create_stats_table(data, target_key="human"))
 
     # writing the stats table JSON
-    write_stats(filepath, stats_table)
+    write_stats(output_filepath, stats_table)
 
 
-def save_operation_stats(filepath: pathlib.Path):
+def save_operation_stats(input_filepath: pathlib.Path, output_filepath: pathlib.Path):
     """Save the operation stats in a json file
 
     Parameters
@@ -169,12 +166,7 @@ def save_operation_stats(filepath: pathlib.Path):
     =======
     """
 
-    # read the evaluation summary output file
-    filename = (
-        pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
-    )
-    logger.info(f"reading {filename}")
-    data = read_output(bibcode=None, filename=filename)
+    data = read_output(bibcode=None, filename=input_filepath)
 
     # Build Pandas DataFrame
     df = pd.DataFrame(
@@ -235,8 +227,8 @@ def save_operation_stats(filepath: pathlib.Path):
     grouped_df.to_dict(orient="records")
 
     # writing the stats table JSON
-    write_stats(filepath, grouped_df.to_dict(orient="records"))
-    logger.info(f"bibcode lists for both acceptance and inspection were generated in {filepath}")
+    write_stats(output_filepath, grouped_df.to_dict(orient="records"))
+    logger.info(f"bibcode lists for both acceptance and inspection were generated in {output_filepath}")
 
 
 def write_stats(filepath: pathlib.Path, stats: Dict | list[Dict, Any]):
