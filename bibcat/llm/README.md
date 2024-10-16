@@ -39,7 +39,7 @@ bibcat run-gpt -b "2022A&A...668A..63R"
 bibcat run-gpt -i 101
 ```
 
-The `run-gpt-batch` command submits a list of files.  The list can either be specified one of two ways:  1.) individually, with the `-f` option, as a filename, bibcode, or index, or 2.) a file that contains a list of filenames, bibcodes, or indicies to use, with one line per entry.  You can also instruct it to submit each paper multiple times with the `-n` option. Run `bibcat run-gpt-batch --help` to see the full list of cli options. 
+The `run-gpt-batch` command submits a list of files.  The list can either be specified one of two ways:  1.) individually, with the `-f` option, as a filename, bibcode, or index, or 2.) a file that contains a list of filenames, bibcodes, or indices to use, with one line per entry.  By default, each paper in the list is submitted once.  You can instruct it to submit each paper multiple times with the `-n` option. Run `bibcat run-gpt-batch --help` to see the full list of cli options. 
 
 ```python
 # batch submit a list of papers, using source index
