@@ -412,6 +412,11 @@ def stats_llm(evaluation: bool, ops: bool):
         )
         save_evaluation_stats(input_filepath, output_filepath)
     if ops:
+        threshold_inspection = config.llms.performance.inspection
+        threshold_acceptance = config.llms.performance.threshold
+        logger.info(f"threshold for accepting llm classification: {threshold_acceptance} ")
+        logger.info(f"threshold for inspecting llm classification: {threshold_inspection} ")
+
         # read the operational paper_output file
         input_filepath = (
             Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
@@ -421,7 +426,7 @@ def stats_llm(evaluation: bool, ops: bool):
         output_filepath = (
             Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.ops_stats_file}"
         )
-        save_operation_stats(input_filepath, output_filepath)
+        save_operation_stats(input_filepath, output_filepath, threshold_acceptance, threshold_inspection)
 
 
 @cli.group("openai", short_help="OpenAI LLM commands")

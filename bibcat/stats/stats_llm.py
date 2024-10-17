@@ -131,30 +131,35 @@ def create_stats_table(data: Dict[str, Any], target_key: str) -> Dict[str, float
     return stats_dict
 
 
-def save_evaluation_stats(input_filepath: pathlib.Path, output_filepath: pathlib.Path) -> None:
+def save_evaluation_stats(input_path: pathlib.Path, output_path: pathlib.Path) -> None:
     """Save the evaluation stats in a json file
 
     Parameters
     ==========
-    input_filepath: pathlib.Path
+    input_path: pathlib.Path
         input filename path to read a summary_output JSON file.
-    output_filepath: pathlib.Path
+    output_path: pathlib.Path
         output filename path to save a JSON file.
 
     Returns
     =======
     """
 
-    data = read_output(bibcode=None, filename=input_filepath)
+    data = read_output(bibcode=None, filename=input_path)
 
     stats_table = create_stats_table(data, target_key="llm")
     stats_table.update(create_stats_table(data, target_key="human"))
 
     # writing the stats table JSON
-    write_stats(output_filepath, stats_table)
+    write_stats(output_path, stats_table)
 
 
-def save_operation_stats(input_filepath: pathlib.Path, output_filepath: pathlib.Path):
+def save_operation_stats(
+    input_path: pathlib.Path,
+    output_path: pathlib.Path,
+    threshold_acceptance: float,
+    threshold_inspection: float,
+):
     """Save the operation stats in a json file
 
     Parameters
@@ -166,7 +171,7 @@ def save_operation_stats(input_filepath: pathlib.Path, output_filepath: pathlib.
     =======
     """
 
-    data = read_output(bibcode=None, filename=input_filepath)
+    data = read_output(bibcode=None, filename=input_path)
 
     # Build Pandas DataFrame
     df = pd.DataFrame(
@@ -181,11 +186,6 @@ def save_operation_stats(input_filepath: pathlib.Path, output_filepath: pathlib.
 
     df = df.sort_values(["mission", "papertype"]).reset_index(drop=True)
 
-    threshold_inspection = config.llms.performance.inspection
-    threshold_acceptance = config.llms.performance.threshold
-    logger.info(f"threshold for accepting llm classification: {threshold_acceptance} ")
-    logger.info(f"threshold for inspecting llm classification: {threshold_inspection} ")
-
     def inspection_condition(confidence: list):
         return (max(confidence) >= threshold_inspection) and (max(confidence) < threshold_acceptance)
 
@@ -198,6 +198,14 @@ def save_operation_stats(input_filepath: pathlib.Path, output_filepath: pathlib.
         .agg(
             total_count=("mission", "size"),
             accepted_count=("llm_confidence", lambda x: sum(1 for i in x if max(i) >= threshold_acceptance)),
+            accepted_bibcodes=(
+                "bibcode",
+                lambda x: [
+                    df.loc[i, "bibcode"]
+                    for i in range(len(x))
+                    if acceptance_condition(df.loc[x.index[i], "llm_confidence"])
+                ],
+            ),
             inspection_count=(
                 "llm_confidence",
                 lambda x: sum(1 for i in x if inspection_condition(i)),
@@ -210,26 +218,25 @@ def save_operation_stats(input_filepath: pathlib.Path, output_filepath: pathlib.
                     if inspection_condition(df.loc[x.index[i], "llm_confidence"])
                 ],
             ),
-            accepted_bibcodes=(
-                "bibcode",
-                lambda x: [
-                    df.loc[i, "bibcode"]
-                    for i in range(len(x))
-                    if acceptance_condition(df.loc[x.index[i], "llm_confidence"])
-                ],
-            ),
         )
         .reset_index()
     )
 
-    logger.info("Production counts by LLM Mission and Paper Type:\n" + grouped_df.iloc[:, :-2].to_string(index=False))
+    logger.info(
+        "Production counts by LLM Mission and Paper Type:\n"
+        + grouped_df[["mission", "papertype", "total_count", "accepted_count", "inspection_count"]].to_string(
+            index=False
+        )
+    )
 
     list_of_dicts = grouped_df.to_dict(orient="records")
-    list_of_dicts.append({"threshold_acceptance": threshold_acceptance, "threshold_inspection": threshold_inspection})
+    list_of_dicts.insert(
+        0, {"threshold_acceptance": threshold_acceptance, "threshold_inspection": threshold_inspection}
+    )
 
     # writing the stats table JSON
-    write_stats(output_filepath, list_of_dicts)
-    logger.info(f"bibcode lists for both acceptance and inspection were generated in {output_filepath}")
+    write_stats(output_path, list_of_dicts)
+    logger.info(f"bibcode lists for both acceptance and inspection were generated in {output_path}")
 
 
 def write_stats(filepath: pathlib.Path, stats: Dict | list[Dict, Any]):
