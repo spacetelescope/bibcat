@@ -49,12 +49,14 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
         an output pandas dataframe
     """
     summary_filename = (
-        pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}"
+        pathlib.Path(config.paths.output)
+        / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
     )
 
     paper_output = (
         pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
     )
+
     paper = get_source(bibcode=bibcode, index=index)
     bibcode = paper["bibcode"]
     response = read_output(bibcode=bibcode, filename=paper_output)
@@ -272,6 +274,7 @@ def prepare_output(
 
     """
     # pass its llm's classification if the maximum confindence value is higher than the threshold
+    # the maximum value is used because the papertype's confidence is aligned with the maximum value
     llm = [
         {i["llm_mission"]: i["llm_papertype"]}
         for i in grouped_df.to_dict(orient="records")

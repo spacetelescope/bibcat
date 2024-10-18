@@ -207,6 +207,8 @@ def read_output(bibcode: str | None, filename: pathlib.Path) -> list:
     list
         The output data from the LLM response
     """
+    logger.info(f"reading {filename}")
+
     with open(filename, "r") as f:
         data = json.load(f)
         return data.get(bibcode) if bibcode else data

@@ -260,9 +260,9 @@ llm_mission llm_papertype mean_llm_confidences std_llm_confidences  count  n_run
 INFO - Missing missions by humans: K2
 INFO - Missing missions by LLM: 
 INFO - Hallucination by LLM: K2
-Writing output to /Users/jyoon/GitHub/bibcat/output/output/llms/openai_gpt-4o-mini/summary_output.json
+Writing output to /Users/jyoon/GitHub/bibcat/output/output/llms/openai_gpt-4o-mini/summary_output_t0.7.json
 ```
-The output is also written to a file specified by `config.llms.eval_output_file`, e.g. "summary_output.json".
+The output is also written to a file specified by `config.llms.eval_output_file`.
 
 For now this produces a Pandas dataframe, grouped by the LLM predicted mission and papertype, with its mean confidence score, the number of times that combination was output by the LLM, the total number of trial runs, an accuracy score of how well it matched the human classification, and a boolean flag if that combination appears in the human classification.  The human classication comes from the "class_missions" field in the source dataset file.
 
@@ -342,3 +342,63 @@ To plot a confusion matrix for all missions, run:
 ```bash
 bibcat eval-plot -r -a
 ```
+
+## Statistics output
+After running bibcat GPT classification using bibcat run-gpt, bibcat run-gpt-batch, or bibcat evaluate-llm to generate classifications for papers, you may want to review various statistics. These statistics can include the number of papers per mission and papertype, the count of accepted papertypes, and the number of papers that require human inspection due to low confidence scores. 
+
+From the evaluation summary output file, you may want to see the list of the papers where human classifications are not consistent with llm classifications. The next command line will also create this file.
+
+The filenames are defined in `bibcat_config.yaml`: `eval_output_file`, `ops_output_file`, and `inconsistent_classification_file`.
+To create a statistics JSON file, use the command line options listed below.
+
+### Evaluation summary statistics for mission+papertype pairs
+
+To create a statisitics output from the *e*valuation summary output, e.g., `summary_output.json`, run:
+```bash
+bibcat stats-llm -e
+```
+The output file name will be something like `evaluation_stats_t0.7.json` where `t0.7` refers to the threshold value, `0.7` to accept the llm's papertype.
+
+This command line will also create a file for the list of the papers where human classifications are not consistent with llm classifications. 
+
+### Operation classification statistics for mission+papertype pairs
+This output will provide various number counts including the number of papers with accepted papertype which meets this condition `threshold_acceptance >= confidence` and the number of papers required for human inspection (`threshold_inspection <= confidence < threshold_acceptance`) for final papertype assignment. It also includes the lists of bibcodes of accepted papertypes and inspection required for human inspection. 
+
+To create a statisitics output from the llm classification output for *o*peration, `paper_output.json`, run:
+```bash
+bibcat stats-llm -o
+```
+```bash
+INFO - reading /Users/jyoon/GitHub/bibcat/output/output/llms/openai_gpt-4o-mini/paper_output.json
+INFO - threshold for accepting llm classification: 0.6 
+INFO - threshold for inspecting llm classification: 0.4 
+INFO - Production counts by LLM Mission and Paper Type:
+   mission papertype  total_count  accepted_count  inspection_count
+     GALEX   MENTION            4               4                 0
+     GALEX   SCIENCE            2               2                 0
+       HST   MENTION           22              21                 1
+       HST   SCIENCE            4               4                 0
+      JWST   MENTION            8               8                 0
+      JWST   SCIENCE           17              17                 0
+
+```
+### Statistics Output columns
+Both the evaluation and operation statistics files share the same column names.
+
+
+#### Statistics Output
+The definitions of the output columns are following.
+
+- **threshold_acceptance**: The threshold value to accept the LLM papertype classification
+- **threshold_inspection**: The threshold value to require human inspection
+- **mission**: MAST mission
+- **papertype**: papertype classified by LLM
+- **total_count**: The total number of papers
+- **accepted_count**: The count of papers with accepted llm papertype
+- **accepted_bibcodes**: The bibcode list of the papers with accepted llm papertype 
+- **inspection_count**: The count of papers required for human inspection
+- **inspection_bibcodes**: The bibcode list of the papers for papertype required human inspection
+
+#### File output for the inconsistent classifications
+The definitions of the output columns can be found in the [Output Columns](#output-columns).
+

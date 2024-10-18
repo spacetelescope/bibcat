@@ -319,12 +319,23 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
     show_default=True,
     help="Flag to write the output evaluation file",
 )
+@click.option(
+    "-t",
+    "--threshold",
+    default=0.7,
+    type=float,
+    show_default=True,
+    help="The threshold value to accept the llm papertype",
+)
 @click.pass_context
-def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write):
+def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, threshold):
     """Evaluate the ouput JSON from a LLM model"""
     # override the config model
     if model:
         config.llms.openai.model = model
+    # override the config threshold
+    if threshold:
+        config.llms.performance.threshold = threshold
     # override the config output response file
     if file:
         config.llms.prompt_output_file = file
@@ -400,31 +411,44 @@ def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
     show_default=False,
     help="Create an Evaluation statistics table for llm and human mission-papertype pairs. This flag works with the '-e' flag. e.g., 'bibcat stat_llm -e'",
 )
-def stats_llm(evaluation: bool, ops: bool):
+@click.option(
+    "-t",
+    "--threshold",
+    default=0.7,
+    type=float,
+    show_default=True,
+    help="The threshold value to accept the llm papertype",
+)
+def stats_llm(evaluation: bool, ops: bool, threshold: float):
+    # override config threshold value
+    if threshold:
+        config.llms.performance.threshold = threshold
+
+    threshold_inspection = config.llms.performance.inspection
+    threshold_acceptance = config.llms.performance.threshold
+    logger.info(f"threshold for accepting llm classification: {threshold_acceptance} ")
+    logger.info(f"threshold for inspecting llm classification: {threshold_inspection} ")
+
     if evaluation:
         # read the evaluation summary output file
-        logger.info(f"reading {input_filepath}")
         input_filepath = (
-            Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}"
+            Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}.json"
         )
-        output_filepath = (
-            Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_stats_file}"
-        )
-        save_evaluation_stats(input_filepath, output_filepath)
-    if ops:
-        threshold_inspection = config.llms.performance.inspection
-        threshold_acceptance = config.llms.performance.threshold
-        logger.info(f"threshold for accepting llm classification: {threshold_acceptance} ")
-        logger.info(f"threshold for inspecting llm classification: {threshold_inspection} ")
 
+        output_filepath = (
+            Path(config.paths.output)
+            / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_stats_file}_t{config.llms.performance.threshold}.json"
+        )
+        save_evaluation_stats(input_filepath, output_filepath, threshold_acceptance, threshold_inspection)
+    if ops:
         # read the operational paper_output file
         input_filepath = (
             Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
         )
-        logger.info(f"reading {input_filepath}")
 
         output_filepath = (
-            Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.ops_stats_file}"
+            Path(config.paths.output)
+            / f"llms/openai_{config.llms.openai.model}/{config.llms.ops_stats_file}_t{config.llms.performance.threshold}.json"
         )
         save_operation_stats(input_filepath, output_filepath, threshold_acceptance, threshold_inspection)
 
