@@ -36,32 +36,37 @@ def save_evaluation_stats(
     """
 
     data = read_output(bibcode=None, filename=input_path)
+    logger.debug(f"Loaded data: {data}")
 
     # Build DataFrame
-    df = pd.DataFrame(
-        [
-            (
-                item["llm_mission"].lower(),  # mission
-                item["llm_papertype"].lower(),  # papertype
-                item["mean_llm_confidences"],
-                bibcode,
-                item["in_human_class"],
-                item["mission_in_text"],
-                item["consistency"],
-            )
-            for bibcode, eval_item in data.items()
-            for index, item in enumerate(eval_item["df"])
-        ],
-        columns=[
-            "mission",
-            "papertype",
-            "mean_llm_confidences",
-            "bibcode",
-            "in_human_class",
-            "mission_in_text",
-            "consistency",
-        ],
-    )
+    try:
+        df = pd.DataFrame(
+            [
+                (
+                    item["llm_mission"].lower(),  # mission
+                    item["llm_papertype"].lower(),  # papertype
+                    item["mean_llm_confidences"],
+                    bibcode,
+                    item["in_human_class"],
+                    item["mission_in_text"],
+                    item["consistency"],
+                )
+                for bibcode, eval_item in data.items()
+                for index, item in enumerate(eval_item["df"])
+            ],
+            columns=[
+                "mission",
+                "papertype",
+                "mean_llm_confidences",
+                "bibcode",
+                "in_human_class",
+                "mission_in_text",
+                "consistency",
+            ],
+        )
+    except Exception as e:
+        logger.error(f"Error during operation DataFrame creation: {e}")
+        raise
     df = df.sort_values(["mission", "papertype"]).reset_index(drop=True)
 
     # grouping DF and aggregate other properies
@@ -107,21 +112,36 @@ def save_operation_stats(
 
     data = read_output(bibcode=None, filename=input_path)
 
+    logger.debug(f"Loaded data: {data}")
+
+    # Validate data structure
+    for bibcode, assessment in data.items():
+        assert isinstance(assessment, list), f"Assessment for {bibcode} should be a list."
+        for mission_item in assessment:
+            assert isinstance(
+                mission_item, dict
+            ), f"Each mission_item should be a dict, got {type(mission_item)} for bibcode {bibcode}."
+
     # Build Pandas DataFrame
-    df = pd.DataFrame(
-        [
-            (mission.lower(), classification[0].lower(), classification[1], bibcode)
-            for bibcode, assessment in data.items()
-            for mission_item in assessment
-            for mission, classification in mission_item.items()
-        ],
-        columns=["mission", "papertype", "llm_confidence", "bibcode"],
-    )
+    try:
+        df = pd.DataFrame(
+            [
+                (mission.lower(), classification[0].lower(), classification[1], bibcode)
+                for bibcode, assessment in data.items()
+                for mission_item in assessment
+                for mission, classification in mission_item.items()
+            ],
+            columns=["mission", "papertype", "llm_confidences", "bibcode"],
+        )
+
+    except Exception as e:
+        logger.error(f"Error during operation DataFrame creation: {e}")
+        raise
 
     df = df.sort_values(["mission", "papertype"]).reset_index(drop=True)
 
     # grouping DF and aggregate other properies
-    grouped_df = group_by_agg("llm_confidence", threshold_acceptance, threshold_inspection, df)
+    grouped_df = group_by_agg("llm_confidences", threshold_acceptance, threshold_inspection, df)
 
     # Write the statistics summary
     write_stats(output_path, threshold_acceptance, threshold_inspection, grouped_df)
