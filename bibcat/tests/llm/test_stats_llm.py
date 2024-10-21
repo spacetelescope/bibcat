@@ -72,7 +72,8 @@ SaveStats = Callable[[pathlib.Path, pathlib.Path, float, float], None]
     [(eval_data, save_evaluation_stats, "evaluation"), (ops_data, save_operation_stats, "operation")],
 )
 def test_save_stats(tmp_path: pathlib.Path, input_data: Dict[str, Any], save_stats: SaveStats, test_name: str):
-    """Test for saving the evaluation stats"""
+    """Test for saving the evaluation/operation results stats"""
+
     temp_input_filepath = tmp_path / "input.json"
     temp_output_filepath = tmp_path / "output.json"
 
