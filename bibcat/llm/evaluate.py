@@ -61,6 +61,9 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     bibcode = paper["bibcode"]
     response = read_output(bibcode=bibcode, filename=paper_output)
 
+    # filter out any cases where the llm returns an error
+    response = [i for i in response if 'error' not in i.keys()]
+
     # exit if no bibcode found in output
     if not response:
         logger.info(f"No output found for {bibcode}")
