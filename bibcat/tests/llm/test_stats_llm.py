@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List
 import pytest
 
 from bibcat import config
-from bibcat.stats.stats_llm import save_evaluation_stats, save_operation_stats
+from bibcat.llm.stats_llm import save_evaluation_stats, save_operation_stats
 from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import load_json_file, save_json_file
 
@@ -71,8 +71,25 @@ SaveStats = Callable[[pathlib.Path, pathlib.Path, float, float], None]
     "input_data, save_stats, test_name",
     [(eval_data, save_evaluation_stats, "evaluation"), (ops_data, save_operation_stats, "operation")],
 )
-def test_save_stats(tmp_path: pathlib.Path, input_data: Dict[str, Any], save_stats: SaveStats, test_name: str):
-    """Test for saving the evaluation/operation results stats"""
+def test_save_stats(tmp_path: str | pathlib.Path, input_data: Dict[str, Any], save_stats: SaveStats, test_name: str):
+    """Test for saving the evaluation/operation results stats
+
+    Parameters
+    ----------
+    tmp_path: str | pathlib.Path
+        Temporary path for files
+    input_data: Dict[str, Any]
+        Input data, either summary_output data or paper_output data
+    save_stats: SaveStats
+        Save statistics function, either `save_evaluation_stats()` or `save_operation_stats()`
+    test_name: str
+        Test name
+
+    Returns
+    -------
+    None
+
+    """
 
     temp_input_filepath = tmp_path / "input.json"
     temp_output_filepath = tmp_path / "output.json"

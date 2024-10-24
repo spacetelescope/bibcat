@@ -146,7 +146,7 @@ def get_llm_prompt(prompt_type: str) -> str:
     return prompt
 
 
-def write_output(paper_key: str, response: dict, ops: bool = False):
+def write_output(paper_key: str, response: dict):
     """Write the output response to a file
 
     Writes the output json response to a file, located at
@@ -179,8 +179,8 @@ def write_output(paper_key: str, response: dict, ops: bool = False):
             data = json.load(f)
 
         # append response to an existing file entry, or add a new one with a new paper_key or in the OPS mode
-        if paper_key in data and not ops:
-            # ogger.info(f"Appending the new run to {paper_key}")
+        if paper_key in data and not config.llm.ops:
+            # logger.info(f"Appending the new run to {paper_key}")
             data[paper_key].append(response)
         else:
             data[paper_key] = [response]

@@ -157,12 +157,12 @@ def get_human_classification(paper: dict | str):
     """Get human's mission and paper types
 
     Parameters
-    ==========
+    ----------
     paper: dict | str
         dictionary or text (a row from the source dataset)
 
     Returns
-    =======
+    -------
     dict
         human's mission and paper type
     """
@@ -179,7 +179,7 @@ def compute_consistency(paper: dict | str, grouped_df: pd.DataFrame, human_class
     check if mission names are found in the text body.
 
     Parameters
-    ==========
+    ----------
     paper: dict | str
         dictionary or text (a row from the source dataset)
     grouped_df: pd.DataFrame
@@ -188,7 +188,7 @@ def compute_consistency(paper: dict | str, grouped_df: pd.DataFrame, human_class
         human's mission and paper type
 
     Returns
-    =======
+    -------
     tuple
         missing missions by human and those by llm
     """
@@ -220,12 +220,12 @@ def check_hallucination(grouped_df):
     """Find missions by llm hallucination
 
     Parameters
-    ==========
+    ----------
     grouped_df: pd.DataFrame
         pandas data frame grouped by mission and papertype
 
     Returns
-    =======
+    -------
     list
         list of hallucinated missions
     """
@@ -258,7 +258,7 @@ def prepare_output(
     Preparing output by gathering information.
 
     Parameters
-    ==========
+    ----------
     bibcode: str
         paper bibcode
     grouped_df: pd.DataFrame
@@ -271,7 +271,7 @@ def prepare_output(
         set of missions missed by llm
 
     Returns
-    =======
+    -------
     dict[str, dict[str, Any]]
         dictionary of paper, missions, and papertypes, pandas dataframe of llm assessment, and other
 

@@ -525,8 +525,9 @@ llms:
     asst_id: null
     use_assistant: false
   classifications: ["SCIENCE", "MENTION"]
-  performance:
+  performance: # used for both evaluation and operation
     threshold: 0.7
     inspection: 0.5
+  ops: false # false if in evaluation, true if in operation
 
 

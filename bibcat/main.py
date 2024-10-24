@@ -19,7 +19,7 @@ from bibcat.evaluate_basic_performance import evaluate_basic_performance
 from bibcat.llm.evaluate import evaluate_output
 from bibcat.llm.openai import OpenAIHelper, classify_paper
 from bibcat.llm.plots import confusion_matrix_plot, roc_plot
-from bibcat.stats.stats_llm import save_evaluation_stats, save_operation_stats
+from bibcat.llm.stats_llm import save_evaluation_stats, save_operation_stats
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
@@ -432,7 +432,8 @@ def stats_llm(evaluation: bool, ops: bool, threshold: float):
     if evaluation:
         # read the evaluation summary output file
         input_filepath = (
-            Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}.json"
+            Path(config.paths.output)
+            / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
         )
 
         output_filepath = (
@@ -440,7 +441,9 @@ def stats_llm(evaluation: bool, ops: bool, threshold: float):
             / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_stats_file}_t{config.llms.performance.threshold}.json"
         )
         save_evaluation_stats(input_filepath, output_filepath, threshold_acceptance, threshold_inspection)
+    # override the config ops to True
     if ops:
+        config.llms.ops = ops
         # read the operational paper_output file
         input_filepath = (
             Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
