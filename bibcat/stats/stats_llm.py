@@ -1,12 +1,10 @@
-import json
 import os
 import pathlib
-from typing import Any, Dict, Set, Tuple
 
 import pandas as pd
 
 from bibcat import config
-from bibcat.llm.io import read_output, write_summary
+from bibcat.llm.io import read_output
 from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import save_json_file
 
@@ -17,7 +15,9 @@ logger.setLevel(config.logging.level)
 def save_evaluation_stats(
     input_path: pathlib.Path, output_path: pathlib.Path, threshold_acceptance: float, threshold_inspection: float
 ):
-    """Save the evaluation stats file and the inconsistent classification list file.  The stats file also includes the lists of the bibcodes for llm classification acceptance and for human inspection for egdy case confidence values. The second file includes the list of data where there are inconsistencies between human and llm's classifications caused by human's missing missions, llm's hallucination, or simply inconsistent classifications.
+    """Save the evaluation stats file and the inconsistent classification list file.
+
+    The stats file includes the lists of the bibcodes for llm classification acceptance and for human inspection for egdy case confidence values. The second file includes the list of data where there are inconsistencies between human and llm's classifications caused by human's missing missions, llm's hallucination, or simply inconsistent classifications.
 
     Parameters
     ==========

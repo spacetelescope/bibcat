@@ -16,7 +16,8 @@ logger.setLevel(config.logging.level)
 def fetch_data():
     # read the evaluation summary output file
     eval_output = (
-        pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}"
+        pathlib.Path(config.paths.output)
+        / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}.json"
     )
     logger.info(f"reading {eval_output}")
     return read_output(filename=eval_output)

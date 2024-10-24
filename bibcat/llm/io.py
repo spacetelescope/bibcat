@@ -2,6 +2,7 @@ import json
 import os
 import pathlib
 import tempfile
+from typing import Optional, Union
 
 from bibcat import config
 from bibcat.data.streamline_dataset import load_source_dataset
@@ -189,7 +190,7 @@ def write_output(paper_key: str, response: dict, ops: bool = False):
             json.dump(data, f, indent=2, sort_keys=False)
 
 
-def read_output(bibcode: str | None, filename: pathlib.Path) -> list:
+def read_output(bibcode: str | None = None, filename: str | pathlib.Path | None = None) -> list:
     """Read in the output for a given bibcode
 
     Returns the content from the output JSON file
@@ -214,7 +215,7 @@ def read_output(bibcode: str | None, filename: pathlib.Path) -> list:
         return data.get(bibcode) if bibcode else data
 
 
-def write_summary(output: dict, filename: pathlib.Path):
+def write_summary(output: dict, filename: str | pathlib.Path):
     """Write summary output from evaluation to a file
 
     Write the output summary statistics and info from
