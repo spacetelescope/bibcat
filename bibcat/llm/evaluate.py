@@ -48,11 +48,6 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     pd.DataFrame
         an output pandas dataframe
     """
-    summary_filename = (
-        pathlib.Path(config.paths.output)
-        / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
-    )
-
     paper_output = (
         pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
     )
@@ -115,7 +110,7 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
             missing_by_llm,
             hallucinated_missions,
         )
-        write_summary(output, summary_filename)
+        write_summary(output)
 
     # return the dataframe
     return grouped_df
