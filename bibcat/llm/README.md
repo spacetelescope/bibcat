@@ -353,7 +353,7 @@ To create a statistics JSON file, use the command line options listed below.
 
 ### Evaluation summary statistics for mission+papertype pairs
 
-To create a statisitics output from the *e*valuation summary output, e.g., `summary_output.json`, run:
+To create a statisitics output from the *e*valuation summary output, e.g., `summary_output_t0.7.json`, run:
 ```bash
 bibcat stats-llm -e
 ```
@@ -364,13 +364,13 @@ This command line will also create a file for the list of the papers where human
 ### Operation classification statistics for mission+papertype pairs
 This output will provide various number counts including the number of papers with accepted papertype which meets this condition `threshold_acceptance >= confidence` and the number of papers required for human inspection (`threshold_inspection <= confidence < threshold_acceptance`) for final papertype assignment. It also includes the lists of bibcodes of accepted papertypes and inspection required for human inspection. 
 
-To create a statisitics output from the llm classification output for *o*peration, `paper_output.json`, run:
+To create a statisitics output,`operation_stats_t0.7.json`  from the llm classification output for *o*peration, `paper_output.json`, run:
 ```bash
 bibcat stats-llm -o
 ```
 ```bash
 INFO - reading /Users/jyoon/GitHub/bibcat/output/output/llms/openai_gpt-4o-mini/paper_output.json
-INFO - threshold for accepting llm classification: 0.6 
+INFO - threshold for accepting llm classification: 0.7 
 INFO - threshold for inspecting llm classification: 0.4 
 INFO - Production counts by LLM Mission and Paper Type:
    mission papertype  total_count  accepted_count  inspection_count
