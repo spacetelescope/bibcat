@@ -2,7 +2,6 @@ import json
 import os
 import pathlib
 import tempfile
-from typing import Optional, Union
 
 from bibcat import config
 from bibcat.data.streamline_dataset import load_source_dataset
