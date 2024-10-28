@@ -1,7 +1,18 @@
 """
 :title: parameters.py
 
-This module contains keyword parameters for bibcat such as MAST mission names.
+This module contains keyword parameters for bibcat such as MAST mission names.  It also gathers Keyword objects and classification types into lists for use by the user.
+
+Purpose:
+ - Build a list of Keyword objects that describe the user's target missions (e.g., HST, JWST, TESS).
+
+Arguments of the Keyword class:
+ - keywords [list of strings | empty list]: List of full phrases that name the mission (e.g., "Hubble Space Telescope").  Not case-sensitive.
+ - acronyms_casesensitive [list of strings | empty list]: List of acronyms that can describe the mission; capitalization is preserved (e.g., "STScI").  Punctuation should be omitted (as it is handled internally within the code).
+ - acronyms_caseinsensitive [list of strings | empty list]: List of acronyms that can describe the mission; capitalization is not preserved (e.g., "HST" and "hst" are treated in the same manner).  Punctuation should be omitted (as it is handled internally within the code).
+ - do_not_classify [boolean]: If True, text for the mission will be processed, extracted, and presented to the user, but not classified.  This can be useful for missions for which only human classification is desired.  This can also be useful for missions for which false positives are too difficult to automatically screen out (e.g., "K2", which can be a mission and also a stellar spectral type).
+ - banned_overlap [list of strings | empty list]: Phrases that overlap with the target mission keywords but should not be treated as the same mission.  E.g., "Hubble Legacy Archive" can be a distinct mission from "Hubble"; therefore "Hubble Legacy Archive" is banned overlap for the Hubble mission, to avoid double-counting "Hubble Legacy Archive" as multiple missions.
+ - ambig_words [list of strings | empty list]: Phrases for which the user requests false positive checks to be done against the internal database of false positives.  E.g., "Hubble" can be found in the mission phrase "Hubble Telescope" and also in the false positive (i.e., non-mission) phrase "Hubble constant".  By specifying "Hubble" as a false positive phrase for the Hubble mission, the code knows to internally check phrases in the text with "Hubble" against the internal false positive database and procedure.
 
 """
 
