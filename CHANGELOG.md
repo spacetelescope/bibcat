@@ -1,8 +1,9 @@
 # Change Log
 
 ## [Unreleased]
-- [PR #35]
-    - Implement performance evaluation metrics and plots
+- [PR # 40]
+    - Add `stats-llm.py` to output statistics results from the evaluation summary output and the operational gpt results
+    - pytests (`test_stats_llm.py`) and llm `README.md` updated
 
 - Bibcat to do list
     - Refactor performance.py
@@ -88,6 +89,11 @@
     - updated formatting and styling
 
 ### Added
+- [PR #38]
+    - Add option to run gpt-batch multiple times
+- [PR #35]
+    - Implement performance evaluation metrics and plots
+
 - [PR #34]
     - Added a summary output code for evaluation
 - [PR #32]

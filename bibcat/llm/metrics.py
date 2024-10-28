@@ -48,7 +48,7 @@ def extract_eval_data(data: dict, missions: list[str]):
                 human_labels.append(human_data.get(mission))
                 llm_labels.extend(v for i in llm_data for k, v in i.items() if k == mission)
                 llm_confidences.extend(i["mean_llm_confidences"] for i in df if i["llm_mission"] == mission)
-        threshold = data[bibcode]["threshold"]
+        threshold = data[bibcode]["threshold_acceptance"]
 
     logger.debug(
         f"human_labels = {human_labels}, llm_labels = {llm_labels}, threshold = {threshold}, confidences = {llm_confidences}"

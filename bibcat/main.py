@@ -7,6 +7,7 @@ Main entry point into bibcat
 
 import os
 import time
+from pathlib import Path
 
 import click
 
@@ -18,6 +19,7 @@ from bibcat.evaluate_basic_performance import evaluate_basic_performance
 from bibcat.llm.evaluate import evaluate_output
 from bibcat.llm.openai import OpenAIHelper, classify_paper
 from bibcat.llm.plots import confusion_matrix_plot, roc_plot
+from bibcat.llm.stats import save_evaluation_stats, save_operation_stats
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
@@ -25,7 +27,10 @@ logger = setup_logger(__name__)
 
 @click.group("bibcat")
 def cli() -> None:
-    """Command-line tool for running the bibcat package"""
+    """Command-line tool for running the bibcat package
+    To see more options for each command, you can use `--help` after each command.
+    For instance, `bibcat run-gpt --help`
+    """
 
 
 @cli.command(help="Build a combined dataset")
@@ -54,6 +59,7 @@ def dataset() -> None:
         return
 
     else:
+        logger.info("CLI option: 'dataset' selected")
         build_dataset()
 
 
@@ -112,6 +118,7 @@ def classify(name) -> None:
 
     Wraps the original classify_papers script.
     """
+    logger.info("Selected ML classification!")
     classify_papers(classifier_name=name)
 
 
@@ -125,7 +132,7 @@ def update() -> None:
     "-n",
     "--name",
     default="ML",
-    type=click.Choice(["ML", "RB"]),
+    type=click.Choice(["ML", "RB"]),  # TODO: delete "RB"
     show_default=True,
     help="The type of classifier to use.  Either machine-learning (ML) or rule-based (RB).",
 )
@@ -139,8 +146,22 @@ def evaluate(name) -> None:
 
 @cli.command(help="Send a prompt to an OpenAI LLM model")
 @click.option("-f", "--filename", default=None, type=str, show_default=True, help="The path to a file to upload")
-@click.option("-b", "--bibcode", default=None, type=str, show_default=True, help="A bibcode from the papertrack source combined_dataset")
-@click.option("-i", "--index", default=None, type=str, show_default=True, help="An array index from the papertrack source combined_dataset")
+@click.option(
+    "-b",
+    "--bibcode",
+    default=None,
+    type=str,
+    show_default=True,
+    help="A bibcode from the papertrack source combined_dataset",
+)
+@click.option(
+    "-i",
+    "--index",
+    default=None,
+    type=str,
+    show_default=True,
+    help="An array index from the papertrack source combined_dataset",
+)
 @click.option("-m", "--model", default=None, type=str, show_default=True, help="The model type to use")
 @click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
 @click.option(
@@ -158,10 +179,12 @@ def evaluate(name) -> None:
     help="The name of a custom agent prompt file",
 )
 @click.option("-v", "--verbose", is_flag=True, show_default=True, help="Set to print verbose output")
-def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_file, agent_prompt_file, verbose):
+@click.option("-o", "--ops", is_flag=True, show_default=False, help="Set to operational classification mode")
+def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_file, agent_prompt_file, verbose, ops):
     """Send a prompt to an OpenAI LLM model"""
     # override the config model
     start_time = time.time()
+    logger.info("CLI option: 'run_gpt' selected")
     if model:
         config.llms.openai.model = model
     # override the config user prompt file
@@ -172,22 +195,54 @@ def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_fi
         config.llms.llm_agent_prompt = agent_prompt_file
 
     classify_paper(
-        file_path=filename, bibcode=bibcode, index=index, n_runs=num_runs, use_assistant=assistant, verbose=verbose
+        file_path=filename,
+        bibcode=bibcode,
+        index=index,
+        n_runs=num_runs,
+        use_assistant=assistant,
+        verbose=verbose,
+        ops=ops,
     )
     elapsed_time = time.time() - start_time
     logger.info(f"Elapsed time for run_gpt for {num_runs} papers: {elapsed_time} seconds.")
 
 
 @cli.command(help="Batch submit papers to an OpenAI LLM model")
-@click.option("-f", "--files", default=None, type=str, show_default=True, multiple=True, help="A list of files or bibcodes to upload")
-@click.option("-p", "--filename", default=None, type=click.File('r'), show_default=True, help="The path to a file of bibcodes or papers to read in")
+@click.option(
+    "-f",
+    "--files",
+    default=None,
+    type=str,
+    show_default=True,
+    multiple=True,
+    help="A list of files or bibcodes to upload",
+)
+@click.option(
+    "-p",
+    "--filename",
+    default=None,
+    type=click.File("r"),
+    show_default=True,
+    help="The path to a file of bibcodes or papers to read in",
+)
 @click.option("-m", "--model", default=None, type=str, show_default=True, help="The model type to use")
-@click.option("-u", "--user-prompt-file", default=None, type=str, show_default=True, help="The name of a custom user prompt file")
-@click.option("-a", "--agent-prompt-file", default=None, type=str, show_default=True, help="The name of a custom agent prompt file")
-@click.option('-v', '--verbose', is_flag=True, show_default=True, help="Set to print verbose output")
+@click.option(
+    "-u", "--user-prompt-file", default=None, type=str, show_default=True, help="The name of a custom user prompt file"
+)
+@click.option(
+    "-a",
+    "--agent-prompt-file",
+    default=None,
+    type=str,
+    show_default=True,
+    help="The name of a custom agent prompt file",
+)
+@click.option("-v", "--verbose", is_flag=True, show_default=True, help="Set to print verbose output")
+@click.option("-o", "--ops", is_flag=True, show_default=False, help="Set to operational classification mode")
 @click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
-def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, verbose, num_runs):
+def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, verbose, num_runs, ops):
     start_time = time.time()
+    logger.info("CLI option: 'run_gpt_batch' selected")
     # override the config model
     if model:
         config.llms.openai.model = model
@@ -197,6 +252,8 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
     # override the config agent prompt file
     if agent_prompt_file:
         config.llms.llm_agent_prompt = agent_prompt_file
+    if ops:
+        logger.info("Run in the OPS MODE!")
 
     # get the list of files
     files = files or filename.read().splitlines()
@@ -213,28 +270,75 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
             n_runs=num_runs,
             use_assistant=True if source == "file" else False,
             verbose=verbose,
+            ops=ops,
         )
     elapsed_time = time.time() - start_time
     logger.info(f"Elapsed time for run_gpt_batch for {len(files)} papers: {elapsed_time} seconds.")
 
-@cli.command(help='Evaluate the LLM output')
-@click.option("-b", "--bibcode", default=None, type=str, show_default=True, help="A bibcode from the papertrack source combined_dataset")
-@click.option("-i", "--index", default=None, type=str, show_default=True, help="An array index from the papertrack source combined_dataset")
+
+@cli.command(help="Evaluate the LLM output")
+@click.option(
+    "-b",
+    "--bibcode",
+    default=None,
+    type=str,
+    show_default=True,
+    help="A bibcode from the papertrack source combined_dataset",
+)
+@click.option(
+    "-i",
+    "--index",
+    default=None,
+    type=str,
+    show_default=True,
+    help="An array index from the papertrack source combined_dataset",
+)
 @click.option("-m", "--model", default=None, type=str, show_default=True, help="The model type to use")
-@click.option("-f", "--file", default=None, type=str, show_default=True, help="The name of the output response file to use for evaluation")
-@click.option('-s', '--submit', is_flag=True, show_default=True, help="Flag to submit the paper for classification")
-@click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute for classification")
-@click.option('-w/-now', '--write/--no-write', default=True, is_flag=True, show_default=True, help="Flag to write the output evaluation file")
+@click.option(
+    "-f",
+    "--file",
+    default=None,
+    type=str,
+    show_default=True,
+    help="The name of the output response file to use for evaluation",
+)
+@click.option("-s", "--submit", is_flag=True, show_default=True, help="Flag to submit the paper for classification")
+@click.option(
+    "-n",
+    "--num_runs",
+    default=1,
+    type=int,
+    show_default=True,
+    help="The number of prompt runs to execute for classification",
+)
+@click.option(
+    "-w/-now",
+    "--write/--no-write",
+    default=True,
+    is_flag=True,
+    show_default=True,
+    help="Flag to write the output evaluation file",
+)
+@click.option(
+    "-t",
+    "--threshold",
+    default=0.7,
+    type=float,
+    show_default=True,
+    help="The threshold value to accept the llm papertype",
+)
 @click.pass_context
-def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write):
-    """ Evaluate the ouput JSON from a LLM model """
+def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, threshold):
+    """Evaluate the ouput JSON from a LLM model"""
     # override the config model
     if model:
         config.llms.openai.model = model
+    # override the config threshold
+    if threshold:
+        config.llms.performance.threshold = threshold
     # override the config output response file
     if file:
         config.llms.prompt_output_file = file
-
 
     # submit the paper for classification, if requested
     if submit:
@@ -244,7 +348,7 @@ def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write):
     evaluate_output(bibcode=bibcode, index=index, write_file=write)
 
 
-@cli.command(help="Create evaulation plots")
+@cli.command(help="Create evaulation plots for llm performance")
 @click.option(
     "-c",
     "--cm",
@@ -290,6 +394,66 @@ def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
 
     elif roc and missions:
         roc_plot(missions=list(missions))
+
+
+@cli.command(help="Create a statisics table for classification")
+@click.option(
+    "-o",
+    "--ops",
+    is_flag=True,
+    show_default=False,
+    help="Create a OPS statistics table for llm mission-papertype pairs. This flag works with the '-o' flag. e.g., 'bibcat stat_llm -o'",
+)
+@click.option(
+    "-e",
+    "--evaluation",
+    is_flag=True,
+    show_default=False,
+    help="Create an Evaluation statistics table for llm and human mission-papertype pairs. This flag works with the '-e' flag. e.g., 'bibcat stat_llm -e'",
+)
+@click.option(
+    "-t",
+    "--threshold",
+    default=0.7,
+    type=float,
+    show_default=True,
+    help="The threshold value to accept the llm papertype",
+)
+def stats_llm(evaluation: bool, ops: bool, threshold: float):
+    # override config threshold value
+    if threshold:
+        config.llms.performance.threshold = threshold
+
+    threshold_inspection = config.llms.performance.inspection
+    threshold_acceptance = config.llms.performance.threshold
+    logger.info(f"threshold for accepting llm classification: {threshold_acceptance} ")
+    logger.info(f"threshold for inspecting llm classification: {threshold_inspection} ")
+
+    if evaluation:
+        # read the evaluation summary output file
+        input_filepath = (
+            Path(config.paths.output)
+            / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
+        )
+
+        output_filepath = (
+            Path(config.paths.output)
+            / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_stats_file}_t{config.llms.performance.threshold}.json"
+        )
+        save_evaluation_stats(input_filepath, output_filepath, threshold_acceptance, threshold_inspection)
+    # override the config ops to True
+    if ops:
+        config.llms.ops = ops
+        # read the operational paper_output file
+        input_filepath = (
+            Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
+        )
+
+        output_filepath = (
+            Path(config.paths.output)
+            / f"llms/openai_{config.llms.openai.model}/{config.llms.ops_stats_file}_t{config.llms.performance.threshold}.json"
+        )
+        save_operation_stats(input_filepath, output_filepath, threshold_acceptance, threshold_inspection)
 
 
 @cli.group("openai", short_help="OpenAI LLM commands")
