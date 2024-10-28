@@ -207,6 +207,10 @@ def read_output(bibcode: str | None = None, filename: str | pathlib.Path | None 
     list
         The output data from the LLM response
     """
+    # set filename if not present
+    if bibcode and not filename:
+        filename = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
+
     logger.info(f"reading {filename}")
 
     with open(filename, "r") as f:

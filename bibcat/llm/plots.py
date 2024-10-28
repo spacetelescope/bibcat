@@ -17,7 +17,7 @@ def fetch_data():
     # read the evaluation summary output file
     eval_output = (
         pathlib.Path(config.paths.output)
-        / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}.json"
+        / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
     )
     logger.info(f"reading {eval_output}")
     return read_output(filename=eval_output)

@@ -19,7 +19,7 @@ from bibcat.evaluate_basic_performance import evaluate_basic_performance
 from bibcat.llm.evaluate import evaluate_output
 from bibcat.llm.openai import OpenAIHelper, classify_paper
 from bibcat.llm.plots import confusion_matrix_plot, roc_plot
-from bibcat.llm.stats_llm import save_evaluation_stats, save_operation_stats
+from bibcat.llm.stats import save_evaluation_stats, save_operation_stats
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)

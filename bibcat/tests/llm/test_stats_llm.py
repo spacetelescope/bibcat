@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List
 import pytest
 
 from bibcat import config
-from bibcat.llm.stats_llm import save_evaluation_stats, save_operation_stats
+from bibcat.llm.stats import save_evaluation_stats, save_operation_stats
 from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import load_json_file, save_json_file
 
