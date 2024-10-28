@@ -58,14 +58,11 @@ textprocessing:
     - 0.95
     - 20
   buffer: 0  # the number of sentences to include within paragraph around each sentence with target terms
-  placeholder_anon: "OBJ"
-  placeholder_numeric: "numeric"
-  placeholder_number: "000"
-  placeholder_website: "website"
-  placeholder_author: "Authorsetal"
+  placeholder_anon: "OBJ" # For text that is anonymized against user's target missions, this is the text that the mission terms are replaced with.
+  placeholder_number: "000" # For text that is anonymized against numbers, this is the text that the numbers are replaced with.
+  placeholder_author: "Authorsetal" # For text that is anonymized against authors, this is the text that the authors are replaced with.
   which_modes: [none, skim, trim, anon, skim_trim_anon]
-  keywords_ambig: [Hubble, Kepler, K2]
-  phrases_ambig:
+  phrases_ambig: # Database of known true vs false positives (e.g., phrases that are mission-related (like "Hubble telescope") vs phrases that are false positives (like "Hubble constant").  Nouns should be given in singular form, since plurality is avoided internally to the code via synsets / internal meanings.  Column 1 is the mission; column 2 is the ambiguous phrase; column 3 is the boolean for true vs false positive status.
   - [Kepler, Campos Kepler, 'FALSE']
   - [Kepler, Castanheira Kepler, 'FALSE']
   - [Kepler, Kepler 000, 'FALSE']
@@ -473,17 +470,8 @@ grammar:
     thres_verbsimilarityhigh: 0.75  # Threshold of similarity to say two verbs are similar
 
     # Grammar nest generation
-    # Convert from tree to nest terminology
-    conv_pos_fromtreetonest: {"PREPOSITION_SUBJECT": "subjectmatter", "SUBJECT": "subjectmatter", "DIRECT_OBJECT": "objectmatter", "PREPOSITION_OBJECT": "objectmatter"}
-    # List of important booleans to record into a post-grammar nest
-    nest_important_treebools: ["is_pron_1st", "is_keyword", "is_etal", "is_pron_3rd", "is_term_fig"]
     # List of important booleans that get merged into main component from linked terms in a nest
-    nest_important_treebools_superior: [ "is_pron_1st", "is_term_fig", "is_etal"]
-    nest_unimportant_pos: [None, "PUNCTUATION"]  # Any parts-of-speech (pos) that will be ignored+skipped during nest-building
-    nest_keys_main: ["subjectmatter", "objectmatter", "verbclass", "verbtypes"]  # List of main keywords that define a nest
     nest_keys_matter: ["subjectmatter", "objectmatter"]  # List of matter keywords that define a nest
-    nest_key_verbtype: "verbtypes"  # verbtype keyword
-    nest_prefix_link: "link_"  # Prefix for linked keys within nest
     max_num_hypernyms: 3
 
     # Verb synsets
@@ -495,18 +483,9 @@ grammar:
     synsets_verbs_know: ["know.v.01", "understand.v.01", "want.v.02"]
 
     # Verb categorization
-    category_nonverb_root: "root_nonverb"
     list_category_names: ["science", "datainfluenced", "plot", "know"]
     list_category_synsets: [synsets_verbs_science, synsets_verbs_influenced, synsets_verbs_plot, synsets_verbs_know]
     list_category_threses: [thres_verbsimilaritymain, thres_verbsimilaritymain, thres_verbsimilaritymain, thres_verbsimilarityhigh]
-  # classification
-  list_default_verdicts_decisiontree: ["science", "data_influenced", "mention"]
-  dict_tree_possible_values: {
-      "subjectmatter": ["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"],
-      "objectmatter": ["is_pron_1st", "is_etal", "is_keyword", "is_term_fig", "is_pron_3rd"],
-      "verbclass": ["be", "has", "know", "plot", "root_nonverb", "science", "datainfluenced"],
-      "verbtypes": ["FUTURE", "PASSIVE", "PAST", "POTENTIAL", "PURPOSE", "PRESENT"],
-  }
 
 llms:
   user_prompt: null
@@ -525,5 +504,3 @@ llms:
   performance:
     threshold: 0.6
     inspection: 0.4
-
-
