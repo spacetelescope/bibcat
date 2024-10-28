@@ -19,21 +19,23 @@ from bibcat.core.base import Base
 class Keyword(Base):
     """
     Class: Keyword
-    Purpose: Store terms, i.e. titles and acronyms, that refer to a mission.
-    Initialization Arguments:
-        - acronyms [list of strings or Nones, or None (default=None)]:
-          - Acronyms of the mission
-        - keywords [list of strings]:
-          - Titles of the mission
-        - do_verbose [bool (default=False)]:
-          - Whether or not to print log information and tests
+    Purpose:
+     - Store terms, i.e. titles and acronyms, that refer to a mission.
+    Arguments:
+     - acronyms_caseinsensitive [list of strings | empty list]: List of acronyms that can describe the mission; capitalization is not preserved (e.g., "HST" and "hst" are treated in the same manner).  Punctuation should be omitted (as it is handled internally within the code).
+     - acronyms_casesensitive [list of strings | empty list]: List of acronyms that can describe the mission; capitalization is preserved (e.g., "STScI").  Punctuation should be omitted (as it is handled internally within the code).
+     - ambig_words [list of strings | empty list]: Phrases for which the user requests false positive checks to be done against the internal database of false positives.  E.g., "Hubble" can be found in the mission phrase "Hubble Telescope" and also in the false positive (i.e., non-mission) phrase "Hubble constant".  By specifying "Hubble" as a false positive phrase for the Hubble mission, the code knows to internally check phrases in the text with "Hubble" against the internal false positive database and procedure.
+     - banned_overlap [list of strings | empty list]: Phrases that overlap with the target mission keywords but should not be treated as the same mission.  E.g., "Hubble Legacy Archive" can be a distinct mission from "Hubble"; therefore "Hubble Legacy Archive" is banned overlap for the Hubble mission, to avoid double-counting "Hubble Legacy Archive" as multiple missions.
+     - do_not_classify [boolean]: If True, text for the mission will be processed, extracted, and presented to the user, but not classified.  This can be useful for missions for which only human classification is desired.  This can also be useful for missions for which false positives are too difficult to automatically screen out (e.g., "K2", which can be a mission and also a stellar spectral type).
+     - do_verbose [boolean]: If True, will print statements and internal reports within applicable methods while the code is running.
+     - keywords [list of strings | empty list]: List of full phrases that name the mission (e.g., "Hubble Space Telescope").  Not case-sensitive.
+
     """
 
     def __init__(self, keywords, acronyms_caseinsensitive, acronyms_casesensitive, banned_overlap, ambig_words, do_not_classify, do_verbose=False):
         """
         Method: __init__
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Initialize instance of Keyword class.
+        Purpose: Initialize instance of Keyword class.  See docstring of the main class for descriptions of all initialization arguments.
         """
         # Initialize storage
         self._storage = {}
@@ -154,12 +156,13 @@ class Keyword(Base):
         Method: identify_keyword
         Purpose: Return whether or not the given text contains terms (keywords, acronyms) matching this instance.
         Arguments:
-          - "text" [str]: The text to search within for terms
+          - text [str]: The text to search within for terms.
+          - mode [str | "keyword" | "acronym"]: If a mode is specified, then the code will only search for terms of that type (i.e., either specifically for full phrases OR of acronyms matching to this Keyword instance).
         Returns:
           - [dict] containing:
-            - "bool":[bool] - if any matches
-            - "charspans":[lists of 2 ints] - character spans of matches
-            - "bool_acronym_only":[bool] - if any acronym matches
+            - "bool" [bool]: If any matches exist.
+            - "charspans" [lists of 2 ints]: Character spans of matches.
+            - "bool_acronym_only" [bool]: If any acronym matches exist.
         """
         # Fetch global variables
         exps_k = self._get_info("exps_keywords")
@@ -253,10 +256,10 @@ class Keyword(Base):
         Method: replace_keyword
         Purpose: Replace any substrings within given text that contain terms (keywords, acronyms) matching this instance.
         Arguments:
-          - "text" [str]: The text to search within for terms
-          - "placeholder" [str]: The substring to replace terms with
+          - "text" [str]: The text to search within for terms.
+          - "placeholder" [str]: The substring to replace terms with.
         Returns:
-          - [str]
+          - [str]: The text with any keywords/acronyms matching to this Keyword instance replaced.
         """
         # Fetch global variables
         exps_k = self._get_info("exps_keywords")
