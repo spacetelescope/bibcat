@@ -322,7 +322,7 @@ def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, thre
 @click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
 @click.pass_context
 def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
-
+    """ Batch evaluate a list of papers """
     start_time = time.time()
 
     # override the config model
