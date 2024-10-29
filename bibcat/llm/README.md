@@ -319,6 +319,13 @@ Definitions of the output columns from the evaluation.
 - **mission_in_text**: Flag whether or not the mission keyword is in the source paper text
 - **hallucination_by_llm**: Flag whether or not the mission keyword is hallucinated by LLM
 
+### Batch Evaluation
+
+You can batch evaluate a list of papers/bibcodes with the `evaluate-llm-batch` command.  For example, to submit a list of bibcodes to `run-gpt-batch`,
+with 20 runs each paper, then batch evaluate them, run:
+```bash
+bibcat evaluate-llm-batch -p bibcode_list.txt -s -n 20
+```
 
 ## Plotting Evaluation Plots
 
