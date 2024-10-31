@@ -10,7 +10,6 @@ The primary methods and use cases of ClassifierBase include:
 """
 
 from bibcat.core.base import Base
-from bibcat.core.grammar import Grammar
 
 
 # TODO - remove this ; not needed

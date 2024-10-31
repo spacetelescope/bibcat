@@ -434,7 +434,7 @@ class Grammar(Base):
                     #            and ("ROOT" not in [pos_main, check_pos])):
                     # Take the dominant p.o.s. for allowed cases
                     # This catches weird overlap cases due to ambig. English
-                    tmp_list = [check_pos, pos_main]
+                    # tmp_list = [check_pos, pos_main]
                     # Aux > verb
                     # if (("VERB" in tmp_list) and ("AUX" in tmp_list)):
                     #    pos_main = "AUX"
