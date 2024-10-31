@@ -54,6 +54,13 @@ def test_evaluate_llm() -> None:
     assert "Evaluate the LLM output" in result.output
 
 
+def test_evaluate_llm_batch() -> None:
+    """test the cli evaluate help command"""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["evaluate-llm-batch", "--help"])
+    assert "Batch evaluate the LLM output" in result.output
+
+
 def test_run_gpt() -> None:
     """test the cli run-gpt help command"""
     runner = CliRunner()
