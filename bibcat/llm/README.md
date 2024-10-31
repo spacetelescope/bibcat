@@ -26,7 +26,7 @@ You should see something like `INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], '
 
 The cli `bibcat run-gpt` submits a prompt with paper content.  The paper content can either be a local filepath on disk, or a bibcode or array list index from source dataset ``dataset_combined_all_2018-2023.json``.  When specifying a bibcode or list array index, the paper data is pulled from the source JSON dataset.
 
-The `run-gpt` command submits a single paper. Note that when submitting any paper whose bibcode contains `&`, double quotes `" "` are needed for the bibcode in the command line. 
+The `run-gpt` command submits a single paper. Note that when submitting any paper whose bibcode contains `&`, double quotes `" "` are needed for the bibcode in the command line.
 ```python
 # submit a paper
 bibcat run-gpt -f /Users/bcherinka/Downloads/2406.15083v1.pdf
@@ -39,7 +39,7 @@ bibcat run-gpt -b "2022A&A...668A..63R"
 bibcat run-gpt -i 101
 ```
 
-The `run-gpt-batch` command submits a list of files.  The list can either be specified one of two ways:  1.) individually, with the `-f` option, as a filename, bibcode, or index, or 2.) a file that contains a list of filenames, bibcodes, or indices to use, with one line per entry.  By default, each paper in the list is submitted once.  You can instruct it to submit each paper multiple times with the `-n` option. Run `bibcat run-gpt-batch --help` to see the full list of cli options. 
+The `run-gpt-batch` command submits a list of files.  The list can either be specified one of two ways:  1.) individually, with the `-f` option, as a filename, bibcode, or index, or 2.) a file that contains a list of filenames, bibcodes, or indices to use, with one line per entry.  By default, each paper in the list is submitted once.  You can instruct it to submit each paper multiple times with the `-n` option. Run `bibcat run-gpt-batch --help` to see the full list of cli options.
 
 ```python
 # batch submit a list of papers, using source index
@@ -140,8 +140,8 @@ Which type of whale appeared in a 80's science fiction movie?
 - Create a new text file, `my_agent_prompt.txt` with the following content:
 
 >```txt
->You are an professional expert on whales. 
->You are also witty and always respond with a clever pun. 
+>You are an professional expert on whales.
+>You are also witty and always respond with a clever pun.
 >*Always* format your response as valid JSON, with the following example as a guide:
 >
 >```json
@@ -258,7 +258,7 @@ llm_mission llm_papertype mean_llm_confidences std_llm_confidences  count  n_run
          K2       SCIENCE         [0.85, 0.15]        [0.05, 0.05]      2       3          0.0           False            False                  True
      KEPLER       SCIENCE         [0.92, 0.08]        [0.02, 0.02]      3       3        100.0            True             True                 False
 INFO - Missing missions by humans: K2
-INFO - Missing missions by LLM: 
+INFO - Missing missions by LLM:
 INFO - Hallucination by LLM: K2
 Writing output to /Users/jyoon/GitHub/bibcat/output/output/llms/openai_gpt-4o-mini/summary_output_t0.7.json
 ```
@@ -344,7 +344,7 @@ bibcat eval-plot -r -a
 ```
 
 ## Statistics output
-After running bibcat GPT classification using bibcat run-gpt, bibcat run-gpt-batch, or bibcat evaluate-llm to generate classifications for papers, you may want to review various statistics. These statistics can include the number of papers per mission and papertype, the count of accepted papertypes, and the number of papers that require human inspection due to low confidence scores. 
+After running bibcat GPT classification using bibcat run-gpt, bibcat run-gpt-batch, or bibcat evaluate-llm to generate classifications for papers, you may want to review various statistics. These statistics can include the number of papers per mission and papertype, the count of accepted papertypes, and the number of papers that require human inspection due to low confidence scores.
 
 From the evaluation summary output file, you may want to see the list of the papers where human classifications are not consistent with llm classifications. The next command line will also create this file.
 
@@ -359,10 +359,10 @@ bibcat stats-llm -e
 ```
 The output file name will be something like `evaluation_stats_t0.7.json` where `t0.7` refers to the threshold value, `0.7` to accept the llm's papertype.
 
-This command line will also create a file for the list of the papers where human classifications are not consistent with llm classifications. 
+This command line will also create a file for the list of the papers where human classifications are not consistent with llm classifications.
 
 ### Operation classification statistics for mission+papertype pairs
-This output will provide various number counts including the number of papers with accepted papertype which meets this condition `threshold_acceptance >= confidence` and the number of papers required for human inspection (`threshold_inspection <= confidence < threshold_acceptance`) for final papertype assignment. It also includes the lists of bibcodes of accepted papertypes and inspection required for human inspection. 
+This output will provide various number counts including the number of papers with accepted papertype which meets this condition `threshold_acceptance >= confidence` and the number of papers required for human inspection (`threshold_inspection <= confidence < threshold_acceptance`) for final papertype assignment. It also includes the lists of bibcodes of accepted papertypes and inspection required for human inspection.
 
 To create a statisitics output,`operation_stats_t0.7.json`  from the llm classification output for *o*peration, `paper_output.json`, run:
 ```bash
@@ -370,8 +370,8 @@ bibcat stats-llm -o
 ```
 ```bash
 INFO - reading /Users/jyoon/GitHub/bibcat/output/output/llms/openai_gpt-4o-mini/paper_output.json
-INFO - threshold for accepting llm classification: 0.7 
-INFO - threshold for inspecting llm classification: 0.4 
+INFO - threshold for accepting llm classification: 0.7
+INFO - threshold for inspecting llm classification: 0.4
 INFO - Production counts by LLM Mission and Paper Type:
    mission papertype  total_count  accepted_count  inspection_count
      GALEX   MENTION            4               4                 0
@@ -395,11 +395,10 @@ The definitions of the output columns are following.
 - **papertype**: papertype classified by LLM
 - **total_count**: The total number of papers
 - **accepted_count**: The count of papers with accepted llm papertype
-- **accepted_bibcodes**: The bibcode list of the papers with accepted llm papertype 
+- **accepted_bibcodes**: The bibcode list of the papers with accepted llm papertype
 - **inspection_count**: The count of papers required for human inspection
 - **inspection_bibcodes**: The bibcode list of the papers for papertype required human inspection
 
 #### File output for the inconsistent classifications
 The output columns are `mission`, `papertype`, `mean_llm_confidences`,`bibcode`, `in_human_class`, `mission_in_text`, and `consistency`.
 The column definitions can be found in the [Output Columns](#output-columns).
-

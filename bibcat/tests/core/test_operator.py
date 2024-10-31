@@ -42,9 +42,7 @@ class TestOperator(unittest.TestCase):
             for key1 in dict_acts:
                 # Otherwise, check generated modif
                 curr_lookup = key1
-                test_res = testbase._fetch_keyword_object(
-                    lookup=curr_lookup, do_raise_emptyerror=True
-                )
+                test_res = testbase._fetch_keyword_object(lookup=curr_lookup, do_raise_emptyerror=True)
                 curr_answer = params.test_dict_lookup_kobj[dict_acts[key1]]
 
                 # Check answer

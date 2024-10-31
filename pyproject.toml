@@ -53,8 +53,8 @@ docs = [
 ]
 
 [tool.ruff]
-select = ["E4", "E7", "E9", "F", "I", "PL", "C901", "RUF010", "W291"]
-ignore = ["PLR"]  # Ignore specific Pylint refactor messages
+lint.select = ["E4", "E7", "E9", "F", "I", "PL", "C901", "RUF010", "W291"]
+lint.ignore = ["PLR"]  # Ignore specific Pylint refactor messages
 line-length = 120
 target-version = "py310"
 

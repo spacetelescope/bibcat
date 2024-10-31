@@ -10,17 +10,17 @@ To construct the input text JSON file, you need two sets of data: a full-text da
 The metadata keys for the MAST Papertrack data, the ADS full-text data, and the combined data are as follows. However, we only need the following keys from the ADS text metadata to construct the final input data: ["abstract", "author", "bibcode", "body", "keyword", "keyword_norm", "pubdate", "title"].
 
 - keys_papertext (from ADS):
-  ['bibcode', 'abstract', 'author', 'bibstem', 'identifier', 'keyword', 
-  'keyword_norm', 'page', 'pub', 'pub_raw', 'pubdate', 'title', 'volume', 
+  ['bibcode', 'abstract', 'author', 'bibstem', 'identifier', 'keyword',
+  'keyword_norm', 'page', 'pub', 'pub_raw', 'pubdate', 'title', 'volume',
   'aff_canonical', 'institution', 'body']
 - keys for papertrack (from MAST):
   ['bibcode', 'searches':['search_key','ignored'], 'class_missions':['bibcode','papertype']]
 
    where `search_key` refers to search mission names such as `HST`, or `Kepler`,
-          `ignored` indicates that the paper is not related to the search mission, and                 
+          `ignored` indicates that the paper is not related to the search mission, and
           `papertype` refers to its paper classification such as `science`, `datafinfluenced`, or `mention`.
 - The combined input data:
-  ['bibcode', 'abstract', 'author', 'keyword', 'keyword_norm', 'pubdate', 'title', 'body', 
+  ['bibcode', 'abstract', 'author', 'keyword', 'keyword_norm', 'pubdate', 'title', 'body',
   'class_missions', 'is_ignored_mission']
 
    where `class_mssions` refers to `papertype` for the search mission, and

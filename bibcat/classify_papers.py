@@ -64,9 +64,7 @@ def classify_papers(classifier_name: str = "ML") -> None:
     if classifier_name == "ML":
         classifier = classifier_ML
     else:
-        raise ValueError(
-            "An invalid value! Choose 'ML' for the machine learning classifier!"
-        )
+        raise ValueError("An invalid value! Choose 'ML' for the machine learning classifier!")
 
     operate_classifier(
         classifier_name=classifier_name,

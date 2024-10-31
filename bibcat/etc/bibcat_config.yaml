@@ -516,8 +516,8 @@ llms:
   eval_stats_file: evaluation_stats  # llm evaluation high-level statistics output
   inconsistent_classifications_file: inconsistent_classifications # list of inconsistent classifications between llm and human
   ops_stats_file: operation_stats  # llm operation high-level statistics output
-  cm_plot: confusion_matrix_llm.png # confusion matrix plot 
-  roc_plot: roc_plot_llm.png # receiver operating charateristic curve 
+  cm_plot: confusion_matrix_llm.png # confusion matrix plot
+  roc_plot: roc_plot_llm.png # receiver operating charateristic curve
   llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
   llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
   openai:
@@ -529,5 +529,3 @@ llms:
     threshold: 0.7
     inspection: 0.5
   ops: false # false if in evaluation, true if in operation
-
-

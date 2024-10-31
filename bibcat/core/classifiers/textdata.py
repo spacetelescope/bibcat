@@ -8,6 +8,7 @@ The primary methods and use cases of ClassifierBase include:
 * `classify_text`: Base classification method, overwritten by various classifier types during inheritance.
 
 """
+
 from bibcat.core.base import Base
 from bibcat.core.grammar import Grammar
 

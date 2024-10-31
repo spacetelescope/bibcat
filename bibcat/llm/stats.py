@@ -166,7 +166,8 @@ def save_operation_stats(
                 (mission.lower(), classification[0].lower(), classification[1], bibcode)
                 for bibcode, assessment in data.items()
                 for mission_item in assessment
-                for mission, classification in mission_item.items() if mission != 'error'
+                for mission, classification in mission_item.items()
+                if mission != "error"
             ],
             columns=["mission", "papertype", "llm_confidences", "bibcode"],
         )

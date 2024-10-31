@@ -90,9 +90,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
     if classifier_name == "ML":
         classifier = classifier_ML
     else:
-        raise ValueError(
-            "An invalid value! Choose 'ML' for the machine learning classifier!"
-        )
+        raise ValueError("An invalid value! Choose 'ML' for the machine learning classifier!")
 
     # Initialize operators by loading models into instances of the Operator class
     op = operator.Operator(
