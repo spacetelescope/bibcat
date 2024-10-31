@@ -22,6 +22,5 @@ dependencies:
     - pytest
     - pytest-doctestplus
     - pytest-mock
-    - pylint
     - ruff
     - pre-commit

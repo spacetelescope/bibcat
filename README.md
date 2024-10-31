@@ -44,6 +44,30 @@ The `bibcat` directory contains the python package itself, installable via pip.
 ```shell
 pip install -e .
 ```
+## pre-commit for development
+
+[pre-commit](https://pre-commit.com/) allows all collaborators push their commits compliant with the same set of lint and format rules in [pyproject.toml](pyproject.toml) by checking all files in the project at different stages of the git workflow. It runs commands specified in the [.pre-commit-config.yaml](.pre-commit-config.yaml) config file and runs checks before committing or pushing, to catch errors that would have caused a build failure before they reach CI.
+
+### Install pre-commit
+You will need to install `pre-commit` manually.
+```bash
+pip install pre-commit # if you haven't already installed the package
+```
+
+```bash
+pre-commit install # install default hooks `pre-commit`, `pre-push`, and `commit-msg` as specified in the config file.
+```
+
+If this is your first time running, you should run the hooks against for all files and it will fix all files based on your setting.
+```bash
+pre-commit run --all-files
+```
+Finally, you will need to update `pre-commit` regularly by running
+```bash
+pre-commit autoupdate
+```
+For other configuration options and more detailed information, check out at the [pre-commit](https://pre-commit.com/) page.
+
 ## Setup
 ### Input JSON file
 Download several data files (the ADS full text file and the papertrack file) to create models for training or combined fulltext dataset files for the input text. These files can be accessed only by authorized users. Downloading the files requires a single sign-on.
