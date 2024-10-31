@@ -4,19 +4,20 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
+from bibcat import config
+from bibcat.core.base import Base
+from bibcat.utils.logger_config import setup_logger
+
 xxx = None
 
 try:
-    import tensorflow as tf  # type: ignore
-    import tensorflow_hub as tfhub  # type: ignore
+    import tensorflow as tf
+    import tensorflow_hub as tfhub
     import tensorflow_text  # type: ignore  # noqa: F401
     from tensorboard.plugins.hparams import api as hp
 except ImportError:
     tf = None
 
-from bibcat import config
-from bibcat.core.base import Base
-from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
 

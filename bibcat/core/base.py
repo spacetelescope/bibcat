@@ -1103,7 +1103,7 @@ class Base:
         """
 
         ##Load global variables
-        word_i = word.i  # Index
+        # word_i = word.i  # Index
         word_dep = word.dep_  # dep label
         word_pos = word.pos_  # p.o.s. label
         word_tag = word.tag_  # tag label
