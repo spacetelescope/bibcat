@@ -30,8 +30,6 @@ All the output are saved in the output folder.
 import os
 
 import numpy as np
-from numpy import float64
-from numpy.typing import NDArray
 
 from bibcat import config
 from bibcat import parameters as params
@@ -119,7 +117,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
         filename_plot=config.performance.fileroot_confusion_matrix_plot + f"{classifier_name}.png",
         fileroot_evaluation=config.performance.fileroot_evaluation + f"{classifier_name}",
         fileroot_misclassif=config.performance.fileroot_misclassif + f"{classifier_name}",
-        figsize=config.performance.figsize,
+        figsize=tuple(config.performance.figsize),
         print_freq=config.performance.print_freq,
         do_verbose=True,
         do_verbose_deep=False,
@@ -142,7 +140,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
         filename_plot=config.performance.fileroot_uncertainty_plot + f"{classifier_name}.png",
         fileroot_evaluation=config.performance.fileroot_evaluation + f"{classifier_name}",
         fileroot_misclassif=config.performance.fileroot_misclassif + f"{classifier_name}",
-        figsize=config.performance.figsize,
+        figsize=tuple(config.performance.figsize),
         print_freq=config.performance.print_freq,
         do_check_truematch=config.textprocessing.do_verify_truematch,
         do_raise_innererror=config.textprocessing.do_raise_innererror,
