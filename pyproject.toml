@@ -38,11 +38,13 @@ dynamic = ["version"]
 bibcat = "bibcat.main:cli"
 
 [project.optional-dependencies]
+dev = [
+    "pre-commit",
+    "ruff",
+]
 test = [
     "pytest",
     "pytest-doctestplus",
-    "ruff",
-    "pylint",
 ]
 docs = [
     "sphinx",
@@ -50,13 +52,20 @@ docs = [
     "tomli; python_version <\"3.11\"",
 ]
 
-[tool.ruff.lint]
-# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
-# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
-# McCabe complexity (`C901`) by default.
-# See https://docs.astral.sh/ruff/rules/
-select = ["E4", "E7", "E9", "F", "I", "PL", "C901", "RUF010"]
-ignore = ["PLR"]  # pylint refactor
+[tool.ruff]
+select = ["E4", "E7", "E9", "F", "I", "PL", "C901", "RUF010", "W291"]
+ignore = ["PLR"]  # Ignore specific Pylint refactor messages
+line-length = 120
+target-version = "py310"
+
+[tool.pylint]
+max-line-length = 120
+disable = [
+    "C0114",  # Missing module docstring
+    "C0115",  # Missing class docstring
+    "C0116",  # Missing function docstring
+    "R0903",  # Too few public methods
+]
 
 
 
