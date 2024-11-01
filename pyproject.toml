@@ -58,16 +58,6 @@ lint.ignore = ["PLR"]  # Ignore specific Pylint refactor messages
 line-length = 120
 target-version = "py310"
 
-[tool.pylint]
-max-line-length = 120
-disable = [
-    "C0114",  # Missing module docstring
-    "C0115",  # Missing class docstring
-    "C0116",  # Missing function docstring
-    "R0903",  # Too few public methods
-]
-
-
 
 [project.urls]
 repository = "https://github.com/spacetelescope/bibcat"

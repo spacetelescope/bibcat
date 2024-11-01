@@ -110,7 +110,7 @@ class Base:
     # TODO - remove this entirely - this is for rules
     def _assemble_keyword_wordchunks(
         self, text, keyword_objs, do_include_verbs=False, do_include_brackets=False, do_verbose=False
-    ):
+    ):  # noqa: C901
         """
         Method: _assemble_keyword_wordchunks
         WARNING! This method is *not* meant to be used directly by users.
@@ -452,7 +452,7 @@ class Base:
 
     # Return boolean for whether or not text contains a true vs false match to the given keywords
     # TODO - move this to operator or grammar class
-    def _check_truematch(self, text, keyword_objs, dict_ambigs, do_verbose=None, do_verbose_deep=False):
+    def _check_truematch(self, text, keyword_objs, dict_ambigs, do_verbose=None, do_verbose_deep=False):  # noqa: C901
         """
         Method: _check_truematch
         WARNING! This method is *not* meant to be used directly by users.
@@ -871,7 +871,7 @@ class Base:
 
     # Extract core meaning (e.g., synsets) from given phrase
     # TODO - move this to grammar class
-    def _extract_core_from_phrase(self, phrase_NLP, do_skip_useless, do_verbose=None, keyword_objs=None):
+    def _extract_core_from_phrase(self, phrase_NLP, do_skip_useless, do_verbose=None, keyword_objs=None):  # noqa: C901
         """
         Method: _extract_core_from_phrase
         WARNING! This method is *not* meant to be used directly by users.
@@ -1094,7 +1094,7 @@ class Base:
 
     # Return boolean for if given word (NLP type word) is of given part of speech
     # TODO - move this to Grammar class
-    def _is_pos_word(self, word, pos, keyword_objs=None, do_verbose=False):
+    def _is_pos_word(self, word, pos, keyword_objs=None, do_verbose=False):  # noqa: C901
         """
         Method: _is_pos_word
         WARNING! This method is *not* meant to be used directly by users.

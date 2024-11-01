@@ -140,7 +140,7 @@ class Grammar(Base):
         return dict_results
 
     # Run submethods to convert paragraphs into custom grammar trees
-    def run_modifications(self, which_modes=None):
+    def run_modifications(self, which_modes=None):  # noqa: C901
         """
         Method: run_modifications
         Purpose: Parse paragraphs and process them into grammar structures using various modification schemes.
@@ -275,7 +275,7 @@ class Grammar(Base):
         return
 
     # Add aux to grammar structure
-    def _add_aux(self, word, storage_verbs):
+    def _add_aux(self, word, storage_verbs):  # noqa: C901
         """
         Method: _add_aux
         WARNING! This method is *not* meant to be used directly by users.
@@ -397,7 +397,7 @@ class Grammar(Base):
         return dict_verb
 
     # Add general word to grammar structure
-    def _add_word(self, node, i_verb, i_cluster, i_sentence, storage_verbs, storage_words, i_headoftrail):
+    def _add_word(self, node, i_verb, i_cluster, i_sentence, storage_verbs, storage_words, i_headoftrail):  # noqa: C901
         """
         Method: _add_word
         WARNING! This method is *not* meant to be used directly by users.
@@ -641,7 +641,7 @@ class Grammar(Base):
             return phrase
 
     # Modify given grammar structure, following specifications of the given mode
-    def _modify_structure(self, struct_verbs, struct_words, mode):
+    def _modify_structure(self, struct_verbs, struct_words, mode):  # noqa: C901
         """
         Method: _modify_structure
         WARNING! This method is *not* meant to be used directly by users.
@@ -823,7 +823,7 @@ class Grammar(Base):
         chain_i_verbs,
         verb_side,
         i_headoftrail,
-    ):
+    ):  # noqa: C901
         """
         Method: _recurse_NLP_categorization
         WARNING! This method is *not* meant to be used directly by users.
