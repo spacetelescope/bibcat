@@ -5,7 +5,7 @@
 # This file does only contain a selection of the most common options. For a
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
-
+from bibcat import __version__
 
 # -- Project information -----------------------------------------------------
 
@@ -14,7 +14,6 @@ copyright = "2022, Jamila Pegues, Jinmi Yoon, Brian Cherinka"
 author = "Jamila Pegues, Jinmi Yoon, Brian Cherinka"
 
 # The full version, including alpha/beta/rc tags
-from bibcat import __version__
 
 release = __version__
 

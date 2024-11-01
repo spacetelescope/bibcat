@@ -4,7 +4,6 @@
 
 # pylint: disable=all
 
-import pytest
 from click.testing import CliRunner
 
 from bibcat.main import cli

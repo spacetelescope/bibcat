@@ -229,7 +229,7 @@ class Paper(Base):
         """
         # Fetch global variables
         do_verbose = self._get_info("do_verbose")
-        do_verbose_deep = self._get_info("do_verbose_deep")
+        # do_verbose_deep = self._get_info("do_verbose_deep")
         do_check_truematch = self._get_info("do_check_truematch")
         sentences = np.asarray(self._get_info("text_clean_split"))
         do_not_classify = keyword_obj._get_info("do_not_classify")

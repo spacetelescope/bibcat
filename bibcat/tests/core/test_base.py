@@ -145,7 +145,7 @@ class TestBase(unittest.TestCase):
         # Test _cleanse_text for variety of text
         def test__cleanse_text__variety(self):
             # Prepare text and answers for test
-            kobj = params.kobj_hubble
+            # kobj = params.kobj_hubble
             dict_acts = {
                 "  J.W .. . S. - T .  .S-c": "J.W. S. - T.S-c",
                 " We  walked to the   store/shop - across   the street. \n   We bought:   carrots-celery, and  - tofu-juice /milk.  ": "We walked to the store/shop - across the street. \n We bought: carrots-celery, and - tofu-juice /milk.",

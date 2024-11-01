@@ -8,7 +8,6 @@ Run example: bibcat train
 
 """
 
-import json
 import os
 from pathlib import Path
 
@@ -171,7 +170,7 @@ def trim_dict(dataset: list[dict], keys: list) -> list[dict]:
 
     trimmed_dict = [{key: value for key, value in thisdict.items() if (key in keys)}.copy() for thisdict in dataset]
     logger.debug(f"Show the first entry of the trimmed data: \n {trimmed_dict[0]}")
-    logger.debug(f"Dict trimming is complete.")
+    logger.debug("Dict trimming is complete.")
 
     return trimmed_dict
 
