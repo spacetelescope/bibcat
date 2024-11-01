@@ -273,26 +273,63 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
             index=file if source == "index" else None,
             n_runs=num_runs,
             use_assistant=True if source == "file" else False,
-            verbose=verbose)
+            verbose=verbose,
+        )
     elapsed_time = time.time() - start_time
     logger.info(f"Elapsed time for run_gpt_batch for {len(files)} papers: {elapsed_time} seconds.")
 
 
 @cli.command(help="Evaluate the LLM output")
-@click.option("-b", "--bibcode", default=None, type=str, show_default=True,
-              help="A bibcode from the papertrack source combined_dataset")
-@click.option("-i", "--index", default=None, type=str, show_default=True,
-              help="An array index from the papertrack source combined_dataset")
+@click.option(
+    "-b",
+    "--bibcode",
+    default=None,
+    type=str,
+    show_default=True,
+    help="A bibcode from the papertrack source combined_dataset",
+)
+@click.option(
+    "-i",
+    "--index",
+    default=None,
+    type=str,
+    show_default=True,
+    help="An array index from the papertrack source combined_dataset",
+)
 @click.option("-m", "--model", default=None, type=str, show_default=True, help="The model type to use")
-@click.option("-f", "--file", default=None, type=str, show_default=True,
-              help="The name of the output response file to use for evaluation")
+@click.option(
+    "-f",
+    "--file",
+    default=None,
+    type=str,
+    show_default=True,
+    help="The name of the output response file to use for evaluation",
+)
 @click.option("-s", "--submit", is_flag=True, show_default=True, help="Flag to submit the paper for classification")
-@click.option("-n", "--num_runs", default=1, type=int, show_default=True,
-              help="The number of prompt runs to execute for classification")
-@click.option("-w/-now", "--write/--no-write", default=True, is_flag=True, show_default=True,
-              help="Flag to write the output evaluation file")
-@click.option("-t", "--threshold", default=0.7, type=float, show_default=True,
-              help="The threshold value to accept the llm papertype")
+@click.option(
+    "-n",
+    "--num_runs",
+    default=1,
+    type=int,
+    show_default=True,
+    help="The number of prompt runs to execute for classification",
+)
+@click.option(
+    "-w/-now",
+    "--write/--no-write",
+    default=True,
+    is_flag=True,
+    show_default=True,
+    help="Flag to write the output evaluation file",
+)
+@click.option(
+    "-t",
+    "--threshold",
+    default=0.7,
+    type=float,
+    show_default=True,
+    help="The threshold value to accept the llm papertype",
+)
 @click.pass_context
 def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, threshold):
     """Evaluate the ouput JSON from a LLM model"""
@@ -314,15 +351,30 @@ def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, thre
     evaluate_output(bibcode=bibcode, index=index, write_file=write)
 
 
-@cli.command(help='Batch evaluate the LLM output')
-@click.option("-f", "--files", default=None, type=str, show_default=True, multiple=True, help="A list of files or bibcodes to upload")
-@click.option("-p", "--filename", default=None, type=click.File('r'), show_default=True, help="The path to a file of bibcodes or papers to read in")
+@cli.command(help="Batch evaluate the LLM output")
+@click.option(
+    "-f",
+    "--files",
+    default=None,
+    type=str,
+    show_default=True,
+    multiple=True,
+    help="A list of files or bibcodes to upload",
+)
+@click.option(
+    "-p",
+    "--filename",
+    default=None,
+    type=click.File("r"),
+    show_default=True,
+    help="The path to a file of bibcodes or papers to read in",
+)
 @click.option("-m", "--model", default=None, type=str, show_default=True, help="The model type to use")
-@click.option('-s', '--submit', is_flag=True, show_default=True, help="Flag to submit the paper for classification")
+@click.option("-s", "--submit", is_flag=True, show_default=True, help="Flag to submit the paper for classification")
 @click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
 @click.pass_context
 def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
-    """ Batch evaluate a list of papers """
+    """Batch evaluate a list of papers"""
     start_time = time.time()
 
     # override the config model
@@ -340,9 +392,9 @@ def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
         # check if file, bibcode, or index
         source = "file" if os.path.isfile(file) else "index" if file.isnumeric() else "bibcode"
 
-        evaluate_output(bibcode=file if source == "bibcode" else None,
-                        index=file if source == "index" else None,
-                        write_file=True)
+        evaluate_output(
+            bibcode=file if source == "bibcode" else None, index=file if source == "index" else None, write_file=True
+        )
 
     elapsed_time = time.time() - start_time
     logger.info(f"Elapsed time for evaluate_llm_batch for {len(files)} papers: {elapsed_time} seconds.")
@@ -497,4 +549,3 @@ def list_oa_assistants():
 
 if __name__ == "__main__":
     cli()
-
