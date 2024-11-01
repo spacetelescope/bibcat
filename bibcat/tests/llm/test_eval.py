@@ -1,5 +1,3 @@
-import pytest
-
 from bibcat.llm.evaluate import evaluate_output
 
 paper = {
