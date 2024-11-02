@@ -41,6 +41,8 @@ bibcat = "bibcat.main:cli"
 dev = [
     "pre-commit",
     "ruff",
+]
+test = [
     "pytest",
     "pytest-doctestplus",
 ]
