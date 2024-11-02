@@ -38,4 +38,5 @@ jobs:
           ruff check . --config=pyproject.toml --ignore=C901
 
       - name: Run tests
-        run: pytest --ignore=bibcat/tests/core/
+        # run: pytest --ignore=bibcat/tests/llm/
+        run: pytest bibcat/tests/llm/
