@@ -37,6 +37,10 @@ jobs:
           # exit-zero treats all errors as warnings.
           ruff check . --config=pyproject.toml --ignore=C901
 
+      - name: Download NLTK wordnet resource
+        run: |
+          python -m nltk.downloader wordnet
+
       - name: Run tests
         # run: pytest --ignore=bibcat/tests/llm/
         run: pytest bibcat/tests/llm/
