@@ -1,3 +1,5 @@
+import pytest  # noqa: F401
+
 from bibcat.llm.evaluate import evaluate_output
 
 paper = {

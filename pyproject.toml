@@ -45,12 +45,13 @@ dev = [
 ]
 test = [
     "pytest",
+    "pytest-mock",
     "pytest-doctestplus",
 ]
 docs = [
     "sphinx",
     "sphinx-automodapi",
-    "tomli; python_version <\"3.11\"",
+    "tomli; python_version <\"3.10\"",
 ]
 
 [tool.ruff]
