@@ -6,7 +6,7 @@ from bibcat.llm.metrics import extract_eval_data, get_roc_metrics, prepare_roc_i
 data = {
     "Bibcode2024": {
         "human": {"JWST": "SCIENCE", "Roman": "MENTION"},
-        "threshold": 0.7,
+        "threshold_acceptance": 0.7,
         "llm": [{"JWST": "SCIENCE"}, {"Roman": "MENTION"}, {"GALEX": "SCIENCE"}],
         "df": [
             {"llm_mission": "JWST", "mean_llm_confidences": [0.8, 0.2]},

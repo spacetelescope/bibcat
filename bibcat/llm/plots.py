@@ -16,7 +16,8 @@ logger.setLevel(config.logging.level)
 def fetch_data():
     # read the evaluation summary output file
     eval_output = (
-        pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}"
+        pathlib.Path(config.paths.output)
+        / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
     )
     logger.info(f"reading {eval_output}")
     return read_output(filename=eval_output)
@@ -85,11 +86,9 @@ def confusion_matrix_plot(missions: list[str]) -> None:
     logger.info(f"The confusion matrix plot is saved on {cm_plot}!")
 
 
-# create a confusion matrix plot
+# create a ROC curve plot
 def roc_plot(missions: list[str]) -> None:
-    """Create a confusion matrix figure
-
-    Create confusion matrix plots (counts and normalized) given a threshold value.
+    """Create a Receiver Operating Characteristic (ROC) curve plot
 
     Parameters
     ----------

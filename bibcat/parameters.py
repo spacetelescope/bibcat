@@ -117,8 +117,8 @@ kobj_panstarrs = keyword.Keyword(
 # all missions below needs revisiting
 kobj_fuse = keyword.Keyword(
     keywords=["Far Ultraviolet Spectroscopic Explorer"],
-    acronyms_casesensitive=[],
-    acronyms_caseinsensitive=["FUSE"],
+    acronyms_casesensitive=["FUSE"],
+    acronyms_caseinsensitive=[],
     do_not_classify=False,
     banned_overlap=[],
     ambig_words=[],
@@ -132,7 +132,7 @@ kobj_iue = keyword.Keyword(
     ambig_words=[],
 )
 kobj_hut = keyword.Keyword(
-    keywords=["Hopkins Ultraviolet Telescope", "UIT"],
+    keywords=["Hopkins Ultraviolet Telescope", "HUT"],
     acronyms_casesensitive=[],
     acronyms_caseinsensitive=[],
     do_not_classify=False,

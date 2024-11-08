@@ -37,7 +37,7 @@ def load_json_file(path: Path) -> None:
         logger.error(f"An error occurred while reading the file: {e}")
 
 
-def save_json_file(path: Path, dataset: list[dict], indent: int = 2) -> None:
+def save_json_file(path: Path, dataset: list[dict] | dict, indent: int = 2) -> None:
     try:
         logger.info(f"Saving {path}!")
         with open(path, "w") as openfile:

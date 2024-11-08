@@ -177,8 +177,9 @@ def write_output(paper_key: str, response: dict):
         with open(out, "r") as f:
             data = json.load(f)
 
-        # append response to an existing file entry, or add a new one
-        if paper_key in data:
+        # append response to an existing file entry, or add a new one with a new paper_key or in the OPS mode
+        if paper_key in data and not config.llms.ops:
+            # logger.info(f"Appending the new run to {paper_key}")
             data[paper_key].append(response)
         else:
             data[paper_key] = [response]
@@ -188,7 +189,7 @@ def write_output(paper_key: str, response: dict):
             json.dump(data, f, indent=2, sort_keys=False)
 
 
-def read_output(bibcode: str | None, filename: str) -> list:
+def read_output(bibcode: str | None = None, filename: str | pathlib.Path | None = None) -> list:
     """Read in the output for a given bibcode
 
     Returns the content from the output JSON file
@@ -198,45 +199,61 @@ def read_output(bibcode: str | None, filename: str) -> list:
     ----------
     bibcode : str, optional
         The paper bibcode, by default None
+    filename: Path, optional
+        The prompt output file path
 
     Returns
     -------
     list
         The output data from the LLM response
     """
+    # set filename if not present
+    if bibcode and not filename:
+        filename = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
+
+    logger.info(f"reading {filename}")
+
     with open(filename, "r") as f:
         data = json.load(f)
         return data.get(bibcode) if bibcode else data
 
 
 def write_summary(output: dict):
-    """Write summary output from evaluation to a file
+    """Write the evaluation summary output to a file
 
-    Write the output summary statistics and info from
-    evaluation into a JSON file. Writes the file, located at
-    $BIBCAT_OUTPUT/output/llms/openai_[config.llms.openai.model]/[config.llms.eval_output_file]
+    Write the output summary statistics and info from evaluation into a JSON file.
 
     Parameters
     ----------
     output : dict
         the output summary data
+
+    Returns
+    -------
+    None
+
     """
-    out = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}"
-    logger.info(f"Writing output to {out}")
+
+    filename = (
+        pathlib.Path(config.paths.output)
+        / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
+    )
+
+    logger.info(f"Writing output to {filename}")
 
     # write the content
-    if not os.path.exists(out):
+    if not os.path.exists(filename):
         # create a new file
-        with open(out, "w+") as f:
+        with open(filename, "w+") as f:
             json.dump(output, f, indent=2, sort_keys=False, cls=NumpyEncoder)
     else:
         # append to an existing file
-        with open(out, "r") as f:
+        with open(filename, "r") as f:
             data = json.load(f)
 
         # update response to an existing bibcode, or add a new one
         data.update(output)
 
         # write the updated file
-        with open(out, "w") as f:
+        with open(filename, "w") as f:
             json.dump(data, f, indent=2, sort_keys=False, cls=NumpyEncoder)

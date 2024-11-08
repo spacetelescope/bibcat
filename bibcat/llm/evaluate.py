@@ -48,10 +48,16 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     pd.DataFrame
         an output pandas dataframe
     """
-    out = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
+    paper_output = (
+        pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
+    )
+
     paper = get_source(bibcode=bibcode, index=index)
     bibcode = paper["bibcode"]
-    response = read_output(bibcode=bibcode, filename=out)
+    response = read_output(bibcode=bibcode, filename=paper_output)
+
+    # filter out any cases where the llm returns an error
+    response = [i for i in response if 'error' not in i.keys()]
 
     # exit if no bibcode found in output
     if not response:
@@ -94,17 +100,17 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
 
     # write the summary output
     if write_file:
-      output = prepare_output(
-          bibcode,
-          threshold,
-          inspection,
-          grouped_df,
-          human_classes,
-          missing_by_human,
-          missing_by_llm,
-          hallucinated_missions,
-      )
-      write_summary(output)
+        output = prepare_output(
+            bibcode,
+            threshold,
+            inspection,
+            grouped_df,
+            human_classes,
+            missing_by_human,
+            missing_by_llm,
+            hallucinated_missions,
+        )
+        write_summary(output)
 
     # return the dataframe
     return grouped_df
@@ -146,12 +152,12 @@ def get_human_classification(paper: dict | str):
     """Get human's mission and paper types
 
     Parameters
-    ==========
+    ----------
     paper: dict | str
         dictionary or text (a row from the source dataset)
 
     Returns
-    =======
+    -------
     dict
         human's mission and paper type
     """
@@ -168,7 +174,7 @@ def compute_consistency(paper: dict | str, grouped_df: pd.DataFrame, human_class
     check if mission names are found in the text body.
 
     Parameters
-    ==========
+    ----------
     paper: dict | str
         dictionary or text (a row from the source dataset)
     grouped_df: pd.DataFrame
@@ -177,7 +183,7 @@ def compute_consistency(paper: dict | str, grouped_df: pd.DataFrame, human_class
         human's mission and paper type
 
     Returns
-    =======
+    -------
     tuple
         missing missions by human and those by llm
     """
@@ -186,6 +192,7 @@ def compute_consistency(paper: dict | str, grouped_df: pd.DataFrame, human_class
     grouped_df["consistency"] = grouped_df.apply(
         lambda x: (x["count"] / x["n_runs"]) * 100 if (x["llm_mission"], x["llm_papertype"]) in vv else 0, axis=1
     )
+    # whether the mission is in human classification
     grouped_df["in_human_class"] = grouped_df.apply(lambda x: (x["llm_mission"], x["llm_papertype"]) in vv, axis=1)
 
     # get missing missions
@@ -208,12 +215,12 @@ def check_hallucination(grouped_df):
     """Find missions by llm hallucination
 
     Parameters
-    ==========
+    ----------
     grouped_df: pd.DataFrame
         pandas data frame grouped by mission and papertype
 
     Returns
-    =======
+    -------
     list
         list of hallucinated missions
     """
@@ -221,6 +228,7 @@ def check_hallucination(grouped_df):
         False if mission_in_text else True for mission_in_text in grouped_df["mission_in_text"]
     ]
 
+    # Capture the hallucinated missions
     hallucinated_missions = [
         grouped_df["llm_mission"][index]
         for index, hallucination in enumerate(grouped_df["hallucination_by_llm"])
@@ -245,7 +253,7 @@ def prepare_output(
     Preparing output by gathering information.
 
     Parameters
-    ==========
+    ----------
     bibcode: str
         paper bibcode
     grouped_df: pd.DataFrame
@@ -258,12 +266,13 @@ def prepare_output(
         set of missions missed by llm
 
     Returns
-    =======
+    -------
     dict[str, dict[str, Any]]
         dictionary of paper, missions, and papertypes, pandas dataframe of llm assessment, and other
 
     """
     # pass its llm's classification if the maximum confindence value is higher than the threshold
+    # the maximum value is used because the papertype's confidence is aligned with the maximum value
     llm = [
         {i["llm_mission"]: i["llm_papertype"]}
         for i in grouped_df.to_dict(orient="records")
