@@ -30,7 +30,8 @@ dependencies = [
   "pandas >= 2.1.4",
   "openai >= 1.40.0",
   "matplotlib >=3.9.0",
-  "scikit-learn >=1.4.2"
+  "scikit-learn >=1.4.2",
+  "PyYAML=6.0.1",
 ]
 dynamic = ["version"]
 
