@@ -19,6 +19,7 @@ dependencies:
     - openai
     - matplotlib
     - scikit-learn
+    - pyYAML
     - pytest
     - pytest-doctestplus
     - pytest-mock
