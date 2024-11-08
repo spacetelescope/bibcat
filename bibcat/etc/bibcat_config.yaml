@@ -53,7 +53,7 @@ textprocessing:
   max_tests: 30  # Number of text entries to test the performance for; None for all tests
   lookup: HST  # Prepare some Keyword objects
   threshold: 0.70
-  threshold_array: !tuple # will be used for np.linspace(0.5, 0.95, 20)
+  threshold_array: # this will be used for np.linspace(0.5, 0.95, 20)
     - 0.5
     - 0.95
     - 20
@@ -352,9 +352,7 @@ performance:
   fileroot_uncertainty_plot: "performance_grid_uncertainty_"
   fileroot_evaluation: "test_eval_basic_"
   fileroot_misclassif: "test_misclassif_basic_"
-  figsize: !tuple # figsize = (20, 12)
-    - 20
-    - 12
+  figsize: [20, 12] # figsize = (20, 12)
   print_freq: 1
   threshold: 0.70
 
@@ -529,5 +527,3 @@ llms:
     threshold: 0.7
     inspection: 0.5
   ops: false # false if in evaluation, true if in operation
-
-

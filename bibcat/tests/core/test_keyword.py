@@ -18,25 +18,32 @@ class TestKeyword(unittest.TestCase):
         def test_get_name__variety(self):
             # Prepare text and answers for test
             kobj1 = keyword.Keyword(
-            keywords=["Long Phrase", "Phrase", "Longer Phrase", "Mid Phrase"],
-            acronyms_casesensitive=[], acronyms_caseinsensitive=[],
-            ambig_words=[], banned_overlap=[], do_not_classify=False
+                keywords=["Long Phrase", "Phrase", "Longer Phrase", "Mid Phrase"],
+                acronyms_casesensitive=[],
+                acronyms_caseinsensitive=[],
+                ambig_words=[],
+                banned_overlap=[],
+                do_not_classify=False,
             )
             ans1 = "Phrase"
 
             kobj2 = keyword.Keyword(
-            keywords=["Long Phrase", "Phrase", "Longer Phrase", "Mid Phrase"],
-            acronyms_caseinsensitive=["AB....C", "A....... B...", "A.BC  D", "ABCD E", "AB C"],
-            acronyms_casesensitive=[],
-            ambig_words=[], banned_overlap=[], do_not_classify=False
+                keywords=["Long Phrase", "Phrase", "Longer Phrase", "Mid Phrase"],
+                acronyms_caseinsensitive=["AB....C", "A....... B...", "A.BC  D", "ABCD E", "AB C"],
+                acronyms_casesensitive=[],
+                ambig_words=[],
+                banned_overlap=[],
+                do_not_classify=False,
             )
             ans2 = "Phrase"
 
             kobj3 = keyword.Keyword(
-            keywords=[],
-            acronyms_caseinsensitive=["AB....C", "A....... B...", "A.BC  D", "ABCD E", "AB C"],
-            acronyms_casesensitive=[],
-            ambig_words=[], banned_overlap=[], do_not_classify=False
+                keywords=[],
+                acronyms_caseinsensitive=["AB....C", "A....... B...", "A.BC  D", "ABCD E", "AB C"],
+                acronyms_casesensitive=[],
+                ambig_words=[],
+                banned_overlap=[],
+                do_not_classify=False,
             )
             ans3 = "ABCDE"
 

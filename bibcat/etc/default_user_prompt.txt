@@ -29,4 +29,3 @@ Make sure you now write the word "OUTPUT:" followed by a newline and then the va
 mentioned at all, then please omit them. Again, don't forget to precede this JSON block with "OUTPUT:" and the newline.
 
 Here is the paper data.\n\n**Title**:{title}\n**Abstract**:{abstract}\n**Full text**:{body}
-

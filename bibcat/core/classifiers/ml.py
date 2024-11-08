@@ -4,25 +4,26 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
+from bibcat import config
+from bibcat.core.base import Base
+from bibcat.utils.logger_config import setup_logger
+
 xxx = None
 
 try:
-    import tensorflow as tf  # type: ignore
-    import tensorflow_hub as tfhub  # type: ignore
+    import tensorflow as tf
+    import tensorflow_hub as tfhub
     import tensorflow_text  # type: ignore  # noqa: F401
     from tensorboard.plugins.hparams import api as hp
 except ImportError:
     tf = None
 
-from bibcat import config
-from bibcat.core.base import Base
-from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
 
 
 class AbstractModel(abc.ABC):
-    """ Abstract base class for machine learning models.
+    """Abstract base class for machine learning models.
 
     To be subclassed by specific model types. All classes marked with @abc.abstractmethod
     must be implemented in the subclass, or instantiation fails.
@@ -62,7 +63,7 @@ class AbstractModel(abc.ABC):
 
 
 class TensorFlow(AbstractModel):
-    """ TensorFlow machine learning model class
+    """TensorFlow machine learning model class
 
     Class for building, training, and evaluating a machine learning model using TensorFlow.
     Most configuration is set by the user or global bibcat_config.yaml file.
@@ -78,14 +79,17 @@ class TensorFlow(AbstractModel):
     load : bool, optional
         Flag to load the existing model, by default False
     """
+
     def __new__(cls, *args, **kwargs):
         # raise error if tensorflow is not installed
         if not tf:
-            raise ImportError('tensorflow packages not found.  Cannot create a tensorflow model.  Please install required packages.')
+            raise ImportError(
+                "tensorflow packages not found.  Cannot create a tensorflow model.  Please install required packages."
+            )
         return super(TensorFlow, cls).__new__(cls)
 
     def __init__(self, model_type: str = None, model_key: str = None, verbose: bool = False, load: bool = False):
-        """ Initialize the TensorFlow model class """
+        """Initialize the TensorFlow model class"""
         # object attributes
         self.model_type = model_type or config.ml.ML_model_type
         self.mlconfig = config.ml.get(self.model_type, {})
@@ -129,11 +133,11 @@ class TensorFlow(AbstractModel):
             self.load_model()
 
     def __repr__(self) -> str:
-        """ Class repr """
+        """Class repr"""
         return f"<TensorFlow (model_type='{self.model_type}', key='{self.model_key}', loaded={self.loaded})>"
 
     def _check_model_config(self):
-        """ Check the model configuration
+        """Check the model configuration
 
         Perform a few checks that the model_type is in the configuration object
         and that the model_key is in the model preprocessors/encoders mapping.
@@ -153,7 +157,7 @@ class TensorFlow(AbstractModel):
             raise KeyError(f"Model key {self.model_key} not found in config.ml.{self.model_type}")
 
     def build_model(self, num_dense: int = 3) -> tf.keras.Model:
-        """ Build a training model
+        """Build a training model
 
         Builds an empty tensorflow model for training.  The model is built with a text input layer,
         a preprocessor layer, an encoder layer, a dropout layer, and "num_dense" number of dense layers.
@@ -206,15 +210,13 @@ class TensorFlow(AbstractModel):
         # Dropout and Dense layers
         net = outputs_encoder["pooled_output"]
         net = tf.keras.layers.Dropout(frac_dropout)(net)
-        net = tf.keras.layers.Dense(
-            num_dense, activation=activation_dense, name="classifier"
-        )(net)
+        net = tf.keras.layers.Dense(num_dense, activation=activation_dense, name="classifier")(net)
 
         # Return the completed empty model
         return tf.keras.Model(layer_input, net)
 
     def split_datasets(self, train: str = None, test: str = None, validation: str = None):
-        """ Construct the tensorflow datasets
+        """Construct the tensorflow datasets
 
         Loads and constructs the train, test, validation datasets from input directories.
 
@@ -234,12 +236,15 @@ class TensorFlow(AbstractModel):
         dir_validation = validation or os.path.join(self.data_dir, config.output.folders_TVT["validate"])
 
         # load the train, test, and validate datasets
-        dataset_train_raw = tf.keras.preprocessing.text_dataset_from_directory(dir_train, batch_size=self.batch_size,
-                                                                                label_mode=self.label_mode, seed=self.seed)
-        dataset_test = tf.keras.preprocessing.text_dataset_from_directory(dir_test, batch_size=self.batch_size,
-                                                                            label_mode=self.label_mode, seed=self.seed)
-        dataset_validation = tf.keras.preprocessing.text_dataset_from_directory(dir_validation, batch_size=self.batch_size,
-                                                                                label_mode=self.label_mode, seed=self.seed)
+        dataset_train_raw = tf.keras.preprocessing.text_dataset_from_directory(
+            dir_train, batch_size=self.batch_size, label_mode=self.label_mode, seed=self.seed
+        )
+        dataset_test = tf.keras.preprocessing.text_dataset_from_directory(
+            dir_test, batch_size=self.batch_size, label_mode=self.label_mode, seed=self.seed
+        )
+        dataset_validation = tf.keras.preprocessing.text_dataset_from_directory(
+            dir_validation, batch_size=self.batch_size, label_mode=self.label_mode, seed=self.seed
+        )
 
         # cache and prefetch the datasets
         self.dataset_train_raw = dataset_train_raw
@@ -248,7 +253,7 @@ class TensorFlow(AbstractModel):
         self.dataset_validation = dataset_validation.cache().prefetch(buffer_size=tf.data.AUTOTUNE)
 
     def train_model(self, train: str = None, test: str = None, validation: str = None):
-        """ Train the model
+        """Train the model
 
         Builds and trains a new model. Uses tensorflow callbacks to track model state,
         as well as loss and accuracy metrics over time.
@@ -301,40 +306,54 @@ class TensorFlow(AbstractModel):
             logger.info(self.model.summary())
 
         # Set up callbacks
-        log_dir = os.path.join(self.model_dir, 'logs')
-        checkpoint_filepath = os.path.join(self.model_dir, 'checkpoints/checkpoint.weights.h5')
+        log_dir = os.path.join(self.model_dir, "logs")
+        checkpoint_filepath = os.path.join(self.model_dir, "checkpoints/checkpoint.weights.h5")
 
         # metric tracking dashboard
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
         # model save state, only save the weights
-        model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath, save_weights_only=True,
-                                                                       monitor='loss', mode='min', save_freq='epoch',
-                                                                       save_best_only=True, verbose=True)
+        model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+            filepath=checkpoint_filepath,
+            save_weights_only=True,
+            monitor="loss",
+            mode="min",
+            save_freq="epoch",
+            save_best_only=True,
+            verbose=True,
+        )
         # hparams tracking
-        self.hparams = {'num_dense_units': self.num_dense, 'batch_size': self.batch_size, 'num_epochs': self.num_epochs,
-                        'learning_rate': self.init_lr}
+        self.hparams = {
+            "num_dense_units": self.num_dense,
+            "batch_size": self.batch_size,
+            "num_epochs": self.num_epochs,
+            "learning_rate": self.init_lr,
+        }
         hparam_callback = hp.KerasCallback(log_dir, self.hparams)
 
         # early stopping
         early_stopping = tf.keras.callbacks.EarlyStopping(
-            monitor='val_loss',  # Monitor validation loss
+            monitor="val_loss",  # Monitor validation loss
             patience=10,  # Number of epochs with no improvement after which training will be stopped
-            restore_best_weights=True  # Restore model weights from the epoch with the best value
-            )
+            restore_best_weights=True,  # Restore model weights from the epoch with the best value
+        )
 
         # Fit the model on the training data
         if self.verbose:
             logger.info("\nTraining the ML model...")
 
-        self.history = self.model.fit(x=self.dataset_train, validation_data=self.dataset_validation, epochs=self.num_epochs,
-                                 callbacks=[tensorboard_callback, model_checkpoint_callback, hparam_callback, early_stopping])
+        self.history = self.model.fit(
+            x=self.dataset_train,
+            validation_data=self.dataset_validation,
+            epochs=self.num_epochs,
+            callbacks=[tensorboard_callback, model_checkpoint_callback, hparam_callback, early_stopping],
+        )
 
         # Set the loaded flag
         self.loaded = True
 
     def evaluate_model(self):
-        """ Evalute the model using the test dataset
+        """Evalute the model using the test dataset
 
         Evalute the model and set the loss and accuracy attributes.
 
@@ -347,9 +366,8 @@ class TensorFlow(AbstractModel):
 
         self.res_loss, self.res_accuracy = self.model.evaluate(self.dataset_test)
 
-
     def predict(self, texts: list) -> np.array:
-        """ Predict the input text
+        """Predict the input text
 
         Run the model predictions on the input text.  Produces probabilities
         for each category the model was trainined on.  In this case, the categories
@@ -376,7 +394,7 @@ class TensorFlow(AbstractModel):
         return results
 
     def save_model(self):
-        """ Save the model
+        """Save the model
 
         Writes out the model as an output directory at
         $BIBCAT_OUTPUT_DIR/models/[model_name]/[tfoutput_prefix_model_name].
@@ -392,13 +410,13 @@ class TensorFlow(AbstractModel):
             "class_names": self.class_names,
             "accuracy": self.res_accuracy,
             "init_lr": self.init_lr,
-            "num_epochs": self.num_epochs
+            "num_epochs": self.num_epochs,
         }
         self.model.save(os.path.join(self.model_dir, self.savename_ML), include_optimizer=False)
         np.save(os.path.join(self.model_dir, self.savename_model), self.outputs)
 
     def load_model(self):
-        """ Load the model from saved output
+        """Load the model from saved output
 
         Loads the model output directory and the numpy output file.
 
@@ -427,7 +445,7 @@ class TensorFlow(AbstractModel):
         self.loaded = True
 
     def plot_model(self):
-        """ Plot the loss and accuracy
+        """Plot the loss and accuracy
 
         Creates and saves a matplotlib plot of the loss and accuracy over epochs.
 
@@ -455,8 +473,8 @@ class TensorFlow(AbstractModel):
         ax1.set_ylabel("Loss")
 
         # For accuracy
-        ax2.plot( e_arr, self.history.history["accuracy"], label="Accuracy: Training", color="blue", linewidth=4)
-        ax2.plot( e_arr, self.history.history["val_accuracy"], label="Accuracy: Validation", color="gray", linewidth=2)
+        ax2.plot(e_arr, self.history.history["accuracy"], label="Accuracy: Training", color="blue", linewidth=4)
+        ax2.plot(e_arr, self.history.history["val_accuracy"], label="Accuracy: Validation", color="gray", linewidth=2)
         leg = ax2.legend(loc="best", frameon=False)
         leg.set_alpha(0.5)
         ax2.set_xlabel("Epochs")
@@ -467,7 +485,7 @@ class TensorFlow(AbstractModel):
 
 
 def select_library(name: str) -> object:
-    """ Select the model library class to use
+    """Select the model library class to use
 
     Parameters
     ----------
@@ -485,7 +503,7 @@ def select_library(name: str) -> object:
 
 
 class MachineLearningClassifier:
-    """ Class for setting up and running a ML classifier
+    """Class for setting up and running a ML classifier
 
     Class for selecting a ML library, running the ML classifier, and
     predicting the paper class of a given text.  If the model has not been
@@ -507,7 +525,7 @@ class MachineLearningClassifier:
     """
 
     def __init__(self, load: bool = False, verbose: bool = True):
-        """ Initialize the ML classifier """
+        """Initialize the ML classifier"""
 
         # object attributes
         self.model = None
@@ -521,7 +539,7 @@ class MachineLearningClassifier:
         self.model = self.model_class(verbose=verbose, load=load)
 
     def run(self):
-        """ Run the model training and evaluation
+        """Run the model training and evaluation
 
         Build, train, evaluate, and save the model. This method is the new
         top level method to be run for the ML classifier when building the model.
@@ -537,7 +555,7 @@ class MachineLearningClassifier:
         self.model.plot_model()
 
     def classify_text(self, text: str) -> dict:
-        """ Classify some text using the ML model
+        """Classify some text using the ML model
 
         Runs the model prediction and returns the paper class probabilities
         and the paper verdict, i.e. the paper class with the highest probability.
@@ -567,7 +585,7 @@ class MachineLearningClassifier:
 
         # Run model prediction on the text and map probabilities to classes
         probs = self.model.predict([cleaned_text])[0]
-        prob_class_mapping = dict(zip(self.model.class_names, probs.astype('float64')))
+        prob_class_mapping = dict(zip(self.model.class_names, probs.astype("float64")))
 
         # Determine best verdict
         max_ind = np.argmax(probs)
