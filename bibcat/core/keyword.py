@@ -21,7 +21,7 @@ class Keyword(Base):
     A Keyword instance stores terms, e.g. titles and acronyms, that describe a mission (e.g., HST, JWST, TESS) for a user.  Methods of a Keyword instance can identify and/or replace snippets within texts that match to the mission.
     """
 
-    def __init__(self, keywords: list[str] | list, acronyms_caseinsensitive: list[str] | list, acronyms_casesensitive: list[str] | list, banned_overlap: list[str] | list, ambig_words: list[str] | list, do_not_classify: bool, do_verbose: bool = False):
+    def __init__(self, keywords: list[str], acronyms_caseinsensitive: list[str], acronyms_casesensitive: list[str], banned_overlap: list[str], ambig_words: list[str], do_not_classify: bool, do_verbose: bool = False):
         """
         Initialize an instance of the Keyword class, which stores terms, e.g. titles and acronyms, that describe a mission (e.g., HST, JWST, TESS) for a user.
 
@@ -31,15 +31,15 @@ class Keyword(Base):
 
         Parameters
         ----------
-        keywords : {empty list, list of strings}
+        keywords : list[str]
             List of full phrases that name the mission (e.g., "Hubble Space Telescope").  Not case-sensitive.
-        acronyms_caseinsensitive : {empty list, list of strings}
+        acronyms_caseinsensitive : list[str]
             List of acronyms that can describe the mission; capitalization is not preserved (e.g., "HST" and "hst" are treated in the same manner).  Punctuation should be omitted (as it is handled internally within the code).
-        acronyms_casesensitive : {empty list, list of strings}
+        acronyms_casesensitive : list[str]
             List of acronyms that can describe the mission; capitalization is preserved (e.g., "STScI").  Punctuation should be omitted (as it is handled internally within the code).
-        banned_overlap : {empty list, list of strings}
+        banned_overlap : list[str]
             Phrases that overlap with the target mission keywords but should not be treated as the same mission.  E.g., "Hubble Legacy Archive" can be a distinct mission from "Hubble"; therefore "Hubble Legacy Archive" is banned overlap for the Hubble mission, to avoid matching "Hubble Legacy Archive" to a Keyword instance for HST.
-        ambig_words : {empty list, list of strings}
+        ambig_words : list[str]
             Phrases for which the user requests false positive checks to be done against the internal database of false positives.  E.g., "Hubble" can be found in the mission phrase "Hubble Telescope" and also in the false positive (i.e., non-mission) phrase "Hubble constant".  By specifying "Hubble" as a false positive phrase for the Hubble mission, the code knows to internally check phrases in the text associated with Hubble against the internal false positive database and procedure.
         do_not_classify : bool
             If True, text for the mission will be processed, extracted, and presented to the user, but not classified.  This can be useful for missions for which only human classification is desired.  This can also be useful for missions for which false positives are too difficult to automatically screen out (e.g., "K2", which can be a mission and also a stellar spectral type).
@@ -48,8 +48,7 @@ class Keyword(Base):
 
         Returns
         -------
-        out : Keyword instance
-            Instance of the Keyword class, which is a container for e.g. phrases and acronyms that describe a mission (e.g., HST, JWST, or TESS).
+        None
         """
         # Initialize storage
         self._storage = {}
@@ -165,7 +164,7 @@ class Keyword(Base):
         return self._get_info("name")
 
     # Purpose: Check if text matches to this keyword object; return match inds
-    def identify_keyword(self, text: str, mode=None):
+    def identify_keyword(self, text: str, mode: str | None = None):
         """
         Return whether or not the given text contains terms (keywords, acronyms) matching this instance.
 
@@ -173,8 +172,8 @@ class Keyword(Base):
         ----------
         text : str
             The text to search within for terms.
-        mode : {None | "keyword" | "acronym"}, optional
-            If a mode is specified, then the code will only search for terms of that type (i.e., either specifically for full phrases OR of acronyms matching to this Keyword instance).
+        mode : {None, "keyword", "acronym"}, optional
+            If a mode is specified, then the code will only search for terms of that type (i.e., either specifically for full phrases OR of acronyms matching to this Keyword instance).  The default is `None`, which searches for all term types.
 
         Returns
         -------
