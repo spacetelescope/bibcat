@@ -9,6 +9,7 @@ instead of the full text allows us to remove much of the 'noise' inherent to
 the rest of the text.
 
 """
+
 import re
 
 import numpy as np
@@ -228,7 +229,7 @@ class Paper(Base):
         """
         # Fetch global variables
         do_verbose = self._get_info("do_verbose")
-        do_verbose_deep = self._get_info("do_verbose_deep")
+        # do_verbose_deep = self._get_info("do_verbose_deep")
         do_check_truematch = self._get_info("do_check_truematch")
         sentences = np.asarray(self._get_info("text_clean_split"))
         do_not_classify = keyword_obj._get_info("do_not_classify")
@@ -268,7 +269,11 @@ class Paper(Base):
             )
 
         # If requested, run a check for ambiguous phrases if any ambig. keywords
-        if (not do_not_classify) and do_check_truematch and any([keyword_obj.identify_keyword(item)["bool"] for item in lookup_ambigs]):
+        if (
+            (not do_not_classify)
+            and do_check_truematch
+            and any([keyword_obj.identify_keyword(item)["bool"] for item in lookup_ambigs])
+        ):
             # Print some notes
             if do_verbose:
                 print("Verifying ambiguous phrases...")
@@ -337,9 +342,13 @@ class Paper(Base):
         # Split by line breaks first
         text_lines = text.split("\n")
         # Split by sentences starting with brackets
-        text_flat = [item for phrase in text_lines for item in re.split(config.grammar.regex.exp_splitbracketstarts, phrase)]
+        text_flat = [
+            item for phrase in text_lines for item in re.split(config.grammar.regex.exp_splitbracketstarts, phrase)
+        ]
         # Split by sentences ending with brackets
-        text_flat = [item for phrase in text_flat for item in re.split(config.grammar.regex.exp_splitbracketends, phrase)]
+        text_flat = [
+            item for phrase in text_flat for item in re.split(config.grammar.regex.exp_splitbracketends, phrase)
+        ]
         # Then split by assumed sentence structure
         text_flat = [item for phrase in text_flat for item in re.split(config.grammar.regex.exp_splittext, phrase)]
         # Return the split text

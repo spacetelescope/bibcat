@@ -74,9 +74,9 @@ def confusion_matrix_plot(missions: list[str]) -> None:
     if len(missions) < 5:
         fig.suptitle(f"Confusion Matrix\nMissions: {missions}", fontsize=14)
     elif missions == config.missions:
-        fig.suptitle(f"Confusion Matrix\nAll missions", fontsize=14)
+        fig.suptitle("Confusion Matrix\nAll missions", fontsize=14)
     else:
-        fig.suptitle(f"Confusion Matrix\nMulti-missions", fontsize=14)
+        fig.suptitle("Confusion Matrix\nMulti-missions", fontsize=14)
 
     plt.tight_layout()
 

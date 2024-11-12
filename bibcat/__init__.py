@@ -2,7 +2,8 @@ import os
 
 from bibcat.core.config import get_config
 
-from ._version import version as __version__
+# from ._version import version as __version__
+__all__ = [".version"]
 
 
 def check_env(name: str):

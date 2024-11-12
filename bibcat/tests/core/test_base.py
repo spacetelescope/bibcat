@@ -145,7 +145,7 @@ class TestBase(unittest.TestCase):
         # Test _cleanse_text for variety of text
         def test__cleanse_text__variety(self):
             # Prepare text and answers for test
-            kobj = params.kobj_hubble
+            # kobj = params.kobj_hubble
             dict_acts = {
                 "  J.W .. . S. - T .  .S-c": "J.W. S. - T.S-c",
                 " We  walked to the   store/shop - across   the street. \n   We bought:   carrots-celery, and  - tofu-juice /milk.  ": "We walked to the store/shop - across the street. \n We bought: carrots-celery, and - tofu-juice /milk.",
@@ -195,7 +195,9 @@ class TestBase(unittest.TestCase):
                 dict_acts[key1]["roots"] = []
                 for curr_word in curr_text:
                     curr_syns = wordnet.synsets(curr_word)
-                    curr_kobjs = [item for item in params.test_list_lookup_kobj if (item.identify_keyword(curr_word)["bool"])]
+                    curr_kobjs = [
+                        item for item in params.test_list_lookup_kobj if (item.identify_keyword(curr_word)["bool"])
+                    ]
                     curr_set = [item.name() for item in curr_syns if (".n." in item.name())]
                     # Store as name if keyword
                     if len(curr_kobjs) > 0:
@@ -245,8 +247,8 @@ class TestBase(unittest.TestCase):
                 "small Hubble constant": {"lookup": "Kepler", "bool": False},
                 "small Hubble's constant": {"lookup": "Kepler", "bool": False},
                 "Edwin Hubble's papers": {"lookup": "Hubble", "bool": False},
-                #"Hubble 1970": {"lookup": "Hubble", "bool": False}, - not realistic since would be cleaned beforehand normally
-                #"Hubble (2000)": {"lookup": "Hubble", "bool": False}, - not realistic since would be cleaned beforehand normally
+                # "Hubble 1970": {"lookup": "Hubble", "bool": False}, - not realistic since would be cleaned beforehand normally
+                # "Hubble (2000)": {"lookup": "Hubble", "bool": False}, - not realistic since would be cleaned beforehand normally
                 "high S/N Hubble image": {"lookup": "Hubble", "bool": True},
                 "HST observatory": {"lookup": "Hubble", "bool": True},
                 "H.S.T. observatory": {"lookup": "Hubble", "bool": True},
@@ -883,20 +885,19 @@ class TestBase(unittest.TestCase):
                 "Hubble (1953) was a landmark paper (for that subfield).": "{0} was a landmark paper (for that subfield).".format(
                     config.textprocessing.placeholder_author
                 ),
-                #"See also: Kepler [2023], Hubble & Author (2020), Author, Somename, and Kepler et al. [1990];": "See also: {0}, {0}, {0};".format(
+                # "See also: Kepler [2023], Hubble & Author (2020), Author, Somename, and Kepler et al. [1990];": "See also: {0}, {0}, {0};".format(
                 #    config.textprocessing.placeholder_author
-                #), - unrealistic citation case
-                "See also: Kepler [2023], Hubble & Author (2020), Author and Kepler et al. [1990];":
-                    "See also: {0};".format(
+                # ), - unrealistic citation case
+                "See also: Kepler [2023], Hubble & Author (2020), Author and Kepler et al. [1990];": "See also: {0};".format(
                     config.textprocessing.placeholder_author
                 ),
                 "Also Author papers (Author et al. 1997, 2023),": "Also Author papers,",
-                #"(Someone, Author, Somename et al. 1511; 1612)": "", - unrealistic citation case
-                #"(Someone, Author, and Somename et al. 1913,15)": "", - unrealistic citation case
+                # "(Someone, Author, Somename et al. 1511; 1612)": "", - unrealistic citation case
+                # "(Someone, Author, and Somename et al. 1913,15)": "", - unrealistic citation case
                 "(Author et al. 80; Somename & Author 2012)": "",
-                #"McThatname, Kepler, & Othername [1993] (see our paper)": "{0} (see our paper)".format(
+                # "McThatname, Kepler, & Othername [1993] (see our paper)": "{0} (see our paper)".format(
                 #    config.textprocessing.placeholder_author
-                #), - unrealistic citation case
+                # ), - unrealistic citation case
                 "{Othername et al. 1991} (see Hubble observations)": "(see Hubble observations)",
             }
 

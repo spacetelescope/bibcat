@@ -31,7 +31,6 @@ logger = setup_logger(__name__)
 
 
 def build_model() -> None:
-
     # Fetch filepath for model
     name_model = config.output.name_model
     dir_data = os.path.join(config.paths.partitioned, name_model)
@@ -50,9 +49,15 @@ def build_model() -> None:
     classifier_ML = ml.MachineLearningClassifier(verbose=True)
 
     # Initialize an Operator
-    tabby_ML = operator.Operator(classifier=classifier_ML, name='ML', mode=config.textprocessing.mode_modif,
-                                 keyword_objs=params.all_kobjs, verbose=True,
-                                 load_check_truematch=config.textprocessing.do_verify_truematch, deep_verbose=False)
+    tabby_ML = operator.Operator(
+        classifier=classifier_ML,
+        name="ML",
+        mode=config.textprocessing.mode_modif,
+        keyword_objs=params.all_kobjs,
+        verbose=True,
+        load_check_truematch=config.textprocessing.do_verify_truematch,
+        deep_verbose=False,
+    )
 
     # load source dataset
     source_dataset = load_source_dataset(do_verbose=True)

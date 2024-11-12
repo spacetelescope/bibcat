@@ -113,8 +113,8 @@ def test_build_datasets(mockjson: Any) -> None:
 
     save_json_file(mock_path_papertext, expected_papertext)
     save_json_file(mock_path_papertrack, expected_papertrack)
-    assert mock_path_papertext.exists(), f"mock papertext file was not created."
-    assert mock_path_papertrack.exists(), f"mock papertrack file was not created."
+    assert mock_path_papertext.exists(), "mock papertext file was not created."
+    assert mock_path_papertrack.exists(), "mock papertrack file was not created."
 
     loaded_papertext, loaded_papertrack = bd.load_datasets(mock_path_papertext, mock_path_papertrack)
     assert loaded_papertext == expected_papertext, "loaded papertext data does not match the expected output"

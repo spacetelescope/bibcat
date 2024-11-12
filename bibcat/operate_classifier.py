@@ -20,11 +20,23 @@ logger = setup_logger(__name__)
 # Store texts for each operator and its internal classifier
 # For operator ML, Dictionary of texts to classify
 
+
 # TODO - do we need this?
-def operate_classifier(classifier_name: str, classifier: object, dict_texts: dict,   keyword_objs: list,
-                       buffer: int, print_freq: int, filepath_output: str,
-                       fileroot_class_results: str, mode_modif: str, is_text_processed: bool = False,
-                       load_check_truematch: bool = True, verbose: bool = True, deep_verbose: bool = False):
+def operate_classifier(
+    classifier_name: str,
+    classifier: object,
+    dict_texts: dict,
+    keyword_objs: list,
+    buffer: int,
+    print_freq: int,
+    filepath_output: str,
+    fileroot_class_results: str,
+    mode_modif: str,
+    is_text_processed: bool = False,
+    load_check_truematch: bool = True,
+    verbose: bool = True,
+    deep_verbose: bool = False,
+):
     """
     Method: operate_classifiers
     Purpose:
@@ -45,8 +57,15 @@ def operate_classifier(classifier_name: str, classifier: object, dict_texts: dic
     """
 
     # Initialize operators by loading models into instances of the Operator class
-    op = operator.Operator(classifier=classifier, name=classifier_name, mode=mode_modif, keyword_objs=keyword_objs,
-                           load_check_truematch=load_check_truematch, verbose=verbose, deep_verbose=deep_verbose)
+    op = operator.Operator(
+        classifier=classifier,
+        name=classifier_name,
+        mode=mode_modif,
+        keyword_objs=keyword_objs,
+        load_check_truematch=load_check_truematch,
+        verbose=verbose,
+        deep_verbose=deep_verbose,
+    )
 
     # Print some notes
     if verbose:
@@ -56,16 +75,17 @@ def operate_classifier(classifier_name: str, classifier: object, dict_texts: dic
     if is_text_processed:  # If given text preprocessed
         curr_texts = None
         curr_modifs = [dict_texts[key]["text"] for key in dict_texts]
-        #curr_forests = [dict_texts[key]["forest"] for key in dict_texts]
+        # curr_forests = [dict_texts[key]["forest"] for key in dict_texts]
     else:  # If raw text given, text needs to be preprocessed
         # curr_texts = [dict_texts[keys[jj]]["text"] for jj in range(0, len(keys))]
         curr_texts = [dict_texts[key]["text"] for key in dict_texts]
         curr_modifs = None
-        #curr_forests = None
+        # curr_forests = None
 
     # Classify texts with current operator
-    results = op.classify_set(curr_texts, modifs=curr_modifs, buffer=buffer, do_check_truematch=load_check_truematch,
-                              print_freq=print_freq)
+    results = op.classify_set(
+        curr_texts, modifs=curr_modifs, buffer=buffer, do_check_truematch=load_check_truematch, print_freq=print_freq
+    )
 
     # Print some notes
     if verbose:

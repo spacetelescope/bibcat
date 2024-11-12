@@ -409,4 +409,3 @@ The definitions of the output columns are following.
 #### File output for the inconsistent classifications
 The output columns are `mission`, `papertype`, `mean_llm_confidences`,`bibcode`, `in_human_class`, `mission_in_text`, and `consistency`.
 The column definitions can be found in the [Output Columns](#output-columns).
-

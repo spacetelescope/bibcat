@@ -1,12 +1,10 @@
-
-
 import os
 import tempfile
 
 import pytest
 
 from bibcat import setup_paths
-from bibcat.core.config import get_default_config, get_config
+from bibcat.core.config import get_config, get_default_config
 
 
 def pytest_sessionstart(session):
@@ -14,12 +12,12 @@ def pytest_sessionstart(session):
     temp_dir = tempfile.mkdtemp()
 
     # Set the environment variable
-    os.environ['BIBCAT_OUTPUT_DIR'] = temp_dir
+    os.environ["BIBCAT_OUTPUT_DIR"] = temp_dir
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def setenv(tmp_path_factory):
-    """ globally set the bibcat envvars """
+    """globally set the bibcat envvars"""
     root = tmp_path_factory.mktemp("temp")
     output = root / "output"
     cc = root / "config"
@@ -28,27 +26,31 @@ def setenv(tmp_path_factory):
     for d in [output, cc, data, ops]:
         d.mkdir(parents=True, exist_ok=True)
 
-    os.environ['BIBCAT_OUTPUT_DIR'] = str(output)
-    os.environ['BIBCAT_CONFIG_DIR'] = str(cc)
-    os.environ['BIBCAT_DATA_DIR'] = str(data)
-    os.environ['BIBCAT_OPSDATA_DIR'] = str(ops)
+    os.environ["BIBCAT_OUTPUT_DIR"] = str(output)
+    os.environ["BIBCAT_CONFIG_DIR"] = str(cc)
+    os.environ["BIBCAT_DATA_DIR"] = str(data)
+    os.environ["BIBCAT_OPSDATA_DIR"] = str(ops)
 
 
 @pytest.fixture()
 def setconfig(mocker):
-    """ fixture to patch the global config object in a particular module directory """
+    """fixture to patch the global config object in a particular module directory"""
     cfg = setup_paths(get_default_config())
+
     def _setconfig(moddir):
         mocker.patch(moddir, new=cfg)
         return cfg
+
     yield _setconfig
 
 
 @pytest.fixture()
 def reconfig(mocker):
-    """ fixture to patch the global config object in a particular module directory """
+    """fixture to patch the global config object in a particular module directory"""
     cfg = setup_paths(get_config())
+
     def _setconfig(moddir):
         mocker.patch(moddir, new=cfg)
         return cfg
+
     yield _setconfig

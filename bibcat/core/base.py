@@ -110,7 +110,7 @@ class Base:
     # TODO - remove this entirely - this is for rules
     def _assemble_keyword_wordchunks(
         self, text, keyword_objs, do_include_verbs=False, do_include_brackets=False, do_verbose=False
-    ):
+    ):  # noqa: C901
         """
         Method: _assemble_keyword_wordchunks
         WARNING! This method is *not* meant to be used directly by users.
@@ -272,11 +272,11 @@ class Base:
             # Remove max scaling for non-target classifs along y-axis
             for yind in minmax_inds["y"]:
                 # Remove non-target classifications from max consideration
-                tmpmatr[yind,:] = -1
+                tmpmatr[yind, :] = -1
             # Remove max scaling for non-target classifs along x-axis
             for xind in minmax_inds["x"]:
                 # Remove non-target classifications from max consideration
-                tmpmatr[:,xind] = -1
+                tmpmatr[:, xind] = -1
             #
             vmax = tmpmatr.max()
         else:
@@ -448,11 +448,11 @@ class Base:
         dict_results["is_any"] = any([dict_results[key] for key in dict_results])
 
         # Return the booleans
-        return {"bools":dict_results, "charspans_keyword":charspans_keyword}
+        return {"bools": dict_results, "charspans_keyword": charspans_keyword}
 
     # Return boolean for whether or not text contains a true vs false match to the given keywords
     # TODO - move this to operator or grammar class
-    def _check_truematch(self, text, keyword_objs, dict_ambigs, do_verbose=None, do_verbose_deep=False):
+    def _check_truematch(self, text, keyword_objs, dict_ambigs, do_verbose=None, do_verbose_deep=False):  # noqa: C901
         """
         Method: _check_truematch
         WARNING! This method is *not* meant to be used directly by users.
@@ -482,8 +482,8 @@ class Base:
         # Replace hyphenated numerics with placeholders
         text_orig = text
         placeholder_number = config.textprocessing.placeholder_number
-        #text = re.sub(r"\(?\b[0-9]+\b\)?", placeholder_number, text_orig)
-        text = re.sub(r"-\b[0-9]+\b", ("-"+placeholder_number), text_orig)
+        # text = re.sub(r"\(?\b[0-9]+\b\)?", placeholder_number, text_orig)
+        text = re.sub(r"-\b[0-9]+\b", ("-" + placeholder_number), text_orig)
 
         # Print some notes
         if do_verbose:
@@ -499,10 +499,7 @@ class Base:
         ]
 
         # Extract keyword identification information for each kobj
-        dict_kobjinfo = {
-            item._get_info("name"):item.identify_keyword(text)
-            for item in keyword_objs
-        }
+        dict_kobjinfo = {item._get_info("name"): item.identify_keyword(text) for item in keyword_objs}
 
         # Return status as true match if non-ambig keywords match to text
         if any(
@@ -531,12 +528,7 @@ class Base:
             }
 
         # Return status as false match if no keywords match at all
-        elif not any(
-            [
-                dict_kobjinfo[item._get_info("name")]["bool"]
-                for item in keyword_objs_ambigs
-            ]
-        ):
+        elif not any([dict_kobjinfo[item._get_info("name")]["bool"] for item in keyword_objs_ambigs]):
             # Print some notes
             if do_verbose:
                 print("Text matches no keywords at all. Returning false state.")
@@ -555,26 +547,21 @@ class Base:
             }
 
         # Return status as true match if any acronyms match
-        elif any(
-            [
-                dict_kobjinfo[item._get_info("name")]["bool_acronym_only"]
-                for item in keyword_objs_ambigs
-            ]
-        ):
+        elif any([dict_kobjinfo[item._get_info("name")]["bool_acronym_only"] for item in keyword_objs_ambigs]):
             # Print some notes
             if do_verbose:
                 print("Text matches acronym. Returning true state.")
 
             # Return status as true match
             return {
-                "bool":True,
-                "info":[
+                "bool": True,
+                "info": [
                     {
-                        "matcher":None,
-                        "set":None,
-                        "bool":True,
-                        "text_wordchunk":"<Not ambig.>",
-                        "text_database":None
+                        "matcher": None,
+                        "set": None,
+                        "bool": True,
+                        "text_wordchunk": "<Not ambig.>",
+                        "text_database": None,
                     }
                 ],
             }
@@ -582,7 +569,7 @@ class Base:
         # Return status as true match if any non-ambig. phrases match to text
         elif any(
             [
-                bool(re.search((r"\b"+item2+r"\b"), text, flags=re.IGNORECASE))
+                bool(re.search((r"\b" + item2 + r"\b"), text, flags=re.IGNORECASE))
                 for item1 in keyword_objs_ambigs
                 for item2 in item1._get_info("keywords")
                 if (item2 not in item1._get_info("ambig_words"))
@@ -594,14 +581,14 @@ class Base:
 
             # Return status as true match
             return {
-                "bool":True,
-                "info":[
+                "bool": True,
+                "info": [
                     {
-                        "matcher":None,
-                        "set":None,
-                        "bool":True,
-                        "text_wordchunk":"<Not ambig.>",
-                        "text_database":None
+                        "matcher": None,
+                        "set": None,
+                        "bool": True,
+                        "text_wordchunk": "<Not ambig.>",
+                        "text_database": None,
                     }
                 ],
             }
@@ -667,7 +654,11 @@ class Base:
                 [
                     (curr_chunk_text.lower().replace(".", "") == item2.lower())
                     for item1 in keyword_objs
-                    for item2 in (item1._get_info("keywords") + item1._get_info("acronyms_casesensitive") + item1._get_info("acronyms_caseinsensitive"))
+                    for item2 in (
+                        item1._get_info("keywords")
+                        + item1._get_info("acronyms_casesensitive")
+                        + item1._get_info("acronyms_caseinsensitive")
+                    )
                     if (item2.lower() not in lookup_ambigs_lower)
                 ]
             )  # Check if wordchunk matches to any non-ambig terms
@@ -713,23 +704,20 @@ class Base:
                     print(item1)
 
             # Extract all ambig. phrases+substrings that match to this *meaning*
-            if len(set_matches) == 0: # If no direct matches
+            if len(set_matches) == 0:  # If no direct matches
                 set_matches_raw = [
                     {
-                        "ind":jj,
-                        "text_database":list_text_ambigs[jj],
-                        "text_wordchunk":curr_chunk_text,
-                        "exp":list_exp_meaning_ambigs[jj],
-                        "matcher":re.search(list_exp_meaning_ambigs[jj], curr_meaning, flags=re.IGNORECASE),
-                        "bool":list_bool_ambigs[jj]
+                        "ind": jj,
+                        "text_database": list_text_ambigs[jj],
+                        "text_wordchunk": curr_chunk_text,
+                        "exp": list_exp_meaning_ambigs[jj],
+                        "matcher": re.search(list_exp_meaning_ambigs[jj], curr_meaning, flags=re.IGNORECASE),
+                        "bool": list_bool_ambigs[jj],
                     }
                     for jj in range(0, num_ambigs)
                     if (list_kw_ambigs[jj] in curr_inner_kw)
                 ]
-                set_matches = [
-                    item for item in set_matches_raw
-                    if (item["matcher"] is not None)
-                ]
+                set_matches = [item for item in set_matches_raw if (item["matcher"] is not None)]
 
                 # Print some notes
                 if do_verbose_deep:
@@ -839,10 +827,10 @@ class Base:
             # https://regex101.com/r/xssPEs/1
             # https://stackoverflow.com/questions/63632861/
             #                           python-regex-to-get-citations-in-a-paper
-            #bit_author = r"(?:[A-Z][A-Za-z'`-]+)"
+            # bit_author = r"(?:[A-Z][A-Za-z'`-]+)"
             bit_author = r"(?:(\b[A-Z]\. )*[A-Z][A-Za-z'`-]+)"
             bit_etal = r"(?:et al\.?)"
-            #bit_additional = f"(?:,? (?:(?:and |& )?{bit_author}|{bit_etal}))"
+            # bit_additional = f"(?:,? (?:(?:and |& )?{bit_author}|{bit_etal}))"
             bit_additional = f"(?: (?:(?:and |& ){bit_author}|{bit_etal}))"
             # Regular expressions for years (with or without brackets)
             exp_year_yesbrackets = (
@@ -863,11 +851,17 @@ class Base:
             text = re.sub(exp_cites_nobrackets, config.textprocessing.placeholder_author, text)
 
             # Replace singular et al. (e.g. SingleAuthor et al.) wordage as well
-            #text = re.sub(r" et al\b\.?", "etal", text)
-            text = re.sub(r"\b([A-Z]\. )*(\b[A-Z][A-Z|a-z]+) et al\b\.?", config.textprocessing.placeholder_author, text)
+            # text = re.sub(r" et al\b\.?", "etal", text)
+            text = re.sub(
+                r"\b([A-Z]\. )*(\b[A-Z][A-Z|a-z]+) et al\b\.?", config.textprocessing.placeholder_author, text
+            )
 
-            #Collapse adjacent author terms
-            text = re.sub(r"{0}((,|;|(,? and))( )+{0})+".format(config.textprocessing.placeholder_author), config.textprocessing.placeholder_author, text)
+            # Collapse adjacent author terms
+            text = re.sub(
+                r"{0}((,|;|(,? and))( )+{0})+".format(config.textprocessing.placeholder_author),
+                config.textprocessing.placeholder_author,
+                text,
+            )
 
         # Remove starting+ending whitespace
         text = text.lstrip().rstrip()
@@ -877,7 +871,7 @@ class Base:
 
     # Extract core meaning (e.g., synsets) from given phrase
     # TODO - move this to grammar class
-    def _extract_core_from_phrase(self, phrase_NLP, do_skip_useless, do_verbose=None, keyword_objs=None):
+    def _extract_core_from_phrase(self, phrase_NLP, do_skip_useless, do_verbose=None, keyword_objs=None):  # noqa: C901
         """
         Method: _extract_core_from_phrase
         WARNING! This method is *not* meant to be used directly by users.
@@ -927,14 +921,13 @@ class Base:
             if len(matched_kobjs) > 0:  # If word is a keyword
                 # If word contains hyphen-esque|punct., keep whole word as synset
                 if bool(re.search(r"(?:[^\w\s]|_)", curr_word.text)):
-                    name_kobj = matched_kobjs[0].get_name() # Fetch name for kobj
+                    name_kobj = matched_kobjs[0].get_name()  # Fetch name for kobj
                     core_keywords.append(name_kobj.lower())
                     core_synsets.append([curr_word.text.lower()])
 
                     # Print some notes
                     if do_verbose:
-                        print("Word itself is keyword. Stored synset: {0}"
-                                .format(core_synsets))
+                        print("Word itself is keyword. Stored synset: {0}".format(core_synsets))
 
                     continue
                 # Otherwise, store keyword itself
@@ -1028,9 +1021,9 @@ class Base:
         Purpose: Finds stored Keyword instance that matches to given lookup term.
         """
         # Load global variables
-        if (do_verbose is None):
+        if do_verbose is None:
             do_verbose = self._get_info("do_verbose")
-        if (keyword_objs is None):
+        if keyword_objs is None:
             keyword_objs = self._get_info("keyword_objs")
         num_keyobjs = len(keyword_objs)
         # Print some notes
@@ -1101,7 +1094,7 @@ class Base:
 
     # Return boolean for if given word (NLP type word) is of given part of speech
     # TODO - move this to Grammar class
-    def _is_pos_word(self, word, pos, keyword_objs=None, do_verbose=False):
+    def _is_pos_word(self, word, pos, keyword_objs=None, do_verbose=False):  # noqa: C901
         """
         Method: _is_pos_word
         WARNING! This method is *not* meant to be used directly by users.
@@ -1110,7 +1103,7 @@ class Base:
         """
 
         ##Load global variables
-        word_i = word.i  # Index
+        # word_i = word.i  # Index
         word_dep = word.dep_  # dep label
         word_pos = word.pos_  # p.o.s. label
         word_tag = word.tag_  # tag label
@@ -1186,8 +1179,8 @@ class Base:
             check_tag = word_tag in config.grammar.speech.tag_useless
             check_dep = word_dep in config.grammar.speech.dep_useless
             check_pos = word_pos in config.grammar.speech.pos_useless
-            check_use = self._check_importance(word_text, version_NLP=word, keyword_objs=keyword_objs)[
-                "bools"]["is_any"
+            check_use = self._check_importance(word_text, version_NLP=word, keyword_objs=keyword_objs)["bools"][
+                "is_any"
             ]  # Useful
             check_root = self._is_pos_word(word=word, pos="ROOT")
             check_neg = self._is_pos_word(word=word, pos="NEGATIVE")
@@ -1434,17 +1427,13 @@ class Base:
         # Load the keywords
         if keyword_objs is None:
             try:
-                keyword_objs = [
-                    self._get_info("keyword_obj", do_flag_hidden=True)
-                ]
+                keyword_objs = [self._get_info("keyword_obj", do_flag_hidden=True)]
             except KeyError:
                 keyword_objs = self._get_info("keyword_objs", do_flag_hidden=True)
 
         # Load the ambig. lookup phrases
         lookup_ambigs = [
-            item._get_info("name").lower()
-            for item in keyword_objs
-            if (len(item._get_info("ambig_words")) > 0)
+            item._get_info("name").lower() for item in keyword_objs if (len(item._get_info("ambig_words")) > 0)
         ]
 
         # Load the ambig. phrase data
@@ -1485,10 +1474,10 @@ class Base:
                 phrase_NLP=curr_NLP, do_verbose=do_verbose, do_skip_useless=False, keyword_objs=keyword_objs
             )
             curr_roots = curr_extraction["roots"]
-            curr_exp_exact = r"\b("+re.escape(curr_text)+r")\b"
+            curr_exp_exact = r"\b(" + re.escape(curr_text) + r")\b"
             curr_exp_meaning = (
-                r"(" + r") (\w+ )*(".join([(r"\b("+r"|".join(item)+r")\b") for item in curr_roots]) + r")"
-            ) #Convert to reg. exp. for substring search later
+                r"(" + r") (\w+ )*(".join([(r"\b(" + r"|".join(item) + r")\b") for item in curr_roots]) + r")"
+            )  # Convert to reg. exp. for substring search later
 
             # Extract current keywords
             curr_kw_raw = data_ambigs[ii, ind_keyword].lower()
@@ -1504,7 +1493,8 @@ class Base:
                 re.sub(str_anymatch_ambig, curr_kw[jj], curr_exp_exact, flags=re.IGNORECASE) for jj in range(0, tmp_num)
             ]
             list_exp_meaning_ambigs += [
-                re.sub(str_anymatch_ambig, curr_kw[jj], curr_exp_meaning, flags=re.IGNORECASE) for jj in range(0, tmp_num)
+                re.sub(str_anymatch_ambig, curr_kw[jj], curr_exp_meaning, flags=re.IGNORECASE)
+                for jj in range(0, tmp_num)
             ]
             list_bool_ambigs += [curr_bool] * tmp_num
             list_text_ambigs += [curr_text] * tmp_num
@@ -1541,7 +1531,11 @@ class Base:
         if do_verbose:
             # Extract global variables
             keywords = [item2 for item1 in keyword_objs for item2 in item1._get_info("keywords")]
-            acronyms = [item2 for item1 in keyword_objs for item2 in item1._get_info("acronyms_casesensitive") + item1._get_info("acronyms_caseinsensitive")]
+            acronyms = [
+                item2
+                for item1 in keyword_objs
+                for item2 in item1._get_info("acronyms_casesensitive") + item1._get_info("acronyms_caseinsensitive")
+            ]
 
             print("Completed _search_text().")
             print("Keywords={0}\nAcronyms={1}".format(keywords, acronyms))
@@ -1549,7 +1543,7 @@ class Base:
             print("Char. Spans: {0}".format(charspans_keywords))
 
         # Return boolean result
-        return {"bool":check_keywords, "charspans":charspans_keywords}
+        return {"bool": check_keywords, "charspans": charspans_keywords}
 
     # Cleanse given (short) string of extra whitespace, dashes, etc,
     # with uniform placeholders.
