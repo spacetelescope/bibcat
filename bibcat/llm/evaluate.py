@@ -59,6 +59,10 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     # filter out any cases where the llm returns an error
     response = [i for i in response if 'error' not in i.keys()]
 
+    # response is structured as:
+    # - notes: str
+    # - missions: [{mission: str, papertype: str, confidence: list[float], reason: str, quotes: list[str]}]
+
     # exit if no bibcode found in output
     if not response:
         logger.info(f"No output found for {bibcode}")
@@ -70,10 +74,12 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     logger.info(f"Number of runs: {n_runs}")
 
     # convert output to a dataframe (v[1] is a list of two confidences)
-    df = pd.DataFrame(
-        [(k, v[0], v[1]) for i in response for k, v in i.items()],
-        columns=["mission", "papertype", "llm_confidences"],
-    )
+    # df = pd.DataFrame(
+    #     [(k, v[0], v[1]) for i in response for k, v in i.items()],
+    #     columns=["mission", "papertype", "llm_confidences"],
+    # )
+    df = pd.DataFrame([j | {'notes': i['notes']} for i in response for j in i['missions']])
+    df = df.rename(columns={'confidence': 'llm_confidences'})
     df = df.sort_values("mission").reset_index(drop=True)
 
     # group by mission and paper type,
