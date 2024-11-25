@@ -161,16 +161,19 @@ def save_operation_stats(
 
     # Build Pandas DataFrame
     try:
-        df = pd.DataFrame(
-            [
-                (mission.lower(), classification[0].lower(), classification[1], bibcode)
-                for bibcode, assessment in data.items()
-                for mission_item in assessment
-                for mission, classification in mission_item.items() if mission != 'error'
-            ],
-            columns=["mission", "papertype", "llm_confidences", "bibcode"],
-        )
-
+        # df = pd.DataFrame(
+        #     [
+        #         (mission.lower(), classification[0].lower(), classification[1], bibcode)
+        #         for bibcode, assessment in data.items()
+        #         for mission_item in assessment
+        #         for mission, classification in mission_item.items() if mission != 'error'
+        #     ],
+        #     columns=["mission", "papertype", "llm_confidences", "bibcode"],
+        # )
+        df = pd.DataFrame([[item['mission'].lower(), item['papertype'].lower(), item['confidence'], bibcode]
+                           for bibcode, assessment in data.items()
+                           for mission_item in assessment for item in mission_item['missions']],
+                          columns=['mission', 'papertype', 'llm_confidences', 'bibcode'])
     except Exception as e:
         logger.error(f"Error during operation DataFrame creation: {e}")
         raise
