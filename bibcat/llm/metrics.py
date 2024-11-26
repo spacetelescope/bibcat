@@ -50,7 +50,7 @@ def extract_eval_data(data: dict, missions: list[str]):
             if mission in human_data and mission in llm_mission:
                 human_labels.append(human_data.get(mission))
                 llm_labels.extend(v for i in llm_data for k, v in i.items() if k == mission)
-                llm_confidences.extend(i["mean_llm_confidences"] for i in df if i["llm_mission"] == mission)
+                llm_confidences.extend(i["mean_llm_confidences"] for i in df if i["llm_mission"] == mission and i["llm_papertype"] == llm_labels[0])
         threshold = data[bibcode]["threshold_acceptance"]
 
     logger.debug(
