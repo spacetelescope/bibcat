@@ -13,7 +13,10 @@ logger.setLevel(config.logging.level)
 def extract_eval_data(data: dict, missions: list[str]):
     """Extract the human and llm classification labels and confidences
 
-    Extract the human and llm classes and confidence values from the evaluation json file, `config.llms.eval_output_file (summary_output.json)`. You can extract data from only a single mission or a list of missions. The labels will be used to create confusion matrix plots and the confidence values are used for ROC curves.
+    Extract the human and llm classes and confidence values from the evaluation json file,
+    `config.llms.eval_output_file (summary_output.json)`. You can extract data from only a single
+    mission or a list of missions. The labels will be used to create confusion matrix plots and the
+    confidence values are used for ROC curves.
 
     Parameters
     ----------

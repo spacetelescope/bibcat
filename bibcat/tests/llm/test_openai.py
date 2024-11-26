@@ -34,7 +34,7 @@ def test_convert_failure(caplog):
                      ('```json\n{\n  "title": "DampingwingsintheLyman-αforest",\n  "primary_mission_or_survey": ["X-Shooter"],\n  "other_missions_or_surveys_mentioned": ["Planck"],\n  "notes": ""\n}\n```',
                       {'title': 'DampingwingsintheLyman-αforest', 'primary_mission_or_survey': ['X-Shooter'], 'other_missions_or_surveys_mentioned': ['Planck'], 'notes': ''}),
                      ('There is no json here.', {'error': 'No JSON content found in response'}),
-                     ('```json\n{"field": ["A", "B", "C",]}\n```', {'error': 'Error decoding JSON content: "Expecting value: line 1 column 23 (char 22)"'})
+                     ('```json\n{"field": ["A", "B", "C",]}\n```', {'error': 'Error decoding JSON content: "Expecting value: line 1 column 26 (char 25)"'})
                      ], ids=['json1', 'json2', 'nojson', 'badjson'])
 def test_extract_json(data, exp):
     """test we can extract some json content"""

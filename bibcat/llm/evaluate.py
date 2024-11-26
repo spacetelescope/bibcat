@@ -73,7 +73,7 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     logger.info(f"Evaluating output for {bibcode}")
     logger.info(f"Number of runs: {n_runs}")
 
-    # convert output to a dataframe (v[1] is a list of two confidences)
+    # convert output to a dataframe
     df = pd.DataFrame([j | {'notes': i['notes']} for i in response for j in i['missions']])
     df = df.rename(columns={'confidence': 'llm_confidences'})
     df = df.sort_values("mission").reset_index(drop=True)

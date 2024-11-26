@@ -13,25 +13,52 @@ paper = {"bibcode": "2022Sci...377.1211L",
 output = {
   "2022Sci...377.1211L": [
     {
-      "TESS": ["SCIENCE", [0.9, 0.1]],
-      "JWST": ["MENTION", [0.3, 0.7]]
+      "notes": "",
+      "missions": [
+        {"mission": "TESS", "papertype": "SCIENCE", "confidence": [0.9, 0.1],
+         "reason": "They use TESS data", "quotes": ["We use TESS data."]},
+        {"mission": "JWST", "papertype": "MENTION", "confidence": [0.3, 0.7],
+         "reason": "They mention JWST", "quotes": ["We mention JWST."]}
+      ]
     },
     {
-      "TESS": ["MENTION", [0.3, 0.7]]
+      "notes": "",
+      "missions": [
+        {"mission": "TESS", "papertype": "MENTION", "confidence": [0.3, 0.7],
+         "reason": "They mention TESS", "quotes": ["We mention TESS."]}
+      ]
     },
     {
-      "JWST": ["SCIENCE", [0.9, 0.1]],
-      "TESS": ["SCIENCE", [0.9, 0.1]]
+      "notes": "",
+      "missions": [
+        {"mission": "TESS", "papertype": "SCIENCE", "confidence": [0.9, 0.1],
+         "reason": "They use TESS data", "quotes": ["We use TESS data."]},
+        {"mission": "JWST", "papertype": "SCIENCE", "confidence": [0.9, 0.1],
+         "reason": "They use JWST data", "quotes": ["We use JWST data."]}
+      ]
     },
     {
-      "TESS": ["SCIENCE", [0.9, 0.1]]
+      "notes": "",
+      "missions": [
+        {"mission": "TESS", "papertype": "SCIENCE", "confidence": [0.9, 0.1],
+         "reason": "They use TESS data", "quotes": ["We use TESS data."]}
+      ]
     },
     {
-      "TESS": ["SCIENCE", [0.9, 0.1]]
+      "notes": "",
+      "missions": [
+        {"mission": "TESS", "papertype": "SCIENCE", "confidence": [0.9, 0.1],
+         "reason": "They use TESS data", "quotes": ["We use TESS data."]}
+      ]
     },
     {
-      "JWST": ["MENTION", [0.3, 0.7]],
-      "TESS": ["SCIENCE", [0.9, 0.1]]
+      "notes": "",
+      "missions": [
+        {"mission": "TESS", "papertype": "SCIENCE", "confidence": [0.9, 0.1],
+         "reason": "They use TESS data", "quotes": ["We use TESS data."]},
+        {"mission": "JWST", "papertype": "MENTION", "confidence": [0.3, 0.7],
+         "reason": "They mention JWST", "quotes": ["We mention JWST."]}
+      ]
     },
   ]
 }
