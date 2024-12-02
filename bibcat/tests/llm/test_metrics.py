@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from bibcat.llm.metrics import extract_eval_data, get_roc_metrics, prepare_roc_inputs
 

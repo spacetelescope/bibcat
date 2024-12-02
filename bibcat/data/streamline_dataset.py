@@ -1,6 +1,6 @@
 import json
-from typing import Dict
 from functools import lru_cache
+from typing import Dict
 
 from bibcat import config
 from bibcat import parameters as params
@@ -67,9 +67,7 @@ def streamline_dataset(source_dataset: Dict, operator_ML: Operator, do_verbose_t
                 continue
 
             # Otherwise, check if this mission is a target mission
-            fetched_kobj = operator_ML._fetch_keyword_object(
-                lookup=curr_key, do_raise_emptyerror=False
-            )
+            fetched_kobj = operator_ML._fetch_keyword_object(lookup=curr_key, do_raise_emptyerror=False)
             # Skip if not a target
             if fetched_kobj is None:
                 continue

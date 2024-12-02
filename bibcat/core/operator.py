@@ -30,10 +30,11 @@ from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
 
+
 # TODO - this class is too complicated and may be unneccesary; break down into smaller components and
 # TODO - move to other relevant classes like Paper, Grammar, Keyword, etc.
 class Operator(Base):
-    """ Operator class for running a bibcat workflow
+    """Operator class for running a bibcat workflow
 
     Class for running the complete workflow of text classification, from input text to internal text processing,
     to output classification.  The ``classsify`` method is the primary method that handles the actual classification.
@@ -63,9 +64,17 @@ class Operator(Base):
     """
 
     # Initialize this class instance
-    def __init__( self, classifier, mode: str, keyword_objs: list, verbose: bool = False, name: str = "operator",
-                 load_check_truematch: bool = True, deep_verbose: bool = False):
-        """ Initialize the Operator class """
+    def __init__(
+        self,
+        classifier,
+        mode: str,
+        keyword_objs: list,
+        verbose: bool = False,
+        name: str = "operator",
+        load_check_truematch: bool = True,
+        deep_verbose: bool = False,
+    ):
+        """Initialize the Operator class"""
         # object attributes
         self.name = name
         self.classifier = classifier
@@ -103,10 +112,9 @@ class Operator(Base):
             for kobj in self.keyword_objs:
                 logger.info(f"{kobj}")
 
-
     # Fetch a keyword object that matches the given lookup
     def _fetch_keyword_object(self, lookup: str, do_raise_emptyerror: bool = True) -> Any | None:
-        """ Fetch a keyword object
+        """Fetch a keyword object
 
         Given an input lookup string, tries to match it to a stored Keyword instance.
 
@@ -145,7 +153,7 @@ class Operator(Base):
             errstr = f"No matching keyword object for {lookup}.\n"
             errstr += "Available keyword objects are:\n"
             # just use the names of the keywords
-            names = ', '.join(a._get_info('name') for a in self.keyword_objs)
+            names = ", ".join(a._get_info("name") for a in self.keyword_objs)
             errstr += f"{names}\n"
 
             # Raise error if so requested
@@ -156,9 +164,15 @@ class Operator(Base):
         return match
 
     # Inspect text and either reject as false target or give classifications
-    def classify(self, text: str | None, keyword: str, modif: str | None = None,
-                 do_check_truematch: bool = False, buffer: int = 0) -> dict[str, Any] | Any:
-        """ Classify a text
+    def classify(
+        self,
+        text: str | None,
+        keyword: str,
+        modif: str | None = None,
+        do_check_truematch: bool = False,
+        buffer: int = 0,
+    ) -> dict[str, Any] | Any:
+        """Classify a text
 
         Classify a text against a target mission keyword as "science", "mention", or "data_influencded".
         First converts the input text into a modif, or uses the input modif if given.  Then runs the
@@ -236,9 +250,15 @@ class Operator(Base):
         return verdicts
 
     # Classify set of texts as false target or give classifications
-    def classify_set(self, texts: list[str] | None, modifs: list[str] | None = None,
-                     do_check_truematch: bool = False, buffer: int = 0, print_freq: int = 25) -> list[dict[str, Any] | Any]:
-        """ Classify a set of texts
+    def classify_set(
+        self,
+        texts: list[str] | None,
+        modifs: list[str] | None = None,
+        do_check_truematch: bool = False,
+        buffer: int = 0,
+        print_freq: int = 25,
+    ) -> list[dict[str, Any] | Any]:
+        """Classify a set of texts
 
         Classify a list of texts against the list of all mission keywords.
 
@@ -295,14 +315,15 @@ class Operator(Base):
             for kobj in self.keyword_objs:
                 name = kobj._get_info("name")
                 # Classify current text for current mission
-                result = self.classify(text=text, keyword=kobj, modif=modif, do_check_truematch=do_check_truematch,
-                                       buffer=buffer)
+                result = self.classify(
+                    text=text, keyword=kobj, modif=modif, do_check_truematch=do_check_truematch, buffer=buffer
+                )
 
                 # Store current result
                 item[name] = result
 
             # Print some notes at given frequency, if requested
-            if self.verbose and (((ii % print_freq) == 0) or (ii == (num_texts-1))):
+            if self.verbose and (((ii % print_freq) == 0) or (ii == (num_texts - 1))):
                 logger.info(f"Classification for text #{(ii + 1)} of {num_texts} complete...")
 
         # Return the classification results
@@ -312,9 +333,15 @@ class Operator(Base):
         return results
 
     # Process text into modifs
-    def process(self, text: str, lookup: str = None, keyword_obj: Keyword = None, do_check_truematch: bool = False,
-                buffer: int = 0) -> dict:
-        """ Process text into modifs
+    def process(
+        self,
+        text: str,
+        lookup: str = None,
+        keyword_obj: Keyword = None,
+        do_check_truematch: bool = False,
+        buffer: int = 0,
+    ) -> dict:
+        """Process text into modifs
 
         Processes the text using the Grammar and Paper classes into modifs.  A "modif" is a modified version of the text
         that has been processed to identify and remove references to the target keyword mission, i.e. ambiguates the text.
@@ -349,8 +376,14 @@ class Operator(Base):
 
         # Process text into modifs using Grammar class
         use_these_modes = [self.mode, "none"]
-        grammar = Grammar(text=text, keyword_obj=keyword_obj, do_check_truematch=do_check_truematch, dict_ambigs=self.dict_ambigs,
-                          do_verbose=self.deep_verbose, buffer=buffer)
+        grammar = Grammar(
+            text=text,
+            keyword_obj=keyword_obj,
+            do_check_truematch=do_check_truematch,
+            dict_ambigs=self.dict_ambigs,
+            do_verbose=self.deep_verbose,
+            buffer=buffer,
+        )
         grammar.run_modifications(which_modes=use_these_modes)
         output = grammar.get_modifs()
 
@@ -382,7 +415,7 @@ class Operator(Base):
         fraction_TVT=[0.8, 0.1, 0.1],
         mode_TVT="uniform",
         do_shuffle=True,
-        print_freq=25
+        print_freq=25,
     ):
         """
         Method: train_model_ML
@@ -442,9 +475,11 @@ class Operator(Base):
 
             # Otherwise, raise error if not to reuse previous run data
             else:
-                raise ValueError("Err: Training/validation data already exists "
-                                 f"in {dir_data}. Either delete it, or rerun method "
-                                 "with do_reuse_run=True.")
+                raise ValueError(
+                    "Err: Training/validation data already exists "
+                    f"in {dir_data}. Either delete it, or rerun method "
+                    "with do_reuse_run=True."
+                )
 
         # Otherwise, preprocess the text and store in TVT directories
         else:
@@ -466,13 +501,18 @@ class Operator(Base):
                 # Extract modif for current text
                 if do_check_truematch:  # Catch and print unknown ambig. phrases
                     try:
-                        curr_res = self.process(text=old_dict["text"],
-                                                lookup=old_dict["mission"],
-                                                keyword_obj=None,
-                                                do_check_truematch=do_check_truematch,
-                                                buffer=buffer)
+                        curr_res = self.process(
+                            text=old_dict["text"],
+                            lookup=old_dict["mission"],
+                            keyword_obj=None,
+                            do_check_truematch=do_check_truematch,
+                            buffer=buffer,
+                        )
                     except NotImplementedError as err:
-                        curr_str = ("\n-\n" + f'Printing Error:\nID: {old_dict["id"]}\nBibcode: {old_dict["bibcode"]}\n" + "Mission: {old_dict["mission"]}\nMasked class: {masked_class}\n')
+                        curr_str = (
+                            "\n-\n"
+                            + f'Printing Error:\nID: {old_dict["id"]}\nBibcode: {old_dict["bibcode"]}\n" + "Mission: {old_dict["mission"]}\nMasked class: {masked_class}\n'
+                        )
                         curr_str += "The following err. was encountered" + " in train_model_ML:\n"
                         curr_str += repr(err)
                         curr_str += "\nError was noted. Skipping this paper.\n-"
@@ -496,11 +536,13 @@ class Operator(Base):
                         continue
 
                 else:  # Otherwise, run without ambig. phrase check
-                    curr_res = self.process(text=old_dict["text"],
-                                            lookup=old_dict["mission"],
-                                            keyword_obj=None,
-                                            do_check_truematch=do_check_truematch,
-                                            buffer=buffer)
+                    curr_res = self.process(
+                        text=old_dict["text"],
+                        lookup=old_dict["mission"],
+                        keyword_obj=None,
+                        do_check_truematch=do_check_truematch,
+                        buffer=buffer,
+                    )
 
                 # Store the modif and previous classification information
                 new_dict = {
@@ -560,9 +602,11 @@ class Operator(Base):
 
             # Otherwise, raise error if not to reuse previous run data
             else:
-                raise ValueError("Err: ML model/output already exists "
-                                 f"in {dir_model}. Either delete it, or rerun method "
-                                 "with do_reuse_run=True.")
+                raise ValueError(
+                    "Err: ML model/output already exists "
+                    f"in {dir_model}. Either delete it, or rerun method "
+                    "with do_reuse_run=True."
+                )
 
         # Otherwise, train new ML model on the TVT directories
         else:

@@ -57,7 +57,7 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     response = read_output(bibcode=bibcode, filename=paper_output)
 
     # filter out any cases where the llm returns an error
-    response = [i for i in response if 'error' not in i.keys()]
+    response = [i for i in response if "error" not in i.keys()]
 
     # response is structured as:
     # - notes: str

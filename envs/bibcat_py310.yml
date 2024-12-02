@@ -14,11 +14,14 @@ dependencies:
     - tensorflow
     - tensorflow-hub
     - tensorflow-macos
-    - pytest
-    - pytest-doctestplus
-    - pytest-mock
     - deepmerge
     - pandas
     - openai
     - matplotlib
     - scikit-learn
+    - pyYAML
+    - pytest
+    - pytest-doctestplus
+    - pytest-mock
+    - ruff
+    - pre-commit
