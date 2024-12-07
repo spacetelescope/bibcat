@@ -41,8 +41,8 @@ bibcat = "bibcat.main:cli"
 
 [project.optional-dependencies]
 dev = [
-    "pre-commit",
-    "ruff",
+    "pre-commit >=4.0.1",
+    "ruff >= 0.8.2",
 ]
 test = [
     "pytest",
@@ -57,7 +57,7 @@ docs = [
 
 [tool.ruff]
 lint.select = ["E4", "E7", "E9", "F", "I", "PL", "C901", "RUF010", "W291"]
-lint.ignore = ["PLR"]  # Ignore specific Pylint refactor messages
+lint.ignore = ["PLR", "PLC0206"]  # Ignore specific Pylint refactor messages
 line-length = 120
 target-version = "py310"
 
