@@ -57,9 +57,6 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
 
     # Fetch filepath for model
     name_model = config.output.name_model
-    dir_model = os.path.join(config.paths.models, name_model)
-    filepath_model = os.path.join(dir_model, (name_model + ".npy"))
-    fileloc_ML = os.path.join(dir_model, (config.output.tfoutput_prefix + name_model))
 
     # Fetch filepath for output or create the directory if not exists.
     dir_output = os.path.join(config.paths.output, name_model)
@@ -82,7 +79,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
 
     # initialize classifiers
     # Machine-Learning Classifier
-    classifier_ML = ml.MachineLearningClassifier(filepath_model=filepath_model, fileloc_ML=fileloc_ML, do_verbose=True)
+    classifier_ML = ml.MachineLearningClassifier(verbose=True, load=True)
 
     # CLI option
     if classifier_name == "ML":
@@ -97,8 +94,8 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
         mode=config.textprocessing.mode_modif,
         keyword_objs=params.all_kobjs,
         load_check_truematch=config.textprocessing.do_verify_truematch,
-        do_verbose=True,
-        do_verbose_deep=False,
+        verbose=True,
+        deep_verbose=False,
     )
 
     # Create an instance of the Performance class
@@ -133,7 +130,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
         operators=[op],
         dicts_texts=[dict_texts],
         mappers=[params.map_papertypes],
-        threshold_arrays=[np.linspace(*config.performance.threshold_array)],
+        threshold_arrays=[np.linspace(*config.textprocessing.threshold_array)],
         buffers=[config.textprocessing.buffer],
         is_text_processed=is_text_processed,
         filepath_output=dir_output,

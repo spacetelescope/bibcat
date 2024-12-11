@@ -120,7 +120,7 @@ class Performance(Base):
             print("Plotting confusion matrices...")
 
         # Plot grid of confusion matrices for classifier performance
-        titles = [item._get_info("name") for item in operators]
+        titles = [item.name for item in operators]
         list_evaluations = [dict_evaluations[item] for item in titles]
         self.plot_performance_confusion_matrix(
             list_evaluations=list_evaluations,
@@ -236,7 +236,7 @@ class Performance(Base):
             print("Plotting performance as a function of uncertainty level...")
 
         # Plot grid of classifier performance as function of uncertainty
-        titles = [item._get_info("name") for item in operators]
+        titles = [item.name for item in operators]
         list_evaluations = [dict_evaluations[item] for item in titles]
         # Prepare base figure
         fig = plt.figure(figsize=figsize)
@@ -354,10 +354,10 @@ class Performance(Base):
 
         num_ops = len(operators)
         # Throw error if operators do not have unique names
-        if len(set([item._get_info("name") for item in operators])) != num_ops:
+        if len(set([item.name for item in operators])) != num_ops:
             raise ValueError(
                 "Err: Please give each operator a unique name."
-                + "\nCurrently, the names are:\n{0}".format([item._get_info("name") for item in operators])
+                + "\nCurrently, the names are:\n{0}".format([item.name for item in operators])
             )
 
         # Print some notes
@@ -366,10 +366,10 @@ class Performance(Base):
             print("Iterating through Operators to classify each set of text...")
 
         # Use each operator to classify the set of texts and measure performance
-        dict_evaluations = {item._get_info("name"): None for item in operators}
+        dict_evaluations = {item.name: None for item in operators}
         for ii in range(0, num_ops):
             curr_op = operators[ii]  # Current operator
-            curr_name = curr_op._get_info("name")
+            curr_name = curr_op.name
             curr_data = dicts_texts[ii]
 
             # Print some notes
@@ -383,25 +383,18 @@ class Performance(Base):
             if is_text_processed:  # If given text preprocessed
                 curr_texts = None
                 curr_modifs = [curr_data[curr_keys[jj]]["text"] for jj in range(0, len(curr_keys))]
-                curr_forests = [curr_data[curr_keys[jj]]["forest"] for jj in range(0, len(curr_keys))]
             else:  # If given text needs to be preprocessed
                 curr_texts = [curr_data[curr_keys[jj]]["text"] for jj in range(0, len(curr_keys))]
                 curr_modifs = None
-                curr_forests = None
 
             # Classify texts with current operator
             curr_results = curr_op.classify_set(
                 texts=curr_texts,
                 modifs=curr_modifs,
-                forests=curr_forests,
-                threshold=thresholds[ii],
                 buffer=buffers[ii],
                 do_check_truematch=do_check_truematch,
-                do_raise_innererror=do_raise_innererror,
-                print_freq=print_freq,
-                do_verbose=do_verbose,
-                do_verbose_deep=do_verbose_deep,
-            )
+                print_freq=print_freq
+                )
 
             # Print some notes
             if do_verbose:
@@ -553,7 +546,7 @@ class Performance(Base):
             do_verbose_deep = self._get_info("do_verbose_deep")
 
         num_texts = len(list_measdicts)
-        meas_classifs = operator._get_info("classifier")._get_info("class_names")
+        meas_classifs = operator.classifier.model.class_names
         # Print some notes
         if do_verbose:
             print("\n> Running _generate_performance_counter()!")
