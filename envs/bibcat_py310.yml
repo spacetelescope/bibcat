@@ -25,3 +25,5 @@ dependencies:
     - pytest-mock
     - ruff
     - pre-commit
+    # - sphinx
+    # - sphinx-astropy
