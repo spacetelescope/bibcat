@@ -77,7 +77,7 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     df = df.sort_values("mission").reset_index(drop=True)
 
     # group by mission and paper type,
-    grouped_df = group_by_mission_papertype(df, n_runs)
+    grouped_df = group_by_mission_papertype(df)
     grouped_df["n_runs"] = n_runs
 
     # get the human paper classifications
@@ -116,7 +116,7 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     return grouped_df
 
 
-def group_by_mission_papertype(df: pd.DataFrame, n_runs: str):
+def group_by_mission_papertype(df: pd.DataFrame):
     """Create a Pandas grouped_by data frame
 
     Group by distict mission and papertype and add the mean/std confidence by filling NaN with zeros
@@ -126,8 +126,6 @@ def group_by_mission_papertype(df: pd.DataFrame, n_runs: str):
     ----------
     df: pd.DataFrame
         paper ouput pandas data frame
-    n_runs: str
-        the number of runs per mission
 
     Returns
     -------
@@ -139,14 +137,8 @@ def group_by_mission_papertype(df: pd.DataFrame, n_runs: str):
         df.fillna(0)
         .groupby(["mission", "papertype"])
         .agg(
-            mean_llm_confidences=(
-                "llm_confidences",
-                lambda x: np.round(np.mean(np.stack(x), axis=0), 2),
-            ),
-            std_llm_confidences=(
-                "llm_confidences",
-                lambda x: np.round(np.std(np.stack(x), axis=0), 2),
-            ),
+            mean_llm_confidences=("llm_confidences", lambda x: np.round(np.mean(np.stack(x), axis=0), 2)),
+            std_llm_confidences=("llm_confidences", lambda x: np.round(np.std(np.stack(x), axis=0), 2)),
             count=("mission", "size"),
         )
         .reset_index()
@@ -198,8 +190,7 @@ def compute_consistency(paper: dict | str, grouped_df: pd.DataFrame, human_class
     # compute consistency of matches to human classification
     vv = [(k, v["papertype"]) for k, v in human_classes.items()]
     grouped_df["consistency"] = grouped_df.apply(
-        lambda x: (x["count"] / x["n_runs"]) * 100 if (x["llm_mission"], x["llm_papertype"]) in vv else 0,
-        axis=1,
+        lambda x: (x["count"] / x["n_runs"]) * 100 if (x["llm_mission"], x["llm_papertype"]) in vv else 0, axis=1
     )
     # whether the mission is in human classification
     grouped_df["in_human_class"] = grouped_df.apply(lambda x: (x["llm_mission"], x["llm_papertype"]) in vv, axis=1)
