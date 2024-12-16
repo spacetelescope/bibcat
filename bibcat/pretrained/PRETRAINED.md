@@ -7,12 +7,12 @@ Here is a quick start guide. If this is your first time running `bibcat`, you wi
 
 ### Train the ML models
 
-1. To create a training model, make sure to set up the model name (`name_model`) of your run in the `output:`config in [bibcat_config.yaml](bibcat/etc/bibcat_config.yaml). The default name is `tf_bert_run` and you can change the name. 
+1. To create a training model, configure the name_model parameter within the output: section of the bibcat_config.yaml file. By default, this parameter is set to tf_bert_run, but you can customize it to any name that aligns with your project or run identifier.
   ```
   output:
     name_model: tf_bert_run
   ```
-2. run `bibcat train`. This will build and train a new model with the default ML hyperparameter settings in the `ml:` configuration in `bibcat_config.yaml` using the training dataset.
+2. run `bibcat train`. This process will build and train a new model using the default machine learning (ML) hyperparameter settings specified in the ml: section of the bibcat_config.yaml file, applying them to the training dataset.
 
 ### Evaluate the trained models
 - To evaluate the classifiers, run `bibcat evaluate`. `fetch_papers.py` (with `do_evaluation=True`) fetches the test papers with papertrack classification (`paper_type`). It will produce some evaluation diagnostics such as a confusion matrix in the `output/ouptut/` directory.
