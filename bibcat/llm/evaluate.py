@@ -202,14 +202,10 @@ def compute_consistency(paper: dict | str, grouped_df: pd.DataFrame, human_class
     missing_by_llm = set(human_classes) - set(grouped_df["llm_mission"])
 
     # check if missions are in the paper text body
-
-    text = " ".join(paper["title"]) + " ".join(paper["abstract"]) + " ".join(paper["body"])
+    text = f"{paper['title']}; {paper['abstract']}; {paper['body']}"
     in_text = identify_missions_in_text(grouped_df["llm_mission"], text)
     grouped_df["mission_in_text"] = in_text
-    # in_text = identify_missions_in_text(
-    #     grouped_df["llm_mission"], " ".join(paper["title"]) + " ".join(paper["abstract"]) + " ".join(paper["body"])
-    # )
-    # grouped_df["mission_in_text"] = in_text
+
     return missing_by_human, missing_by_llm
 
 
