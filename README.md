@@ -11,8 +11,8 @@ There are two main branches for bibcat work:
 ## Installation
 ### Required packages and versions
 - tensorflow 2.15.0
-- tensorflow-hub
-- tensorflow-text
+- tensorflow-hub 0.16.1
+- tensorflow-text 2.15.0
 - See more packages found in the [conda evn file](envs/bibcat_py310.yml).
 
 ### Conda env installation
@@ -24,7 +24,7 @@ conda env create -n env_name -f bibcat_py310.yml
 conda activate env_name
 python -m spacy download en_core_web_sm
 ```
-#### Extra pacakge for Apple M1/M2 chip
+#### Extra required pacakge for Apple M1/M2/M3 chip
 For Apple Silicon chips, to utilize your GPU, you install `tensorflow-metal`.  You can run `pip install tensorflow-metal`.  To verify if tensorflow is set up to utilize your GPU, do the following:
 ```
 import tensorflow as tf
