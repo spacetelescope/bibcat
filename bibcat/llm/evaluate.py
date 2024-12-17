@@ -82,6 +82,11 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     grouped_df = group_by_mission_papertype(df)
     grouped_df["n_runs"] = n_runs
 
+    # weight the mean confidences by the frequency of occurrence
+    # these represent a combined measure of frequency and confidence across multiple independent trials and categories
+    grouped_df['weighted_confs'] = grouped_df.apply(lambda df:
+        (df['mean_llm_confidences'] * (df['count'] / df['n_runs'])).round(3), axis=1)
+
     # get the human paper classifications
     human_classes = get_human_classification(paper)
 
@@ -269,19 +274,19 @@ def prepare_output(
         dictionary of paper, missions, and papertypes, pandas dataframe of llm assessment, and other
 
     """
-    # pass its llm's classification if the maximum confindence value is higher than the threshold
+    # pass its llm's classification if the maximum weighted-confidence value is higher than the threshold
     # the maximum value is used because the papertype's confidence is aligned with the maximum value
     llm = [
         {i["llm_mission"]: i["llm_papertype"]}
         for i in grouped_df.to_dict(orient="records")
-        if max(i["mean_llm_confidences"]) >= threshold
+        if max(i["weighted_confs"]) >= threshold
     ]
 
     # human inspection list for ambiguous classification
     inspection_missions = [
         {i["llm_mission"]: i["llm_papertype"]}
         for i in grouped_df.to_dict(orient="records")
-        if max(i["mean_llm_confidences"]) >= inspection and max(i["mean_llm_confidences"]) < threshold
+        if max(i["weighted_confs"]) >= inspection and max(i["weighted_confs"]) < threshold
     ]
 
     output = {

@@ -73,8 +73,17 @@ def test_evaluate_df(mocker):
 
     assert len(df) == 4
     assert set(df["llm_mission"]) == {"TESS", "JWST"}
-    # assert the first row is hallucinated
+    # assert the first row (JWST) is hallucinated
     assert df.iloc[0]["hallucination_by_llm"]
+
+    # assert the second row (JWST-SCIENCE) has a low weight
+    assert df.iloc[1]["llm_mission"] == 'JWST'
+    assert df.iloc[1]["llm_papertype"] == 'SCIENCE'
+    assert df.iloc[1]["mean_llm_confidences"].tolist() == [0.9, 0.1]
+    assert df.iloc[1]["count"] == 1
+    assert df.iloc[1]["n_runs"] == 6
+    assert df.iloc[1]["weighted_confs"].tolist() == [0.15, 0.017]
+
 
     # check the last TESS-SCIENCE row
     intext = df["in_human_class"] == True  # noqa: E712
@@ -83,3 +92,9 @@ def test_evaluate_df(mocker):
     assert df[intext].iloc[0]["llm_mission"] == "TESS"
     assert df[intext].iloc[0]["llm_papertype"] == "SCIENCE"
     assert not df[intext].iloc[0]["hallucination_by_llm"]
+
+    # assert last row has a high weight
+    assert df[intext].iloc[0]["mean_llm_confidences"].tolist() == [0.9, 0.1]
+    assert df[intext].iloc[0]["count"] == 5
+    assert df[intext].iloc[0]["n_runs"] == 6
+    assert df[intext].iloc[0]["weighted_confs"].tolist() == [0.75, 0.083]

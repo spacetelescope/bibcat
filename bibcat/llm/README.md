@@ -284,10 +284,10 @@ INFO - Number of runs: 3
 INFO - Human Classifications:
  KEPLER: SCIENCE
 Output Stats by LLM Mission and Paper Type:
-llm_mission llm_papertype mean_llm_confidences std_llm_confidences  count  n_runs  consistency  in_human_class  mission_in_text  hallucination_by_llm
-         K2       MENTION           [0.2, 0.8]          [0.0, 0.0]      1       3          0.0           False            False                  True
-         K2       SCIENCE         [0.85, 0.15]        [0.05, 0.05]      2       3          0.0           False            False                  True
-     KEPLER       SCIENCE         [0.92, 0.08]        [0.02, 0.02]      3       3        100.0            True             True                 False
+llm_mission llm_papertype mean_llm_confidences std_llm_confidences  count  n_runs  weighted_confs  consistency  in_human_class  mission_in_text  hallucination_by_llm
+         K2       MENTION           [0.2, 0.8]          [0.0, 0.0]      1       3  [0.067, 0.267]          0.0          False            False                  True
+         K2       SCIENCE         [0.85, 0.15]        [0.05, 0.05]      2       3  [0.567, 0.100]          0.0          False            False                  True
+     KEPLER       SCIENCE         [0.92, 0.08]        [0.02, 0.02]      3       3  [0.920, 0.080]        100.0          True              True                 False
 INFO - Missing missions by humans: K2
 INFO - Missing missions by LLM:
 INFO - Hallucination by LLM: K2
@@ -295,7 +295,7 @@ Writing output to /Users/jyoon/GitHub/bibcat/output/output/llms/openai_gpt-4o-mi
 ```
 The output is also written to a file specified by `config.llms.eval_output_file`.
 
-For now this produces a Pandas dataframe, grouped by the LLM predicted mission and papertype, with its mean confidence score, the number of times that combination was output by the LLM, the total number of trial runs, an accuracy score of how well it matched the human classification, and a boolean flag if that combination appears in the human classification.  The human classication comes from the "class_missions" field in the source dataset file.
+For now this produces a Pandas dataframe, grouped by the LLM predicted mission and papertype, with its mean confidence score, the number of times that combination was output by the LLM, the total number of trial runs, frequency-weighted confidence values, an accuracy score of how well it matched the human classification, and a boolean flag if that combination appears in the human classification.  The human classication comes from the "class_missions" field in the source dataset file.
 
 Alternatively, you can both submit a paper for classfication and evaluate it in a single command using the `-s`, `--submit` flag.  In combination with the `-n` flag,
 this will classify the paper `num_runs` time before evaluation.
@@ -340,11 +340,12 @@ Definitions of the output columns from the evaluation.
 
 #### Each mission/papertype DataFrame output
 - **llm_mission**: The mission from the LLM output
-- **mean_llm_confidence**: The list of the mean confidence values of SCIENCE and MENTION across all trial runs, for each mission + papertype combination
+- **mean_llm_confidence**: The list of the mean confidence values of SCIENCE and MENTION across all trial runs, for each mission + papertype combination. Conditional probabilities. Sum to 1.
 - **std_llm_confidence**: The standard deviation of the confidence values of SCIENCE and MENTION  across all trial runs
 - **count**: The number of times a mission + papertype combo was included in the LLM response, across all trial runs
 - **llm_papertype**: The papertype from the LLM output
 - **n_runs**: The total number of trial runs
+- **weighted_confs**: Frequency-weighted confidence values.  The "mean_llm_confidence" scaled by the fraction of runs in which the mission+papertype appeared. Combined measure of frequency and confidence.
 - **consistency**: The percentage of how often the LLM mission + papertype matched the human classification
 - **in_human_class**: Flag whether or not the mission + papertype was included in the set of human classifications
 - **mission_in_text**: Flag whether or not the mission keyword is in the source paper text
