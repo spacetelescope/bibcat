@@ -206,28 +206,59 @@ The Assistant supports uploading PDF or JSON files.  `bibcat` will accept either
 
 ## Response Output
 
-The output response from the LLM prompt is written to a file, specified by `config.llms.prompt_output_file`, e.g. "paper_output.json".  The response output is organized by the name of the file, or the bibcode of the paper.  Repeated prompts using the same paper will be appended to the entry for that paper.
+The output response from the LLM prompt is written to a file, specified by `config.llms.prompt_output_file`, e.g. "paper_output.json".
+The response output is organized by the name of the file, or the bibcode of the paper.  Repeated prompts using the same
+paper will be appended to the entry for that paper.
+
+By default bibcat uses [Structured Response](https://openai.com/index/introducing-structured-outputs-in-the-api/), defining a Pydantic response model as the `response_format`.  The structure of the response is organized as follows:
+
+- notes: Notes on the LLM's thought process and decision making
+- missions: a list of mission-papertype classifications
+  - mission: the name of the mission class
+  - papertype: the type of paper classification
+  - confidence: an array of the LLM confidence values of ["science", "mention"]
+  - reason: the LLMs rational for why it's assigning the mission-papertype
+  - quotes: if able, a list of direct quotes from the paper that back up the LLM's reason.  (These quotes may be hallucinated!)
 
 For example, running `bibcat run-gpt -b "2023Natur.616..266L"` produces the following output:
 ```json
   "2023Natur.616..266L": [
     {
-      "HST": [
-        "MENTION",
-        [
-          0.3,
-          0.7
-        ]
-      ],
-      "JWST": [
-        "SCIENCE",
-        [
-          0.9,
-          0.1
-        ]
+      "notes": "I reviewed the paper and found multiple references to both JWST and HST. The JWST is explicitly noted for
+      the new observations, while HST is referenced in the context of overlapping imaging with JWST's observations.
+      MAST data are explicitly mentioned as part of the data processing steps.",
+      "missions": [
+        {
+          "mission": "JWST",
+          "papertype": "SCIENCE",
+          "confidence": [
+            0.95,
+            0.05
+          ],
+          "reason": "The paper presents and analyzes new observational data from JWST's CEERS program.",
+          "quotes": [
+            "This article is based on the first imaging taken with the NIRCam on JWST as part of the CEERS
+            program (Principal Investigator, Finkelstein; Program Identifier, 1345)."
+          ]
+        },
+        {
+          "mission": "HST",
+          "papertype": "MENTION",
+          "confidence": [
+            0.1,
+            0.9
+          ],
+          "reason": "HST data are referenced primarily for comparative purposes and indicate overlap with JWST
+          observations, but no new HST data is presented.",
+          "quotes": [
+            "The total area covered by these initial data is roughly 40 arcmin 2 and overlaps fully with the
+            existing HST\u2013Advanced Camera for Surveys (ACS) and WFC3 footprint."
+          ]
+        }
       ]
     },
 ```
+You can turn off structured response output with the `-u` flag, e.g. `bibcat run-gpt -b "2023Natur.616..266L" -u`.
 
 ## Evaluating Output
 
