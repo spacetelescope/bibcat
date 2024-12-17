@@ -180,7 +180,10 @@ def evaluate(name) -> None:
 )
 @click.option("-v", "--verbose", is_flag=True, show_default=True, help="Set to print verbose output")
 @click.option("-o", "--ops", is_flag=True, show_default=False, help="Set to operational classification mode")
-def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_file, agent_prompt_file, verbose, ops):
+@click.option("-s/-u", "--structured/--unstructured", is_flag=True, default=True, show_default=True,
+              help="Set to toggle structured response")
+def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_file, agent_prompt_file, verbose, ops,
+            structured):
     """Send a prompt to an OpenAI LLM model"""
     # override the config model
     start_time = time.time()
@@ -204,6 +207,7 @@ def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_fi
         n_runs=num_runs,
         use_assistant=assistant,
         verbose=verbose,
+        structured=structured
     )
     elapsed_time = time.time() - start_time
     logger.info(f"Elapsed time for run_gpt for {num_runs} papers: {elapsed_time} seconds.")
@@ -242,7 +246,9 @@ def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_fi
 @click.option("-v", "--verbose", is_flag=True, show_default=True, help="Set to print verbose output")
 @click.option("-o", "--ops", is_flag=True, show_default=False, help="Set to operational classification mode")
 @click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
-def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, verbose, num_runs, ops):
+@click.option("-s/-u", "--structured/--unstructured", is_flag=True, default=True, show_default=True,
+              help="Set to toggle structured response")
+def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, verbose, num_runs, ops, structured):
     start_time = time.time()
     logger.info("CLI option: 'run_gpt_batch' selected")
     # override the config model
@@ -274,6 +280,7 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
             n_runs=num_runs,
             use_assistant=True if source == "file" else False,
             verbose=verbose,
+            structured=structured
         )
     elapsed_time = time.time() - start_time
     logger.info(f"Elapsed time for run_gpt_batch for {len(files)} papers: {elapsed_time} seconds.")

@@ -38,13 +38,16 @@ class OpenAIHelper:
         Flag to use the file-search OpenAI Assistant or not, by default None
     verbose : bool, optional
         Flag to turn on verbose logging, by default None
+    structured : bool, optional
+        Flag to use structured response, by default True
     """
 
-    def __init__(self, use_assistant: bool = None, verbose: bool = None):
+    def __init__(self, use_assistant: bool = None, verbose: bool = None, structured: bool = True):
         """init"""
         # input parameters
         self.use_assistant = use_assistant or config.llms.openai.use_assistant
         self.verbose = verbose or config.logging.verbose
+        self.structured = structured
 
         # llm attributes
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -356,7 +359,9 @@ class OpenAIHelper:
         Sends your prompt to the LLM model with an expected response format
         of InfoModel.  The LLM will parse its response into the structure you
         provide. See https://openai.com/index/introducing-structured-outputs-in-the-api/
-        Currently only works with the gpt-4o-mini-2024-07-18 and gpt-4o-2024-08-06 models.
+        Works with minimum gpt-4o-mini-2024-07-18 and gpt-4o-2024-08-06 models, but
+        structured outputs with response formats is available on gpt-4o-mini and gpt-4o-2024-08-06 and
+        any fine tunes based on these models.
 
         Parameters
         ----------
@@ -373,8 +378,6 @@ class OpenAIHelper:
         ValueError
             when the model is not one of the supported models
         """
-        if config.llms.openai.model not in ['gpt-4o-mini-2024-07-18', 'gpt-4o-2024-08-06']:
-            raise ValueError("Structured response only works with gpt-4o-mini-2024-07-18 and gpt-4o-2024-08-06 models")
 
         result = self.client.beta.chat.completions.parse(
             model=config.llms.openai.model,
@@ -448,15 +451,14 @@ class OpenAIHelper:
             self.user_prompt = self.populate_user_template(self.paper)
 
             # send the prompt
-            if config.llms.openai.model in ['gpt-4o-mini-2024-07-18', 'gpt-4o-2024-08-06']:
+            if self.structured or config.llms.openai.model in ['gpt-4o-mini-2024-07-18', 'gpt-4o-2024-08-06']:
                 # automatically use the structured response if we're using the right models
+                logger.info("Using structured response.")
                 response = self.send_structured_message(user_prompt=self.user_prompt)
             else:
                 # otherwise, use the regular response
+                logger.info("Using unstructured response.")
                 response = self.send_message(user_prompt=self.user_prompt)
-                self.response_classes = convert_to_classification(
-                    output=response, bibcode=self.bibcode, threshold=config.llms.performance.threshold
-                )
 
         return response
 
@@ -553,6 +555,7 @@ def classify_paper(
     n_runs: int = 1,
     use_assistant: bool = None,
     verbose: bool = None,
+    structured: bool = True
 ):
     """Send a prompt to an OpenAI LLM model to classify a paper
 
@@ -570,8 +573,10 @@ def classify_paper(
         Flag to use the OpenAI file-search Assistant or not, by default None
     verbose : bool, optional
         Flag to turn on verbose logging, by default None
+    structured : bool, optional
+        Flag to use structured response, by default True
     """
-    oa = OpenAIHelper(use_assistant=use_assistant, verbose=verbose)
+    oa = OpenAIHelper(use_assistant=use_assistant, verbose=verbose, structured=structured)
 
     # iterate for number of runs
     for i in range(n_runs):
