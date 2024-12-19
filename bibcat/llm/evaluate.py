@@ -82,10 +82,8 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     grouped_df = group_by_mission_papertype(df)
     grouped_df["n_runs"] = n_runs
 
-    # weight the mean confidences by the frequency of occurrence
-    # these represent a combined measure of frequency and confidence across multiple independent trials and categories
-    grouped_df['weighted_confs'] = grouped_df.apply(lambda df:
-        (df['mean_llm_confidences'] * (df['count'] / df['n_runs'])).round(3), axis=1)
+    # weight and normalize the confidence values
+    grouped_df = apply_weightings(grouped_df)
 
     # get the human paper classifications
     human_classes = get_human_classification(paper)
@@ -151,6 +149,43 @@ def group_by_mission_papertype(df: pd.DataFrame):
         .reset_index()
         .rename(columns={"mission": "llm_mission", "papertype": "llm_papertype"})
     )
+
+    return grouped_df
+
+
+def apply_weightings(grouped_df: pd.DataFrame) -> pd.DataFrame:
+    """ Apply weightings to the mean LLM confidence values
+
+    Frequency-weights the mean LLM confidence values by the number of occurrences
+    in the mission + papertype group, and stores as "weighted_confs".  Normalizes
+    the weighted confidence values by the total sum of weighted confidences, and
+    the sum of weighted confidences per papertype category, stored as "normalized_total_confs"
+    and "normalized_percat_confs" respectively.
+
+    Parameters
+    ----------
+    grouped_df : pd.DataFrame
+        the input grouped dataframe
+
+    Returns
+    -------
+    pd.DataFrame
+        the output grouped dataframe
+    """
+    # weight the mean confidences by the frequency of occurrence
+    # these represent a combined measure of frequency and confidence across multiple independent trials and categories
+    grouped_df['weighted_confs'] = grouped_df.apply(lambda df:
+        (df['mean_llm_confidences'] * (df['count'] / df['n_runs'])).round(3), axis=1)
+
+    # normalize by the total sum of weighted confidences
+    # for comparisons of mission+papertype across all combinations - single reference frame
+    val = grouped_df['weighted_confs'].sum().sum()
+    grouped_df['normalized_total_confs'] = grouped_df['weighted_confs'].apply(lambda x: (x/val).round(3))
+
+    # normalize by the per-category sum of weighted confidences
+    # for comparisons of which mission is dominant within a papertype category - per category reference frames
+    val = grouped_df['weighted_confs'].sum()
+    grouped_df['normalized_percat_confs'] = grouped_df['weighted_confs'].apply(lambda x: (x/val).round(3))
 
     return grouped_df
 

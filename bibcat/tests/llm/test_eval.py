@@ -83,6 +83,8 @@ def test_evaluate_df(mocker):
     assert df.iloc[1]["count"] == 1
     assert df.iloc[1]["n_runs"] == 6
     assert df.iloc[1]["weighted_confs"].tolist() == [0.15, 0.017]
+    assert df.iloc[1]["normalized_total_confs"].tolist() == [0.1, 0.011]
+    assert df.iloc[1]["normalized_percat_confs"].tolist() == [0.143, 0.038]
 
 
     # check the last TESS-SCIENCE row
@@ -98,3 +100,5 @@ def test_evaluate_df(mocker):
     assert df[intext].iloc[0]["count"] == 5
     assert df[intext].iloc[0]["n_runs"] == 6
     assert df[intext].iloc[0]["weighted_confs"].tolist() == [0.75, 0.083]
+    assert df[intext].iloc[0]["normalized_total_confs"].tolist() == [0.5, 0.055]
+    assert df[intext].iloc[0]["normalized_percat_confs"].tolist() == [0.714, 0.184]
