@@ -52,11 +52,6 @@ textprocessing:
   do_real_testdata: true  # If True, will use real papers to test performance; if False, will use fake texts but we will implement the fake data if we need.
   max_tests: 30  # Number of text entries to test the performance for; None for all tests
   lookup: HST  # Prepare some Keyword objects
-  threshold: 0.70
-  threshold_array: # this will be used for np.linspace(0.5, 0.95, 20)
-    - 0.5
-    - 0.95
-    - 20
   buffer: 0  # the number of sentences to include within paragraph around each sentence with target terms
   placeholder_anon: "OBJ" # For text that is anonymized against user's target missions, this is the text that the mission terms are replaced with.
   placeholder_number: "000" # For text that is anonymized against numbers, this is the text that the numbers are replaced with.
@@ -352,6 +347,11 @@ performance:
   figsize: [20, 12] # figsize = (20, 12)
   print_freq: 1
   threshold: 0.70
+  threshold_array: # this will be used for np.linspace(0.5, 0.95, 20)
+    - 0.5
+    - 0.95
+    - 20
+
 
 results:
   # Result file name root
