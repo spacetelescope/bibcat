@@ -1,10 +1,9 @@
 # Change Log
 
 ## [Unreleased]
-- [PR # 40]
-    - Add `stats-llm.py` to output statistics results from the evaluation summary output and the operational gpt results
-    - pytests (`test_stats_llm.py`) and llm `README.md` updated
-
+- [PR #46]
+    - Grouping the BERT model method into the pretrained folder
+    - Created PRETRAINED_README.md and updated the main README.md
 - Bibcat to do list
     - Refactor performance.py
     - Adding tutorial notebooks back
@@ -89,6 +88,13 @@
     - updated formatting and styling
 
 ### Added
+- [PR #43]
+    - pre-commit-hook setup
+    - GitHub CI/CD action pipeline for linting/formatting and pytests
+- [PR #40]
+    - Add `stats-llm.py` to output statistics results from the evaluation summary output and the operational gpt results
+    - pytests (`test_stats_llm.py`) and llm `README.md` updated
+
 - [PR #38]
     - Add option to run gpt-batch multiple times
 - [PR #35]

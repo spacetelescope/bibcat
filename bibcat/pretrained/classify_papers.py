@@ -21,8 +21,8 @@ from bibcat import config
 from bibcat import parameters as params
 from bibcat.core.classifiers import ml
 from bibcat.core.classifiers.textdata import ClassifierBase
-from bibcat.fetch_papers import fetch_papers
-from bibcat.operate_classifier import operate_classifier
+from bibcat.pretrained.fetch_papers import fetch_papers
+from bibcat.pretrained.operate_classifier import operate_classifier
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)

@@ -156,7 +156,7 @@ class TensorFlow(AbstractModel):
         if self.model_key not in preprocs:
             raise KeyError(f"Model key {self.model_key} not found in config.ml.{self.model_type}")
 
-    def build_model(self, num_dense: int = 3) -> tf.keras.Model:
+    def build_model(self, num_dense: int = 3) -> tf.keras.Model:  # type: ignore
         """Build a training model
 
         Builds an empty tensorflow model for training.  The model is built with a text input layer,

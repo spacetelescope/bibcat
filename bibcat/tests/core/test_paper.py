@@ -104,7 +104,7 @@ class TestPaper(unittest.TestCase):
             for info in list_acts:
                 curr_text = info["text"]
                 curr_kobj = info["kobj"]
-                # curr_buffer = info["buffer"]
+                curr_buffer = info["buffer"]
                 curr_answer = info["answer"]
                 # curr_ambig = info["results_ambig"]
                 # curr_acr_meanings = info["acronym_meanings"]
@@ -114,7 +114,7 @@ class TestPaper(unittest.TestCase):
                 testbase = paper.Paper(
                     text=curr_text, keyword_objs=params.test_list_lookup_kobj, do_check_truematch=True
                 )
-                # set_res = testbase.process_paragraphs(buffer=curr_buffer)
+                _ = testbase.process_paragraphs(buffer=curr_buffer)
                 test_res = testbase.get_paragraphs()[curr_name]
 
                 # ambig_output = testbase._get_info("_results_ambig")[curr_name]
