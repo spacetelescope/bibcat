@@ -217,7 +217,7 @@ By default bibcat uses [Structured Response](https://openai.com/index/introducin
   - mission: the name of the mission class
   - papertype: the type of paper classification
   - confidence: an array of the LLM confidence values of ["science", "mention"]
-  - reason: the LLMs rational for why it's assigning the mission-papertype
+  - reason: the LLMs rationale for why it's assigning the mission-papertype
   - quotes: if able, a list of direct quotes from the paper that back up the LLM's reason.  (These quotes may be hallucinated!)
 
 For example, running `bibcat run-gpt -b "2023Natur.616..266L"` produces the following output:
@@ -293,12 +293,6 @@ INFO - Missing missions by LLM:
 INFO - Hallucination by LLM: K2
 Writing output to /Users/jyoon/GitHub/bibcat/output/output/llms/openai_gpt-4o-mini/summary_output_t0.7.json
 ```
-
-llm_mission llm_papertype mean_llm_confidences std_llm_confidences  count  n_runs weighted_confs normalized_total_confs normalized_percat_confs  consistency  in_human_class  mission_in_text  hallucination_by_llm
-        HST       SCIENCE           [0.8, 0.2]          [0.0, 0.0]      1      50 [0.016, 0.004]         [0.016, 0.004]          [0.019, 0.021]          0.0           False            False                  True
-       TESS       MENTION         [0.23, 0.78]        [0.11, 0.11]      4      50 [0.018, 0.062]         [0.018, 0.061]          [0.022, 0.318]          0.0           False             True                 False
-       TESS       SCIENCE         [0.86, 0.14]        [0.05, 0.05]     46      50 [0.791, 0.129]         [0.775, 0.126]          [0.959, 0.662]         92.0            True             True                 False
-
 
 The output is also written to a file specified by `config.llms.eval_output_file`.
 
