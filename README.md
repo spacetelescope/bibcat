@@ -11,8 +11,8 @@ There are two main branches for bibcat work:
 ## Installation
 ### Required packages and versions
 - tensorflow 2.15.0
-- tensorflow-hub
-- tensorflow-text
+- tensorflow-hub 0.16.1
+- tensorflow-text 2.15.0
 - See more packages found in the [conda evn file](envs/bibcat_py310.yml).
 
 ### Conda env installation
@@ -24,7 +24,7 @@ conda env create -n env_name -f bibcat_py310.yml
 conda activate env_name
 python -m spacy download en_core_web_sm
 ```
-#### Extra pacakge for Apple M1/M2 chip
+#### Extra required pacakge for Apple M1/M2/M3 chip
 For Apple Silicon chips, to utilize your GPU, you install `tensorflow-metal`.  You can run `pip install tensorflow-metal`.  To verify if tensorflow is set up to utilize your GPU, do the following:
 ```
 import tensorflow as tf
@@ -106,54 +106,24 @@ output:
 
 For testing, you need to install the extra test dependencies.  You do this with `pip install -e ".[test]"`.  The test suite is located in `tests/`. We can recommend using `pytest` for running tests.  Navigate to `/tests/` and run `pytest`, or for extra verbosity run `pytest -vs`. `pytest` can find and run tests written with pytest or unittests.
 
-### Changing Models
-
-`bibcat` now supports the ability to use other Tensorflow models for paper classification. The default model used is `bert`.  New models are added into bibcat via the bibcat configuration yaml file, under the `ml` section, similar to the existing `bert` section.  Then, update the `ML_model_type` and `ML_model_key` keys to the new model values.
-
-For example to use the `roberta` model, with roberta-specific encoders/preprocessors, within your user `$BIBCAT_CONFIG_DIR/bibcat_config.yaml`, you would set:
-```yaml
-output:
-  name_model: tf_roberta_trial
-ml:
-  ML_model_type: "roberta"
-  ML_model_key: "roberta_encased"
-  roberta:
-    dict_ml_model_encoders: {"roberta_encased": "https://www.kaggle.com/models/kaggle/roberta/TensorFlow2/en-cased-l-12-h-768-a-12/1"}
-    dict_ml_model_preprocessors: {"roberta_encased": "https://kaggle.com/models/kaggle/roberta/TensorFlow2/en-cased-preprocess/1"}
-```
-Then run `bibcat train` and `bibcat classify` as normal.
-
-Alternatively, you can specify new models directly from the command line during `bibcat train`.  For example, to use the `roberta` model, run:
-```
-bibcat train -m roberta -n tf_roberta_trial -k roberta_encased
-```
-This assumes the preprocessors and encoders for that model are already included in the config file.  To use a different preprocessor or encoder not included in your configuration file, you can manually pass in the urls, e.g.
-```
-bibcat train -m roberta -n tf_roberta_trial -k roberta_encased -e https://www.kaggle.com/models/kaggle/roberta/TensorFlow2/en-cased-l-12-h-768-a-12/1 -p https://kaggle.com/models/kaggle/roberta/TensorFlow2/en-cased-preprocess/1
-```
-
 ## Quick start
 
 There is a CLI interface to bibcat.  After installation with `pip install -e .`, a `bibcat` cli will be available from the terminal.  Run `bibcat --help` from the terminal to display the available commands.  All commands also have their own help.  For example to see the options
-for classifying papers, run `bibcat classify --help`.
+for classifying papers, run `bibcat train --help`.
 
 - First, set the three user BIBCAT_XXX_DIR environment variables specified above, in particular `BIBCAT_DATA_DIR` points to the location of your input JSON files.
 
-### Build dataset from the papertrak and ADS papertext JSON files.
+### Build The Dataset
 
 - run `bibcat dataset`if you don't already have the source dataset combined from the papertrack data and the papertext data.
 
-### Train and evaluate the ML models
+### Using Pretrained Models (BERT flavors)
 
-- To create a training model, run `bibcat train`.
-- To evaluate the classifiers, run `bibcat evaluate`. fetch_papers.py (with `do_evaluation=True`) fetches the test papers with papertrack classification (`paper_type`). It will produce some evaluation diagnostics such as a confusion matrix in the `output/ouptut/` directory.
+You can classify papers using the pretrained models like `BERT` or `RoBERTa`. Please see the following [Quick Start Guide using Pretrained Models](bibcat/pretrained/PRETRAINED.md) to get started.
 
-### Paper classification for operation
-- To classify papers, run `bibcat classify`. Copy `etc/fakedata.json` to your local OPSDATA folder to test `bibcat classify`. Check out `etc/fakedata.json` to see the necessary contents for operational papers in JSON. You use any texts with their bibcode in a JSON file by pointing `inputs.path_ops_data`in `bibcat_config.yaml` to your JSON file. fetch_papers.py (with with `do_evaluation=False` will fetch the JSON file for classification )
+### Using LLM Prompting Method
 
-## LLM Prompting
-
-You can submit paper content to OpenAI's gpt models.  Please see the following [Quick Start Guide](bibcat/llm/README.md) to get started.
+You can submit paper content to OpenAI's gpt models.  Please see the following [Quick Start Guide using LLM Prompting](bibcat/llm/README.md) to get started.
 
 
 ## License
