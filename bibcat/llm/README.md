@@ -284,10 +284,10 @@ INFO - Number of runs: 3
 INFO - Human Classifications:
  KEPLER: SCIENCE
 Output Stats by LLM Mission and Paper Type:
-llm_mission llm_papertype mean_llm_confidences std_llm_confidences  count  n_runs  weighted_confs normalized_total_confs normalized_percat_confs  consistency  in_human_class  mission_in_text  hallucination_by_llm
-         K2       MENTION           [0.2, 0.8]          [0.0, 0.0]      1       3  [0.067, 0.267]         [0.033, 0.133]          [0.043, 0.597]         0.0          False            False                  True
-         K2       SCIENCE         [0.85, 0.15]        [0.05, 0.05]      2       3  [0.567, 0.100]          [0.283, 0.05]          [0.365, 0.224]         0.0          False            False                  True
-     KEPLER       SCIENCE         [0.92, 0.08]        [0.02, 0.02]      3       3  [0.920, 0.080]           [0.46, 0.04]          [0.592, 0.179]       100.0          True              True                 False
+llm_mission llm_papertype mean_llm_confidences std_llm_confidences  count  n_runs  weighted_confs  consistency  in_human_class  mission_in_text  hallucination_by_llm
+         K2       MENTION           [0.2, 0.8]          [0.0, 0.0]      1       3  [0.067, 0.267]          0.0          False            False                  True
+         K2       SCIENCE         [0.85, 0.15]        [0.05, 0.05]      2       3  [0.567, 0.100]          0.0          False            False                  True
+     KEPLER       SCIENCE         [0.92, 0.08]        [0.02, 0.02]      3       3  [0.920, 0.080]        100.0          True              True                 False
 INFO - Missing missions by humans: K2
 INFO - Missing missions by LLM:
 INFO - Hallucination by LLM: K2
@@ -347,8 +347,6 @@ Definitions of the output columns from the evaluation.
 - **llm_papertype**: The papertype from the LLM output
 - **n_runs**: The total number of trial runs
 - **weighted_confs**: Frequency-weighted confidence values.  The "mean_llm_confidence" scaled by the fraction of runs in which the mission+papertype appeared. Combined measure of frequency and confidence.
-- **normalized_total_confs**: Frequency-weighted confidences normalized by the sum total of all weighted confs.
-- **normalized_percat_confs**: Frequency-weighted confidences normalized by the sum of weighted confs per papertype category.
 - **consistency**: The percentage of how often the LLM mission + papertype matched the human classification
 - **in_human_class**: Flag whether or not the mission + papertype was included in the set of human classifications
 - **mission_in_text**: Flag whether or not the mission keyword is in the source paper text
