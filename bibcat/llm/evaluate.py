@@ -82,8 +82,13 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     grouped_df = group_by_mission_papertype(df)
     grouped_df["n_runs"] = n_runs
 
-    # weight and normalize the confidence values
-    grouped_df = apply_weightings(grouped_df)
+    # weight the mean confidences by the frequency of occurrence
+    # these represent a combined measure of frequency and confidence across multiple independent trials and categories
+    grouped_df['weighted_confs'] = grouped_df.apply(lambda df:
+        (df['mean_llm_confidences'] * (df['count'] / df['n_runs'])).round(3), axis=1)
+
+    # group by mission and compute final probabilities and confidences
+    mission_group = group_by_mission(grouped_df)
 
     # get the human paper classifications
     human_classes = get_human_classification(paper)
@@ -110,6 +115,7 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
             threshold,
             inspection,
             grouped_df,
+            mission_group,
             human_classes,
             missing_by_human,
             missing_by_llm,
@@ -153,14 +159,12 @@ def group_by_mission_papertype(df: pd.DataFrame):
     return grouped_df
 
 
-def apply_weightings(grouped_df: pd.DataFrame) -> pd.DataFrame:
-    """ Apply weightings to the mean LLM confidence values
+def group_by_mission(grouped_df: pd.DataFrame) -> pd.DataFrame:
+    """ Groups the dataframe by mission
 
-    Frequency-weights the mean LLM confidence values by the number of occurrences
-    in the mission + papertype group, and stores as "weighted_confs".  Normalizes
-    the weighted confidence values by the total sum of weighted confidences, and
-    the sum of weighted confidences per papertype category, stored as "normalized_total_confs"
-    and "normalized_percat_confs" respectively.
+    Groups the dataframe by mission and compute final confidence values and probabilities.
+    Important relevant columns are the "prob_mission" and "total_weighted_conf" columns.
+    Low "prob_mission" means the mission is likely hallucinated.
 
     Parameters
     ----------
@@ -172,22 +176,17 @@ def apply_weightings(grouped_df: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame
         the output grouped dataframe
     """
-    # weight the mean confidences by the frequency of occurrence
-    # these represent a combined measure of frequency and confidence across multiple independent trials and categories
-    grouped_df['weighted_confs'] = grouped_df.apply(lambda df:
-        (df['mean_llm_confidences'] * (df['count'] / df['n_runs'])).round(3), axis=1)
 
-    # normalize by the total sum of weighted confidences
-    # for comparisons of mission+papertype across all combinations - single reference frame
-    val = grouped_df['weighted_confs'].sum().sum()
-    grouped_df['normalized_total_confs'] = grouped_df['weighted_confs'].apply(lambda x: (x/val).round(3))
+    # group by each mission and compute the total confidence values by mission
+    df = (grouped_df.groupby('llm_mission', as_index=False)
+        .agg(total_mission_conf=('weighted_confs',lambda x: x.sum().sum()),
+             total_weighted_conf=('weighted_confs',lambda x: x.sum()))
+        )
 
-    # normalize by the per-category sum of weighted confidences
-    # for comparisons of which mission is dominant within a papertype category - per category reference frames
-    val = grouped_df['weighted_confs'].sum()
-    grouped_df['normalized_percat_confs'] = grouped_df['weighted_confs'].apply(lambda x: (x/val).round(3))
-
-    return grouped_df
+    # compute columns for the probability of mission and within each mission, probability of each papertype
+    df['prob_mission'] = df['total_mission_conf'].apply(lambda x: (x/df['total_mission_conf'].sum()).round(2))
+    df['prob_papertype'] = df.apply(lambda x: x['total_weighted_conf']/x['total_mission_conf'], axis=1)
+    return df
 
 
 def get_human_classification(paper: dict | str):
@@ -281,6 +280,7 @@ def prepare_output(
     threshold: float,
     inspection: float,
     grouped_df: pd.DataFrame,
+    mission_df: pd.DataFrame,
     human_classes: dict,
     missing_by_human: set,
     missing_by_llm: set,
@@ -296,6 +296,8 @@ def prepare_output(
         paper bibcode
     grouped_df: pd.DataFrame
         pandas dataframe grouped by mission and papertype
+    mission_df: pd.DataFrame
+        grouped_df dataframe grouped by mission
     human classes: dict
         human classifed missions and papertypes
     missing_by_human: set
@@ -309,17 +311,26 @@ def prepare_output(
         dictionary of paper, missions, and papertypes, pandas dataframe of llm assessment, and other
 
     """
+    # reindex mission
+    mm = mission_df.set_index("llm_mission")
+
     # pass its llm's classification if the maximum weighted-confidence value is higher than the threshold
     # the maximum value is used because the papertype's confidence is aligned with the maximum value
     llm = [
-        {i["llm_mission"]: i["llm_papertype"]}
+        {i["llm_mission"]: i["llm_papertype"],
+         'confidence': mm.loc[i["llm_mission"]]["total_weighted_conf"].tolist(),
+         'mission_probability': mm.loc[i["llm_mission"]]["prob_mission"]
+         }
         for i in grouped_df.to_dict(orient="records")
         if max(i["weighted_confs"]) >= threshold
     ]
 
     # human inspection list for ambiguous classification
     inspection_missions = [
-        {i["llm_mission"]: i["llm_papertype"]}
+        {i["llm_mission"]: i["llm_papertype"],
+         'confidence': mm.loc[i["llm_mission"]]["total_weighted_conf"].tolist(),
+         'mission_probability': mm.loc[i["llm_mission"]]["prob_mission"]
+         }
         for i in grouped_df.to_dict(orient="records")
         if max(i["weighted_confs"]) >= inspection and max(i["weighted_confs"]) < threshold
     ]
@@ -335,6 +346,7 @@ def prepare_output(
             "missing_by_llm": list(missing_by_llm),
             "hallucinated_missions": list(set(hallucinated_missions)),
             "df": grouped_df.to_dict(orient="records"),
+            "mission_conf": mission_df.to_dict(orient='records')
         }
     }
 
