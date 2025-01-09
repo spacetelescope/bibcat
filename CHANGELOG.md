@@ -7,6 +7,9 @@
 - Bibcat to do list
     - Refactor performance.py
     - Adding tutorial notebooks back
+- [PR #44](https://github.com/spacetelescope/bibcat/pull/44)
+    - Updated LLM prompt to include its rationale and reasoning in the output
+    - Switch to OpenAI Structured Response output, using pydantic models to control output
 
 
 ### Removed

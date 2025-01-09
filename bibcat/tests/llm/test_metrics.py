@@ -8,9 +8,9 @@ data = {
         "threshold_acceptance": 0.7,
         "llm": [{"JWST": "SCIENCE"}, {"Roman": "MENTION"}, {"GALEX": "SCIENCE"}],
         "df": [
-            {"llm_mission": "JWST", "mean_llm_confidences": [0.8, 0.2]},
-            {"llm_mission": "Roman", "mean_llm_confidences": [0.3, 0.7]},
-            {"llm_mission": "GALEX", "mean_llm_confidences": [0.4, 0.6]},
+            {"llm_mission": "JWST", "llm_papertype": "SCIENCE", "mean_llm_confidences": [0.8, 0.2]},
+            {"llm_mission": "Roman", "llm_papertype": "MENTION", "mean_llm_confidences": [0.3, 0.7]},
+            {"llm_mission": "GALEX", "llm_papertype": "SCIENCE", "mean_llm_confidences": [0.4, 0.6]},
         ],
     }
 }

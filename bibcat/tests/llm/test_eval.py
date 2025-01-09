@@ -11,14 +11,56 @@ paper = {
 }
 
 output = {
-    "2022Sci...377.1211L": [
-        {"TESS": ["SCIENCE", [0.9, 0.1]], "JWST": ["MENTION", [0.3, 0.7]]},
-        {"TESS": ["MENTION", [0.3, 0.7]]},
-        {"JWST": ["SCIENCE", [0.9, 0.1]], "TESS": ["SCIENCE", [0.9, 0.1]]},
-        {"TESS": ["SCIENCE", [0.9, 0.1]]},
-        {"TESS": ["SCIENCE", [0.9, 0.1]]},
-        {"JWST": ["MENTION", [0.3, 0.7]], "TESS": ["SCIENCE", [0.9, 0.1]]},
-    ]
+  "2022Sci...377.1211L": [
+    {
+      "notes": "",
+      "missions": [
+        {"mission": "TESS", "papertype": "SCIENCE", "confidence": [0.9, 0.1],
+         "reason": "They use TESS data", "quotes": ["We use TESS data."]},
+        {"mission": "JWST", "papertype": "MENTION", "confidence": [0.3, 0.7],
+         "reason": "They mention JWST", "quotes": ["We mention JWST."]}
+      ]
+    },
+    {
+      "notes": "",
+      "missions": [
+        {"mission": "TESS", "papertype": "MENTION", "confidence": [0.3, 0.7],
+         "reason": "They mention TESS", "quotes": ["We mention TESS."]}
+      ]
+    },
+    {
+      "notes": "",
+      "missions": [
+        {"mission": "TESS", "papertype": "SCIENCE", "confidence": [0.9, 0.1],
+         "reason": "They use TESS data", "quotes": ["We use TESS data."]},
+        {"mission": "JWST", "papertype": "SCIENCE", "confidence": [0.9, 0.1],
+         "reason": "They use JWST data", "quotes": ["We use JWST data."]}
+      ]
+    },
+    {
+      "notes": "",
+      "missions": [
+        {"mission": "TESS", "papertype": "SCIENCE", "confidence": [0.9, 0.1],
+         "reason": "They use TESS data", "quotes": ["We use TESS data."]}
+      ]
+    },
+    {
+      "notes": "",
+      "missions": [
+        {"mission": "TESS", "papertype": "SCIENCE", "confidence": [0.9, 0.1],
+         "reason": "They use TESS data", "quotes": ["We use TESS data."]}
+      ]
+    },
+    {
+      "notes": "",
+      "missions": [
+        {"mission": "TESS", "papertype": "SCIENCE", "confidence": [0.9, 0.1],
+         "reason": "They use TESS data", "quotes": ["We use TESS data."]},
+        {"mission": "JWST", "papertype": "MENTION", "confidence": [0.3, 0.7],
+         "reason": "They mention JWST", "quotes": ["We mention JWST."]}
+      ]
+    },
+  ]
 }
 
 
@@ -31,8 +73,19 @@ def test_evaluate_df(mocker):
 
     assert len(df) == 4
     assert set(df["llm_mission"]) == {"TESS", "JWST"}
-    # assert the first row is hallucinated
+    # assert the first row (JWST) is hallucinated
     assert df.iloc[0]["hallucination_by_llm"]
+
+    # assert the second row (JWST-SCIENCE) has a low weight
+    assert df.iloc[1]["llm_mission"] == 'JWST'
+    assert df.iloc[1]["llm_papertype"] == 'SCIENCE'
+    assert df.iloc[1]["mean_llm_confidences"].tolist() == [0.9, 0.1]
+    assert df.iloc[1]["count"] == 1
+    assert df.iloc[1]["n_runs"] == 6
+    assert df.iloc[1]["weighted_confs"].tolist() == [0.15, 0.017]
+    assert df.iloc[1]["normalized_total_confs"].tolist() == [0.1, 0.011]
+    assert df.iloc[1]["normalized_percat_confs"].tolist() == [0.143, 0.038]
+
 
     # check the last TESS-SCIENCE row
     intext = df["in_human_class"] == True  # noqa: E712
@@ -41,3 +94,11 @@ def test_evaluate_df(mocker):
     assert df[intext].iloc[0]["llm_mission"] == "TESS"
     assert df[intext].iloc[0]["llm_papertype"] == "SCIENCE"
     assert not df[intext].iloc[0]["hallucination_by_llm"]
+
+    # assert last row has a high weight
+    assert df[intext].iloc[0]["mean_llm_confidences"].tolist() == [0.9, 0.1]
+    assert df[intext].iloc[0]["count"] == 5
+    assert df[intext].iloc[0]["n_runs"] == 6
+    assert df[intext].iloc[0]["weighted_confs"].tolist() == [0.75, 0.083]
+    assert df[intext].iloc[0]["normalized_total_confs"].tolist() == [0.5, 0.055]
+    assert df[intext].iloc[0]["normalized_percat_confs"].tolist() == [0.714, 0.184]

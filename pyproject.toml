@@ -31,6 +31,7 @@ dependencies = [
   "openai >= 1.40.0",
   "matplotlib >=3.9.0",
   "scikit-learn >=1.4.2",
+  "pydantic >= 2.5.0",
   "PyYAML == 6.0.1",
 ]
 dynamic = ["version"]
@@ -80,9 +81,10 @@ write_to = "bibcat/_version.py"
 
 [tool.pytest.ini_options]
 testpaths = [
-  "bibcat",
+  "bibcat/tests",
   "docs",
 ]
+import_mode = "importlib"
 doctest_plus = "enabled"
 text_file_format = "rst"
 addopts = "--doctest-rst"

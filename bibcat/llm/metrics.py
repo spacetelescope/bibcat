@@ -13,7 +13,10 @@ logger.setLevel(config.logging.level)
 def extract_eval_data(data: dict, missions: list[str]):
     """Extract the human and llm classification labels and confidences
 
-    Extract the human and llm classes and confidence values from the evaluation json file, `config.llms.eval_output_file (summary_output.json)`. You can extract data from only a single mission or a list of missions. The labels will be used to create confusion matrix plots and the confidence values are used for ROC curves.
+    Extract the human and llm classes and confidence values from the evaluation json file,
+    `config.llms.eval_output_file (summary_output.json)`. You can extract data from only a single
+    mission or a list of missions. The labels will be used to create confusion matrix plots and the
+    confidence values are used for ROC curves.
 
     Parameters
     ----------
@@ -46,8 +49,10 @@ def extract_eval_data(data: dict, missions: list[str]):
         for mission in missions:
             if mission in human_data and mission in llm_mission:
                 human_labels.append(human_data.get(mission))
-                llm_labels.extend(v for i in llm_data for k, v in i.items() if k == mission)
-                llm_confidences.extend(i["mean_llm_confidences"] for i in df if i["llm_mission"] == mission)
+                labels = [v for i in llm_data for k, v in i.items() if k == mission]
+                confs = [i["mean_llm_confidences"] for i in df if i["llm_mission"] == mission and i["llm_papertype"] == labels[0]]
+                llm_labels.extend(labels)
+                llm_confidences.extend(confs)
         threshold = data[bibcode]["threshold_acceptance"]
 
     logger.debug(

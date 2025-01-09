@@ -206,28 +206,59 @@ The Assistant supports uploading PDF or JSON files.  `bibcat` will accept either
 
 ## Response Output
 
-The output response from the LLM prompt is written to a file, specified by `config.llms.prompt_output_file`, e.g. "paper_output.json".  The response output is organized by the name of the file, or the bibcode of the paper.  Repeated prompts using the same paper will be appended to the entry for that paper.
+The output response from the LLM prompt is written to a file, specified by `config.llms.prompt_output_file`, e.g. "paper_output.json".
+The response output is organized by the name of the file, or the bibcode of the paper.  Repeated prompts using the same
+paper will be appended to the entry for that paper.
+
+By default bibcat uses [Structured Response](https://openai.com/index/introducing-structured-outputs-in-the-api/), defining a Pydantic response model as the `response_format`.  The structure of the response is organized as follows:
+
+- notes: Notes on the LLM's thought process and decision making
+- missions: a list of mission-papertype classifications
+  - mission: the name of the mission class
+  - papertype: the type of paper classification
+  - confidence: an array of the LLM confidence values of ["science", "mention"]
+  - reason: the LLMs rationale for why it's assigning the mission-papertype
+  - quotes: if able, a list of direct quotes from the paper that back up the LLM's reason.  (These quotes may be hallucinated!)
 
 For example, running `bibcat run-gpt -b "2023Natur.616..266L"` produces the following output:
 ```json
   "2023Natur.616..266L": [
     {
-      "HST": [
-        "MENTION",
-        [
-          0.3,
-          0.7
-        ]
-      ],
-      "JWST": [
-        "SCIENCE",
-        [
-          0.9,
-          0.1
-        ]
+      "notes": "I reviewed the paper and found multiple references to both JWST and HST. The JWST is explicitly noted for
+      the new observations, while HST is referenced in the context of overlapping imaging with JWST's observations.
+      MAST data are explicitly mentioned as part of the data processing steps.",
+      "missions": [
+        {
+          "mission": "JWST",
+          "papertype": "SCIENCE",
+          "confidence": [
+            0.95,
+            0.05
+          ],
+          "reason": "The paper presents and analyzes new observational data from JWST's CEERS program.",
+          "quotes": [
+            "This article is based on the first imaging taken with the NIRCam on JWST as part of the CEERS
+            program (Principal Investigator, Finkelstein; Program Identifier, 1345)."
+          ]
+        },
+        {
+          "mission": "HST",
+          "papertype": "MENTION",
+          "confidence": [
+            0.1,
+            0.9
+          ],
+          "reason": "HST data are referenced primarily for comparative purposes and indicate overlap with JWST
+          observations, but no new HST data is presented.",
+          "quotes": [
+            "The total area covered by these initial data is roughly 40 arcmin 2 and overlaps fully with the
+            existing HST\u2013Advanced Camera for Surveys (ACS) and WFC3 footprint."
+          ]
+        }
       ]
     },
 ```
+You can turn off structured response output with the `-u` flag, e.g. `bibcat run-gpt -b "2023Natur.616..266L" -u`.
 
 ## Evaluating Output
 
@@ -253,18 +284,19 @@ INFO - Number of runs: 3
 INFO - Human Classifications:
  KEPLER: SCIENCE
 Output Stats by LLM Mission and Paper Type:
-llm_mission llm_papertype mean_llm_confidences std_llm_confidences  count  n_runs  consistency  in_human_class  mission_in_text  hallucination_by_llm
-         K2       MENTION           [0.2, 0.8]          [0.0, 0.0]      1       3          0.0           False            False                  True
-         K2       SCIENCE         [0.85, 0.15]        [0.05, 0.05]      2       3          0.0           False            False                  True
-     KEPLER       SCIENCE         [0.92, 0.08]        [0.02, 0.02]      3       3        100.0            True             True                 False
+llm_mission llm_papertype mean_llm_confidences std_llm_confidences  count  n_runs  weighted_confs normalized_total_confs normalized_percat_confs  consistency  in_human_class  mission_in_text  hallucination_by_llm
+         K2       MENTION           [0.2, 0.8]          [0.0, 0.0]      1       3  [0.067, 0.267]         [0.033, 0.133]          [0.043, 0.597]         0.0          False            False                  True
+         K2       SCIENCE         [0.85, 0.15]        [0.05, 0.05]      2       3  [0.567, 0.100]          [0.283, 0.05]          [0.365, 0.224]         0.0          False            False                  True
+     KEPLER       SCIENCE         [0.92, 0.08]        [0.02, 0.02]      3       3  [0.920, 0.080]           [0.46, 0.04]          [0.592, 0.179]       100.0          True              True                 False
 INFO - Missing missions by humans: K2
 INFO - Missing missions by LLM:
 INFO - Hallucination by LLM: K2
 Writing output to /Users/jyoon/GitHub/bibcat/output/output/llms/openai_gpt-4o-mini/summary_output_t0.7.json
 ```
+
 The output is also written to a file specified by `config.llms.eval_output_file`.
 
-For now this produces a Pandas dataframe, grouped by the LLM predicted mission and papertype, with its mean confidence score, the number of times that combination was output by the LLM, the total number of trial runs, an accuracy score of how well it matched the human classification, and a boolean flag if that combination appears in the human classification.  The human classication comes from the "class_missions" field in the source dataset file.
+For now this produces a Pandas dataframe, grouped by the LLM predicted mission and papertype, with its mean confidence score, the number of times that combination was output by the LLM, the total number of trial runs, frequency-weighted confidence values, an accuracy score of how well it matched the human classification, and a boolean flag if that combination appears in the human classification.  The human classication comes from the "class_missions" field in the source dataset file.
 
 Alternatively, you can both submit a paper for classfication and evaluate it in a single command using the `-s`, `--submit` flag.  In combination with the `-n` flag,
 this will classify the paper `num_runs` time before evaluation.
@@ -309,11 +341,14 @@ Definitions of the output columns from the evaluation.
 
 #### Each mission/papertype DataFrame output
 - **llm_mission**: The mission from the LLM output
-- **mean_llm_confidence**: The list of the mean confidence values of SCIENCE and MENTION across all trial runs, for each mission + papertype combination
+- **mean_llm_confidence**: The list of the mean confidence values of SCIENCE and MENTION across all trial runs, for each mission + papertype combination. Conditional probabilities. Sum to 1.
 - **std_llm_confidence**: The standard deviation of the confidence values of SCIENCE and MENTION  across all trial runs
 - **count**: The number of times a mission + papertype combo was included in the LLM response, across all trial runs
 - **llm_papertype**: The papertype from the LLM output
 - **n_runs**: The total number of trial runs
+- **weighted_confs**: Frequency-weighted confidence values.  The "mean_llm_confidence" scaled by the fraction of runs in which the mission+papertype appeared. Combined measure of frequency and confidence.
+- **normalized_total_confs**: Frequency-weighted confidences normalized by the sum total of all weighted confs.
+- **normalized_percat_confs**: Frequency-weighted confidences normalized by the sum of weighted confs per papertype category.
 - **consistency**: The percentage of how often the LLM mission + papertype matched the human classification
 - **in_human_class**: Flag whether or not the mission + papertype was included in the set of human classifications
 - **mission_in_text**: Flag whether or not the mission keyword is in the source paper text

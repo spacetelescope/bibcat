@@ -39,7 +39,17 @@ eval_data: Dict[str, Any] = {
 
 # OPS paper_output.json data
 ops_data: Dict[str, Any] = {
-    "2020A&A...642A.105K": [{"KEPLER": ["SCIENCE", [0.95, 0.05]], "K2": ["MENTION", [0.2, 0.8]]}]
+    "2020A&A...642A.105K": [
+        {
+        "notes": "",
+        "missions": [
+            {"mission": "KEPLER", "papertype": "SCIENCE", "confidence": [0.95, 0.05],
+            "reason": "They use Kepler data", "quotes": ["We use Kepler data."]},
+            {"mission": "K2", "papertype": "MENTION", "confidence": [0.2, 0.8],
+            "reason": "They mention K2", "quotes": ["We mention K2."]}
+        ]
+        }
+    ]
 }
 
 expected_stats_data: List[Dict[str, Any]] = [

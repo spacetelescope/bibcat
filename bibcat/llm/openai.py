@@ -6,6 +6,7 @@ import re
 import openai
 from openai import OpenAI
 from openai.types.beta.assistant import Assistant
+from pydantic import BaseModel, Field
 
 from bibcat import config
 from bibcat.llm.io import get_file, get_llm_prompt, get_source, write_output
@@ -13,6 +14,19 @@ from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
+
+class MissionInfo(BaseModel):
+    """ Pydantic model for a mission entry """
+    mission: str = Field(..., description="The name of the mission.")
+    papertype: str = Field(..., description="The type of paper you think it is")
+    confidence: list[float] = Field(..., description="A list of float values of your confidence")
+    reason: str = Field(..., description="A short sentence summarizing your reasoning for classifying this mission + papertype")
+    quotes: list[str] = Field(..., description="A list of exact quotes from the paper that support your reason")
+
+class InfoModel(BaseModel):
+    """ Pydantic model for the parsed response from the LLM """
+    notes: str = Field(..., description="all your notes and thoughts you have written down during your process")
+    missions: list[MissionInfo] = Field(..., description="a list of your identified missions")
 
 
 class OpenAIHelper:
@@ -24,13 +38,16 @@ class OpenAIHelper:
         Flag to use the file-search OpenAI Assistant or not, by default None
     verbose : bool, optional
         Flag to turn on verbose logging, by default None
+    structured : bool, optional
+        Flag to use structured response, by default True
     """
 
-    def __init__(self, use_assistant: bool = None, verbose: bool = None):
+    def __init__(self, use_assistant: bool = None, verbose: bool = None, structured: bool = True):
         """init"""
         # input parameters
         self.use_assistant = use_assistant or config.llms.openai.use_assistant
         self.verbose = verbose or config.logging.verbose
+        self.structured = structured
 
         # llm attributes
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -336,6 +353,50 @@ class OpenAIHelper:
 
         return self.response
 
+    def send_structured_message(self, user_prompt: str = None) -> dict | str:
+        """ Send a chat message to the LLM using Structured Response
+
+        Sends your prompt to the LLM model with an expected response format
+        of InfoModel.  The LLM will parse its response into the structure you
+        provide. See https://openai.com/index/introducing-structured-outputs-in-the-api/
+        Works with minimum gpt-4o-mini-2024-07-18 and gpt-4o-2024-08-06 models, but
+        structured outputs with response formats is available on gpt-4o-mini and gpt-4o-2024-08-06 and
+        any fine tunes based on these models.
+
+        Parameters
+        ----------
+        user_prompt : str, optional
+            A customized user prompt, by default None
+
+        Returns
+        -------
+        dict | str
+            the output response from the model
+
+        Raises
+        ------
+        ValueError
+            when the model is not one of the supported models
+        """
+
+        result = self.client.beta.chat.completions.parse(
+            model=config.llms.openai.model,
+            messages=[
+                {"role": "system", "content": get_llm_prompt('agent')},
+                {"role":'user', 'content': user_prompt or get_llm_prompt("user")}
+                ],
+            response_format=InfoModel)
+
+        self.original_response = result.choices[0].message.content
+
+        message = result.choices[0].message
+        if message.parsed:
+            self.response = message.parsed.model_dump()
+        else:
+            self.response = message.refusal
+
+        return self.response
+
     def submit_paper(self, filepath: str = None, bibcode: str = None, index: int = None) -> dict | str:
         """Submit a paper to the OpenAI LLM model
 
@@ -390,10 +451,14 @@ class OpenAIHelper:
             self.user_prompt = self.populate_user_template(self.paper)
 
             # send the prompt
-            response = self.send_message(user_prompt=self.user_prompt)
-            self.response_classes = convert_to_classification(
-                output=response, bibcode=self.bibcode, threshold=config.llms.performance.threshold
-            )
+            if self.structured or config.llms.openai.model in ['gpt-4o-mini-2024-07-18', 'gpt-4o-2024-08-06']:
+                # automatically use the structured response if we're using the right models
+                logger.info("Using structured response.")
+                response = self.send_structured_message(user_prompt=self.user_prompt)
+            else:
+                # otherwise, use the regular response
+                logger.info("Using unstructured response.")
+                response = self.send_message(user_prompt=self.user_prompt)
 
         return response
 
@@ -434,7 +499,7 @@ def extract_response(value: str) -> dict:
         the extracted JSON content
     """
     # extract the json content
-    response = re.search(r"```json\n(.*?)\n```", value.replace(" ", ""), re.DOTALL)
+    response = re.search(r"```json\n(.*?)\n```", value, re.DOTALL)
 
     if response:
         response = response.group(1)
@@ -490,6 +555,7 @@ def classify_paper(
     n_runs: int = 1,
     use_assistant: bool = None,
     verbose: bool = None,
+    structured: bool = True
 ):
     """Send a prompt to an OpenAI LLM model to classify a paper
 
@@ -507,8 +573,10 @@ def classify_paper(
         Flag to use the OpenAI file-search Assistant or not, by default None
     verbose : bool, optional
         Flag to turn on verbose logging, by default None
+    structured : bool, optional
+        Flag to use structured response, by default True
     """
-    oa = OpenAIHelper(use_assistant=use_assistant, verbose=verbose)
+    oa = OpenAIHelper(use_assistant=use_assistant, verbose=verbose, structured=structured)
 
     # iterate for number of runs
     for i in range(n_runs):

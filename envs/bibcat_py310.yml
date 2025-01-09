@@ -25,3 +25,4 @@ dependencies:
     - pytest-mock>=3.14.0
     - ruff==0.8.2
     - pre-commit==4.0.1
+    - pydantic>= 2.5.0

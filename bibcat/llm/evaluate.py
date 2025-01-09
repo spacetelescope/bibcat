@@ -59,6 +59,10 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     # filter out any cases where the llm returns an error
     response = [i for i in response if "error" not in i.keys()]
 
+    # response is structured as:
+    # - notes: str
+    # - missions: [{mission: str, papertype: str, confidence: list[float], reason: str, quotes: list[str]}]
+
     # exit if no bibcode found in output
     if not response:
         logger.info(f"No output found for {bibcode}")
@@ -69,16 +73,17 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     logger.info(f"Evaluating output for {bibcode}")
     logger.info(f"Number of runs: {n_runs}")
 
-    # convert output to a dataframe (v[1] is a list of two confidences)
-    df = pd.DataFrame(
-        [(k, v[0], v[1]) for i in response for k, v in i.items()],
-        columns=["mission", "papertype", "llm_confidences"],
-    )
+    # convert output to a dataframe
+    df = pd.DataFrame([j | {'notes': i['notes']} for i in response for j in i['missions']])
+    df = df.rename(columns={'confidence': 'llm_confidences'})
     df = df.sort_values("mission").reset_index(drop=True)
 
     # group by mission and paper type,
     grouped_df = group_by_mission_papertype(df)
     grouped_df["n_runs"] = n_runs
+
+    # weight and normalize the confidence values
+    grouped_df = apply_weightings(grouped_df)
 
     # get the human paper classifications
     human_classes = get_human_classification(paper)
@@ -148,6 +153,43 @@ def group_by_mission_papertype(df: pd.DataFrame):
     return grouped_df
 
 
+def apply_weightings(grouped_df: pd.DataFrame) -> pd.DataFrame:
+    """ Apply weightings to the mean LLM confidence values
+
+    Frequency-weights the mean LLM confidence values by the number of occurrences
+    in the mission + papertype group, and stores as "weighted_confs".  Normalizes
+    the weighted confidence values by the total sum of weighted confidences, and
+    the sum of weighted confidences per papertype category, stored as "normalized_total_confs"
+    and "normalized_percat_confs" respectively.
+
+    Parameters
+    ----------
+    grouped_df : pd.DataFrame
+        the input grouped dataframe
+
+    Returns
+    -------
+    pd.DataFrame
+        the output grouped dataframe
+    """
+    # weight the mean confidences by the frequency of occurrence
+    # these represent a combined measure of frequency and confidence across multiple independent trials and categories
+    grouped_df['weighted_confs'] = grouped_df.apply(lambda df:
+        (df['mean_llm_confidences'] * (df['count'] / df['n_runs'])).round(3), axis=1)
+
+    # normalize by the total sum of weighted confidences
+    # for comparisons of mission+papertype across all combinations - single reference frame
+    val = grouped_df['weighted_confs'].sum().sum()
+    grouped_df['normalized_total_confs'] = grouped_df['weighted_confs'].apply(lambda x: (x/val).round(3))
+
+    # normalize by the per-category sum of weighted confidences
+    # for comparisons of which mission is dominant within a papertype category - per category reference frames
+    val = grouped_df['weighted_confs'].sum()
+    grouped_df['normalized_percat_confs'] = grouped_df['weighted_confs'].apply(lambda x: (x/val).round(3))
+
+    return grouped_df
+
+
 def get_human_classification(paper: dict | str):
     """Get human's mission and paper types
 
@@ -200,14 +242,10 @@ def compute_consistency(paper: dict | str, grouped_df: pd.DataFrame, human_class
     missing_by_llm = set(human_classes) - set(grouped_df["llm_mission"])
 
     # check if missions are in the paper text body
-
-    text = " ".join(paper["title"]) + " ".join(paper["abstract"]) + " ".join(paper["body"])
+    text = f"{paper['title']}; {paper['abstract']}; {paper['body']}"
     in_text = identify_missions_in_text(grouped_df["llm_mission"], text)
     grouped_df["mission_in_text"] = in_text
-    # in_text = identify_missions_in_text(
-    #     grouped_df["llm_mission"], " ".join(paper["title"]) + " ".join(paper["abstract"]) + " ".join(paper["body"])
-    # )
-    # grouped_df["mission_in_text"] = in_text
+
     return missing_by_human, missing_by_llm
 
 
@@ -271,19 +309,19 @@ def prepare_output(
         dictionary of paper, missions, and papertypes, pandas dataframe of llm assessment, and other
 
     """
-    # pass its llm's classification if the maximum confindence value is higher than the threshold
+    # pass its llm's classification if the maximum weighted-confidence value is higher than the threshold
     # the maximum value is used because the papertype's confidence is aligned with the maximum value
     llm = [
         {i["llm_mission"]: i["llm_papertype"]}
         for i in grouped_df.to_dict(orient="records")
-        if max(i["mean_llm_confidences"]) >= threshold
+        if max(i["weighted_confs"]) >= threshold
     ]
 
     # human inspection list for ambiguous classification
     inspection_missions = [
         {i["llm_mission"]: i["llm_papertype"]}
         for i in grouped_df.to_dict(orient="records")
-        if max(i["mean_llm_confidences"]) >= inspection and max(i["mean_llm_confidences"]) < threshold
+        if max(i["weighted_confs"]) >= inspection and max(i["weighted_confs"]) < threshold
     ]
 
     output = {
