@@ -51,13 +51,14 @@ test = [
 ]
 docs = [
     "sphinx",
+    "sphinx-astropy",
     "sphinx-automodapi",
     "tomli; python_version <\"3.10\"",
 ]
 
 [tool.ruff]
-lint.select = ["E4", "E7", "E9", "F", "I", "PL", "C901", "RUF010", "W291"]
-lint.ignore = ["PLR", "PLC0206"]  # Ignore specific Pylint refactor messages
+select = ["E4", "E7", "E9", "F", "I", "PL", "C901", "RUF010", "W291"]
+ignore = ["PLR", "PLC0206"]  # Ignore specific Pylint refactor messages
 line-length = 120
 target-version = "py310"
 

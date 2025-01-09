@@ -36,7 +36,7 @@ from bibcat import parameters as params
 from bibcat.core import operator, performance
 from bibcat.core.classifiers import ml
 from bibcat.core.classifiers.textdata import ClassifierBase
-from bibcat.fetch_papers import fetch_papers
+from bibcat.pretrained.fetch_papers import fetch_papers
 
 
 def evaluate_basic_performance(classifier_name: str = "ML") -> None:
@@ -80,7 +80,6 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
     # initialize classifiers
     # Machine-Learning Classifier
     classifier_ML = ml.MachineLearningClassifier(verbose=True, load=True)
-
     # CLI option
     if classifier_name == "ML":
         classifier = classifier_ML
@@ -130,7 +129,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
         operators=[op],
         dicts_texts=[dict_texts],
         mappers=[params.map_papertypes],
-        threshold_arrays=[np.linspace(*config.textprocessing.threshold_array)],
+        threshold_arrays=[np.linspace(*config.performance.threshold_array)],
         buffers=[config.textprocessing.buffer],
         is_text_processed=is_text_processed,
         filepath_output=dir_output,

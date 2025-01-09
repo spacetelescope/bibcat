@@ -197,6 +197,13 @@ class Operator(Base):
         -------
         dict[str, Any] | Any
             the classification results
+            - modif (str): the modified text
+            - modif_none (str): the unmodified text
+            - verdict (str): the classification.
+            - scores_comb (str|Any): the final score.
+            - scores_indiv (str|Any): the individual scores.
+            - uncertainty (dict[str, float]|None): the uncertainty of the classifications, e.g., "science", "mention"
+
         """
 
         modif_none = None
@@ -343,8 +350,8 @@ class Operator(Base):
     ) -> dict:
         """Process text into modifs
 
-        Processes the text using the Grammar and Paper classes into modifs.  A "modif" is a modified version of the text
-        that has been processed to identify and remove references to the target keyword mission, i.e. ambiguates the text.
+        Processes the text using the Grammar and Paper classes into modifs and forest.  A "modif" is a modified version of the text
+        that has been processed to identify and remove references to the target keyword mission, i.e. ambiguates the text. A "modif_none" is a unmodified version of the text. "forest" contains a dictionary, which stores some determined 'grammar' data about a given text. For example, "forest" stores verbs that are identified in a sentence, the identified clauses of a sentence, the assigned noun chunks of a sentence, and so on. The “forest” dictionary is optionally used for some of the optional text trimming methods of bibcat - for example, if the user wants to remove adjectives from a sentence, which are often not relevant for classification. Ultimately, the goal was to reduce how much "noise" (e.g., irrelevant text) was fed into one of the trained classifiers for classification.
 
         Parameters
         ----------
@@ -361,8 +368,14 @@ class Operator(Base):
 
         Returns
         -------
-        dict
-            the output modif and forest (internal text processing output)
+        dict: the output modif and forest (internal text processing output)
+            A dictionary containing the following keys:
+            - modif (str): the modified paragraphs
+            - modif_none (str): the unmodifed paragraphs
+            - forest (str): a dictionary, which stores some determined ‘grammar’ data about a given text.
+
+
+
         """
 
         if self.verbose:
