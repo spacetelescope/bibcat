@@ -335,8 +335,8 @@ Definitions of the output columns from the evaluation.
 - **threshold_inspection**: The threshold value to require human inspection
 - **llm**: llm's classification whose confidence value is higher than or equal to the threshold value. Each entry is organized as:
   - "mission": "papertype" (the mission and papertype classification)
-  - **confidence**: the list of final LLM confidences values of for [science, mention] papertype classification
-  - **probability**: the probability of the specified mission is relevant to the paper
+  - **confidence**: the list of final LLM confidences values for [science, mention] papertype classification
+  - **probability**: the probability that the specified mission is relevant to the paper
 - **inspection**: The list of missions/papertypes for human inspection due to the edge-case confidence values (e.g, 0.5)
 - **missing_by_human**: The set of missing missions by human classification
 - **missing_by_llm**: The set of missing missions by llm classification
