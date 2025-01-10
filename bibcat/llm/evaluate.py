@@ -74,8 +74,8 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     logger.info(f"Number of runs: {n_runs}")
 
     # convert output to a dataframe
-    df = pd.DataFrame([j | {'notes': i['notes']} for i in response for j in i['missions']])
-    df = df.rename(columns={'confidence': 'llm_confidences'})
+    df = pd.DataFrame([j | {"notes": i["notes"]} for i in response for j in i["missions"]])
+    df = df.rename(columns={"confidence": "llm_confidences"})
     df = df.sort_values("mission").reset_index(drop=True)
 
     # group by mission and paper type,
@@ -84,8 +84,9 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
 
     # weight the mean confidences by the frequency of occurrence
     # these represent a combined measure of frequency and confidence across multiple independent trials and categories
-    grouped_df['weighted_confs'] = grouped_df.apply(lambda df:
-        (df['mean_llm_confidences'] * (df['count'] / df['n_runs'])).round(3), axis=1)
+    grouped_df["weighted_confs"] = grouped_df.apply(
+        lambda df: (df["mean_llm_confidences"] * (df["count"] / df["n_runs"])).round(3), axis=1
+    )
 
     # group by mission and compute final probabilities and confidences
     mission_group = group_by_mission(grouped_df)
@@ -148,8 +149,8 @@ def group_by_mission_papertype(df: pd.DataFrame):
         df.fillna(0)
         .groupby(["mission", "papertype"])
         .agg(
-            mean_llm_confidences=("llm_confidences", lambda x: np.round(np.mean(np.stack(x), axis=0), 2)),
-            std_llm_confidences=("llm_confidences", lambda x: np.round(np.std(np.stack(x), axis=0), 2)),
+            mean_llm_confidences=("llm_confidences", lambda x: np.round(np.mean(np.stack(x), axis=0), 3)),
+            std_llm_confidences=("llm_confidences", lambda x: np.round(np.std(np.stack(x), axis=0), 3)),
             count=("mission", "size"),
         )
         .reset_index()
@@ -160,7 +161,7 @@ def group_by_mission_papertype(df: pd.DataFrame):
 
 
 def group_by_mission(grouped_df: pd.DataFrame) -> pd.DataFrame:
-    """ Groups the dataframe by mission
+    """Groups the dataframe by mission
 
     Groups the dataframe by mission and compute final confidence values and probabilities.
     Important relevant columns are the "prob_mission" and "total_weighted_conf" columns.
@@ -178,14 +179,14 @@ def group_by_mission(grouped_df: pd.DataFrame) -> pd.DataFrame:
     """
 
     # group by each mission and compute the total confidence values by mission
-    df = (grouped_df.groupby('llm_mission', as_index=False)
-        .agg(total_mission_conf=('weighted_confs',lambda x: x.sum().sum()),
-             total_weighted_conf=('weighted_confs',lambda x: x.sum()))
-        )
+    df = grouped_df.groupby("llm_mission", as_index=False).agg(
+        total_mission_conf=("weighted_confs", lambda x: x.sum().sum()),
+        total_weighted_conf=("weighted_confs", lambda x: x.sum()),
+    )
 
     # compute columns for the probability of mission and within each mission, probability of each papertype
-    df['prob_mission'] = df['total_mission_conf'].apply(lambda x: (x/df['total_mission_conf'].sum()).round(2))
-    df['prob_papertype'] = df.apply(lambda x: x['total_weighted_conf']/x['total_mission_conf'], axis=1)
+    df["prob_mission"] = df["total_mission_conf"].apply(lambda x: (x / df["total_mission_conf"].sum()).round(2))
+    df["prob_papertype"] = df.apply(lambda x: x["total_weighted_conf"] / x["total_mission_conf"], axis=1)
     return df
 
 
@@ -317,20 +318,22 @@ def prepare_output(
     # pass its llm's classification if the maximum weighted-confidence value is higher than the threshold
     # the maximum value is used because the papertype's confidence is aligned with the maximum value
     llm = [
-        {i["llm_mission"]: i["llm_papertype"],
-         'confidence': mm.loc[i["llm_mission"]]["total_weighted_conf"].tolist(),
-         'mission_probability': mm.loc[i["llm_mission"]]["prob_mission"]
-         }
+        {
+            i["llm_mission"]: i["llm_papertype"],
+            "confidence": mm.loc[i["llm_mission"]]["total_weighted_conf"].tolist(),
+            "mission_probability": mm.loc[i["llm_mission"]]["prob_mission"],
+        }
         for i in grouped_df.to_dict(orient="records")
         if max(i["weighted_confs"]) >= threshold
     ]
 
     # human inspection list for ambiguous classification
     inspection_missions = [
-        {i["llm_mission"]: i["llm_papertype"],
-         'confidence': mm.loc[i["llm_mission"]]["total_weighted_conf"].tolist(),
-         'mission_probability': mm.loc[i["llm_mission"]]["prob_mission"]
-         }
+        {
+            i["llm_mission"]: i["llm_papertype"],
+            "confidence": mm.loc[i["llm_mission"]]["total_weighted_conf"].tolist(),
+            "mission_probability": mm.loc[i["llm_mission"]]["prob_mission"],
+        }
         for i in grouped_df.to_dict(orient="records")
         if max(i["weighted_confs"]) >= inspection and max(i["weighted_confs"]) < threshold
     ]
@@ -346,7 +349,7 @@ def prepare_output(
             "missing_by_llm": list(missing_by_llm),
             "hallucinated_missions": list(set(hallucinated_missions)),
             "df": grouped_df.to_dict(orient="records"),
-            "mission_conf": mission_df.to_dict(orient='records')
+            "mission_conf": mission_df.to_dict(orient="records"),
         }
     }
 
