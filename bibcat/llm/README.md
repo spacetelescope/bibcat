@@ -333,13 +333,16 @@ Definitions of the output columns from the evaluation.
 - **human**: Human classifications
 - **threshold_acceptance**: The threshold value to accept the llm's classifications
 - **threshold_inspection**: The threshold value to require human inspection
-- **llm**: llm's classification whose confidence value is higher than or equal to the threshold value
+- **llm**: llm's classification whose confidence value is higher than or equal to the threshold value. Each entry is organized as:
+  - "mission": "papertype" (the mission and papertype classification)
+  - **confidence**: the list of final LLM confidences values of for [science, mention] papertype classification
+  - **probability**: the probability of the specified mission is relevant to the paper
 - **inspection**: The list of missions/papertypes for human inspection due to the edge-case confidence values (e.g, 0.5)
 - **missing_by_human**: The set of missing missions by human classification
 - **missing_by_llm**: The set of missing missions by llm classification
 - **hallucinated_missions**: The list of missions hallucinated by llm
 
-#### Each mission/papertype DataFrame output
+#### Each mission/papertype DataFrame output, as "df"
 - **llm_mission**: The mission from the LLM output
 - **mean_llm_confidence**: The list of the mean confidence values of SCIENCE and MENTION across all trial runs, for each mission + papertype combination. Conditional probabilities. Sum to 1.
 - **std_llm_confidence**: The standard deviation of the confidence values of SCIENCE and MENTION  across all trial runs
@@ -351,6 +354,143 @@ Definitions of the output columns from the evaluation.
 - **in_human_class**: Flag whether or not the mission + papertype was included in the set of human classifications
 - **mission_in_text**: Flag whether or not the mission keyword is in the source paper text
 - **hallucination_by_llm**: Flag whether or not the mission keyword is hallucinated by LLM
+
+#### Output Statistics by each mission, as "mission_conf"
+- **llm_mission**: The mission from the LLM output
+- **total_mission_conf**: The total confidence value for the given mission.  Sum of all weighted [science, mention] conf values.
+- **total_weighted_conf**: The total weighted confidence values for the given mission, by [science, mention]
+- **prob_mission**: The probability the input mission is relevant to the paper, i.e. "overall mission confidence"
+- **prop_papertype**: Within each mission, the probability the mission is a science vs mention papertype
+
+### Example Output
+
+An example output file would look like:
+```json
+{
+  "2022Sci...377.1211L": {
+    "human": {
+      "TESS": "SCIENCE"
+    },
+    "threshold_acceptance": 0.7,
+    "threshold_inspection": 0.5,
+    "llm": [
+      {
+        "TESS": "SCIENCE",
+        "confidence": [
+          0.809,
+          0.191
+        ],
+        "probability": 0.98
+      }
+    ],
+    "inspection": [],
+    "missing_by_human": [
+      "HST"
+    ],
+    "missing_by_llm": [],
+    "hallucinated_missions": [
+      "HST"
+    ],
+    "df": [
+      {
+        "llm_mission": "HST",
+        "llm_papertype": "SCIENCE",
+        "mean_llm_confidences": [
+          0.8,
+          0.2
+        ],
+        "std_llm_confidences": [
+          0.0,
+          0.0
+        ],
+        "count": 1,
+        "n_runs": 50,
+        "weighted_confs": [
+          0.016,
+          0.004
+        ],
+        "consistency": 0.0,
+        "in_human_class": false,
+        "mission_in_text": false,
+        "hallucination_by_llm": true
+      },
+      {
+        "llm_mission": "TESS",
+        "llm_papertype": "MENTION",
+        "mean_llm_confidences": [
+          0.23,
+          0.78
+        ],
+        "std_llm_confidences": [
+          0.11,
+          0.11
+        ],
+        "count": 4,
+        "n_runs": 50,
+        "weighted_confs": [
+          0.018,
+          0.062
+        ],
+        "consistency": 0.0,
+        "in_human_class": false,
+        "mission_in_text": true,
+        "hallucination_by_llm": false
+      },
+      {
+        "llm_mission": "TESS",
+        "llm_papertype": "SCIENCE",
+        "mean_llm_confidences": [
+          0.86,
+          0.14
+        ],
+        "std_llm_confidences": [
+          0.05,
+          0.05
+        ],
+        "count": 46,
+        "n_runs": 50,
+        "weighted_confs": [
+          0.791,
+          0.129
+        ],
+        "consistency": 92.0,
+        "in_human_class": true,
+        "mission_in_text": true,
+        "hallucination_by_llm": false
+      }
+    ],
+    "mission_conf": [
+      {
+        "llm_mission": "HST",
+        "total_mission_conf": 0.02,
+        "total_weighted_conf": [
+          0.016,
+          0.004
+        ],
+        "prob_mission": 0.02,
+        "prob_papertype": [
+          0.8,
+          0.2
+        ]
+      },
+      {
+        "llm_mission": "TESS",
+        "total_mission_conf": 1.0,
+        "total_weighted_conf": [
+          0.809,
+          0.191
+        ],
+        "prob_mission": 0.98,
+        "prob_papertype": [
+          0.809,
+          0.191
+        ]
+      }
+    ]
+  }
+}
+```
+
 
 ### Batch Evaluation
 

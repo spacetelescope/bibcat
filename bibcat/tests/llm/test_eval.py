@@ -111,12 +111,12 @@ def test_group_by_mission(mocker):
     assert mm.iloc[0]['llm_mission'] == 'JWST'
     assert mm.iloc[0]['total_mission_conf'] == 0.5
     assert mm.iloc[0]['total_weighted_conf'].tolist() == [0.25, 0.25]
-    assert mm.iloc[0]['prob_mission'] == 0.33
+    assert mm.iloc[0]['prob_mission'] == 0.333
     assert mm.iloc[0]['prob_papertype'].tolist() == [0.5, 0.5]
 
     # TESS
     assert mm.iloc[1]['llm_mission'] == 'TESS'
     assert mm.iloc[1]['total_mission_conf'] == 1.0
     assert mm.iloc[1]['total_weighted_conf'].tolist() == [0.8, 0.2]
-    assert mm.iloc[1]['prob_mission'] == 0.67
+    assert mm.iloc[1]['prob_mission'] == 0.667
     assert mm.iloc[1]['prob_papertype'].tolist() == [0.8, 0.2]

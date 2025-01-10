@@ -185,7 +185,7 @@ def group_by_mission(grouped_df: pd.DataFrame) -> pd.DataFrame:
     )
 
     # compute columns for the probability of mission and within each mission, probability of each papertype
-    df["prob_mission"] = df["total_mission_conf"].apply(lambda x: (x / df["total_mission_conf"].sum()).round(2))
+    df["prob_mission"] = df["total_mission_conf"].apply(lambda x: (x / df["total_mission_conf"].sum()).round(3))
     df["prob_papertype"] = df.apply(lambda x: x["total_weighted_conf"] / x["total_mission_conf"], axis=1)
     return df
 
