@@ -10,8 +10,6 @@ There are two main branches for bibcat work:
 
 ## Installation
 ### Required packages and versions
-- tensorflow-macos 2.15.0
-- tensorflow-metal 1.1.0
 - tensorflow 2.15.0
 - tensorflow-hub 0.16.1
 - tensorflow-text 2.15.0
@@ -28,12 +26,12 @@ conda activate env_name
 python -m spacy download en_core_web_sm
 ```
 #### Extra required pacakge for Apple M1/M2/M3 chip
-For Apple Silicon chips, to utilize your GPU, you should install `tensorflow-metal`.
+For Apple Silicon chips, to utilize your GPU, you should install `tensorflow-macos` and `tensorflow-metal`.
 ```
-pip install tensorflow-metal
+pip install tensorflow-macos tensorflow-metal
 ```
  To verify if tensorflow is set up to utilize your GPU, do the following:
-```
+```python
 import tensorflow as tf
 tf.config.list_physical_devices('GPU')
 ```

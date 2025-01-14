@@ -11,8 +11,6 @@ dependencies:
     - click==8.1.7
     - nltk=3.8.1
     - spacy==3.7.2
-    - tensorflow-macos==2.15.1
-    - tensorflow-metal==1.1.0
     - tensorflow==2.15.0
     - tensorflow-hub==0.16.1
     - deepmerge==1.1.1
