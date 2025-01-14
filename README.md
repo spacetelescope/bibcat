@@ -119,6 +119,7 @@ Sphinx will create the documentation automatically using the module docstrings. 
 cd docs
 make html
 ```
+Then navigate to `docs/_build/html` and open `index.html` on your browser to see the built documentation.
 
 ## Quick start
 
