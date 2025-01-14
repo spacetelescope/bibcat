@@ -1,0 +1,399 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat.llm.io &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">BibCat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bibcat.llm.io</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bibcat.llm.io</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.data.streamline_dataset</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_source_dataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.utils.logger_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.utils.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">NumpyEncoder</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_source">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.io.get_source">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_source</span><span class="p">(</span><span class="n">bibcode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">body_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the source dataset for a given bibcode or index.</span>
+
+<span class="sd">    Retrieve the entry from the combined source dataset for a given bibcode or list index.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    bibcode : str, optional</span>
+<span class="sd">        the paper bibcode to retrieve, by default None</span>
+<span class="sd">    index : int, optional</span>
+<span class="sd">        the list item index to retrieve, by default None</span>
+<span class="sd">    body_only : bool, optional</span>
+<span class="sd">        Flag to only return the text body, by default False</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict | str</span>
+<span class="sd">        a row from the source dataset</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># load the source dataset</span>
+    <span class="n">source_dataset</span> <span class="o">=</span> <span class="n">load_source_dataset</span><span class="p">(</span><span class="n">do_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">n_sources</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">source_dataset</span><span class="p">)</span>
+
+    <span class="n">text</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">bibcode</span><span class="p">:</span>
+        <span class="c1"># get the source by bibcode</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">source_dataset</span> <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;bibcode&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">bibcode</span><span class="p">]</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">res</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">res</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Requested bibcode not found in source datasets.&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="c1"># get the source by index</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">source_dataset</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="n">n_sources</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;</span> <span class="n">n_sources</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Requested index is out of range of the number of source datasets.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">text</span><span class="p">[</span><span class="s2">&quot;body&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">text</span> <span class="ow">and</span> <span class="n">body_only</span> <span class="k">else</span> <span class="n">text</span></div>
+
+
+
+<div class="viewcode-block" id="get_file">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.io.get_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_file</span><span class="p">(</span><span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">bibcode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a file path for paper data</span>
+
+<span class="sd">    Get a file path of a paper to upload to an LLM.  If a file path is provided, e.g.</span>
+<span class="sd">    a local pdf file, it is returned.  If a bibcode or index is provided, retrieves the</span>
+<span class="sd">    source dataset and writes it out to a temporary json file.  The name of the temporary file</span>
+<span class="sd">    is &quot;temp_****_[bibcode].json&quot;, prefixed with &quot;temp_&quot; and suffixed with the bibcode of the paper.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filepath : str, optional</span>
+<span class="sd">        a local filepath to a paper, by default None</span>
+<span class="sd">    bibcode : str, optional</span>
+<span class="sd">        the bibcode of a source paper, by default None</span>
+<span class="sd">    index : int, optional</span>
+<span class="sd">        the list index of a source paper, by default None</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        the file path to the paper data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># if a real file, just return it</span>
+    <span class="k">if</span> <span class="n">filepath</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">filepath</span>
+
+    <span class="c1"># if source dataset file, extract and create temporary file</span>
+    <span class="k">if</span> <span class="n">bibcode</span> <span class="ow">or</span> <span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">get_source</span><span class="p">(</span><span class="n">bibcode</span><span class="o">=</span><span class="n">bibcode</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">bc</span> <span class="o">=</span> <span class="n">source</span><span class="p">[</span><span class="s2">&quot;bibcode&quot;</span><span class="p">]</span>
+
+        <span class="c1"># create temporary file</span>
+        <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">delete</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;temp_&quot;</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">bc</span><span class="si">}</span><span class="s2">.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">fp</span><span class="o">.</span><span class="n">name</span></div>
+
+
+
+<div class="viewcode-block" id="get_llm_prompt">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.io.get_llm_prompt">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_llm_prompt</span><span class="p">(</span><span class="n">prompt_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get an LLM prompt</span>
+
+<span class="sd">    Retrieve a user or agent prompt for an LLM from a file or the config. A user prompt</span>
+<span class="sd">    is the text to be used as the input to the LLM, while the agent, or system, prompt is</span>
+<span class="sd">    the text that defines the instructions or behavior of the LLM Agent to follow.  The agent</span>
+<span class="sd">    prompt is only used when creating a new agent for the first time.</span>
+
+<span class="sd">    You can define a custom user or agent prompt as a text file, located at</span>
+<span class="sd">    $BIBCAT_DATA_DIR/llm_[prompt_type]_prompt.txt.  For example, place your custom user prompt</span>
+<span class="sd">    at $BIBCAT_DATA_DIR/llm_user_prompt.txt. This file takes precendence. If no custom prompt file</span>
+<span class="sd">    is found, the default user prompt will come from the config file field: ``llms.user_prompt``.</span>
+
+<span class="sd">    To set an agent prompt, create a file at $BIBCAT_DATA_DIR/llm_agent_prompt.txt, and add your</span>
+<span class="sd">    instructions for the agent.  If no custom agent prompt is found, a default agent prompt will</span>
+<span class="sd">    be used. The default agent prompt will either come from the config file field: ``llms.agent_prompt``</span>
+<span class="sd">    or from the default file at etc/default_agent_prompt.txt.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    prompt_type : str</span>
+<span class="sd">        The type of prompt to retrieve, either &#39;user&#39; or &#39;agent&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    str</span>
+<span class="sd">        the text prompt</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        when an invalid prompt type is provided</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">prompt_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;agent&quot;</span><span class="p">}:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Prompt type must be either &quot;user&quot; or &quot;agent&quot;.&#39;</span><span class="p">)</span>
+
+    <span class="c1"># if a prompt file exists, use it</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">inputs</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;llm_</span><span class="si">{</span><span class="n">prompt_type</span><span class="si">}</span><span class="s2">_base&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;llm_</span><span class="si">{</span><span class="n">prompt_type</span><span class="si">}</span><span class="s2">_prompt&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">prompt</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">prompt</span>
+
+    <span class="c1"># otherwise, use the config user prompt and default agent prompt</span>
+    <span class="n">prompt</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prompt_type</span><span class="si">}</span><span class="s2">_prompt&quot;</span><span class="p">]</span>
+
+    <span class="c1"># otherise, use the defaults</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">prompt</span><span class="p">:</span>
+        <span class="n">default_prompt</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;etc/default_</span><span class="si">{</span><span class="n">prompt_type</span><span class="si">}</span><span class="s2">_prompt.txt&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">default_prompt</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">prompt</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">prompt</span></div>
+
+
+
+<div class="viewcode-block" id="write_output">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.io.write_output">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">write_output</span><span class="p">(</span><span class="n">paper_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Write the output response to a file</span>
+
+<span class="sd">    Writes the output json response to a file, located at</span>
+<span class="sd">    $BIBCAT_OUTPUT/output/llms/openai_[config.llms.openai.model]/[config.llms.prompt_output_file]</span>
+
+<span class="sd">    The output JSON file is organized by the filename or bibcode of the input file,</span>
+<span class="sd">    with each prompt response appended in the relevant section.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    paper_key : str</span>
+<span class="sd">        the JSON key to append the response to, e.g. the bibcode or filename</span>
+<span class="sd">    response : dict</span>
+<span class="sd">        the response from the llm agent</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># setup the output file</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">paths</span><span class="o">.</span><span class="n">output</span><span class="p">)</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;llms/openai_</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="o">.</span><span class="n">openai</span><span class="o">.</span><span class="n">model</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="o">.</span><span class="n">prompt_output_file</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># write the content</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">out</span><span class="p">):</span>
+        <span class="c1"># create a new file</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">paper_key</span><span class="p">:</span> <span class="p">[</span><span class="n">response</span><span class="p">]}</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s2">&quot;w+&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># append to an existing file</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="c1"># append response to an existing file entry, or add a new one with a new paper_key or in the OPS mode</span>
+        <span class="k">if</span> <span class="n">paper_key</span> <span class="ow">in</span> <span class="n">data</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="o">.</span><span class="n">ops</span><span class="p">:</span>
+            <span class="c1"># logger.info(f&quot;Appending the new run to {paper_key}&quot;)</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">paper_key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">paper_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">response</span><span class="p">]</span>
+
+        <span class="c1"># write the updated file</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="read_output">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.io.read_output">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_output</span><span class="p">(</span><span class="n">bibcode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read in the output for a given bibcode</span>
+
+<span class="sd">    Returns the content from the output JSON file</span>
+<span class="sd">    for the given bibcode.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    bibcode : str, optional</span>
+<span class="sd">        The paper bibcode, by default None</span>
+<span class="sd">    filename: Path, optional</span>
+<span class="sd">        The prompt output file path</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list</span>
+<span class="sd">        The output data from the LLM response</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># set filename if not present</span>
+    <span class="k">if</span> <span class="n">bibcode</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">filename</span><span class="p">:</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">paths</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+            <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;llms/openai_</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="o">.</span><span class="n">openai</span><span class="o">.</span><span class="n">model</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="o">.</span><span class="n">prompt_output_file</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;reading </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">bibcode</span><span class="p">)</span> <span class="k">if</span> <span class="n">bibcode</span> <span class="k">else</span> <span class="n">data</span></div>
+
+
+
+<div class="viewcode-block" id="write_summary">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.io.write_summary">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">write_summary</span><span class="p">(</span><span class="n">output</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Write the evaluation summary output to a file</span>
+
+<span class="sd">    Write the output summary statistics and info from evaluation into a JSON file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    output : dict</span>
+<span class="sd">        the output summary data</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">filename</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">paths</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+        <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;llms/openai_</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="o">.</span><span class="n">openai</span><span class="o">.</span><span class="n">model</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="o">.</span><span class="n">eval_output_file</span><span class="si">}</span><span class="s2">_t</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="o">.</span><span class="n">performance</span><span class="o">.</span><span class="n">threshold</span><span class="si">}</span><span class="s2">.json&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Writing output to </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># write the content</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+        <span class="c1"># create a new file</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w+&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyEncoder</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># append to an existing file</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="c1"># update response to an existing bibcode, or add a new one</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+
+        <span class="c1"># write the updated file</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyEncoder</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

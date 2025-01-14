@@ -1,0 +1,478 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat.tests.core.test_grammar &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/modules.html">BibCat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bibcat.tests.core.test_grammar</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bibcat.tests.core.test_grammar</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">:title: test_grammar.py</span>
+
+<span class="sd">Testing the Grammar class and its methods.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">unittest</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">parameters</span> <span class="k">as</span> <span class="n">params</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.core.grammar</span><span class="w"> </span><span class="kn">import</span> <span class="n">Grammar</span>
+
+
+<div class="viewcode-block" id="TestGrammar">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_grammar.TestGrammar">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TestGrammar</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+    <span class="c1"># For tests of generating and fetching modifs:</span>
+    <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># Test modif generation for basic example text</span>
+<div class="viewcode-block" id="TestGrammar.test__modifs__basic">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_grammar.TestGrammar.test__modifs__basic">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test__modifs__basic</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_acts</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;The Hubble Space Telescope is a really neat telescope that is often referred to as Hubble or HST. It is a telescope that is used across the world. The HST legacy archive is a rich treasure chest of ultraviolet observations used across the world.&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;kobj&quot;</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span><span class="p">,</span>
+                    <span class="s2">&quot;none&quot;</span><span class="p">:</span> <span class="s2">&quot;The Hubble Space Telescope is a really neat telescope that is often referred to as Hubble or HST.</span><span class="se">\n</span><span class="s2">The HST legacy archive is a rich treasure chest of ultraviolet observations used across the world.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;skim&quot;</span><span class="p">:</span> <span class="s2">&quot;The Hubble Space Telescope is a telescope that is referred to as Hubble or HST.</span><span class="se">\n</span><span class="s2">The HST legacy archive is a treasure chest of observations used across the world.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;trim&quot;</span><span class="p">:</span> <span class="s2">&quot;The Hubble Space Telescope is a really neat telescope that is often referred to as Hubble or HST.</span><span class="se">\n</span><span class="s2">The HST legacy archive is a rich treasure chest of ultraviolet observations.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;anon&quot;</span><span class="p">:</span> <span class="s2">&quot;The </span><span class="si">{0}</span><span class="s2"> is a really neat telescope that is often referred to as </span><span class="si">{0}</span><span class="s2"> or </span><span class="si">{0}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">The </span><span class="si">{0}</span><span class="s2"> legacy archive is a rich treasure chest of ultraviolet observations used across the world.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">placeholder_anon</span>
+                    <span class="p">),</span>
+                    <span class="s2">&quot;skim_trim_anon&quot;</span><span class="p">:</span> <span class="s2">&quot;The </span><span class="si">{0}</span><span class="s2"> is a telescope that is referred to as </span><span class="si">{0}</span><span class="s2"> or </span><span class="si">{0}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">The </span><span class="si">{0}</span><span class="s2"> legacy archive is a treasure chest of observations.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">placeholder_anon</span>
+                    <span class="p">),</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Determine and check answers</span>
+            <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">dict_acts</span><span class="p">:</span>
+                <span class="c1"># curr_kobj = dict_acts[phrase][&quot;kobj&quot;]</span>
+
+                <span class="c1"># Prepare and run test for bibcat class instance</span>
+                <span class="n">testbase</span> <span class="o">=</span> <span class="n">Grammar</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">phrase</span><span class="p">,</span> <span class="n">keyword_obj</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span><span class="p">,</span> <span class="n">do_check_truematch</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">testbase</span><span class="o">.</span><span class="n">run_modifications</span><span class="p">(</span><span class="n">which_modes</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">which_modes</span><span class="p">)</span>
+                <span class="c1"># Iterate through modes</span>
+                <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">phrase</span><span class="p">]:</span>
+                    <span class="c1"># Skip over non-mode keys</span>
+                    <span class="k">if</span> <span class="n">key1</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;kobj&quot;</span><span class="p">]:</span>
+                        <span class="k">continue</span>
+                    <span class="c1"># Otherwise, check generated modif</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">get_modifs</span><span class="p">()[</span><span class="s2">&quot;modifs&quot;</span><span class="p">][</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">curr_answer</span> <span class="o">=</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">phrase</span><span class="p">][</span><span class="n">key1</span><span class="p">]</span>
+
+                    <span class="c1"># Check answer</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span>
+                            <span class="p">(</span><span class="s2">&quot;Text: </span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Mode: </span><span class="si">{3}</span><span class="se">\n\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                <span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">,</span> <span class="n">phrase</span><span class="p">,</span> <span class="n">key1</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                        <span class="c1">#</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">)</span></div>
+
+                    <span class="c1">#</span>
+                <span class="c1">#</span>
+            <span class="c1">#</span>
+
+        <span class="c1">#</span>
+        <span class="c1"># Test modif generation for example text with many clauses</span>
+<div class="viewcode-block" id="TestGrammar.test__modifs__manyclauses">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_grammar.TestGrammar.test__modifs__manyclauses">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test__modifs__manyclauses</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_acts</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;Once the transit is observable, we will observe the target in a timely fashion without delay and at high resolution using either JWST or Hubble.&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;kobj&quot;</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span><span class="p">,</span>
+                    <span class="s2">&quot;none&quot;</span><span class="p">:</span> <span class="s2">&quot;Once the transit is observable, we will observe the target in a timely fashion without delay and at high resolution using either JWST or Hubble.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;skim&quot;</span><span class="p">:</span> <span class="s2">&quot;Once the transit is observable, we will observe the target in a fashion without delay and at resolution using either JWST or Hubble.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;trim&quot;</span><span class="p">:</span> <span class="s2">&quot;we will observe the target in a timely fashion without delay and at high resolution using either JWST or Hubble.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;anon&quot;</span><span class="p">:</span> <span class="s2">&quot;Once the transit is observable, we will observe the target in a timely fashion without delay and at high resolution using either JWST or </span><span class="si">{0}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">placeholder_anon</span>
+                    <span class="p">),</span>
+                    <span class="s2">&quot;skim_trim_anon&quot;</span><span class="p">:</span> <span class="s2">&quot;we will observe the target in a fashion without delay and at resolution using either JWST or </span><span class="si">{0}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">placeholder_anon</span>
+                    <span class="p">),</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Determine and check answers</span>
+            <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">dict_acts</span><span class="p">:</span>
+                <span class="c1"># curr_kobj = dict_acts[phrase][&quot;kobj&quot;]</span>
+
+                <span class="c1"># Prepare and run test for bibcat class instance</span>
+                <span class="n">testbase</span> <span class="o">=</span> <span class="n">Grammar</span><span class="p">(</span>
+                    <span class="n">text</span><span class="o">=</span><span class="n">phrase</span><span class="p">,</span> <span class="n">keyword_obj</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span><span class="p">,</span> <span class="n">do_check_truematch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">do_verbose</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+                <span class="n">testbase</span><span class="o">.</span><span class="n">run_modifications</span><span class="p">(</span><span class="n">which_modes</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">which_modes</span><span class="p">)</span>
+                <span class="c1"># Iterate through modes</span>
+                <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">phrase</span><span class="p">]:</span>
+                    <span class="c1"># Skip over non-mode keys</span>
+                    <span class="k">if</span> <span class="n">key1</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;kobj&quot;</span><span class="p">]:</span>
+                        <span class="k">continue</span>
+                    <span class="c1"># Otherwise, check generated modif</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">get_modifs</span><span class="p">()[</span><span class="s2">&quot;modifs&quot;</span><span class="p">][</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">curr_answer</span> <span class="o">=</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">phrase</span><span class="p">][</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="c1">#</span>
+
+                    <span class="c1"># Check answer</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span>
+                            <span class="p">(</span><span class="s2">&quot;Text: </span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Mode: </span><span class="si">{3}</span><span class="se">\n\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                <span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">,</span> <span class="n">phrase</span><span class="p">,</span> <span class="n">key1</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                        <span class="c1">#</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">)</span></div>
+
+
+        <span class="c1"># Test modif generation for example text with clause with mission information</span>
+<div class="viewcode-block" id="TestGrammar.test__modifs__importantclause_mission">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_grammar.TestGrammar.test__modifs__importantclause_mission">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test__modifs__importantclause_mission</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_acts</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the HST observations, we are unable to even tentatively detect those same targets in the snapshots taken with the Cool Telescope.&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;kobj&quot;</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span><span class="p">,</span>
+                    <span class="s2">&quot;none&quot;</span><span class="p">:</span> <span class="s2">&quot;While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the HST observations, we are unable to even tentatively detect those same targets in the snapshots taken with the Cool Telescope.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;skim&quot;</span><span class="p">:</span> <span class="s2">&quot;While we are able to detect (above 5sigma) the three stars within the mosaic created by the HST observations, we are unable to detect those targets in the snapshots taken with the Cool Telescope.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;trim&quot;</span><span class="p">:</span> <span class="s2">&quot;While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the HST observations, we are unable to even tentatively detect those same targets in the snapshots.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;anon&quot;</span><span class="p">:</span> <span class="s2">&quot;While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the </span><span class="si">{0}</span><span class="s2"> observations, we are unable to even tentatively detect those same targets in the snapshots taken with the Cool Telescope.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">placeholder_anon</span>
+                    <span class="p">),</span>
+                    <span class="s2">&quot;skim_trim_anon&quot;</span><span class="p">:</span> <span class="s2">&quot;While we are able to detect (above 5sigma) the three stars within the mosaic created by the </span><span class="si">{0}</span><span class="s2"> observations, we are unable to detect those targets in the snapshots.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">placeholder_anon</span>
+                    <span class="p">),</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Determine and check answers</span>
+            <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">dict_acts</span><span class="p">:</span>
+                <span class="c1"># curr_kobj = dict_acts[phrase][&quot;kobj&quot;]</span>
+
+                <span class="c1"># Prepare and run test for bibcat class instance</span>
+                <span class="n">testbase</span> <span class="o">=</span> <span class="n">Grammar</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">phrase</span><span class="p">,</span> <span class="n">keyword_obj</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span><span class="p">,</span> <span class="n">do_check_truematch</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">testbase</span><span class="o">.</span><span class="n">run_modifications</span><span class="p">(</span><span class="n">which_modes</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">which_modes</span><span class="p">)</span>
+                <span class="c1"># Iterate through modes</span>
+                <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">phrase</span><span class="p">]:</span>
+                    <span class="c1"># Skip over non-mode keys</span>
+                    <span class="k">if</span> <span class="n">key1</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;kobj&quot;</span><span class="p">]:</span>
+                        <span class="k">continue</span>
+                    <span class="c1"># Otherwise, check generated modif</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">get_modifs</span><span class="p">()[</span><span class="s2">&quot;modifs&quot;</span><span class="p">][</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">curr_answer</span> <span class="o">=</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">phrase</span><span class="p">][</span><span class="n">key1</span><span class="p">]</span>
+
+                    <span class="c1"># Check answer</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span>
+                            <span class="p">(</span><span class="s2">&quot;Text: </span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Mode: </span><span class="si">{3}</span><span class="se">\n\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                <span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">,</span> <span class="n">phrase</span><span class="p">,</span> <span class="n">key1</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                        <span class="c1">#</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">)</span></div>
+
+
+        <span class="c1"># Test modif generation for example text with important clause with 1st-person</span>
+<div class="viewcode-block" id="TestGrammar.test__modifs__importantclause_1stperson">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_grammar.TestGrammar.test__modifs__importantclause_1stperson">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test__modifs__importantclause_1stperson</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_acts</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, we are unable to even tentatively detect those same targets in the snapshots taken with the HST.&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;kobj&quot;</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span><span class="p">,</span>
+                    <span class="s2">&quot;none&quot;</span><span class="p">:</span> <span class="s2">&quot;While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, we are unable to even tentatively detect those same targets in the snapshots taken with the HST.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;skim&quot;</span><span class="p">:</span> <span class="s2">&quot;While we are able to detect (above 5sigma) the three stars within the mosaic created by the Cool Telescope observations, we are unable to detect those targets in the snapshots taken with the HST.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;trim&quot;</span><span class="p">:</span> <span class="s2">&quot;While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic, we are unable to even tentatively detect those same targets in the snapshots taken with the HST.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;anon&quot;</span><span class="p">:</span> <span class="s2">&quot;While we are able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, we are unable to even tentatively detect those same targets in the snapshots taken with the </span><span class="si">{0}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">placeholder_anon</span>
+                    <span class="p">),</span>
+                    <span class="s2">&quot;skim_trim_anon&quot;</span><span class="p">:</span> <span class="s2">&quot;While we are able to detect (above 5sigma) the three stars within the mosaic, we are unable to detect those targets in the snapshots taken with the </span><span class="si">{0}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">placeholder_anon</span>
+                    <span class="p">),</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Determine and check answers</span>
+            <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">dict_acts</span><span class="p">:</span>
+                <span class="c1"># curr_kobj = dict_acts[phrase][&quot;kobj&quot;]</span>
+
+                <span class="c1"># Prepare and run test for bibcat class instance</span>
+                <span class="n">testbase</span> <span class="o">=</span> <span class="n">Grammar</span><span class="p">(</span>
+                    <span class="n">text</span><span class="o">=</span><span class="n">phrase</span><span class="p">,</span> <span class="n">keyword_obj</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span><span class="p">,</span> <span class="n">do_check_truematch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">do_verbose</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+                <span class="n">testbase</span><span class="o">.</span><span class="n">run_modifications</span><span class="p">(</span><span class="n">which_modes</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">which_modes</span><span class="p">)</span>
+                <span class="c1"># Iterate through modes</span>
+                <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">phrase</span><span class="p">]:</span>
+                    <span class="c1"># Skip over non-mode keys</span>
+                    <span class="k">if</span> <span class="n">key1</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;kobj&quot;</span><span class="p">]:</span>
+                        <span class="k">continue</span>
+                    <span class="c1"># Otherwise, check generated modif</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">get_modifs</span><span class="p">()[</span><span class="s2">&quot;modifs&quot;</span><span class="p">][</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">curr_answer</span> <span class="o">=</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">phrase</span><span class="p">][</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="c1">#</span>
+
+                    <span class="c1"># Check answer</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span>
+                            <span class="p">(</span><span class="s2">&quot;Text: </span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Mode: </span><span class="si">{3}</span><span class="se">\n\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                <span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">,</span> <span class="n">phrase</span><span class="p">,</span> <span class="n">key1</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                        <span class="c1">#</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">)</span></div>
+
+                    <span class="c1">#</span>
+                <span class="c1">#</span>
+            <span class="c1">#</span>
+
+        <span class="c1">#</span>
+        <span class="c1"># Test modif generation for example text with unimportant clause</span>
+<div class="viewcode-block" id="TestGrammar.test__modifs__unimportantclause">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_grammar.TestGrammar.test__modifs__unimportantclause">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test__modifs__unimportantclause</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_acts</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;While that study was able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, this study was unable to even tentatively detect those same targets in the snapshots taken with the HST.&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;kobj&quot;</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span><span class="p">,</span>
+                    <span class="s2">&quot;none&quot;</span><span class="p">:</span> <span class="s2">&quot;While that study was able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, this study was unable to even tentatively detect those same targets in the snapshots taken with the HST.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;skim&quot;</span><span class="p">:</span> <span class="s2">&quot;While that study was able to detect (above 5sigma) the three stars within the mosaic created by the Cool Telescope observations, this study was unable to detect those targets in the snapshots taken with the HST.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;trim&quot;</span><span class="p">:</span> <span class="s2">&quot;this study was unable to even tentatively detect those same targets in the snapshots taken with the HST.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;anon&quot;</span><span class="p">:</span> <span class="s2">&quot;While that study was able to significantly detect (above 5sigma) the three massive stars within the mosaic created by the Cool Telescope observations, this study was unable to even tentatively detect those same targets in the snapshots taken with the </span><span class="si">{0}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">placeholder_anon</span>
+                    <span class="p">),</span>
+                    <span class="s2">&quot;skim_trim_anon&quot;</span><span class="p">:</span> <span class="s2">&quot;this study was unable to detect those targets in the snapshots taken with the </span><span class="si">{0}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">placeholder_anon</span>
+                    <span class="p">),</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="c1">#</span>
+
+            <span class="c1"># Determine and check answers</span>
+            <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">dict_acts</span><span class="p">:</span>
+                <span class="c1"># curr_kobj = dict_acts[phrase][&quot;kobj&quot;]</span>
+
+                <span class="c1"># Prepare and run test for bibcat class instance</span>
+                <span class="n">testbase</span> <span class="o">=</span> <span class="n">Grammar</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">phrase</span><span class="p">,</span> <span class="n">keyword_obj</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span><span class="p">,</span> <span class="n">do_check_truematch</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">testbase</span><span class="o">.</span><span class="n">run_modifications</span><span class="p">(</span><span class="n">which_modes</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">which_modes</span><span class="p">)</span>
+                <span class="c1"># Iterate through modes</span>
+                <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">phrase</span><span class="p">]:</span>
+                    <span class="c1"># Skip over non-mode keys</span>
+                    <span class="k">if</span> <span class="n">key1</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;kobj&quot;</span><span class="p">]:</span>
+                        <span class="k">continue</span>
+                    <span class="c1"># Otherwise, check generated modif</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">get_modifs</span><span class="p">()[</span><span class="s2">&quot;modifs&quot;</span><span class="p">][</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">curr_answer</span> <span class="o">=</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">phrase</span><span class="p">][</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="c1">#</span>
+
+                    <span class="c1"># Check answer</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span>
+                            <span class="p">(</span><span class="s2">&quot;Text: </span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Mode: </span><span class="si">{3}</span><span class="se">\n\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                <span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">,</span> <span class="n">phrase</span><span class="p">,</span> <span class="n">key1</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                        <span class="c1">#</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">)</span></div>
+
+                    <span class="c1">#</span>
+                <span class="c1">#</span>
+            <span class="c1">#</span>
+
+        <span class="c1">#</span>
+        <span class="c1"># Test modif generation for example text with unimportant conjunction</span>
+<div class="viewcode-block" id="TestGrammar.test__modifs__unimportantconjunction">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_grammar.TestGrammar.test__modifs__unimportantconjunction">[docs]</a>
+        <span class="nd">@unittest</span><span class="o">.</span><span class="n">expectedFailure</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test__modifs__unimportantconjunction</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_acts</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;The red stars are observed with HST and further verified with JWST.&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;kobj&quot;</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span><span class="p">,</span>
+                    <span class="s2">&quot;none&quot;</span><span class="p">:</span> <span class="s2">&quot;The red stars are observed with HST and further verified with JWST.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;skim&quot;</span><span class="p">:</span> <span class="s2">&quot;The stars are observed with HST and verified with JWST.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;trim&quot;</span><span class="p">:</span> <span class="s2">&quot;The red stars are observed with HST.&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;anon&quot;</span><span class="p">:</span> <span class="s2">&quot;The red stars are observed with </span><span class="si">{0}</span><span class="s2"> and further verified with JWST.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">placeholder_anon</span>
+                    <span class="p">),</span>
+                    <span class="s2">&quot;skim_trim_anon&quot;</span><span class="p">:</span> <span class="s2">&quot;The stars are observed with </span><span class="si">{0}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">placeholder_anon</span><span class="p">),</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="c1">#</span>
+
+            <span class="c1"># Determine and check answers</span>
+            <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">dict_acts</span><span class="p">:</span>
+                <span class="c1"># curr_kobj = dict_acts[phrase][&quot;kobj&quot;]</span>
+
+                <span class="c1"># Prepare and run test for bibcat class instance</span>
+                <span class="n">testbase</span> <span class="o">=</span> <span class="n">Grammar</span><span class="p">(</span>
+                    <span class="n">text</span><span class="o">=</span><span class="n">phrase</span><span class="p">,</span> <span class="n">keyword_obj</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span><span class="p">,</span> <span class="n">do_check_truematch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">do_verbose</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+                <span class="n">testbase</span><span class="o">.</span><span class="n">run_modifications</span><span class="p">(</span><span class="n">which_modes</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">which_modes</span><span class="p">)</span>
+                <span class="c1"># Iterate through modes</span>
+                <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">phrase</span><span class="p">]:</span>
+                    <span class="c1"># Skip over non-mode keys</span>
+                    <span class="k">if</span> <span class="n">key1</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;kobj&quot;</span><span class="p">]:</span>
+                        <span class="k">continue</span>
+                    <span class="c1"># Otherwise, check generated modif</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">get_modifs</span><span class="p">()[</span><span class="s2">&quot;modifs&quot;</span><span class="p">][</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">curr_answer</span> <span class="o">=</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">phrase</span><span class="p">][</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="c1">#</span>
+
+                    <span class="c1"># Check answer</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span>
+                            <span class="p">(</span><span class="s2">&quot;Text: </span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Mode: </span><span class="si">{3}</span><span class="se">\n\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                <span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">,</span> <span class="n">phrase</span><span class="p">,</span> <span class="n">key1</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                        <span class="c1">#</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

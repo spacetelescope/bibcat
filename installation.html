@@ -1,0 +1,237 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installation &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="User Configuration and Data Filepaths" href="configuration.html" />
+    <link rel="prev" title="BibCat Documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#packages-and-conda-environment">Packages and Conda Environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#required-packages-and-versions">Required packages and versions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#conda-env-installation">Conda env installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#extra-required-pacakge-for-apple-m1-m2-m3-chip-and-gpu-use">Extra required pacakge for Apple M1/M2/M3 chip and GPU use</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-tensorflow-text">Install <cite>tensorflow-text</cite></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#bibcat-installation">BibCat installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pre-commit-for-development">pre-commit for development</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#install-pre-commit">Install pre-commit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-pre-commit">Run pre-commit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#update-pre-commit">Update pre-commit</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">BibCat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/installation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">bibcat</span></code> is undergoing constant development. We encourage users to always update
+to the latest version. In general, it is good practice to install the development
+version following the instructions below as full released versions may lag behind.</p>
+</div>
+<section id="packages-and-conda-environment">
+<h2>Packages and Conda Environment<a class="headerlink" href="#packages-and-conda-environment" title="Link to this heading"></a></h2>
+<section id="required-packages-and-versions">
+<h3>Required packages and versions<a class="headerlink" href="#required-packages-and-versions" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>tensorflow-macos 2.15.1</p></li>
+<li><p>tensorflow-metal 1.1.0</p></li>
+<li><p>tensorflow 2.15.0</p></li>
+<li><p>tensorflow-hub 0.16.1</p></li>
+<li><p>tensorflow-text 2.15.0</p></li>
+<li><p>See more packages found in the conda evn file (envs/bibcat_py310.yml).</p></li>
+</ul>
+</section>
+<section id="conda-env-installation">
+<h3>Conda env installation<a class="headerlink" href="#conda-env-installation" title="Link to this heading"></a></h3>
+<p>Change <cite>env_name</cite> below with whatever you want to name the environment.
+- Download the conda installation yml file (envs/bibcat_py310.yml).
+- In the terminal, run these commands.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">env</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">env_name</span> <span class="o">-</span><span class="n">f</span> <span class="n">bibcat_py310</span><span class="o">.</span><span class="n">yml</span>
+<span class="n">conda</span> <span class="n">activate</span> <span class="n">env_name</span>
+<span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">spacy</span> <span class="n">download</span> <span class="n">en_core_web_sm</span>
+</pre></div>
+</div>
+</section>
+<section id="extra-required-pacakge-for-apple-m1-m2-m3-chip-and-gpu-use">
+<h3>Extra required pacakge for Apple M1/M2/M3 chip and GPU use<a class="headerlink" href="#extra-required-pacakge-for-apple-m1-m2-m3-chip-and-gpu-use" title="Link to this heading"></a></h3>
+<p>For Apple Silicon chips, to utilize your GPU, you install <cite>**tensorflow-macos**</cite> and <cite>**tensorflow-metal**</cite>.  You can run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">tensorflow</span><span class="o">-</span><span class="n">macos</span> <span class="n">tensorflow</span><span class="o">-</span><span class="n">metal</span>
+</pre></div>
+</div>
+<p>To verify if tensorflow is set up to utilize your GPU, do the following::</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
+<span class="n">tf</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">list_physical_devices</span><span class="p">(</span><span class="s1">&#39;GPU&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You should see the following output.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">PhysicalDevice</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;/physical_device:GPU:0&#39;</span><span class="p">,</span> <span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;GPU&#39;</span><span class="p">)]</span>
+</pre></div>
+</div>
+<p>If the output is an empty list, you are not setup for GPU use.</p>
+</section>
+<section id="install-tensorflow-text">
+<h3>Install <cite>tensorflow-text</cite><a class="headerlink" href="#install-tensorflow-text" title="Link to this heading"></a></h3>
+<ul>
+<li><p>You need to install this package manually. Follow the instruction order below.</p></li>
+<li><p>To install <em>tensorflow-text</em>, the command <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-U</span> <span class="pre">&quot;tensorflow-text&quot;</span></code> <strong>does not work</strong> due to some package version conflict (as of sometime 2024, need to revisit). You need to download the latest release library compatible with your system from the <a class="reference external" href="https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases">Tensorflow library link.</a>; For instance, if you have MacOSX with python 3.10, download <a class="reference external" href="https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl">this library.</a> Then,:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">/</span><span class="n">path</span><span class="o">-</span><span class="n">to</span><span class="o">-</span><span class="n">download</span><span class="o">/</span><span class="n">tensorflow_text</span><span class="o">-</span><span class="mf">2.15.0</span><span class="o">-</span><span class="n">cp310</span><span class="o">-</span><span class="n">cp310</span><span class="o">-</span><span class="n">macosx_11_0_arm64</span><span class="o">.</span><span class="n">whl</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+</section>
+<section id="bibcat-installation">
+<h2>BibCat installation<a class="headerlink" href="#bibcat-installation" title="Link to this heading"></a></h2>
+<p>The <cite>bibcat</cite> directory contains the python package itself, installable via pip.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">.</span>
+</pre></div>
+</div>
+</section>
+<section id="pre-commit-for-development">
+<h2>pre-commit for development<a class="headerlink" href="#pre-commit-for-development" title="Link to this heading"></a></h2>
+<p><a class="reference external" href="https://pre-commit.com/">pre-commit</a> allows all collaborators push their commits compliant with the same set of lint and format rules in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> by checking all files in the project at different stages of the git workflow. It runs commands specified in the <code class="docutils literal notranslate"><span class="pre">.pre-commit-config.yaml</span></code> config file and runs checks before committing or pushing, to catch errors that would have caused a build failure before they reach CI.</p>
+<section id="install-pre-commit">
+<h3>Install pre-commit<a class="headerlink" href="#install-pre-commit" title="Link to this heading"></a></h3>
+<p>You will need to install <code class="docutils literal notranslate"><span class="pre">pre-commit</span></code> manually.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">pre</span><span class="o">-</span><span class="n">commit</span> <span class="c1"># if you haven&#39;t already installed the package</span>
+
+<span class="n">pre</span><span class="o">-</span><span class="n">commit</span> <span class="n">install</span> <span class="c1"># install default hooks `pre-commit`, `pre-push`, and `commit-msg` as specified in the config file.</span>
+</pre></div>
+</div>
+</section>
+<section id="run-pre-commit">
+<h3>Run pre-commit<a class="headerlink" href="#run-pre-commit" title="Link to this heading"></a></h3>
+<p>If this is your first time running, you should run the hooks against for all files and it will fix all files based on your setting.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pre</span><span class="o">-</span><span class="n">commit</span> <span class="n">run</span> <span class="o">--</span><span class="nb">all</span><span class="o">-</span><span class="n">files</span>
+</pre></div>
+</div>
+</section>
+<section id="update-pre-commit">
+<h3>Update pre-commit<a class="headerlink" href="#update-pre-commit" title="Link to this heading"></a></h3>
+<p>Finally, you will need to update <code class="docutils literal notranslate"><span class="pre">pre-commit</span></code> regularly by running:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pre</span><span class="o">-</span><span class="n">commit</span> <span class="n">autoupdate</span>
+</pre></div>
+</div>
+<p>For other configuration options and more detailed information, check out at the <a class="reference external" href="https://pre-commit.com/">pre-commit</a> page.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="BibCat Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="configuration.html" class="btn btn-neutral float-right" title="User Configuration and Data Filepaths" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

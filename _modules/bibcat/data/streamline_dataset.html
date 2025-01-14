@@ -1,0 +1,256 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat.data.streamline_dataset &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">BibCat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bibcat.data.streamline_dataset</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bibcat.data.streamline_dataset</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">lru_cache</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">parameters</span> <span class="k">as</span> <span class="n">params</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.core.operator</span><span class="w"> </span><span class="kn">import</span> <span class="n">Operator</span>
+
+<span class="c1"># map model_settings back to settings</span>
+<span class="n">settings</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">dataprep</span>
+
+
+<div class="viewcode-block" id="load_source_dataset">
+<a class="viewcode-back" href="../../../api/bibcat.data.html#bibcat.data.streamline_dataset.load_source_dataset">[docs]</a>
+<span class="nd">@lru_cache</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_source_dataset</span><span class="p">(</span><span class="n">do_verbose</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load the original source dataset that is a combined set of papertrack classification and ADS full text. Return a dictionary of the JSON content.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">inputs</span><span class="o">.</span><span class="n">path_source_data</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">openfile</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading source dataset: </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">inputs</span><span class="o">.</span><span class="n">path_source_data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">source_dataset</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">openfile</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">source_dataset</span><span class="p">)</span><span class="si">}</span><span class="s2"> papers have been loaded&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">source_dataset</span></div>
+
+
+
+<div class="viewcode-block" id="streamline_dataset">
+<a class="viewcode-back" href="../../../api/bibcat.data.html#bibcat.data.streamline_dataset.streamline_dataset">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">streamline_dataset</span><span class="p">(</span><span class="n">source_dataset</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">operator_ML</span><span class="p">:</span> <span class="n">Operator</span><span class="p">,</span> <span class="n">do_verbose_text_summary</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Organize a new version of the data with: key:text,class,id,mission structure</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Start streamlining dataset:&quot;</span><span class="p">)</span>
+    <span class="c1"># keep track of used bibcodes avoiding duplicate dataset entries</span>
+    <span class="n">list_bibcodes</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Track number of papers kept from original dataset</span>
+    <span class="n">i_track</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">dict_texts</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">curr_data</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">source_dataset</span><span class="p">):</span>
+        <span class="c1"># Extract mission classifications for current text</span>
+        <span class="c1"># curr_data = source_dataset[ii]</span>
+
+        <span class="c1"># Skip if no valid text at all for this text</span>
+        <span class="k">if</span> <span class="s2">&quot;body&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">curr_data</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Skip if no valid missions at all for this text</span>
+        <span class="c1"># This logic has to change to include all bib text for future work. see ASB-25819.</span>
+        <span class="k">if</span> <span class="s2">&quot;class_missions&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">curr_data</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Otherwise, extract the bibcodes and missions</span>
+        <span class="n">curr_bibcode</span> <span class="o">=</span> <span class="n">curr_data</span><span class="p">[</span><span class="s2">&quot;bibcode&quot;</span><span class="p">]</span>
+        <span class="n">curr_missions</span> <span class="o">=</span> <span class="n">curr_data</span><span class="p">[</span><span class="s2">&quot;class_missions&quot;</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">curr_bibcode</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">curr_missions</span><span class="p">)</span>
+
+        <span class="c1"># Skip if bibcode already encountered (and so duplicate entry)</span>
+        <span class="k">if</span> <span class="n">curr_bibcode</span> <span class="ow">in</span> <span class="n">list_bibcodes</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Duplicate bibcode encountered: </span><span class="si">{</span><span class="n">curr_bibcode</span><span class="si">}</span><span class="s2">. Skipping.&quot;</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Iterate through missions for this text</span>
+        <span class="n">i_mission</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">curr_key</span> <span class="ow">in</span> <span class="n">curr_missions</span><span class="p">:</span>
+            <span class="c1"># If this is not an allowed mission, skip</span>
+            <span class="k">if</span> <span class="n">curr_missions</span><span class="p">[</span><span class="n">curr_key</span><span class="p">][</span><span class="s2">&quot;papertype&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">allowed_classifications</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Otherwise, check if this mission is a target mission</span>
+            <span class="n">fetched_kobj</span> <span class="o">=</span> <span class="n">operator_ML</span><span class="o">.</span><span class="n">_fetch_keyword_object</span><span class="p">(</span><span class="n">lookup</span><span class="o">=</span><span class="n">curr_key</span><span class="p">,</span> <span class="n">do_raise_emptyerror</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="c1"># Skip if not a target</span>
+            <span class="k">if</span> <span class="n">fetched_kobj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Otherwise, store classification info for this entry</span>
+            <span class="n">curr_class</span> <span class="o">=</span> <span class="n">curr_missions</span><span class="p">[</span><span class="n">curr_key</span><span class="p">][</span><span class="s2">&quot;papertype&quot;</span><span class="p">]</span>
+            <span class="n">new_dict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">curr_data</span><span class="p">[</span><span class="s2">&quot;body&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;bibcode&quot;</span><span class="p">:</span> <span class="n">curr_data</span><span class="p">[</span><span class="s2">&quot;bibcode&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;class&quot;</span><span class="p">:</span> <span class="n">curr_class</span><span class="p">,</span>  <span class="c1"># Classification for this mission</span>
+                <span class="s2">&quot;mission&quot;</span><span class="p">:</span> <span class="n">curr_key</span><span class="p">,</span>
+                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;paper</span><span class="si">{0}</span><span class="s2">_mission</span><span class="si">{1}</span><span class="s2">_</span><span class="si">{2}</span><span class="s2">_</span><span class="si">{3}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">i_mission</span><span class="p">,</span> <span class="n">curr_key</span><span class="p">,</span> <span class="n">curr_class</span><span class="p">)),</span>
+            <span class="p">}</span>
+            <span class="n">dict_texts</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i_track</span><span class="p">)]</span> <span class="o">=</span> <span class="n">new_dict</span>
+
+            <span class="c1"># Increment counters</span>
+            <span class="n">i_mission</span> <span class="o">+=</span> <span class="mi">1</span>  <span class="c1"># Count of kept missions for this paper</span>
+            <span class="n">i_track</span> <span class="o">+=</span> <span class="mi">1</span>  <span class="c1"># Count of kept classifications overall</span>
+        <span class="c1">#</span>
+
+        <span class="c1"># Record this bibcode as stored</span>
+        <span class="n">list_bibcodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_bibcode</span><span class="p">)</span>
+
+        <span class="c1"># Terminate early if requested number of papers reached</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">num_papers</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">i_track</span> <span class="o">&gt;=</span> <span class="n">settings</span><span class="o">.</span><span class="n">num_papers</span><span class="p">):</span>
+            <span class="k">break</span>
+
+    <span class="c1"># Throw error if not enough text entries collected</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">num_papers</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dict_texts</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">settings</span><span class="o">.</span><span class="n">num_papers</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Err: Something went wrong during initial processing. &quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;Insufficient number of texts extracted.&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Requested number of texts:&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Actual number of texts: </span><span class="si">{1}</span><span class="se">\n</span><span class="s2">Change the setting of num_papers to &#39;None&#39; or a smaller number than the actual number in the model configuration file if you still want to continue.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">settings</span><span class="o">.</span><span class="n">num_papers</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">dict_texts</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="c1"># print a snippet of each of the entries in the dataset.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of processed texts: </span><span class="si">{</span><span class="n">i_track</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">dict_texts</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">do_verbose_text_summary</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">curr_key</span> <span class="ow">in</span> <span class="n">dict_texts</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Text #</span><span class="si">{</span><span class="n">curr_key</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Classification: </span><span class="si">{</span><span class="n">dict_texts</span><span class="p">[</span><span class="n">curr_key</span><span class="p">][</span><span class="s1">&#39;class&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mission: </span><span class="si">{</span><span class="n">dict_texts</span><span class="p">[</span><span class="n">curr_key</span><span class="p">][</span><span class="s1">&#39;mission&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ID: </span><span class="si">{</span><span class="n">dict_texts</span><span class="p">[</span><span class="n">curr_key</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bibcode: </span><span class="si">{</span><span class="n">dict_texts</span><span class="p">[</span><span class="n">curr_key</span><span class="p">][</span><span class="s1">&#39;bibcode&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Text snippet:&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">dict_texts</span><span class="p">[</span><span class="n">curr_key</span><span class="p">][</span><span class="s2">&quot;text&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">500</span><span class="p">])</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Print number of texts that fell under given parameters</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Target missions:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">curr_kobj</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">all_kobjs</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">curr_kobj</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">dict_texts</span><span class="p">)</span><span class="si">}</span><span class="s2"> of valid text entries have been streamlined.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dict_texts</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

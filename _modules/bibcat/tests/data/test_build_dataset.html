@@ -1,0 +1,271 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat.tests.data.test_build_dataset &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/modules.html">BibCat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bibcat.tests.data.test_build_dataset</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bibcat.tests.data.test_build_dataset</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">bibcat.data.build_dataset</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.utils.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_json_file</span>
+
+
+<div class="viewcode-block" id="test_file_exists">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.data.html#bibcat.tests.data.test_build_dataset.test_file_exists">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_file_exists</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">f1</span> <span class="o">=</span> <span class="n">tmp_path</span> <span class="o">/</span> <span class="s2">&quot;file1.txt&quot;</span>
+    <span class="n">f2</span> <span class="o">=</span> <span class="n">tmp_path</span> <span class="o">/</span> <span class="s2">&quot;file2.txt&quot;</span>
+
+    <span class="p">(</span><span class="n">f1</span><span class="p">)</span><span class="o">.</span><span class="n">touch</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">bd</span><span class="o">.</span><span class="n">file_exists</span><span class="p">([</span><span class="n">f1</span><span class="p">,</span> <span class="n">f2</span><span class="p">])</span> <span class="o">==</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">f1</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span><span class="n">f2</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="test_save_text_file">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.data.html#bibcat.tests.data.test_build_dataset.test_save_text_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_save_text_file</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">bibcodes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;bibcode1&quot;</span><span class="p">,</span> <span class="s2">&quot;bibcode2&quot;</span><span class="p">]</span>
+    <span class="n">tmp_file</span> <span class="o">=</span> <span class="n">tmp_path</span> <span class="o">/</span> <span class="s2">&quot;temp_file.txt&quot;</span>
+
+    <span class="c1"># Save bibcodes to a text file, this tests save_test_file() too.</span>
+    <span class="n">bd</span><span class="o">.</span><span class="n">save_text_file</span><span class="p">(</span><span class="n">tmp_file</span><span class="p">,</span> <span class="n">bibcodes</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">tmp_file</span><span class="o">.</span><span class="n">exists</span><span class="p">(),</span> <span class="s2">&quot;File was not created.&quot;</span>
+    <span class="c1"># Load bibcodes back from the file for verification</span>
+    <span class="k">with</span> <span class="n">tmp_file</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">loaded_bibcodes</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">loaded_bibcodes</span> <span class="o">==</span> <span class="n">bibcodes</span><span class="p">,</span> <span class="s2">&quot;loaded bibcodes do not match the input bibcodes.&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="mockjson">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.data.html#bibcat.tests.data.test_build_dataset.mockjson">[docs]</a>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mockjson</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+    <span class="c1"># Create mock papertext and papertrack files using mock dictionaries for test</span>
+    <span class="n">papertext</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;bibcode&quot;</span><span class="p">:</span> <span class="s2">&quot;2021MNRAS.500.3002B&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;pubdate&quot;</span><span class="p">:</span> <span class="s2">&quot;2021-01-00&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;abstract&quot;</span><span class="p">:</span> <span class="s2">&quot;This is a JWST abstract.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="s2">&quot;This is a JWST science paper.&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;bibcode&quot;</span><span class="p">:</span> <span class="s2">&quot;2023ApJ.200.4008B&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;pubdate&quot;</span><span class="p">:</span> <span class="s2">&quot;2023-01-00&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;abstract&quot;</span><span class="p">:</span> <span class="s2">&quot;This is a HST abstract.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="s2">&quot;This is a HST mention paper.&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+
+    <span class="n">papertrack</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;bibcode&quot;</span><span class="p">:</span> <span class="s2">&quot;2021MNRAS.500.3002B&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;searches&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span><span class="s2">&quot;search_key&quot;</span><span class="p">:</span> <span class="s2">&quot;jwst&quot;</span><span class="p">,</span> <span class="s2">&quot;ignored&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+            <span class="p">],</span>
+            <span class="s2">&quot;class_missions&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;mission&quot;</span><span class="p">:</span> <span class="s2">&quot;JWST&quot;</span><span class="p">,</span> <span class="s2">&quot;paper_type&quot;</span><span class="p">:</span> <span class="s2">&quot;SCIENCE&quot;</span><span class="p">}],</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;bibcode&quot;</span><span class="p">:</span> <span class="s2">&quot;2024AA.345.1052C&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;searches&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span><span class="s2">&quot;search_key&quot;</span><span class="p">:</span> <span class="s2">&quot;kepler&quot;</span><span class="p">,</span> <span class="s2">&quot;ignored&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+            <span class="p">],</span>
+            <span class="s2">&quot;class_missions&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;mission&quot;</span><span class="p">:</span> <span class="s2">&quot;Kepler&quot;</span><span class="p">,</span> <span class="s2">&quot;paper_type&quot;</span><span class="p">:</span> <span class="s2">&quot;MENTION&quot;</span><span class="p">}],</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+
+    <span class="n">trimmed_papertext</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;bibcode&quot;</span><span class="p">:</span> <span class="s2">&quot;2021MNRAS.500.3002B&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;pubdate&quot;</span><span class="p">:</span> <span class="s2">&quot;2021-01-00&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="s2">&quot;This is a JWST science paper.&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;bibcode&quot;</span><span class="p">:</span> <span class="s2">&quot;2023ApJ.200.4008B&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;pubdate&quot;</span><span class="p">:</span> <span class="s2">&quot;2023-01-00&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="s2">&quot;This is a HST mention paper.&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+    <span class="n">combined_dataset</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;bibcode&quot;</span><span class="p">:</span> <span class="s2">&quot;2021MNRAS.500.3002B&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;pubdate&quot;</span><span class="p">:</span> <span class="s2">&quot;2021-01-00&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;body&quot;</span><span class="p">:</span> <span class="s2">&quot;This is a JWST science paper.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;class_missions&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;JWST&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;bibcode&quot;</span><span class="p">:</span> <span class="s2">&quot;2021MNRAS.500.3002B&quot;</span><span class="p">,</span> <span class="s2">&quot;papertype&quot;</span><span class="p">:</span> <span class="s2">&quot;SCIENCE&quot;</span><span class="p">}},</span>
+            <span class="s2">&quot;is_ignored_jwst&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+    <span class="n">path_papertext</span> <span class="o">=</span> <span class="n">tmp_path</span> <span class="o">/</span> <span class="s2">&quot;papertext.json&quot;</span>
+    <span class="n">path_papertrack</span> <span class="o">=</span> <span class="n">tmp_path</span> <span class="o">/</span> <span class="s2">&quot;papertrack.json&quot;</span>
+
+    <span class="k">yield</span> <span class="p">(</span>
+        <span class="n">path_papertext</span><span class="p">,</span>
+        <span class="n">papertext</span><span class="p">,</span>
+        <span class="n">path_papertrack</span><span class="p">,</span>
+        <span class="n">papertrack</span><span class="p">,</span>
+        <span class="n">trimmed_papertext</span><span class="p">,</span>
+        <span class="n">combined_dataset</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="test_build_datasets">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.data.html#bibcat.tests.data.test_build_dataset.test_build_datasets">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_build_datasets</span><span class="p">(</span><span class="n">mockjson</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="p">(</span>
+        <span class="n">mock_path_papertext</span><span class="p">,</span>
+        <span class="n">expected_papertext</span><span class="p">,</span>
+        <span class="n">mock_path_papertrack</span><span class="p">,</span>
+        <span class="n">expected_papertrack</span><span class="p">,</span>
+        <span class="n">expected_trimmed_papertext</span><span class="p">,</span>
+        <span class="n">expected_combined_dataset</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">mockjson</span>
+
+    <span class="n">save_json_file</span><span class="p">(</span><span class="n">mock_path_papertext</span><span class="p">,</span> <span class="n">expected_papertext</span><span class="p">)</span>
+    <span class="n">save_json_file</span><span class="p">(</span><span class="n">mock_path_papertrack</span><span class="p">,</span> <span class="n">expected_papertrack</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">mock_path_papertext</span><span class="o">.</span><span class="n">exists</span><span class="p">(),</span> <span class="s2">&quot;mock papertext file was not created.&quot;</span>
+    <span class="k">assert</span> <span class="n">mock_path_papertrack</span><span class="o">.</span><span class="n">exists</span><span class="p">(),</span> <span class="s2">&quot;mock papertrack file was not created.&quot;</span>
+
+    <span class="n">loaded_papertext</span><span class="p">,</span> <span class="n">loaded_papertrack</span> <span class="o">=</span> <span class="n">bd</span><span class="o">.</span><span class="n">load_datasets</span><span class="p">(</span><span class="n">mock_path_papertext</span><span class="p">,</span> <span class="n">mock_path_papertrack</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">loaded_papertext</span> <span class="o">==</span> <span class="n">expected_papertext</span><span class="p">,</span> <span class="s2">&quot;loaded papertext data does not match the expected output&quot;</span>
+    <span class="k">assert</span> <span class="n">loaded_papertrack</span> <span class="o">==</span> <span class="n">expected_papertrack</span><span class="p">,</span> <span class="s2">&quot;loaded papertrack data does not match the expected output&quot;</span>
+
+    <span class="n">trimmed_papertext</span> <span class="o">=</span> <span class="n">bd</span><span class="o">.</span><span class="n">trim_dict</span><span class="p">(</span><span class="n">loaded_papertext</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;bibcode&quot;</span><span class="p">,</span> <span class="s2">&quot;pubdate&quot;</span><span class="p">,</span> <span class="s2">&quot;body&quot;</span><span class="p">])</span>
+    <span class="k">assert</span> <span class="n">trimmed_papertext</span> <span class="o">==</span> <span class="n">expected_trimmed_papertext</span><span class="p">,</span> <span class="s2">&quot;trimmed papertext doesn&#39;t match the expected output&quot;</span>
+
+    <span class="n">combined_dataset</span><span class="p">,</span> <span class="n">bibcodes_notin_papertext</span><span class="p">,</span> <span class="n">bibcodes_notin_papertrack</span><span class="p">,</span> <span class="n">papertext_index_notin_papertrack</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">bd</span><span class="o">.</span><span class="n">combine_datasets</span><span class="p">(</span><span class="n">trimmed_papertext</span><span class="p">,</span> <span class="n">loaded_papertrack</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">assert</span> <span class="n">combined_dataset</span> <span class="o">==</span> <span class="n">expected_combined_dataset</span><span class="p">,</span> <span class="s2">&quot;combinned dataset doesn&#39;t match the expected output&quot;</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_equal</span><span class="p">(</span>
+        <span class="n">bibcodes_notin_papertext</span><span class="p">,</span>
+        <span class="p">[</span><span class="s2">&quot;2024AA.345.1052C&quot;</span><span class="p">],</span>
+        <span class="n">err_msg</span><span class="o">=</span><span class="s2">&quot;Bibcodes not in papertext do not match expected values.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_equal</span><span class="p">(</span>
+        <span class="n">bibcodes_notin_papertrack</span><span class="p">,</span>
+        <span class="p">[</span><span class="s2">&quot;2023ApJ.200.4008B&quot;</span><span class="p">],</span>
+        <span class="n">err_msg</span><span class="o">=</span><span class="s2">&quot;Bibcodes not in papertrack do not match expected values.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">assert</span> <span class="n">papertext_index_notin_papertrack</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;papertext data not in papertrack data does not match the expected&quot;</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

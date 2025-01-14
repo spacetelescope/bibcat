@@ -1,0 +1,904 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat.core.performance &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">BibCat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bibcat.core.performance</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bibcat.core.performance</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">:title: performance.py</span>
+
+<span class="sd">The `Performance` class contains user-friendly methods for estimating the performance</span>
+<span class="sd">of given classifiers and outputting that performance as, e.g., confusion matrices.</span>
+<span class="sd">This class can be used after creating the model, training, and saving</span>
+<span class="sd">a machine learning model.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>  <span class="c1"># type: ignore</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.core.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">Base</span>
+
+
+<div class="viewcode-block" id="Performance">
+<a class="viewcode-back" href="../../../api/bibcat.core.html#bibcat.core.performance.Performance">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Performance</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class: Performance</span>
+<span class="sd">    Purpose:</span>
+<span class="sd">        - !</span>
+<span class="sd">    Initialization Arguments:</span>
+<span class="sd">        - !</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">do_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">do_verbose_deep</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method: __init__</span>
+<span class="sd">        WARNING! This method is *not* meant to be used directly by users.</span>
+<span class="sd">        Purpose: Initializes instance of Performance class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize storage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_storage</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">do_verbose</span><span class="p">,</span> <span class="s2">&quot;do_verbose&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">do_verbose_deep</span><span class="p">,</span> <span class="s2">&quot;do_verbose_deep&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Instance of Performance successfully initialized!&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span>
+
+    <span class="c1"># Evaluate the basic performance of the internal classifier on a test set of data</span>
+<div class="viewcode-block" id="Performance.evaluate_performance_basic">
+<a class="viewcode-back" href="../../../api/bibcat.core.html#bibcat.core.performance.Performance.evaluate_performance_basic">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_performance_basic</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">operators</span><span class="p">,</span>
+        <span class="n">dicts_texts</span><span class="p">,</span>
+        <span class="n">mappers</span><span class="p">,</span>
+        <span class="n">thresholds</span><span class="p">,</span>
+        <span class="n">buffers</span><span class="p">,</span>
+        <span class="n">is_text_processed</span><span class="p">,</span>
+        <span class="n">do_check_truematch</span><span class="p">,</span>
+        <span class="n">filepath_output</span><span class="p">,</span>
+        <span class="n">do_raise_innererror</span><span class="p">,</span>
+        <span class="n">do_save_evaluation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">do_save_misclassif</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">filename_plot</span><span class="o">=</span><span class="s2">&quot;performance_confmatr_basic.png&quot;</span><span class="p">,</span>
+        <span class="n">fileroot_evaluation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">fileroot_misclassif</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">figcolor</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span>
+        <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span>
+        <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+        <span class="n">hspace</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">cmap_abs</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">BuPu</span><span class="p">,</span>
+        <span class="n">cmap_norm</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">PuRd</span><span class="p">,</span>
+        <span class="n">print_freq</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
+        <span class="n">do_verbose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">do_verbose_deep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method: evaluate_performance_basic</span>
+<span class="sd">        Purpose:</span>
+<span class="sd">          - Evaluate the performance of the internally stored classifier on a test set of data.</span>
+<span class="sd">        Arguments:</span>
+<span class="sd">          - !</span>
+<span class="sd">          - do_verbose [bool (default=False)]:</span>
+<span class="sd">            - Whether or not to print surface-level log information and tests.</span>
+<span class="sd">          - do_verbose_deep [bool (default=False)]:</span>
+<span class="sd">            - Whether or not to print inner log information and tests.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">          - dict:</span>
+<span class="sd">            - !</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Fetch global variables</span>
+        <span class="k">if</span> <span class="n">do_verbose</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">do_verbose</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;do_verbose&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">do_verbose_deep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">do_verbose_deep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;do_verbose_deep&quot;</span><span class="p">)</span>
+        <span class="c1">#</span>
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&gt; Running evaluate_performance_basic()!&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Generating evaluation for the given operators...&quot;</span><span class="p">)</span>
+        <span class="c1">#</span>
+
+        <span class="c1"># Evaluate classifier within each operator</span>
+        <span class="n">dict_evaluations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_evaluation</span><span class="p">(</span>
+            <span class="n">operators</span><span class="o">=</span><span class="n">operators</span><span class="p">,</span>
+            <span class="n">dicts_texts</span><span class="o">=</span><span class="n">dicts_texts</span><span class="p">,</span>
+            <span class="n">mappers</span><span class="o">=</span><span class="n">mappers</span><span class="p">,</span>
+            <span class="n">buffers</span><span class="o">=</span><span class="n">buffers</span><span class="p">,</span>
+            <span class="n">is_text_processed</span><span class="o">=</span><span class="n">is_text_processed</span><span class="p">,</span>
+            <span class="n">do_check_truematch</span><span class="o">=</span><span class="n">do_check_truematch</span><span class="p">,</span>
+            <span class="n">do_raise_innererror</span><span class="o">=</span><span class="n">do_raise_innererror</span><span class="p">,</span>
+            <span class="n">do_save_evaluation</span><span class="o">=</span><span class="n">do_save_evaluation</span><span class="p">,</span>
+            <span class="n">do_save_misclassif</span><span class="o">=</span><span class="n">do_save_misclassif</span><span class="p">,</span>
+            <span class="n">filepath_output</span><span class="o">=</span><span class="n">filepath_output</span><span class="p">,</span>
+            <span class="n">fileroot_evaluation</span><span class="o">=</span><span class="n">fileroot_evaluation</span><span class="p">,</span>
+            <span class="n">fileroot_misclassif</span><span class="o">=</span><span class="n">fileroot_misclassif</span><span class="p">,</span>
+            <span class="n">print_freq</span><span class="o">=</span><span class="n">print_freq</span><span class="p">,</span>
+            <span class="n">thresholds</span><span class="o">=</span><span class="n">thresholds</span><span class="p">,</span>
+            <span class="n">do_verbose</span><span class="o">=</span><span class="n">do_verbose</span><span class="p">,</span>
+            <span class="n">do_verbose_deep</span><span class="o">=</span><span class="n">do_verbose_deep</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Evaluations generated.&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Plotting confusion matrices...&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Plot grid of confusion matrices for classifier performance</span>
+        <span class="n">titles</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">operators</span><span class="p">]</span>
+        <span class="n">list_evaluations</span> <span class="o">=</span> <span class="p">[</span><span class="n">dict_evaluations</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">titles</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plot_performance_confusion_matrix</span><span class="p">(</span>
+            <span class="n">list_evaluations</span><span class="o">=</span><span class="n">list_evaluations</span><span class="p">,</span>
+            <span class="n">list_mappers</span><span class="o">=</span><span class="n">mappers</span><span class="p">,</span>
+            <span class="n">list_titles</span><span class="o">=</span><span class="n">titles</span><span class="p">,</span>
+            <span class="n">filepath_plot</span><span class="o">=</span><span class="n">filepath_output</span><span class="p">,</span>
+            <span class="n">filename_plot</span><span class="o">=</span><span class="n">filename_plot</span><span class="p">,</span>
+            <span class="n">figcolor</span><span class="o">=</span><span class="n">figcolor</span><span class="p">,</span>
+            <span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">,</span>
+            <span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">,</span>
+            <span class="n">hspace</span><span class="o">=</span><span class="n">hspace</span><span class="p">,</span>
+            <span class="n">cmap_abs</span><span class="o">=</span><span class="n">cmap_abs</span><span class="p">,</span>
+            <span class="n">cmap_norm</span><span class="o">=</span><span class="n">cmap_norm</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Confusion matrices have been plotted at:</span><span class="se">\n</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filepath_output</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Run of evaluate_performance_basic() complete!&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span></div>
+
+
+    <span class="c1"># Evaluate the performance of the internal classifier on a test set of data as a function of uncertainty</span>
+<div class="viewcode-block" id="Performance.evaluate_performance_uncertainty">
+<a class="viewcode-back" href="../../../api/bibcat.core.html#bibcat.core.performance.Performance.evaluate_performance_uncertainty">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_performance_uncertainty</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">operators</span><span class="p">,</span>
+        <span class="n">dicts_texts</span><span class="p">,</span>
+        <span class="n">mappers</span><span class="p">,</span>
+        <span class="n">threshold_arrays</span><span class="p">,</span>
+        <span class="n">buffers</span><span class="p">,</span>
+        <span class="n">is_text_processed</span><span class="p">,</span>
+        <span class="n">do_check_truematch</span><span class="p">,</span>
+        <span class="n">filepath_output</span><span class="p">,</span>
+        <span class="n">do_raise_innererror</span><span class="p">,</span>
+        <span class="n">do_save_evaluation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">do_save_misclassif</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">filename_plot</span><span class="o">=</span><span class="s2">&quot;performance_grid_uncertainty.png&quot;</span><span class="p">,</span>
+        <span class="n">fileroot_evaluation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">fileroot_misclassif</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">figcolor</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span>
+        <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span>
+        <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+        <span class="n">ticksize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span>
+        <span class="n">tickwidth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">tickheight</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+        <span class="n">colors</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;tomato&quot;</span><span class="p">,</span> <span class="s2">&quot;dodgerblue&quot;</span><span class="p">,</span> <span class="s2">&quot;purple&quot;</span><span class="p">,</span> <span class="s2">&quot;dimgray&quot;</span><span class="p">,</span> <span class="s2">&quot;silver&quot;</span><span class="p">,</span> <span class="s2">&quot;darkgoldenrod&quot;</span><span class="p">,</span> <span class="s2">&quot;darkgreen&quot;</span><span class="p">,</span> <span class="s2">&quot;green&quot;</span><span class="p">,</span> <span class="s2">&quot;cyan&quot;</span><span class="p">],</span>
+        <span class="n">alphas</span><span class="o">=</span><span class="p">([</span><span class="mf">0.75</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10</span><span class="p">),</span>
+        <span class="n">linestyles</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="s2">&quot;:&quot;</span><span class="p">],</span>
+        <span class="n">linewidths</span><span class="o">=</span><span class="p">([</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10</span><span class="p">),</span>
+        <span class="n">markers</span><span class="o">=</span><span class="p">([</span><span class="s2">&quot;o&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10</span><span class="p">),</span>
+        <span class="n">alpha_match</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">color_match</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span>
+        <span class="n">linestyle_match</span><span class="o">=</span><span class="s2">&quot;-&quot;</span><span class="p">,</span>
+        <span class="n">linewidth_match</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+        <span class="n">marker_match</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">,</span>
+        <span class="n">print_freq</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
+        <span class="n">do_verbose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">do_verbose_deep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method: evaluate_performance_uncertainty</span>
+<span class="sd">        Purpose:</span>
+<span class="sd">          - Evaluate the performance of the internally stored classifier on a test set</span>
+<span class="sd">            of data as a function of uncertainty.</span>
+<span class="sd">        Arguments:</span>
+<span class="sd">          - !</span>
+<span class="sd">          - do_verbose [bool (default=False)]:</span>
+<span class="sd">            - Whether or not to print surface-level log information and tests.</span>
+<span class="sd">          - do_verbose_deep [bool (default=False)]:</span>
+<span class="sd">            - Whether or not to print inner log information and tests.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">          - dict:</span>
+<span class="sd">            - !</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Fetch global variables</span>
+        <span class="n">num_ops</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">operators</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">do_verbose</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">do_verbose</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;do_verbose&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">do_verbose_deep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">do_verbose_deep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;do_verbose_deep&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&gt; Running evaluate_performance_uncertainty()!&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Generating evaluations for operators and uncertainties...&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Evaluate classifier for each operator at each uncertainty level</span>
+        <span class="n">dict_evaluations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_evaluation</span><span class="p">(</span>
+            <span class="n">operators</span><span class="o">=</span><span class="n">operators</span><span class="p">,</span>
+            <span class="n">dicts_texts</span><span class="o">=</span><span class="n">dicts_texts</span><span class="p">,</span>
+            <span class="n">mappers</span><span class="o">=</span><span class="n">mappers</span><span class="p">,</span>
+            <span class="n">buffers</span><span class="o">=</span><span class="n">buffers</span><span class="p">,</span>
+            <span class="n">is_text_processed</span><span class="o">=</span><span class="n">is_text_processed</span><span class="p">,</span>
+            <span class="n">do_check_truematch</span><span class="o">=</span><span class="n">do_check_truematch</span><span class="p">,</span>
+            <span class="n">do_raise_innererror</span><span class="o">=</span><span class="n">do_raise_innererror</span><span class="p">,</span>
+            <span class="n">do_save_evaluation</span><span class="o">=</span><span class="n">do_save_evaluation</span><span class="p">,</span>
+            <span class="n">do_save_misclassif</span><span class="o">=</span><span class="n">do_save_misclassif</span><span class="p">,</span>
+            <span class="n">filepath_output</span><span class="o">=</span><span class="n">filepath_output</span><span class="p">,</span>
+            <span class="n">fileroot_evaluation</span><span class="o">=</span><span class="n">fileroot_evaluation</span><span class="p">,</span>
+            <span class="n">fileroot_misclassif</span><span class="o">=</span><span class="n">fileroot_misclassif</span><span class="p">,</span>
+            <span class="n">print_freq</span><span class="o">=</span><span class="n">print_freq</span><span class="p">,</span>
+            <span class="n">thresholds</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_ops</span><span class="p">,</span>  <span class="c1"># Placeholder</span>
+            <span class="n">array_thresholds</span><span class="o">=</span><span class="n">threshold_arrays</span><span class="p">,</span>  <span class="c1"># Actual uncertainties</span>
+            <span class="n">do_verbose</span><span class="o">=</span><span class="n">do_verbose</span><span class="p">,</span>
+            <span class="n">do_verbose_deep</span><span class="o">=</span><span class="n">do_verbose_deep</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Evaluations generated.&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Plotting performance as a function of uncertainty level...&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Plot grid of classifier performance as function of uncertainty</span>
+        <span class="n">titles</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">operators</span><span class="p">]</span>
+        <span class="n">list_evaluations</span> <span class="o">=</span> <span class="p">[</span><span class="n">dict_evaluations</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">titles</span><span class="p">]</span>
+        <span class="c1"># Prepare base figure</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="n">figcolor</span><span class="p">)</span>
+        <span class="n">nrow</span> <span class="o">=</span> <span class="n">num_ops</span>
+        <span class="n">ncol</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;act_classnames&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">list_evaluations</span><span class="p">])</span>
+
+        <span class="c1"># Iterate through operators (one row per operator)</span>
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_ops</span><span class="p">):</span>
+            <span class="n">curr_xs</span> <span class="o">=</span> <span class="n">threshold_arrays</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+            <span class="n">curr_eval</span> <span class="o">=</span> <span class="n">list_evaluations</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+            <span class="n">curr_counters</span> <span class="o">=</span> <span class="n">curr_eval</span><span class="p">[</span><span class="s2">&quot;counters&quot;</span><span class="p">]</span>
+            <span class="n">curr_actlabels</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">curr_eval</span><span class="p">[</span><span class="s2">&quot;act_classnames&quot;</span><span class="p">])</span>
+            <span class="n">curr_measlabels</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">curr_eval</span><span class="p">[</span><span class="s2">&quot;meas_classnames&quot;</span><span class="p">])</span>
+            <span class="c1"># Iterate through current actual classifs</span>
+            <span class="k">for</span> <span class="n">jj</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">curr_actlabels</span><span class="p">)):</span>
+                <span class="n">curr_act</span> <span class="o">=</span> <span class="n">curr_actlabels</span><span class="p">[</span><span class="n">jj</span><span class="p">]</span>
+                <span class="c1"># Prepare subplot</span>
+                <span class="n">ax0</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span><span class="p">,</span> <span class="p">((</span><span class="n">ii</span> <span class="o">*</span> <span class="n">ncol</span><span class="p">)</span> <span class="o">+</span> <span class="n">jj</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="c1"># Iterate through measured classifs</span>
+                <span class="k">for</span> <span class="n">kk</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">curr_measlabels</span><span class="p">)):</span>
+                    <span class="n">curr_meas</span> <span class="o">=</span> <span class="n">curr_measlabels</span><span class="p">[</span><span class="n">kk</span><span class="p">]</span>
+                    <span class="n">curr_ys</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="n">curr_counters</span><span class="p">[</span><span class="n">zz</span><span class="p">][</span><span class="n">curr_act</span><span class="p">][</span><span class="n">curr_meas</span><span class="p">]</span> <span class="k">for</span> <span class="n">zz</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">curr_xs</span><span class="p">))</span>
+                    <span class="p">]</span>  <span class="c1"># Current count of act. vs. meas. classifs</span>
+                    <span class="c1"># Plot results as function of uncertainty</span>
+                    <span class="n">ax0</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                        <span class="n">curr_xs</span><span class="p">,</span>
+                        <span class="n">curr_ys</span><span class="p">,</span>
+                        <span class="n">alpha</span><span class="o">=</span><span class="n">alphas</span><span class="p">[</span><span class="n">kk</span><span class="p">],</span>
+                        <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">kk</span><span class="p">],</span>
+                        <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidths</span><span class="p">[</span><span class="n">kk</span><span class="p">],</span>
+                        <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyles</span><span class="p">[</span><span class="n">kk</span><span class="p">],</span>
+                        <span class="n">marker</span><span class="o">=</span><span class="n">markers</span><span class="p">[</span><span class="n">kk</span><span class="p">],</span>
+                        <span class="n">label</span><span class="o">=</span><span class="n">curr_meas</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="c1"># Highlight correct answers</span>
+                    <span class="k">if</span> <span class="n">curr_act</span> <span class="o">==</span> <span class="n">curr_meas</span><span class="p">:</span>
+                        <span class="n">ax0</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                            <span class="n">curr_xs</span><span class="p">,</span>
+                            <span class="n">curr_ys</span><span class="p">,</span>
+                            <span class="n">alpha</span><span class="o">=</span><span class="n">alpha_match</span><span class="p">,</span>
+                            <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">kk</span><span class="p">],</span>
+                            <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth_match</span><span class="p">,</span>
+                            <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle_match</span><span class="p">,</span>
+                            <span class="n">marker</span><span class="o">=</span><span class="n">marker_match</span><span class="p">,</span>
+                        <span class="p">)</span>
+
+                <span class="c1"># Label the subplot</span>
+                <span class="n">ax0</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Uncertainty Threshold&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">)</span>
+                <span class="n">ax0</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Count of Classifications&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">)</span>
+                <span class="n">ax0</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: </span><span class="si">{1}</span><span class="s2"> Texts&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">titles</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span> <span class="n">curr_act</span><span class="p">),</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">)</span>
+                <span class="n">ax0</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="n">tickwidth</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">tickheight</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="n">ticksize</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s2">&quot;in&quot;</span><span class="p">)</span>
+
+                <span class="c1"># Add legend, if last subplot in row</span>
+                <span class="k">if</span> <span class="n">jj</span> <span class="o">==</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">curr_actlabels</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="n">ax0</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">,</span> <span class="n">frameon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">prop</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="n">fontsize</span><span class="p">})</span>
+
+        <span class="c1"># Save and close the figure</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Performance vs. Uncertainty&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filepath_output</span><span class="p">,</span> <span class="n">filename_plot</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Results have been plotted at:</span><span class="se">\n</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filepath_output</span><span class="p">))</span>
+
+        <span class="c1"># Exit the method</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Run of evaluate_performance_uncertainty() complete!&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span></div>
+
+
+    <span class="c1"># Generate performance evaluation of full classification pipeline (text to rejection/verdict)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_generate_evaluation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">operators</span><span class="p">,</span>
+        <span class="n">dicts_texts</span><span class="p">,</span>
+        <span class="n">mappers</span><span class="p">,</span>
+        <span class="n">thresholds</span><span class="p">,</span>
+        <span class="n">buffers</span><span class="p">,</span>
+        <span class="n">is_text_processed</span><span class="p">,</span>
+        <span class="n">do_check_truematch</span><span class="p">,</span>
+        <span class="n">do_raise_innererror</span><span class="p">,</span>
+        <span class="n">array_thresholds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">do_save_evaluation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">do_save_misclassif</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">filepath_output</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">fileroot_evaluation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">fileroot_misclassif</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">print_freq</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
+        <span class="n">do_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">do_verbose_deep</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method: _generate_evaluation</span>
+<span class="sd">        Purpose:</span>
+<span class="sd">          - !</span>
+<span class="sd">        Arguments:</span>
+<span class="sd">          - !</span>
+<span class="sd">          - do_verbose [bool (default=False)]:</span>
+<span class="sd">            - Whether or not to print surface-level log information and tests.</span>
+<span class="sd">          - do_verbose_deep [bool (default=False)]:</span>
+<span class="sd">            - Whether or not to print inner log information and tests.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">          - dict:</span>
+<span class="sd">            - !</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Fetch global variables</span>
+        <span class="k">if</span> <span class="n">do_verbose</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">do_verbose</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;do_verbose&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">do_verbose_deep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">do_verbose_deep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;do_verbose_deep&quot;</span><span class="p">)</span>
+
+        <span class="n">num_ops</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">operators</span><span class="p">)</span>
+        <span class="c1"># Throw error if operators do not have unique names</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">item</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">operators</span><span class="p">]))</span> <span class="o">!=</span> <span class="n">num_ops</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Err: Please give each operator a unique name.&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Currently, the names are:</span><span class="se">\n</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">([</span><span class="n">item</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">operators</span><span class="p">])</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&gt; Running _generate_evaluation()!&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Iterating through Operators to classify each set of text...&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Use each operator to classify the set of texts and measure performance</span>
+        <span class="n">dict_evaluations</span> <span class="o">=</span> <span class="p">{</span><span class="n">item</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">operators</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_ops</span><span class="p">):</span>
+            <span class="n">curr_op</span> <span class="o">=</span> <span class="n">operators</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>  <span class="c1"># Current operator</span>
+            <span class="n">curr_name</span> <span class="o">=</span> <span class="n">curr_op</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">curr_data</span> <span class="o">=</span> <span class="n">dicts_texts</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Classifying with Operator #</span><span class="si">{0}</span><span class="s2">...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ii</span><span class="p">))</span>
+
+            <span class="c1"># Unpack the classified information for this operator</span>
+            <span class="n">curr_keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">curr_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>  <span class="c1"># All keys for accessing texts</span>
+            <span class="n">curr_actdicts</span> <span class="o">=</span> <span class="p">[</span><span class="n">curr_data</span><span class="p">[</span><span class="n">curr_keys</span><span class="p">[</span><span class="n">jj</span><span class="p">]]</span> <span class="k">for</span> <span class="n">jj</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">curr_keys</span><span class="p">))]</span>  <span class="c1"># Forced order</span>
+            <span class="c1"># Load in as either raw or preprocessed data</span>
+            <span class="k">if</span> <span class="n">is_text_processed</span><span class="p">:</span>  <span class="c1"># If given text preprocessed</span>
+                <span class="n">curr_texts</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">curr_modifs</span> <span class="o">=</span> <span class="p">[</span><span class="n">curr_data</span><span class="p">[</span><span class="n">curr_keys</span><span class="p">[</span><span class="n">jj</span><span class="p">]][</span><span class="s2">&quot;text&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">jj</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">curr_keys</span><span class="p">))]</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># If given text needs to be preprocessed</span>
+                <span class="n">curr_texts</span> <span class="o">=</span> <span class="p">[</span><span class="n">curr_data</span><span class="p">[</span><span class="n">curr_keys</span><span class="p">[</span><span class="n">jj</span><span class="p">]][</span><span class="s2">&quot;text&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">jj</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">curr_keys</span><span class="p">))]</span>
+                <span class="n">curr_modifs</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="c1"># Classify texts with current operator</span>
+            <span class="n">curr_results</span> <span class="o">=</span> <span class="n">curr_op</span><span class="o">.</span><span class="n">classify_set</span><span class="p">(</span>
+                <span class="n">texts</span><span class="o">=</span><span class="n">curr_texts</span><span class="p">,</span>
+                <span class="n">modifs</span><span class="o">=</span><span class="n">curr_modifs</span><span class="p">,</span>
+                <span class="n">buffer</span><span class="o">=</span><span class="n">buffers</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span>
+                <span class="n">do_check_truematch</span><span class="o">=</span><span class="n">do_check_truematch</span><span class="p">,</span>
+                <span class="n">print_freq</span><span class="o">=</span><span class="n">print_freq</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Classification complete for Operator #</span><span class="si">{0}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ii</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Generating the performance counter...&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Measure performance of current operator against actual answers</span>
+            <span class="c1"># For standard evaluation</span>
+            <span class="k">if</span> <span class="n">array_thresholds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># Store per uncertainty, if given</span>
+                <span class="n">tmp_res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_performance_counter</span><span class="p">(</span>
+                    <span class="n">operator</span><span class="o">=</span><span class="n">curr_op</span><span class="p">,</span>
+                    <span class="n">mapper</span><span class="o">=</span><span class="n">mappers</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span>
+                    <span class="n">list_actdicts</span><span class="o">=</span><span class="n">curr_actdicts</span><span class="p">,</span>
+                    <span class="n">list_measdicts</span><span class="o">=</span><span class="n">curr_results</span><span class="p">,</span>
+                    <span class="n">print_freq</span><span class="o">=</span><span class="n">print_freq</span><span class="p">,</span>
+                    <span class="n">do_verbose</span><span class="o">=</span><span class="n">do_verbose</span><span class="p">,</span>
+                    <span class="n">do_verbose_deep</span><span class="o">=</span><span class="n">do_verbose_deep</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">curr_counter</span> <span class="o">=</span> <span class="n">tmp_res</span><span class="p">[</span><span class="s2">&quot;counters&quot;</span><span class="p">]</span>
+                <span class="n">curr_misclassifs</span> <span class="o">=</span> <span class="n">tmp_res</span><span class="p">[</span><span class="s2">&quot;misclassifs&quot;</span><span class="p">]</span>
+                <span class="n">curr_meas_classnames</span> <span class="o">=</span> <span class="n">tmp_res</span><span class="p">[</span><span class="s2">&quot;meas_classnames&quot;</span><span class="p">]</span>
+                <span class="n">curr_act_classnames</span> <span class="o">=</span> <span class="n">tmp_res</span><span class="p">[</span><span class="s2">&quot;act_classnames&quot;</span><span class="p">]</span>
+
+            <span class="c1"># For evaluations against multiple uncertainty values</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">tmp_res</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_generate_performance_counter</span><span class="p">(</span>
+                        <span class="n">operator</span><span class="o">=</span><span class="n">curr_op</span><span class="p">,</span>
+                        <span class="n">mapper</span><span class="o">=</span><span class="n">mappers</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span>
+                        <span class="n">list_actdicts</span><span class="o">=</span><span class="n">curr_actdicts</span><span class="p">,</span>
+                        <span class="n">list_measdicts</span><span class="o">=</span><span class="n">curr_results</span><span class="p">,</span>
+                        <span class="n">print_freq</span><span class="o">=</span><span class="n">print_freq</span><span class="p">,</span>
+                        <span class="n">do_verbose</span><span class="o">=</span><span class="n">do_verbose</span><span class="p">,</span>
+                        <span class="n">threshold</span><span class="o">=</span><span class="n">array_thresholds</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="n">jj</span><span class="p">],</span>
+                        <span class="n">do_verbose_deep</span><span class="o">=</span><span class="n">do_verbose_deep</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">jj</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">array_thresholds</span><span class="p">[</span><span class="n">ii</span><span class="p">]))</span>
+                <span class="p">]</span>
+                <span class="n">curr_counter</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;counters&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">tmp_res</span><span class="p">]</span>
+                <span class="n">curr_misclassifs</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;misclassifs&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">tmp_res</span><span class="p">]</span>
+                <span class="n">curr_meas_classnames</span> <span class="o">=</span> <span class="n">tmp_res</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;meas_classnames&quot;</span><span class="p">]</span>
+                <span class="n">curr_act_classnames</span> <span class="o">=</span> <span class="n">tmp_res</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;act_classnames&quot;</span><span class="p">]</span>
+
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Performance counter complete.&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Store the current results</span>
+            <span class="n">dict_evaluations</span><span class="p">[</span><span class="n">curr_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;counters&quot;</span><span class="p">:</span> <span class="n">curr_counter</span><span class="p">,</span>
+                <span class="s2">&quot;misclassifs&quot;</span><span class="p">:</span> <span class="n">curr_misclassifs</span><span class="p">,</span>
+                <span class="s2">&quot;actual_results&quot;</span><span class="p">:</span> <span class="n">curr_actdicts</span><span class="p">,</span>
+                <span class="s2">&quot;measured_results&quot;</span><span class="p">:</span> <span class="n">curr_results</span><span class="p">,</span>
+                <span class="s2">&quot;act_classnames&quot;</span><span class="p">:</span> <span class="n">curr_act_classnames</span><span class="p">,</span>
+                <span class="s2">&quot;meas_classnames&quot;</span><span class="p">:</span> <span class="n">curr_meas_classnames</span><span class="p">,</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Save the misclassified cases, if so requested</span>
+            <span class="k">if</span> <span class="n">do_save_misclassif</span> <span class="ow">and</span> <span class="p">(</span><span class="n">array_thresholds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="c1"># Print some notes</span>
+                <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Saving misclassifications...&quot;</span><span class="p">)</span>
+                <span class="c1">#</span>
+                <span class="c1"># Build string of misclassification information</span>
+                <span class="n">list_str</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="p">(</span>
+                        <span class="s2">&quot;Internal ID: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Bibcode: </span><span class="si">{1}</span><span class="se">\n</span><span class="s2">Mission: </span><span class="si">{2}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                        <span class="o">+</span> <span class="s2">&quot;Actual Classification: </span><span class="si">{3}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                        <span class="o">+</span> <span class="s2">&quot;Measured Classification: </span><span class="si">{4}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                        <span class="o">+</span> <span class="s2">&quot;Modif:</span><span class="se">\n</span><span class="s2">&#39;&#39;</span><span class="se">\n</span><span class="si">{5}</span><span class="se">\n</span><span class="s2">&#39;&#39;</span><span class="se">\n</span><span class="s2">-</span><span class="se">\n</span><span class="s2">&quot;</span>
+                        <span class="o">+</span> <span class="s2">&quot;Base Paragraph:</span><span class="se">\n</span><span class="s2">&#39;&#39;</span><span class="se">\n</span><span class="si">{6}</span><span class="se">\n</span><span class="s2">&#39;&#39;</span><span class="se">\n</span><span class="s2">-</span><span class="se">\n</span><span class="s2">&quot;</span>
+                    <span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">curr_misclassifs</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;id&quot;</span><span class="p">],</span>
+                        <span class="n">curr_misclassifs</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;bibcode&quot;</span><span class="p">],</span>
+                        <span class="n">curr_misclassifs</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;mission&quot;</span><span class="p">],</span>
+                        <span class="n">curr_misclassifs</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;act_classif&quot;</span><span class="p">],</span>
+                        <span class="n">curr_misclassifs</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;meas_classif&quot;</span><span class="p">],</span>
+                        <span class="n">curr_misclassifs</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;modif&quot;</span><span class="p">],</span>
+                        <span class="n">curr_misclassifs</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;modif_none&quot;</span><span class="p">],</span>
+                    <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">curr_misclassifs</span>
+                <span class="p">]</span>
+
+                <span class="n">str_misclassif</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">-----</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">list_str</span><span class="p">)</span>  <span class="c1"># Combined string</span>
+
+                <span class="c1"># Save the full string of misclassifications</span>
+                <span class="n">tmp_filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">fileroot_misclassif</span><span class="si">}</span><span class="s2">.txt&quot;</span>
+                <span class="n">tmp_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filepath_output</span><span class="p">,</span> <span class="n">tmp_filename</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_write_text</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">str_misclassif</span><span class="p">,</span> <span class="n">filepath</span><span class="o">=</span><span class="n">tmp_filepath</span><span class="p">)</span>
+
+                <span class="c1"># Print some notes</span>
+                <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Misclassifications saved at: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tmp_filepath</span><span class="p">))</span>
+
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All work complete for Operator #</span><span class="si">{0}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ii</span><span class="p">))</span>
+
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;!&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Save the evaluation components, if so requested</span>
+        <span class="k">if</span> <span class="n">do_save_evaluation</span><span class="p">:</span>
+            <span class="n">tmp_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filepath_output</span><span class="p">,</span> <span class="p">(</span><span class="n">fileroot_evaluation</span> <span class="o">+</span> <span class="s2">&quot;.npy&quot;</span><span class="p">))</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">tmp_filepath</span><span class="p">,</span> <span class="n">dict_evaluations</span><span class="p">)</span>
+
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Evaluation saved at: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tmp_filepath</span><span class="p">))</span>
+
+        <span class="c1"># Return the evaluation components</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Run of _generate_evaluation() complete!&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">dict_evaluations</span>
+
+    <span class="c1"># Generate performance counter for set of measured classifications vs actual classifications</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_generate_performance_counter</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">operator</span><span class="p">,</span>
+        <span class="n">mapper</span><span class="p">,</span>
+        <span class="n">list_actdicts</span><span class="p">,</span>
+        <span class="n">list_measdicts</span><span class="p">,</span>
+        <span class="n">threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">print_freq</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
+        <span class="n">do_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">do_verbose_deep</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method: _generate_performance_counter</span>
+<span class="sd">        Purpose:</span>
+<span class="sd">          - !</span>
+<span class="sd">        Arguments:</span>
+<span class="sd">          - !</span>
+<span class="sd">          - do_verbose [bool (default=False)]:</span>
+<span class="sd">            - Whether or not to print surface-level log information and tests.</span>
+<span class="sd">          - do_verbose_deep [bool (default=False)]:</span>
+<span class="sd">            - Whether or not to print inner log information and tests.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">          - dict:</span>
+<span class="sd">            - !</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Fetch global variables</span>
+        <span class="k">if</span> <span class="n">do_verbose</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">do_verbose</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;do_verbose&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">do_verbose_deep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">do_verbose_deep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;do_verbose_deep&quot;</span><span class="p">)</span>
+
+        <span class="n">num_texts</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_measdicts</span><span class="p">)</span>
+        <span class="n">meas_classifs</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">classifier</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">class_names</span>
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&gt; Running _generate_performance_counter()!&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Initialize container for counters and misclassifications</span>
+        <span class="k">if</span> <span class="n">mapper</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># Use mask classifications, if given</span>
+            <span class="n">act_classnames_raw</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">mapper</span><span class="o">.</span><span class="n">values</span><span class="p">())]))</span>
+            <span class="n">meas_classnames_raw</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">mapper</span><span class="o">.</span><span class="n">values</span><span class="p">())]))</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># Otherwise, use internal classifications</span>
+            <span class="n">act_classnames_raw</span> <span class="o">=</span> <span class="n">meas_classifs</span>
+            <span class="n">meas_classnames_raw</span> <span class="o">=</span> <span class="n">meas_classifs</span>
+
+        <span class="c1"># Extend measured allowed class names to include low-uncertainty, etc.</span>
+        <span class="n">act_classnames</span> <span class="o">=</span> <span class="n">act_classnames_raw</span> <span class="o">+</span> <span class="p">[</span><span class="n">config</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">verdict_rejection</span><span class="p">]</span>
+        <span class="n">meas_classnames</span> <span class="o">=</span> <span class="n">meas_classnames_raw</span> <span class="o">+</span> <span class="n">config</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">list_other_verdicts</span>
+
+        <span class="c1"># Streamline the class names</span>
+        <span class="n">act_classnames</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">act_classnames</span><span class="p">]</span>
+        <span class="n">meas_classnames</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">meas_classnames</span><span class="p">]</span>
+
+        <span class="c1"># Form containers</span>
+        <span class="n">dict_counters</span> <span class="o">=</span> <span class="p">{</span><span class="n">act_key</span><span class="p">:</span> <span class="p">{</span><span class="n">meas_key</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">meas_key</span> <span class="ow">in</span> <span class="n">meas_classnames</span><span class="p">}</span> <span class="k">for</span> <span class="n">act_key</span> <span class="ow">in</span> <span class="n">act_classnames</span><span class="p">}</span>
+        <span class="n">dict_misclassifs</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Accumulating performance over </span><span class="si">{0}</span><span class="s2"> texts.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_texts</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Actual class names: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Measured class names: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">act_classnames</span><span class="p">,</span> <span class="n">meas_classnames</span><span class="p">))</span>
+
+        <span class="c1"># Count up classifications from given texts and classifications</span>
+        <span class="n">i_misclassif</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Count of misclassifications</span>
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_texts</span><span class="p">):</span>
+            <span class="n">curr_actdict</span> <span class="o">=</span> <span class="n">list_actdicts</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+            <span class="n">curr_measdict</span> <span class="o">=</span> <span class="n">list_measdicts</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+
+            <span class="c1"># Iterate through missions that were considered</span>
+            <span class="k">for</span> <span class="n">curr_key</span> <span class="ow">in</span> <span class="n">curr_measdict</span><span class="p">:</span>
+                <span class="n">lookup</span> <span class="o">=</span> <span class="n">curr_key</span>
+
+                <span class="c1"># Extract actual classif</span>
+                <span class="n">curr_actval</span> <span class="o">=</span> <span class="n">curr_actdict</span><span class="p">[</span><span class="s2">&quot;missions&quot;</span><span class="p">][</span><span class="n">lookup</span><span class="p">][</span><span class="s2">&quot;class&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">mapper</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">curr_actval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">mapper</span><span class="p">):</span>
+                    <span class="c1"># Map to masked value if so requested</span>
+                    <span class="n">curr_actval</span> <span class="o">=</span> <span class="n">mapper</span><span class="p">[</span><span class="n">curr_actval</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+
+                <span class="c1"># Extract measured classif, or remeasure if threshold given</span>
+                <span class="n">curr_measval</span> <span class="o">=</span> <span class="n">curr_measdict</span><span class="p">[</span><span class="n">lookup</span><span class="p">][</span><span class="s2">&quot;verdict&quot;</span><span class="p">]</span>
+                <span class="c1"># Remeasure if new threshold given and text was classified</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">curr_measval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">act_classnames</span><span class="p">):</span>
+                    <span class="n">tmp_pass</span> <span class="o">=</span> <span class="n">curr_measdict</span><span class="p">[</span><span class="n">lookup</span><span class="p">][</span><span class="s2">&quot;uncertainty&quot;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">tmp_pass</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">tmp_pass</span><span class="p">[</span><span class="n">curr_measval</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
+                            <span class="n">curr_measval</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">dictverdict_lowprob</span><span class="o">.</span><span class="n">copy</span><span class="p">()[</span><span class="s2">&quot;verdict&quot;</span><span class="p">]</span>
+
+                <span class="c1"># Map to new masking value, if mapper given</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">mapper</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">curr_measval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">mapper</span><span class="p">):</span>
+                    <span class="n">curr_measval</span> <span class="o">=</span> <span class="n">mapper</span><span class="p">[</span><span class="n">curr_measval</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+
+                <span class="c1"># Streamline the class names</span>
+                <span class="n">curr_actval</span> <span class="o">=</span> <span class="n">curr_actval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">curr_measval</span> <span class="o">=</span> <span class="n">curr_measval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                <span class="c1"># Increment current counter</span>
+                <span class="n">dict_counters</span><span class="p">[</span><span class="n">curr_actval</span><span class="p">][</span><span class="n">curr_measval</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="c1"># If misclassification, take note</span>
+                <span class="k">if</span> <span class="n">curr_actval</span> <span class="o">!=</span> <span class="n">curr_measval</span><span class="p">:</span>
+                    <span class="n">curr_info</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;act_classif&quot;</span><span class="p">:</span> <span class="n">curr_actval</span><span class="p">,</span>
+                        <span class="s2">&quot;meas_classif&quot;</span><span class="p">:</span> <span class="n">curr_measval</span><span class="p">,</span>
+                        <span class="s2">&quot;bibcode&quot;</span><span class="p">:</span> <span class="n">curr_actdict</span><span class="p">[</span><span class="s2">&quot;bibcode&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;mission&quot;</span><span class="p">:</span> <span class="n">lookup</span><span class="p">,</span>
+                        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">curr_actdict</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;modif&quot;</span><span class="p">:</span> <span class="n">curr_measdict</span><span class="p">[</span><span class="n">lookup</span><span class="p">][</span><span class="s2">&quot;modif&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;modif_none&quot;</span><span class="p">:</span> <span class="n">curr_measdict</span><span class="p">[</span><span class="n">lookup</span><span class="p">][</span><span class="s2">&quot;modif_none&quot;</span><span class="p">],</span>
+                    <span class="p">}</span>
+
+                    <span class="n">dict_misclassifs</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i_misclassif</span><span class="p">)]</span> <span class="o">=</span> <span class="n">curr_info</span>
+                    <span class="c1"># Increment count of misclassifications</span>
+                    <span class="n">i_misclassif</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Compute internal counter totals</span>
+        <span class="k">for</span> <span class="n">key_1</span> <span class="ow">in</span> <span class="n">dict_counters</span><span class="p">:</span>
+            <span class="n">curr_sum</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">dict_counters</span><span class="p">[</span><span class="n">key_1</span><span class="p">][</span><span class="n">key_2</span><span class="p">]</span> <span class="k">for</span> <span class="n">key_2</span> <span class="ow">in</span> <span class="n">dict_counters</span><span class="p">[</span><span class="n">key_1</span><span class="p">]])</span>
+            <span class="n">dict_counters</span><span class="p">[</span><span class="n">key_1</span><span class="p">][</span><span class="s2">&quot;_total&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">curr_sum</span>
+
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">-</span><span class="se">\n</span><span class="s2">Performance counter generated:&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key_1</span> <span class="ow">in</span> <span class="n">dict_counters</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Actual </span><span class="si">{0}</span><span class="s2"> total: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key_1</span><span class="p">,</span> <span class="n">dict_counters</span><span class="p">[</span><span class="n">key_1</span><span class="p">][</span><span class="s2">&quot;_total&quot;</span><span class="p">]))</span>
+                <span class="k">for</span> <span class="n">key_2</span> <span class="ow">in</span> <span class="n">dict_counters</span><span class="p">[</span><span class="n">key_1</span><span class="p">]:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Actual </span><span class="si">{0}</span><span class="s2"> vs Measured </span><span class="si">{1}</span><span class="s2">: </span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key_1</span><span class="p">,</span> <span class="n">key_2</span><span class="p">,</span> <span class="n">dict_counters</span><span class="p">[</span><span class="n">key_1</span><span class="p">][</span><span class="n">key_2</span><span class="p">]))</span>
+
+        <span class="c1"># Return the counters and misclassifications</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">-</span><span class="se">\n\n</span><span class="s2">Run of _generate_performance_counter() complete!&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;counters&quot;</span><span class="p">:</span> <span class="n">dict_counters</span><span class="p">,</span>
+            <span class="s2">&quot;misclassifs&quot;</span><span class="p">:</span> <span class="n">dict_misclassifs</span><span class="p">,</span>
+            <span class="s2">&quot;act_classnames&quot;</span><span class="p">:</span> <span class="n">act_classnames</span><span class="p">,</span>
+            <span class="s2">&quot;meas_classnames&quot;</span><span class="p">:</span> <span class="n">meas_classnames</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="c1"># Plot confusion matrix for given performance counters</span>
+<div class="viewcode-block" id="Performance.plot_performance_confusion_matrix">
+<a class="viewcode-back" href="../../../api/bibcat.core.html#bibcat.core.performance.Performance.plot_performance_confusion_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_performance_confusion_matrix</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">list_evaluations</span><span class="p">,</span>
+        <span class="n">list_mappers</span><span class="p">,</span>
+        <span class="n">list_titles</span><span class="p">,</span>
+        <span class="n">filepath_plot</span><span class="p">,</span>
+        <span class="n">filename_plot</span><span class="p">,</span>
+        <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+        <span class="n">figcolor</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span>
+        <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+        <span class="n">hspace</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">cmap_abs</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">BuPu</span><span class="p">,</span>
+        <span class="n">cmap_norm</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">PuRd</span><span class="p">,</span>
+        <span class="n">do_verbose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">do_verbose_deep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method: plot_performance_confusion_matrix</span>
+<span class="sd">        Purpose:</span>
+<span class="sd">          - !</span>
+<span class="sd">        Arguments:</span>
+<span class="sd">          - !</span>
+<span class="sd">          - do_verbose [bool (default=False)]:</span>
+<span class="sd">            - Whether or not to print surface-level log information and tests.</span>
+<span class="sd">          - do_verbose_deep [bool (default=False)]:</span>
+<span class="sd">            - Whether or not to print inner log information and tests.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">          - dict:</span>
+<span class="sd">            - !</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Fetch global variables</span>
+        <span class="k">if</span> <span class="n">do_verbose</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">do_verbose</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;do_verbose&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">do_verbose_deep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">do_verbose_deep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;do_verbose_deep&quot;</span><span class="p">)</span>
+
+        <span class="n">num_evals</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_evaluations</span><span class="p">)</span>
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&gt; Running plot_performance_confusion_matrix()!&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Prepare the base figure</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="n">figcolor</span><span class="p">)</span>
+        <span class="n">nrow</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">ncol</span> <span class="o">=</span> <span class="n">num_evals</span>
+
+        <span class="c1"># Plot confusion matrix for each evaluation</span>
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_evals</span><span class="p">):</span>
+            <span class="c1"># Use current mapper to determine actual vs measured classifs</span>
+            <span class="n">act_classifs</span> <span class="o">=</span> <span class="n">list_evaluations</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="s2">&quot;act_classnames&quot;</span><span class="p">]</span>
+            <span class="n">meas_classifs</span> <span class="o">=</span> <span class="n">list_evaluations</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="s2">&quot;meas_classnames&quot;</span><span class="p">]</span>
+            <span class="n">num_act</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">act_classifs</span><span class="p">)</span>
+            <span class="n">num_meas</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">meas_classifs</span><span class="p">)</span>
+
+            <span class="c1"># Initialize container for current confusion matrix</span>
+            <span class="n">confmatr_abs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">num_act</span><span class="p">,</span> <span class="n">num_meas</span><span class="p">))</span>  <span class="c1"># Unnormalized</span>
+            <span class="n">confmatr_norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">num_act</span><span class="p">,</span> <span class="n">num_meas</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>  <span class="c1"># Normalized</span>
+
+            <span class="c1"># Fetch counters from current evaluation</span>
+            <span class="n">curr_counts</span> <span class="o">=</span> <span class="n">list_evaluations</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="s2">&quot;counters&quot;</span><span class="p">]</span>
+
+            <span class="c1"># Accumulate the confusion matrices</span>
+            <span class="k">for</span> <span class="n">yy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_act</span><span class="p">):</span>  <span class="c1"># Iterate through actual classifs</span>
+                <span class="n">curr_total</span> <span class="o">=</span> <span class="n">curr_counts</span><span class="p">[</span><span class="n">act_classifs</span><span class="p">[</span><span class="n">yy</span><span class="p">]][</span><span class="s2">&quot;_total&quot;</span><span class="p">]</span>  <span class="c1"># Total act.</span>
+                <span class="k">for</span> <span class="n">xx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_meas</span><span class="p">):</span>  <span class="c1"># Iterate through measured classifs</span>
+                    <span class="c1"># For the unnormalized confusion matrix</span>
+                    <span class="n">curr_val</span> <span class="o">=</span> <span class="n">curr_counts</span><span class="p">[</span><span class="n">act_classifs</span><span class="p">[</span><span class="n">yy</span><span class="p">]][</span><span class="n">meas_classifs</span><span class="p">[</span><span class="n">xx</span><span class="p">]]</span>
+                    <span class="n">confmatr_abs</span><span class="p">[</span><span class="n">yy</span><span class="p">,</span> <span class="n">xx</span><span class="p">]</span> <span class="o">+=</span> <span class="n">curr_val</span>
+
+                    <span class="c1"># For the normalized confusion matrix</span>
+                    <span class="n">confmatr_norm</span><span class="p">[</span><span class="n">yy</span><span class="p">,</span> <span class="n">xx</span><span class="p">]</span> <span class="o">=</span> <span class="n">confmatr_abs</span><span class="p">[</span><span class="n">yy</span><span class="p">,</span> <span class="n">xx</span><span class="p">]</span> <span class="o">/</span> <span class="n">curr_total</span>
+
+            <span class="c1"># Plot the current set of confusion matrices</span>
+            <span class="c1"># For the unnormalized matrix</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span><span class="p">,</span> <span class="p">(</span><span class="n">ii</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ax_confusion_matrix</span><span class="p">(</span>
+                <span class="n">matr</span><span class="o">=</span><span class="n">confmatr_abs</span><span class="p">,</span>
+                <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+                <span class="n">x_labels</span><span class="o">=</span><span class="n">meas_classifs</span><span class="p">,</span>
+                <span class="n">y_labels</span><span class="o">=</span><span class="n">act_classifs</span><span class="p">,</span>
+                <span class="n">y_title</span><span class="o">=</span><span class="s2">&quot;Actual&quot;</span><span class="p">,</span>
+                <span class="n">x_title</span><span class="o">=</span><span class="s2">&quot;Classification&quot;</span><span class="p">,</span>
+                <span class="n">cbar_title</span><span class="o">=</span><span class="s2">&quot;Absolute Count&quot;</span><span class="p">,</span>
+                <span class="n">ax_title</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">list_titles</span><span class="p">[</span><span class="n">ii</span><span class="p">]),</span>
+                <span class="n">cmap</span><span class="o">=</span><span class="n">cmap_abs</span><span class="p">,</span>
+                <span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">,</span>
+                <span class="n">is_norm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># For the normalized matrix</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">nrow</span><span class="p">,</span> <span class="n">ncol</span><span class="p">,</span> <span class="p">(</span><span class="n">ii</span> <span class="o">+</span> <span class="n">ncol</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ax_confusion_matrix</span><span class="p">(</span>
+                <span class="n">matr</span><span class="o">=</span><span class="n">confmatr_norm</span><span class="p">,</span>
+                <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+                <span class="n">x_labels</span><span class="o">=</span><span class="n">meas_classifs</span><span class="p">,</span>
+                <span class="n">y_labels</span><span class="o">=</span><span class="n">act_classifs</span><span class="p">,</span>
+                <span class="n">y_title</span><span class="o">=</span><span class="s2">&quot;Actual&quot;</span><span class="p">,</span>
+                <span class="n">x_title</span><span class="o">=</span><span class="s2">&quot;Classification&quot;</span><span class="p">,</span>
+                <span class="n">cbar_title</span><span class="o">=</span><span class="s2">&quot;Normalized Count&quot;</span><span class="p">,</span>
+                <span class="n">ax_title</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">list_titles</span><span class="p">[</span><span class="n">ii</span><span class="p">]),</span>
+                <span class="n">cmap</span><span class="o">=</span><span class="n">cmap_norm</span><span class="p">,</span>
+                <span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">,</span>
+                <span class="n">is_norm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Save and close the figure</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">hspace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">hspace</span><span class="o">=</span><span class="n">hspace</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filepath_plot</span><span class="p">,</span> <span class="n">filename_plot</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Run of plot_performance_confusion_matrix() complete!&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

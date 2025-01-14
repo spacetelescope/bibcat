@@ -1,0 +1,248 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat.pretrained.operate_classifier &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">BibCat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bibcat.pretrained.operate_classifier</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bibcat.pretrained.operate_classifier</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">:title: operate_classifier.py</span>
+
+<span class="sd">This module applies a given classifier method on the input data for classification.</span>
+
+<span class="sd">- Context: once the input dict texts of papers returned from fetch_papers.py are fed into this script, this will classify the input text(s) into the paper classification.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">operator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.utils.logger_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.utils.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert_sets</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># Store texts for each operator and its internal classifier</span>
+<span class="c1"># For operator ML, Dictionary of texts to classify</span>
+
+
+<span class="c1"># TODO - do we need this?</span>
+<div class="viewcode-block" id="operate_classifier">
+<a class="viewcode-back" href="../../../api/bibcat.pretrained.html#bibcat.pretrained.operate_classifier.operate_classifier">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">operate_classifier</span><span class="p">(</span>
+    <span class="n">classifier_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">classifier</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
+    <span class="n">dict_texts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">keyword_objs</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+    <span class="n">buffer</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">print_freq</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">filepath_output</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">fileroot_class_results</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">mode_modif</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">is_text_processed</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">load_check_truematch</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">deep_verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Method: operate_classifiers</span>
+<span class="sd">    Purpose:</span>
+<span class="sd">    - Classify a set of texts based on a given classifier</span>
+<span class="sd">    Arguments:</span>
+<span class="sd">    - classifier_name: the name of the classifier such as &#39;ML&#39; for a machine learning classifier or &#39;RB&#39; for a rule based classifier.</span>
+<span class="sd">    - classifier: instance object of an classifier</span>
+<span class="sd">    - dict_texts: a nested dictionary of dictionary of input texts to classify</span>
+<span class="sd">    - keyword_obj [&lt;Keyword object&gt; or None]: Target Keyword instance. If None, the input variable lookup will be used to look up the Keyword instance.</span>
+<span class="sd">    - buffer [int (default=0)]: Number of +/- sentences around a sentence containing a target mission to include in the paragraph.</span>
+<span class="sd">    - threshold:</span>
+<span class="sd">    - print_freq: print some notes at given frequency</span>
+<span class="sd">    - is_text_processed: if a given text is preprocessed (&#39;True&#39;) or raw (&#39;False&#39;)</span>
+<span class="sd">    - do_check_truematch [bool]: Whether or not to check that mission phrases found in text are known true vs. false matches. (E.g., &#39;Edwin Hubble&#39; as false match for the Hubble Space Telescope).</span>
+<span class="sd">    - lookup [str or None]: A term for looking up the target Keyword instance (e.g. &#39;HST&#39;). Required if keyobj is None.</span>
+<span class="sd">    - do_verbose [bool (default=False)]: Whether or not to print surface-level log information and tests.</span>
+<span class="sd">    - do_verbose_deep [bool (default=False)]: Whether or not to print inner log information and tests.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Initialize operators by loading models into instances of the Operator class</span>
+    <span class="n">op</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">Operator</span><span class="p">(</span>
+        <span class="n">classifier</span><span class="o">=</span><span class="n">classifier</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">classifier_name</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="n">mode_modif</span><span class="p">,</span>
+        <span class="n">keyword_objs</span><span class="o">=</span><span class="n">keyword_objs</span><span class="p">,</span>
+        <span class="n">load_check_truematch</span><span class="o">=</span><span class="n">load_check_truematch</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+        <span class="n">deep_verbose</span><span class="o">=</span><span class="n">deep_verbose</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Print some notes</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Classifying with Operator </span><span class="si">{</span><span class="n">classifier_name</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Load in as either raw or preprocessed data</span>
+    <span class="k">if</span> <span class="n">is_text_processed</span><span class="p">:</span>  <span class="c1"># If given text preprocessed</span>
+        <span class="n">curr_texts</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">curr_modifs</span> <span class="o">=</span> <span class="p">[</span><span class="n">dict_texts</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;text&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">dict_texts</span><span class="p">]</span>
+        <span class="c1"># curr_forests = [dict_texts[key][&quot;forest&quot;] for key in dict_texts]</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># If raw text given, text needs to be preprocessed</span>
+        <span class="c1"># curr_texts = [dict_texts[keys[jj]][&quot;text&quot;] for jj in range(0, len(keys))]</span>
+        <span class="n">curr_texts</span> <span class="o">=</span> <span class="p">[</span><span class="n">dict_texts</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;text&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">dict_texts</span><span class="p">]</span>
+        <span class="n">curr_modifs</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># curr_forests = None</span>
+
+    <span class="c1"># Classify texts with current operator</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">classify_set</span><span class="p">(</span>
+        <span class="n">curr_texts</span><span class="p">,</span> <span class="n">modifs</span><span class="o">=</span><span class="n">curr_modifs</span><span class="p">,</span> <span class="n">buffer</span><span class="o">=</span><span class="n">buffer</span><span class="p">,</span> <span class="n">do_check_truematch</span><span class="o">=</span><span class="n">load_check_truematch</span><span class="p">,</span> <span class="n">print_freq</span><span class="o">=</span><span class="n">print_freq</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Print some notes</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Classification complete for Operator </span><span class="si">{</span><span class="n">classifier_name</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Generating the performance counter...&quot;</span><span class="p">)</span>
+
+    <span class="c1"># We want to prepend the text ID and its bibcode to the results.</span>
+    <span class="n">text_ids</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">index</span><span class="p">}</span> <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">dict_texts</span><span class="p">]</span>
+    <span class="n">text_bibcodes</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;bibcode&quot;</span><span class="p">:</span> <span class="n">dict_texts</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="s2">&quot;bibcode&quot;</span><span class="p">]}</span> <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">dict_texts</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">classifier_name</span><span class="si">}</span><span class="s2"> results: </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">dict_content</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Text </span><span class="si">{</span><span class="n">index</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Text id: </span><span class="si">{</span><span class="n">text_ids</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Text bibcode: </span><span class="si">{</span><span class="n">text_bibcodes</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;bibcode&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">dict_content</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mission: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Verdict: </span><span class="si">{</span><span class="n">dict_content</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;verdict&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Probability: </span><span class="si">{</span><span class="n">dict_content</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;uncertainty&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Supporting texts:</span><span class="se">\n</span><span class="s2">&#39;</span><span class="se">\n</span><span class="si">{</span><span class="n">dict_content</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;modif&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&#39; &quot;</span><span class="p">)</span>
+
+    <span class="c1"># Save the classification results into a JSON file</span>
+    <span class="n">classification_results</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span><span class="o">**</span><span class="n">text_ids</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="o">**</span><span class="n">text_bibcodes</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="o">**</span><span class="n">dict_content</span><span class="p">}</span> <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">dict_content</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+    <span class="p">]</span>
+
+    <span class="c1"># set file save location and filename</span>
+    <span class="n">tmp_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filepath_output</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">fileroot_class_results</span><span class="si">}</span><span class="s2">.json&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">tmp_filepath</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">tmp_filepath</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saving &#39;</span><span class="si">{</span><span class="n">fileroot_class_results</span><span class="si">}</span><span class="s2">.json&#39; under &#39;</span><span class="si">{</span><span class="n">filepath_output</span><span class="si">}</span><span class="s2">/&#39;!&quot;</span><span class="p">)</span>
+    <span class="n">json_dump</span> <span class="o">=</span> <span class="n">convert_sets</span><span class="p">(</span><span class="n">classification_results</span><span class="p">)</span>  <span class="c1"># converts any sets in the results to lists</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tmp_filepath</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">json_dump</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

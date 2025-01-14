@@ -1,0 +1,1096 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat.tests.core.test_base &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/modules.html">BibCat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bibcat.tests.core.test_base</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bibcat.tests.core.test_base</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">:title: test_base.py</span>
+
+<span class="sd">Testing the Base class and its methods.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">unittest</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">spacy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">nltk.corpus</span><span class="w"> </span><span class="kn">import</span> <span class="n">wordnet</span>  <span class="c1"># type: ignore</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">parameters</span> <span class="k">as</span> <span class="n">params</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.core.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">Base</span>
+
+<span class="n">nlp</span> <span class="o">=</span> <span class="n">spacy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">grammar</span><span class="o">.</span><span class="n">spacy_language_model</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="TestBase">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TestBase</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+    <span class="c1"># For tests of _assemble_keyword_wordchunks:</span>
+    <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># Test determination of wordchunks around keywords</span>
+<div class="viewcode-block" id="TestBase.test__assemble_keyword_wordchunks__variety">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase.test__assemble_keyword_wordchunks__variety">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test__assemble_keyword_wordchunks__variety</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_acts_noverbs</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;The Hubble calibrated data was used.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Hubble calibrated data&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The Hubble database is quite expansive.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Hubble database&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Consider reading the paper Hubble (2000).&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;paper Hubble&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The scientists used the HST PSF.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;HST PSF&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The Hubble Telescope imaged the data.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Hubble Telescope&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;HST and Hubble both refer to the Hubble Telescope&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;HST&quot;</span><span class="p">,</span> <span class="s2">&quot;Hubble&quot;</span><span class="p">,</span> <span class="s2">&quot;Hubble Telescope&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;hubble and roman are both telescopes&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;hubble&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;roman and hubble are both telescopes&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;hubble&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;roman, hubble, and kepler are all telescopes&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;hubble&quot;</span><span class="p">,</span> <span class="s2">&quot;kepler&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;H.S.T stands for Hubble Space Telescope, which is part of an observatory effort.&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="s2">&quot;H.S.T&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Hubble Space Telescope&quot;</span><span class="p">,</span>
+                <span class="p">],</span>
+                <span class="s2">&quot;We tried analysis with Hubble data, before then using a Kepler approach.&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="s2">&quot;Hubble data&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Kepler approach&quot;</span><span class="p">,</span>
+                <span class="p">],</span>
+                <span class="s2">&quot;Kepler&#39;s phases are visible in the plot.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Kepler&#39;s phases&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Perhaps Edwin Hubble was the source of the name for the Hubble Space Telescope.&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="s2">&quot;Edwin Hubble&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Hubble Space Telescope&quot;</span><span class="p">,</span>
+                <span class="p">],</span>
+            <span class="p">}</span>
+            <span class="n">dict_acts_yesverbs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;The Hubble calibrated data was used for the analysis.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Hubble calibrated data&quot;</span><span class="p">]}</span>
+
+            <span class="c1"># Prepare and run test for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">Base</span><span class="p">()</span>
+            <span class="c1"># For tests where verbs are not included</span>
+            <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">dict_acts_noverbs</span><span class="p">:</span>
+                <span class="n">test_res</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">_assemble_keyword_wordchunks</span><span class="p">(</span>
+                    <span class="n">text</span><span class="o">=</span><span class="n">phrase</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">test_list_lookup_kobj</span><span class="p">,</span> <span class="n">do_include_verbs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">do_verbose</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+                <span class="n">test_res</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">test_res</span><span class="p">]</span>
+
+                <span class="c1"># Check answer</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">dict_acts_noverbs</span><span class="p">[</span><span class="n">phrase</span><span class="p">])</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="s2">&quot;Text: </span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">test_res</span><span class="p">,</span> <span class="n">dict_acts_noverbs</span><span class="p">[</span><span class="n">phrase</span><span class="p">],</span> <span class="n">phrase</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">dict_acts_noverbs</span><span class="p">[</span><span class="n">phrase</span><span class="p">])</span>
+
+            <span class="c1"># For tests where verbs are indeed included</span>
+            <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">dict_acts_yesverbs</span><span class="p">:</span>
+                <span class="n">test_res</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">_assemble_keyword_wordchunks</span><span class="p">(</span>
+                    <span class="n">text</span><span class="o">=</span><span class="n">phrase</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">test_list_lookup_kobj</span><span class="p">,</span> <span class="n">do_include_verbs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">do_verbose</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+                <span class="n">test_res</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">test_res</span><span class="p">]</span>
+
+                <span class="c1"># Check answer</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">dict_acts_yesverbs</span><span class="p">[</span><span class="n">phrase</span><span class="p">])</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="s2">&quot;Text: </span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">test_res</span><span class="p">,</span> <span class="n">dict_acts_yesverbs</span><span class="p">[</span><span class="n">phrase</span><span class="p">],</span> <span class="n">phrase</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">dict_acts_yesverbs</span><span class="p">[</span><span class="n">phrase</span><span class="p">])</span></div>
+
+
+    <span class="c1"># For tests of _check_importance:</span>
+    <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># Test determination of importance of given text with various terms</span>
+<div class="viewcode-block" id="TestBase.test__check_importance__variety">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase.test__check_importance__variety">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test__check_importance__variety</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">kobj</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span>
+            <span class="n">dict_acts</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;I went to the store.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;is_pron_1st&quot;</span><span class="p">,</span> <span class="s2">&quot;is_any&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;We all went to their house.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;is_pron_1st&quot;</span><span class="p">,</span> <span class="s2">&quot;is_pron_3rd&quot;</span><span class="p">,</span> <span class="s2">&quot;is_any&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;We used HST data in our work.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;is_pron_1st&quot;</span><span class="p">,</span> <span class="s2">&quot;is_keyword&quot;</span><span class="p">,</span> <span class="s2">&quot;is_any&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Their paper uses both Hubble and JWST observations.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;is_pron_3rd&quot;</span><span class="p">,</span> <span class="s2">&quot;is_keyword&quot;</span><span class="p">,</span> <span class="s2">&quot;is_any&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The observations are plotted in Figure 3.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;is_term_fig&quot;</span><span class="p">,</span> <span class="s2">&quot;is_any&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Tab. 7b lists the H.S.T project codes.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;is_term_fig&quot;</span><span class="p">,</span> <span class="s2">&quot;is_keyword&quot;</span><span class="p">,</span> <span class="s2">&quot;is_any&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The dog left the doghouse.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;Fig. 2 plots the trend line we measured.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;is_pron_1st&quot;</span><span class="p">,</span> <span class="s2">&quot;is_term_fig&quot;</span><span class="p">,</span> <span class="s2">&quot;is_any&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Blue et al. (2023) published the raw spectra already.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;is_etal&quot;</span><span class="p">,</span> <span class="s2">&quot;is_any&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Green (1999) analyzed the Hubble Telescope data.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;is_etal&quot;</span><span class="p">,</span> <span class="s2">&quot;is_keyword&quot;</span><span class="p">,</span> <span class="s2">&quot;is_any&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The references for the Hubble data are given in Section 4 of Yellow et al..&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="s2">&quot;is_etal&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;is_keyword&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;is_term_fig&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;is_any&quot;</span><span class="p">,</span>
+                <span class="p">],</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Prepare and run test for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">Base</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">dict_acts</span><span class="p">:</span>
+                <span class="n">test_res</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">_check_importance</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">phrase</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="p">[</span><span class="n">kobj</span><span class="p">])[</span><span class="s2">&quot;bools&quot;</span><span class="p">]</span>
+                <span class="n">list_res</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">test_res</span> <span class="k">if</span> <span class="p">(</span><span class="n">test_res</span><span class="p">[</span><span class="n">key</span><span class="p">])]</span>
+
+                <span class="c1"># Check answer</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">list_res</span><span class="p">),</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dict_acts</span><span class="p">[</span><span class="n">phrase</span><span class="p">]))</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Text: </span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">phrase</span><span class="p">],</span> <span class="n">phrase</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">list_res</span><span class="p">),</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dict_acts</span><span class="p">[</span><span class="n">phrase</span><span class="p">]))</span></div>
+
+
+    <span class="c1"># For tests of _cleanse_text:</span>
+    <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># Test _cleanse_text for variety of text</span>
+<div class="viewcode-block" id="TestBase.test__cleanse_text__variety">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase.test__cleanse_text__variety">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test__cleanse_text__variety</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="c1"># kobj = params.kobj_hubble</span>
+            <span class="n">dict_acts</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;  J.W .. . S. - T .  .S-c&quot;</span><span class="p">:</span> <span class="s2">&quot;J.W. S. - T.S-c&quot;</span><span class="p">,</span>
+                <span class="s2">&quot; We  walked to the   store/shop - across   the street. </span><span class="se">\n</span><span class="s2">   We bought:   carrots-celery, and  - tofu-juice /milk.  &quot;</span><span class="p">:</span> <span class="s2">&quot;We walked to the store/shop - across the street. </span><span class="se">\n</span><span class="s2"> We bought: carrots-celery, and - tofu-juice /milk.&quot;</span><span class="p">,</span>
+                <span class="s2">&quot; The pets ( cats ,  dogs,  sheep  ) all went to the field.  They &#39; ve all [ allegedly  ] pink (re : : salmon ) fur .   That isn&#39; t typical [apparently (e.g. Cite  2023 ) ].&quot;</span><span class="p">:</span> <span class="s2">&quot;The pets (cats, dogs, sheep) all went to the field. They&#39;ve all [allegedly] pink (re: salmon) fur. That isn&#39;t typical [apparently (e.g. Cite 2023)].&quot;</span><span class="p">,</span>
+                <span class="s2">&quot; The poetry... It was beautiful (according to the audience.).&quot;</span><span class="p">:</span> <span class="s2">&quot;The poetry. It was beautiful (according to the audience.).&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="c1">#</span>
+
+            <span class="c1"># Prepare and run test for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">Base</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">dict_acts</span><span class="p">:</span>
+                <span class="n">test_res</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">_cleanse_text</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">phrase</span><span class="p">,</span> <span class="n">do_streamline_etal</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+                <span class="c1"># Check answer</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">phrase</span><span class="p">])</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Text: </span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">phrase</span><span class="p">],</span> <span class="n">phrase</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">phrase</span><span class="p">])</span></div>
+
+
+    <span class="c1"># For tests of _extract_core_from_phrase:</span>
+    <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># Test core extraction for variety of phrases</span>
+<div class="viewcode-block" id="TestBase.test_extract_core_from_phrase__variety">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase.test_extract_core_from_phrase__variety">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test_extract_core_from_phrase__variety</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_acts</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;Hubble observatory&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;keywords&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;hubble&quot;</span><span class="p">]},</span>
+                <span class="s2">&quot;Kepler planet&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;keywords&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;kepler&quot;</span><span class="p">]},</span>
+                <span class="s2">&quot;Hubble and K2 observations&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;keywords&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;hubble&quot;</span><span class="p">,</span> <span class="s2">&quot;k2&quot;</span><span class="p">]},</span>
+                <span class="s2">&quot;Kepler data and K2 error&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;keywords&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;kepler&quot;</span><span class="p">,</span> <span class="s2">&quot;k2&quot;</span><span class="p">]},</span>
+                <span class="s2">&quot;Simultaneous Kepler phase curves&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;keywords&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;kepler&quot;</span><span class="p">]},</span>
+                <span class="s2">&quot;Beautiful Hubble images of stars&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;keywords&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;hubble&quot;</span><span class="p">]},</span>
+                <span class="s2">&quot;Both Hubble and Roman papers&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;keywords&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;hubble&quot;</span><span class="p">]},</span>
+                <span class="s2">&quot;Hubble UDF&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;keywords&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;hubble&quot;</span><span class="p">]},</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Fill in rest of dictionary entries</span>
+            <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_acts</span><span class="p">:</span>
+                <span class="n">curr_text</span> <span class="o">=</span> <span class="n">key1</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="n">dict_acts</span><span class="p">[</span><span class="n">key1</span><span class="p">][</span><span class="s2">&quot;text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key1</span>
+                <span class="n">dict_acts</span><span class="p">[</span><span class="n">key1</span><span class="p">][</span><span class="s2">&quot;synsets&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">dict_acts</span><span class="p">[</span><span class="n">key1</span><span class="p">][</span><span class="s2">&quot;roots&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">curr_word</span> <span class="ow">in</span> <span class="n">curr_text</span><span class="p">:</span>
+                    <span class="n">curr_syns</span> <span class="o">=</span> <span class="n">wordnet</span><span class="o">.</span><span class="n">synsets</span><span class="p">(</span><span class="n">curr_word</span><span class="p">)</span>
+                    <span class="n">curr_kobjs</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">test_list_lookup_kobj</span> <span class="k">if</span> <span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">identify_keyword</span><span class="p">(</span><span class="n">curr_word</span><span class="p">)[</span><span class="s2">&quot;bool&quot;</span><span class="p">])</span>
+                    <span class="p">]</span>
+                    <span class="n">curr_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">name</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">curr_syns</span> <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;.n.&quot;</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">name</span><span class="p">())]</span>
+                    <span class="c1"># Store as name if keyword</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">curr_kobjs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">dict_acts</span><span class="p">[</span><span class="n">key1</span><span class="p">][</span><span class="s2">&quot;synsets&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[[</span><span class="n">curr_kobjs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_name</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()]]</span>
+                        <span class="n">dict_acts</span><span class="p">[</span><span class="n">key1</span><span class="p">][</span><span class="s2">&quot;roots&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[[</span><span class="n">curr_kobjs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_name</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()]]</span>
+                    <span class="c1"># Otherwise, store synsets</span>
+                    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">curr_set</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">curr_roots</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">([</span><span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">curr_set</span><span class="p">])</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                        <span class="n">dict_acts</span><span class="p">[</span><span class="n">key1</span><span class="p">][</span><span class="s2">&quot;synsets&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="n">curr_set</span><span class="p">]</span>
+                        <span class="n">dict_acts</span><span class="p">[</span><span class="n">key1</span><span class="p">][</span><span class="s2">&quot;roots&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="n">curr_roots</span><span class="p">]</span>
+                    <span class="c1"># Otherwise, store word itself</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">dict_acts</span><span class="p">[</span><span class="n">key1</span><span class="p">][</span><span class="s2">&quot;synsets&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[[</span><span class="n">curr_word</span><span class="o">.</span><span class="n">lower</span><span class="p">()]]</span>
+                        <span class="n">dict_acts</span><span class="p">[</span><span class="n">key1</span><span class="p">][</span><span class="s2">&quot;roots&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[[</span><span class="n">curr_word</span><span class="o">.</span><span class="n">lower</span><span class="p">()]]</span>
+
+                <span class="c1"># Process synsets into single string representation</span>
+                <span class="n">dict_acts</span><span class="p">[</span><span class="n">key1</span><span class="p">][</span><span class="s2">&quot;str_meaning&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">key1</span><span class="p">][</span><span class="s2">&quot;roots&quot;</span><span class="p">]])</span>
+
+            <span class="c1"># Prepare and run test for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">Base</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_acts</span><span class="p">:</span>
+                <span class="n">test_res</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">_extract_core_from_phrase</span><span class="p">(</span>
+                    <span class="n">phrase_NLP</span><span class="o">=</span><span class="n">nlp</span><span class="p">(</span><span class="n">key1</span><span class="p">),</span>
+                    <span class="n">do_skip_useless</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">do_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">keyword_objs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">test_list_lookup_kobj</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="c1"># Check answer</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">key1</span><span class="p">])</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Text: </span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">key1</span><span class="p">],</span> <span class="n">key1</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">dict_acts</span><span class="p">[</span><span class="n">key1</span><span class="p">])</span></div>
+
+
+    <span class="c1"># For tests of _check_truematch:</span>
+    <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># Test verification of ambig. phrases for variety of phrases</span>
+<div class="viewcode-block" id="TestBase.test_check_truematch__variety1">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase.test_check_truematch__variety1">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test_check_truematch__variety1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_tests</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;small Hubble constant&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Kepler&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                <span class="s2">&quot;small Hubble&#39;s constant&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Kepler&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                <span class="s2">&quot;Edwin Hubble&#39;s papers&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Hubble&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                <span class="c1"># &quot;Hubble 1970&quot;: {&quot;lookup&quot;: &quot;Hubble&quot;, &quot;bool&quot;: False}, - not realistic since would be cleaned beforehand normally</span>
+                <span class="c1"># &quot;Hubble (2000)&quot;: {&quot;lookup&quot;: &quot;Hubble&quot;, &quot;bool&quot;: False}, - not realistic since would be cleaned beforehand normally</span>
+                <span class="s2">&quot;high S/N Hubble image&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Hubble&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="s2">&quot;HST observatory&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Hubble&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="s2">&quot;H.S.T. observatory&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Hubble&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="s2">&quot;Hubble calibrated images&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Hubble&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="s2">&quot;Hubble&#39;s calibrated data&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Hubble&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="s2">&quot;Hubble&#39;s pretty spectra&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Hubble&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="s2">&quot;Edwin Hubble&#39;s analysis&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Hubble&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                <span class="s2">&quot;A Hubble constant data&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Hubble&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                <span class="s2">&quot;Hubble et al. 2000&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Hubble&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                <span class="s2">&quot;Hubbleetal 2000&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Hubble&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                <span class="s2">&quot;Hubble and more data.&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Hubble&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="s2">&quot;Kepler fields.&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Kepler&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="s2">&quot;Kepler velocities.&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Kepler&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                <span class="s2">&quot;Kepler velocity fields.&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Kepler&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                <span class="s2">&quot;Kepler rotation velocity fields.&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Kepler&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                <span class="s2">&quot;that Kepler data velocity.&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Kepler&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="s2">&quot;true Kepler planets&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Kepler&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                <span class="s2">&quot;those Kepler radii&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Kepler&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                <span class="s2">&quot;Keplerian orbits&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Kepler&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                <span class="s2">&quot;Kepler&#39;s law&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Kepler&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                <span class="s2">&quot;Kepler observations&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;Kepler&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="s2">&quot;K2 database&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;K2&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="s2">&quot;K2-123 star&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;K2&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                <span class="s2">&quot;K2 stars&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;lookup&quot;</span><span class="p">:</span> <span class="s2">&quot;K2&quot;</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Prepare and run tests for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">Base</span><span class="p">()</span>
+            <span class="n">dict_ambigs</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">_process_database_ambig</span><span class="p">(</span><span class="n">do_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">test_list_lookup_kobj</span><span class="p">)</span>
+
+            <span class="c1"># Check answers</span>
+            <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_tests</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">curr_phrase</span> <span class="o">=</span> <span class="n">key1</span>
+                    <span class="n">curr_kobjs</span> <span class="o">=</span> <span class="p">[</span><span class="n">params</span><span class="o">.</span><span class="n">test_dict_lookup_kobj</span><span class="p">[</span><span class="n">dict_tests</span><span class="p">[</span><span class="n">key1</span><span class="p">][</span><span class="s2">&quot;lookup&quot;</span><span class="p">]]]</span>
+                    <span class="n">answer</span> <span class="o">=</span> <span class="n">dict_tests</span><span class="p">[</span><span class="n">key1</span><span class="p">][</span><span class="s2">&quot;bool&quot;</span><span class="p">]</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">_check_truematch</span><span class="p">(</span>
+                        <span class="n">text</span><span class="o">=</span><span class="n">curr_phrase</span><span class="p">,</span>
+                        <span class="n">keyword_objs</span><span class="o">=</span><span class="n">curr_kobjs</span><span class="p">,</span>
+                        <span class="n">do_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">do_verbose_deep</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">dict_ambigs</span><span class="o">=</span><span class="n">dict_ambigs</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">[</span><span class="s2">&quot;bool&quot;</span><span class="p">],</span> <span class="n">answer</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="s2">&quot;</span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="si">{3}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">test_res</span><span class="p">[</span><span class="s2">&quot;bool&quot;</span><span class="p">],</span> <span class="n">answer</span><span class="p">,</span> <span class="n">key1</span><span class="p">,</span> <span class="n">test_res</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">[</span><span class="s2">&quot;bool&quot;</span><span class="p">],</span> <span class="n">answer</span><span class="p">)</span></div>
+
+
+    <span class="c1"># For tests of _is_pos_word:</span>
+    <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># Test identification of adjectives in a sentence</span>
+<div class="viewcode-block" id="TestBase.test_is_pos_word__adjective">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase.test_is_pos_word__adjective">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test_is_pos_word__adjective</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">test_pos</span> <span class="o">=</span> <span class="s2">&quot;ADJECTIVE&quot;</span>  <span class="c1"># Current p.o.s. to be tested</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_tests</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;Hubble&#39;s calibrated data is in the database.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;calibrated&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;She went to the clean store.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;clean&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Hubble has observed many stars.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;many&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;That is one hideous dog.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;hideous&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The flying pig forms their sigil.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;flying&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;She, the bird, and the cat all bought the book.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;The observed spectra are quickly plotted in pretty figures.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;observed&quot;</span><span class="p">,</span> <span class="s2">&quot;pretty&quot;</span><span class="p">],</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Prepare and run tests for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">Base</span><span class="p">()</span>
+
+            <span class="c1"># Check answers</span>
+            <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_tests</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">curr_phrase</span> <span class="o">=</span> <span class="n">key1</span>
+                    <span class="n">curr_NLP</span> <span class="o">=</span> <span class="n">nlp</span><span class="p">(</span><span class="n">curr_phrase</span><span class="p">)</span>
+                    <span class="n">answer</span> <span class="o">=</span> <span class="n">dict_tests</span><span class="p">[</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">test_bools</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="n">testbase</span><span class="o">.</span><span class="n">_is_pos_word</span><span class="p">(</span><span class="n">word</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">test_list_lookup_kobj</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">test_pos</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">curr_NLP</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">curr_NLP</span><span class="p">)[</span><span class="n">test_bools</span><span class="p">]]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="si">{3}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">,</span> <span class="n">key1</span><span class="p">,</span> <span class="n">test_bools</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All p.o.s.:&quot;</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">word1</span> <span class="ow">in</span> <span class="n">curr_NLP</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: </span><span class="si">{1}</span><span class="s2">, </span><span class="si">{2}</span><span class="s2">, </span><span class="si">{3}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">word1</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">dep_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">pos_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">tag_</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span></div>
+
+
+        <span class="c1"># Test identification of aux in a sentence</span>
+<div class="viewcode-block" id="TestBase.test_is_pos_word__aux">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase.test_is_pos_word__aux">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test_is_pos_word__aux</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">test_pos</span> <span class="o">=</span> <span class="s2">&quot;AUX&quot;</span>  <span class="c1"># Current p.o.s. to be tested</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_tests</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;I think that is a good idea.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;Also shown are new curves.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;are&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;They were frolicking and will soon be at the party.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;were&quot;</span><span class="p">,</span> <span class="s2">&quot;will&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Hubble has observed many stars.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;has&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;There are only so many entries in the database.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;That is one hideous dog.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;We would have gone there for vacation.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;would&quot;</span><span class="p">,</span> <span class="s2">&quot;have&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The doors of the cage were open.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;The doors of the cage were having their locks fixed.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;were&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The option was not available at the time.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;The option was not noted at the time.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;was&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;She could not see the mountain.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;could&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;She will try to be there on time.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;will&quot;</span><span class="p">,</span> <span class="s2">&quot;to&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;They shall find the clue.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;shall&quot;</span><span class="p">],</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Prepare and run tests for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">Base</span><span class="p">()</span>
+
+            <span class="c1"># Check answers</span>
+            <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_tests</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">curr_phrase</span> <span class="o">=</span> <span class="n">key1</span>
+                    <span class="n">curr_NLP</span> <span class="o">=</span> <span class="n">nlp</span><span class="p">(</span><span class="n">curr_phrase</span><span class="p">)</span>
+                    <span class="n">answer</span> <span class="o">=</span> <span class="n">dict_tests</span><span class="p">[</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">test_bools</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="n">testbase</span><span class="o">.</span><span class="n">_is_pos_word</span><span class="p">(</span><span class="n">word</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">test_list_lookup_kobj</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">test_pos</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">curr_NLP</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">curr_NLP</span><span class="p">)[</span><span class="n">test_bools</span><span class="p">]]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="si">{3}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">,</span> <span class="n">key1</span><span class="p">,</span> <span class="n">test_bools</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All p.o.s.:&quot;</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">word1</span> <span class="ow">in</span> <span class="n">curr_NLP</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: </span><span class="si">{1}</span><span class="s2">, </span><span class="si">{2}</span><span class="s2">, </span><span class="si">{3}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">word1</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">dep_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">pos_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">tag_</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span></div>
+
+
+        <span class="c1"># Test identification of marker in a sentence</span>
+<div class="viewcode-block" id="TestBase.test_is_pos_word__marker">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase.test_is_pos_word__marker">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test_is_pos_word__marker</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">test_pos</span> <span class="o">=</span> <span class="s2">&quot;MARKER&quot;</span>  <span class="c1"># Current p.o.s. to be tested</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_tests</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;She bought the book which was written by that team.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;which&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;I think that is a good idea.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;that&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Which way to the store?&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;They do not know which way to turn.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;which&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;I read the book, which by the way was great.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;which&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;They noted there are many ways to do it.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;there&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;That is a fantastic quote for this poster.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Prepare and run tests for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">Base</span><span class="p">()</span>
+
+            <span class="c1"># Check answers</span>
+            <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_tests</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">curr_phrase</span> <span class="o">=</span> <span class="n">key1</span>
+                    <span class="n">curr_NLP</span> <span class="o">=</span> <span class="n">nlp</span><span class="p">(</span><span class="n">curr_phrase</span><span class="p">)</span>
+                    <span class="n">answer</span> <span class="o">=</span> <span class="n">dict_tests</span><span class="p">[</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">test_bools</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="n">testbase</span><span class="o">.</span><span class="n">_is_pos_word</span><span class="p">(</span>
+                                <span class="n">word</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">test_list_lookup_kobj</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">test_pos</span><span class="p">,</span> <span class="n">do_verbose</span><span class="o">=</span><span class="kc">False</span>
+                            <span class="p">)</span>
+                            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">curr_NLP</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">curr_NLP</span><span class="p">)[</span><span class="n">test_bools</span><span class="p">]]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="si">{3}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">,</span> <span class="n">key1</span><span class="p">,</span> <span class="n">test_bools</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All p.o.s.:&quot;</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">word1</span> <span class="ow">in</span> <span class="n">curr_NLP</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: </span><span class="si">{1}</span><span class="s2">, </span><span class="si">{2}</span><span class="s2">, </span><span class="si">{3}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">word1</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">dep_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">pos_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">tag_</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span></div>
+
+
+        <span class="c1"># Test identification of direct object in a sentence</span>
+<div class="viewcode-block" id="TestBase.test_is_pos_word__directobject">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase.test_is_pos_word__directobject">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test_is_pos_word__directobject</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">test_pos</span> <span class="o">=</span> <span class="s2">&quot;DIRECT_OBJECT&quot;</span>  <span class="c1"># Current p.o.s. to be tested</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_tests</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;She went to the clean store.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;Hubble has observed many stars.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;stars&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;There are only so many entries in the database.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;entries&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Many bought cakes that day.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;cakes&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;That is one hideous dog.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;dog&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;She treats them like her own plants.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;them&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Hubble is short for the Hubble Space Telescope.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;We went there on vacation.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;We went quickly on vacation.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;The door of the cage is open.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;We wanted to know the name of the movie.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;They then wanted to know the name and length of the movie.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;length&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;She took a turn on the road along the left lane.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;turn&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;She tried to take a picture.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;picture&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;She tried to send the picture to the agent.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;picture&quot;</span><span class="p">],</span>
+            <span class="p">}</span>
+            <span class="c1">#</span>
+
+            <span class="c1"># Prepare and run tests for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">Base</span><span class="p">()</span>
+
+            <span class="c1"># Check answers</span>
+            <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_tests</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">curr_phrase</span> <span class="o">=</span> <span class="n">key1</span>
+                    <span class="n">curr_NLP</span> <span class="o">=</span> <span class="n">nlp</span><span class="p">(</span><span class="n">curr_phrase</span><span class="p">)</span>
+                    <span class="n">answer</span> <span class="o">=</span> <span class="n">dict_tests</span><span class="p">[</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">test_bools</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="n">testbase</span><span class="o">.</span><span class="n">_is_pos_word</span><span class="p">(</span><span class="n">word</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">test_list_lookup_kobj</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">test_pos</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">curr_NLP</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">curr_NLP</span><span class="p">)[</span><span class="n">test_bools</span><span class="p">]]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="si">{3}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">,</span> <span class="n">key1</span><span class="p">,</span> <span class="n">test_bools</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All p.o.s.:&quot;</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">word1</span> <span class="ow">in</span> <span class="n">curr_NLP</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: </span><span class="si">{1}</span><span class="s2">, </span><span class="si">{2}</span><span class="s2">, </span><span class="si">{3}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">word1</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">dep_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">pos_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">tag_</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span></div>
+
+
+        <span class="c1"># Test identification of prepositions in a sentence</span>
+<div class="viewcode-block" id="TestBase.test_is_pos_word__preposition">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase.test_is_pos_word__preposition">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test_is_pos_word__preposition</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">test_pos</span> <span class="o">=</span> <span class="s2">&quot;PREPOSITION&quot;</span>  <span class="c1"># Current p.o.s. to be tested</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_tests</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;She went to the clean store.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;to&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Hubble has observed many stars.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;There are only so many entries in the database.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;in&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Many bought cakes that day.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;That is one hideous dog.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;Hubble is short for the Hubble Space Telescope.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;for&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;We went there on vacation.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;on&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The door of the cage is open.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;of&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;We wanted to know the name of the movie.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;of&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;She took a turn on the road along the left lane.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;on&quot;</span><span class="p">,</span> <span class="s2">&quot;along&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;She gave a treat to the cat.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;to&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;She tried to take a picture.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;She tried to send the picture to the agent.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;to&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The book was written by her.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;by&quot;</span><span class="p">],</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Prepare and run tests for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">Base</span><span class="p">()</span>
+
+            <span class="c1"># Check answers</span>
+            <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_tests</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">curr_phrase</span> <span class="o">=</span> <span class="n">key1</span>
+                    <span class="n">curr_NLP</span> <span class="o">=</span> <span class="n">nlp</span><span class="p">(</span><span class="n">curr_phrase</span><span class="p">)</span>
+                    <span class="n">answer</span> <span class="o">=</span> <span class="n">dict_tests</span><span class="p">[</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">test_bools</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="n">testbase</span><span class="o">.</span><span class="n">_is_pos_word</span><span class="p">(</span><span class="n">word</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">test_list_lookup_kobj</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">test_pos</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">curr_NLP</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">curr_NLP</span><span class="p">)[</span><span class="n">test_bools</span><span class="p">]]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="si">{3}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">,</span> <span class="n">key1</span><span class="p">,</span> <span class="n">test_bools</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All p.o.s.:&quot;</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">word1</span> <span class="ow">in</span> <span class="n">curr_NLP</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: </span><span class="si">{1}</span><span class="s2">, </span><span class="si">{2}</span><span class="s2">, </span><span class="si">{3}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">word1</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">dep_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">pos_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">tag_</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span></div>
+
+
+        <span class="c1"># Test identification of preposition objects in a sentence</span>
+<div class="viewcode-block" id="TestBase.test_is_pos_word__prepositionobject">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase.test_is_pos_word__prepositionobject">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test_is_pos_word__prepositionobject</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">test_pos</span> <span class="o">=</span> <span class="s2">&quot;PREPOSITION_OBJECT&quot;</span>  <span class="c1"># Current p.o.s. to be tested</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_tests</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;She went to the clean store.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;store&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Hubble has observed many stars.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;There are only so many entries in the database.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;database&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;That is one hideous dog.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;Hubble is short for the Hubble Space Telescope.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Telescope&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;She treats them like her own plants.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;plants&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;We went there on vacation.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;vacation&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The door of the cage is open.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;We wanted to know the name of the movie.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;movie&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The name of the movie is long.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;She took a turn on the road along the left lane.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;road&quot;</span><span class="p">,</span> <span class="s2">&quot;lane&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;She tried to take a picture.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;She tried to send the picture to the agent.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;agent&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;She gave a treat to the cat.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;cat&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;She gave a treat to the cat and the dog.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;cat&quot;</span><span class="p">,</span> <span class="s2">&quot;dog&quot;</span><span class="p">],</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Prepare and run tests for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">Base</span><span class="p">()</span>
+
+            <span class="c1"># Check answers</span>
+            <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_tests</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">curr_phrase</span> <span class="o">=</span> <span class="n">key1</span>
+                    <span class="n">curr_NLP</span> <span class="o">=</span> <span class="n">nlp</span><span class="p">(</span><span class="n">curr_phrase</span><span class="p">)</span>
+                    <span class="n">answer</span> <span class="o">=</span> <span class="n">dict_tests</span><span class="p">[</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">test_bools</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="n">testbase</span><span class="o">.</span><span class="n">_is_pos_word</span><span class="p">(</span><span class="n">word</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">test_list_lookup_kobj</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">test_pos</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">curr_NLP</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">curr_NLP</span><span class="p">)[</span><span class="n">test_bools</span><span class="p">]]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="si">{3}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">,</span> <span class="n">key1</span><span class="p">,</span> <span class="n">test_bools</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All p.o.s.:&quot;</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">word1</span> <span class="ow">in</span> <span class="n">curr_NLP</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: </span><span class="si">{1}</span><span class="s2">, </span><span class="si">{2}</span><span class="s2">, </span><span class="si">{3}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">word1</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">dep_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">pos_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">tag_</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span></div>
+
+
+        <span class="c1"># Test identification of preposition subjects in a sentence</span>
+<div class="viewcode-block" id="TestBase.test_is_pos_word__prepositionsubject">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase.test_is_pos_word__prepositionsubject">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test_is_pos_word__prepositionsubject</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">test_pos</span> <span class="o">=</span> <span class="s2">&quot;PREPOSITION_SUBJECT&quot;</span>  <span class="c1"># Current p.o.s. to be tested</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_tests</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;She went to the clean store.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;Hubble has observed many stars.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;There are only so many entries in the database.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;The door of the cage is open.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;cage&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The key in the lock should not be turned.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;lock&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;We wanted to know the name of the movie.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;The name of the movie is long.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;movie&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The water in the basin seems gray.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;basin&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The cats on the couch, chair, and table are sleeping.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;couch&quot;</span><span class="p">,</span> <span class="s2">&quot;chair&quot;</span><span class="p">,</span> <span class="s2">&quot;table&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;She took a turn on the road along the left lane.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Prepare and run tests for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">Base</span><span class="p">()</span>
+
+            <span class="c1"># Check answers</span>
+            <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_tests</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">curr_phrase</span> <span class="o">=</span> <span class="n">key1</span>
+                    <span class="n">curr_NLP</span> <span class="o">=</span> <span class="n">nlp</span><span class="p">(</span><span class="n">curr_phrase</span><span class="p">)</span>
+                    <span class="n">answer</span> <span class="o">=</span> <span class="n">dict_tests</span><span class="p">[</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">test_bools</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="n">testbase</span><span class="o">.</span><span class="n">_is_pos_word</span><span class="p">(</span><span class="n">word</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">test_list_lookup_kobj</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">test_pos</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">curr_NLP</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">curr_NLP</span><span class="p">)[</span><span class="n">test_bools</span><span class="p">]]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="si">{3}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">,</span> <span class="n">key1</span><span class="p">,</span> <span class="n">test_bools</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All p.o.s.:&quot;</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">word1</span> <span class="ow">in</span> <span class="n">curr_NLP</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: </span><span class="si">{1}</span><span class="s2">, </span><span class="si">{2}</span><span class="s2">, </span><span class="si">{3}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">word1</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">dep_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">pos_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">tag_</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span></div>
+
+
+        <span class="c1"># Test identification of subjects in a sentence</span>
+<div class="viewcode-block" id="TestBase.test_is_pos_word__subject">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase.test_is_pos_word__subject">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test_is_pos_word__subject</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">test_pos</span> <span class="o">=</span> <span class="s2">&quot;SUBJECT&quot;</span>  <span class="c1"># Current p.o.s. to be tested</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_tests</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;The Hubble calibrated data was used.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Hubble calibrated the data.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Hubble&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Calibrated data was used.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Calibrated data.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Fixed units.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;She went to the clean store.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;She&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Hubble has observed many stars.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Hubble&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;There are only so many entries in the database.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;There&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;That is a good idea.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;That&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Many bought cakes that day.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Many&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;That is one hideous dog.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;That&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Hubble is short for the Hubble Space Telescope.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Hubble&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;We went there on vacation.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;We&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The flying pig forms their sigil.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pig&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The name of the cat rhymes with mat.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;She, the bird, and the cat all bought the book.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;She&quot;</span><span class="p">,</span> <span class="s2">&quot;bird&quot;</span><span class="p">,</span> <span class="s2">&quot;cat&quot;</span><span class="p">],</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Prepare and run tests for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">Base</span><span class="p">()</span>
+
+            <span class="c1"># Check answers</span>
+            <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_tests</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">curr_phrase</span> <span class="o">=</span> <span class="n">key1</span>
+                    <span class="n">curr_NLP</span> <span class="o">=</span> <span class="n">nlp</span><span class="p">(</span><span class="n">curr_phrase</span><span class="p">)</span>
+                    <span class="n">answer</span> <span class="o">=</span> <span class="n">dict_tests</span><span class="p">[</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">test_bools</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="n">testbase</span><span class="o">.</span><span class="n">_is_pos_word</span><span class="p">(</span>
+                                <span class="n">word</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">test_list_lookup_kobj</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">test_pos</span><span class="p">,</span> <span class="n">do_verbose</span><span class="o">=</span><span class="kc">False</span>
+                            <span class="p">)</span>
+                            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">curr_NLP</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">curr_NLP</span><span class="p">)[</span><span class="n">test_bools</span><span class="p">]]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="si">{3}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">,</span> <span class="n">key1</span><span class="p">,</span> <span class="n">test_bools</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All p.o.s.:&quot;</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">word1</span> <span class="ow">in</span> <span class="n">curr_NLP</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: </span><span class="si">{1}</span><span class="s2">, </span><span class="si">{2}</span><span class="s2">, </span><span class="si">{3}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">word1</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">dep_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">pos_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">tag_</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span></div>
+
+
+        <span class="c1"># Test identification of useless words in a sentence</span>
+<div class="viewcode-block" id="TestBase.test_is_pos_word__useless">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase.test_is_pos_word__useless">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test_is_pos_word__useless</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">test_pos</span> <span class="o">=</span> <span class="s2">&quot;USELESS&quot;</span>  <span class="c1"># Current p.o.s. to be tested</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_tests</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;She went to the clean store.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;clean&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Hubble has observed many stars.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;many&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;There are only so many entries in the database.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;only&quot;</span><span class="p">,</span> <span class="s2">&quot;so&quot;</span><span class="p">,</span> <span class="s2">&quot;many&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;There are only so many.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;only&quot;</span><span class="p">,</span> <span class="s2">&quot;so&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Many bought cakes that day.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;That is one hideous dog.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;hideous&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Hubble is short for the Hubble Space Telescope.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;That was not cool.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;That was not a cool cat.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;cool&quot;</span><span class="p">],</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Prepare and run tests for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">Base</span><span class="p">()</span>
+
+            <span class="c1"># Check answers</span>
+            <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_tests</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">curr_phrase</span> <span class="o">=</span> <span class="n">key1</span>
+                    <span class="n">curr_NLP</span> <span class="o">=</span> <span class="n">nlp</span><span class="p">(</span><span class="n">curr_phrase</span><span class="p">)</span>
+                    <span class="n">answer</span> <span class="o">=</span> <span class="n">dict_tests</span><span class="p">[</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">test_bools</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="n">testbase</span><span class="o">.</span><span class="n">_is_pos_word</span><span class="p">(</span><span class="n">word</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">test_list_lookup_kobj</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">test_pos</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">curr_NLP</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">curr_NLP</span><span class="p">)[</span><span class="n">test_bools</span><span class="p">]]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="si">{3}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">,</span> <span class="n">key1</span><span class="p">,</span> <span class="n">test_bools</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All p.o.s.:&quot;</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">word1</span> <span class="ow">in</span> <span class="n">curr_NLP</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: </span><span class="si">{1}</span><span class="s2">, </span><span class="si">{2}</span><span class="s2">, </span><span class="si">{3}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">word1</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">dep_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">pos_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">tag_</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span></div>
+
+
+        <span class="c1"># Test identification of verbs in a sentence</span>
+<div class="viewcode-block" id="TestBase.test_is_pos_word__verb">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase.test_is_pos_word__verb">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test_is_pos_word__verb</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">test_pos</span> <span class="o">=</span> <span class="s2">&quot;VERB&quot;</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_tests</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;I think that is a good idea.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;think&quot;</span><span class="p">,</span> <span class="s2">&quot;is&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Also shown are new curves.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;shown&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;They were frolicking and will soon be at the party.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;frolicking&quot;</span><span class="p">,</span> <span class="s2">&quot;be&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The Hubble calibrated data was used.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;used&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Hubble calibrated the data.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;calibrated&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Calibrated data was used.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;used&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Calibrated data.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;Fixed units.&quot;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s2">&quot;She went to the clean store.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;went&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Hubble has observed many stars.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;observed&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;There are only so many entries in the database.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;are&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;That is one hideous dog.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;is&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Many bought cakes that day.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;bought&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;They are watching the movie.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;watching&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Hubble is short for the Hubble Space Telescope.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;is&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;That was not cool.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;was&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;The flying pig forms their sigil.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;forms&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Those raining clouds will float by.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;float&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Those clouds will float by while raining on the emptied town.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;float&quot;</span><span class="p">,</span> <span class="s2">&quot;raining&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;Follow me to the rendesvous.&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Follow&quot;</span><span class="p">],</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Prepare and run tests for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">Base</span><span class="p">()</span>
+
+            <span class="c1"># Check answers</span>
+            <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_tests</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">curr_phrase</span> <span class="o">=</span> <span class="n">key1</span>
+                    <span class="n">curr_NLP</span> <span class="o">=</span> <span class="n">nlp</span><span class="p">(</span><span class="n">curr_phrase</span><span class="p">)</span>
+                    <span class="n">answer</span> <span class="o">=</span> <span class="n">dict_tests</span><span class="p">[</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">test_bools</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="n">testbase</span><span class="o">.</span><span class="n">_is_pos_word</span><span class="p">(</span>
+                                <span class="n">word</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">test_list_lookup_kobj</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">test_pos</span><span class="p">,</span> <span class="n">do_verbose</span><span class="o">=</span><span class="kc">False</span>
+                            <span class="p">)</span>
+                            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">curr_NLP</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">curr_NLP</span><span class="p">)[</span><span class="n">test_bools</span><span class="p">]]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="si">{3}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">,</span> <span class="n">key1</span><span class="p">,</span> <span class="n">test_bools</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All p.o.s.:&quot;</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">word1</span> <span class="ow">in</span> <span class="n">curr_NLP</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: </span><span class="si">{1}</span><span class="s2">, </span><span class="si">{2}</span><span class="s2">, </span><span class="si">{3}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">word1</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">dep_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">pos_</span><span class="p">,</span> <span class="n">word1</span><span class="o">.</span><span class="n">tag_</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="c1">#</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span></div>
+
+
+    <span class="c1"># For tests of _search_text:</span>
+    <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># Test boolean search for keywords and acronyms within text</span>
+<div class="viewcode-block" id="TestBase.test_search_text__variety">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase.test_search_text__variety">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test_search_text__variety</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_tests</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;small Hubble constant&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;small Hero constant&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;Keplerian&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot; That H S.T data&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot; That H.S.T. data&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot; That H.S.T data&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot; That A.H.S.T data&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot; That HST data&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot; That MHST data&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot; That S T data&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot; That H S time&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;no lookup Kepler images&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;K2 images&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;a nothst acronym&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;a hstnot acronym&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;a hsnt acronym&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s2">&quot;an hst-roman project&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Prepare and run tests for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">Base</span><span class="p">()</span>
+
+            <span class="c1"># Check answers</span>
+            <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_tests</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">answer</span> <span class="o">=</span> <span class="n">dict_tests</span><span class="p">[</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">_search_text</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">key1</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">test_list_lookup_kobj</span><span class="p">)[</span><span class="s2">&quot;bool&quot;</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">,</span> <span class="n">key1</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="c1">#</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span></div>
+
+
+    <span class="c1"># For tests of _streamline_phrase:</span>
+    <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># Test streamlining for text with abbreviated phrases</span>
+<div class="viewcode-block" id="TestBase.test_streamline_phrase__abbreviations">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase.test_streamline_phrase__abbreviations">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test_streamline_phrase__abbreviations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_tests</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;We plot the data in Fig. 3b and list values in Tab. A.&quot;</span><span class="p">:</span> <span class="s2">&quot;We plot the data in Figure 3b and list values in Table A.&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Fig. 4 shows the red vs. blue stars differ in radii.&quot;</span><span class="p">:</span> <span class="s2">&quot;Figure 4 shows the red vs blue stars differ in radii.&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;There is a fig on the tree. The tree is the Fig Tree.&quot;</span><span class="p">:</span> <span class="s2">&quot;There is a fig on the tree. The tree is the Fig Tree.&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Put the ginger beer on my tab.&quot;</span><span class="p">:</span> <span class="s2">&quot;Put the ginger beer on my tab.&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Prepare and run tests for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">Base</span><span class="p">()</span>
+
+            <span class="c1"># Check answers</span>
+            <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_tests</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">answer</span> <span class="o">=</span> <span class="n">dict_tests</span><span class="p">[</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">_streamline_phrase</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">key1</span><span class="p">,</span> <span class="n">do_streamline_etal</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">,</span> <span class="n">key1</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span></div>
+
+
+        <span class="c1"># Test streamlining for text with citations</span>
+<div class="viewcode-block" id="TestBase.test_streamline_phrase__citations">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_base.TestBase.test_streamline_phrase__citations">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test_streamline_phrase__citations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">dict_tests</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;Somename (2013) published  in SJ.&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2"> published in SJ.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">placeholder_author</span>
+                <span class="p">),</span>
+                <span class="s2">&quot;Hubble (1953) was a landmark paper (for that subfield).&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2"> was a landmark paper (for that subfield).&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">placeholder_author</span>
+                <span class="p">),</span>
+                <span class="c1"># &quot;See also: Kepler [2023], Hubble &amp; Author (2020), Author, Somename, and Kepler et al. [1990];&quot;: &quot;See also: {0}, {0}, {0};&quot;.format(</span>
+                <span class="c1">#    config.textprocessing.placeholder_author</span>
+                <span class="c1"># ), - unrealistic citation case</span>
+                <span class="s2">&quot;See also: Kepler [2023], Hubble &amp; Author (2020), Author and Kepler et al. [1990];&quot;</span><span class="p">:</span> <span class="s2">&quot;See also: </span><span class="si">{0}</span><span class="s2">;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">config</span><span class="o">.</span><span class="n">textprocessing</span><span class="o">.</span><span class="n">placeholder_author</span>
+                <span class="p">),</span>
+                <span class="s2">&quot;Also Author papers (Author et al. 1997, 2023),&quot;</span><span class="p">:</span> <span class="s2">&quot;Also Author papers,&quot;</span><span class="p">,</span>
+                <span class="c1"># &quot;(Someone, Author, Somename et al. 1511; 1612)&quot;: &quot;&quot;, - unrealistic citation case</span>
+                <span class="c1"># &quot;(Someone, Author, and Somename et al. 1913,15)&quot;: &quot;&quot;, - unrealistic citation case</span>
+                <span class="s2">&quot;(Author et al. 80; Somename &amp; Author 2012)&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="c1"># &quot;McThatname, Kepler, &amp; Othername [1993] (see our paper)&quot;: &quot;{0} (see our paper)&quot;.format(</span>
+                <span class="c1">#    config.textprocessing.placeholder_author</span>
+                <span class="c1"># ), - unrealistic citation case</span>
+                <span class="s2">&quot;{Othername et al. 1991} (see Hubble observations)&quot;</span><span class="p">:</span> <span class="s2">&quot;(see Hubble observations)&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Prepare and run tests for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">Base</span><span class="p">()</span>
+
+            <span class="c1"># Check answers</span>
+            <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">dict_tests</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">answer</span> <span class="o">=</span> <span class="n">dict_tests</span><span class="p">[</span><span class="n">key1</span><span class="p">]</span>
+                    <span class="n">test_res</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">_streamline_phrase</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">key1</span><span class="p">,</span> <span class="n">do_streamline_etal</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">,</span> <span class="n">key1</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

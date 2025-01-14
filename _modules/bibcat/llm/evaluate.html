@@ -1,0 +1,539 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat.llm.evaluate &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">BibCat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bibcat.llm.evaluate</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bibcat.llm.evaluate</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">parameters</span> <span class="k">as</span> <span class="n">params</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.core.operator</span><span class="w"> </span><span class="kn">import</span> <span class="n">Operator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.core.paper</span><span class="w"> </span><span class="kn">import</span> <span class="n">Paper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.llm.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_source</span><span class="p">,</span> <span class="n">read_output</span><span class="p">,</span> <span class="n">write_summary</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.utils.logger_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_logger</span>
+
+<span class="c1"># set up global operator</span>
+<span class="n">op</span> <span class="o">=</span> <span class="n">Operator</span><span class="p">(</span><span class="n">classifier</span><span class="o">=</span><span class="s2">&quot;ML&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">all_kobjs</span><span class="p">)</span>
+
+<span class="c1"># set up logger</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">level</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="evaluate_output">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.evaluate.evaluate_output">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_output</span><span class="p">(</span><span class="n">bibcode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">write_file</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate the output from the LLM model</span>
+
+<span class="sd">    For a given paper bibcode, reads in the output from the LLM model and</span>
+<span class="sd">    evaluates its performance against the human paper classifications. It matches</span>
+<span class="sd">    the LLM&#39;s predicted mission and papertype against the human classification, and</span>
+<span class="sd">    computes a cursory accuracy score based on the number of runs. It also provides</span>
+<span class="sd">    a flag indicating whether the LLM mission + papertype was in the set of human</span>
+<span class="sd">    classification.  It logs to the console and prints which prediced missions are missing by</span>
+<span class="sd">    the humans, and which human missions are missing by the LLM.</span>
+
+<span class="sd">    Returns a pandas DataFrame grouped by LLM mission and paper type, with columns for</span>
+<span class="sd">    its mean confidence score, the count of this entry in the LLM output, the total number</span>
+<span class="sd">    of trial runs, the accuracy of the LLM classification, and a flag indicating whether</span>
+<span class="sd">    the LLM classification was in the human classification.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    bibcode : str, optional</span>
+<span class="sd">        the paper bibcode, by default None</span>
+<span class="sd">    index : int, optional</span>
+<span class="sd">        the dataset array index, by default None</span>
+<span class="sd">    write_file : bool, optional</span>
+<span class="sd">        Flag to write the summary output to a file, by default False</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        an output pandas dataframe</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">paper_output</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">paths</span><span class="o">.</span><span class="n">output</span><span class="p">)</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;llms/openai_</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="o">.</span><span class="n">openai</span><span class="o">.</span><span class="n">model</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="o">.</span><span class="n">prompt_output_file</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">paper</span> <span class="o">=</span> <span class="n">get_source</span><span class="p">(</span><span class="n">bibcode</span><span class="o">=</span><span class="n">bibcode</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span>
+    <span class="n">bibcode</span> <span class="o">=</span> <span class="n">paper</span><span class="p">[</span><span class="s2">&quot;bibcode&quot;</span><span class="p">]</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">read_output</span><span class="p">(</span><span class="n">bibcode</span><span class="o">=</span><span class="n">bibcode</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">paper_output</span><span class="p">)</span>
+
+    <span class="c1"># filter out any cases where the llm returns an error</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">response</span> <span class="k">if</span> <span class="s2">&quot;error&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">i</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span>
+
+    <span class="c1"># response is structured as:</span>
+    <span class="c1"># - notes: str</span>
+    <span class="c1"># - missions: [{mission: str, papertype: str, confidence: list[float], reason: str, quotes: list[str]}]</span>
+
+    <span class="c1"># exit if no bibcode found in output</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No output found for </span><span class="si">{</span><span class="n">bibcode</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">n_runs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Evaluating output for </span><span class="si">{</span><span class="n">bibcode</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of runs: </span><span class="si">{</span><span class="n">n_runs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># convert output to a dataframe</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">j</span> <span class="o">|</span> <span class="p">{</span><span class="s2">&quot;notes&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;notes&quot;</span><span class="p">]}</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">response</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;missions&quot;</span><span class="p">]])</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="s2">&quot;llm_confidences&quot;</span><span class="p">})</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;mission&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># group by mission and paper type,</span>
+    <span class="n">grouped_df</span> <span class="o">=</span> <span class="n">group_by_mission_papertype</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="n">grouped_df</span><span class="p">[</span><span class="s2">&quot;n_runs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_runs</span>
+
+    <span class="c1"># weight the mean confidences by the frequency of occurrence</span>
+    <span class="c1"># these represent a combined measure of frequency and confidence across multiple independent trials and categories</span>
+    <span class="n">grouped_df</span><span class="p">[</span><span class="s2">&quot;weighted_confs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">grouped_df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;mean_llm_confidences&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;n_runs&quot;</span><span class="p">]))</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="c1"># group by mission and compute final probabilities and confidences</span>
+    <span class="n">mission_group</span> <span class="o">=</span> <span class="n">group_by_mission</span><span class="p">(</span><span class="n">grouped_df</span><span class="p">)</span>
+
+    <span class="c1"># get the human paper classifications</span>
+    <span class="n">human_classes</span> <span class="o">=</span> <span class="n">get_human_classification</span><span class="p">(</span><span class="n">paper</span><span class="p">)</span>
+
+    <span class="c1"># compute consistency of matches to human classification and identify missing missions</span>
+    <span class="n">missing_by_human</span><span class="p">,</span> <span class="n">missing_by_llm</span> <span class="o">=</span> <span class="n">compute_consistency</span><span class="p">(</span><span class="n">paper</span><span class="p">,</span> <span class="n">grouped_df</span><span class="p">,</span> <span class="n">human_classes</span><span class="p">)</span>
+
+    <span class="c1"># check if llm hallucinates mission classification</span>
+    <span class="n">hallucinated_missions</span> <span class="o">=</span> <span class="n">check_hallucination</span><span class="p">(</span><span class="n">grouped_df</span><span class="p">)</span>
+
+    <span class="c1"># log the output</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Output Stats by LLM Mission and Paper Type:</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">grouped_df</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Missing missions by humans: &quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing_by_human</span><span class="p">))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Missing missions by LLM: &quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing_by_llm</span><span class="p">))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Hallucination by LLM: &quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">hallucinated_missions</span><span class="p">)))</span>
+
+    <span class="n">threshold</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="o">.</span><span class="n">performance</span><span class="o">.</span><span class="n">threshold</span>
+    <span class="n">inspection</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="o">.</span><span class="n">performance</span><span class="o">.</span><span class="n">inspection</span>
+
+    <span class="c1"># write the summary output</span>
+    <span class="k">if</span> <span class="n">write_file</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">prepare_output</span><span class="p">(</span>
+            <span class="n">bibcode</span><span class="p">,</span>
+            <span class="n">threshold</span><span class="p">,</span>
+            <span class="n">inspection</span><span class="p">,</span>
+            <span class="n">grouped_df</span><span class="p">,</span>
+            <span class="n">mission_group</span><span class="p">,</span>
+            <span class="n">human_classes</span><span class="p">,</span>
+            <span class="n">missing_by_human</span><span class="p">,</span>
+            <span class="n">missing_by_llm</span><span class="p">,</span>
+            <span class="n">hallucinated_missions</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">write_summary</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+
+    <span class="c1"># return the dataframe</span>
+    <span class="k">return</span> <span class="n">grouped_df</span></div>
+
+
+
+<div class="viewcode-block" id="group_by_mission_papertype">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.evaluate.group_by_mission_papertype">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">group_by_mission_papertype</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a Pandas grouped_by data frame</span>
+
+<span class="sd">    Group by distict mission and papertype and add the mean/std confidence by filling NaN with zeros</span>
+<span class="sd">    for missing missions/papertypes and the count of llm_mission</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df: pd.DataFrame</span>
+<span class="sd">        paper ouput pandas data frame</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        pandas data frame grouped by mission and papertype</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">grouped_df</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;mission&quot;</span><span class="p">,</span> <span class="s2">&quot;papertype&quot;</span><span class="p">])</span>
+        <span class="o">.</span><span class="n">agg</span><span class="p">(</span>
+            <span class="n">mean_llm_confidences</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;llm_confidences&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="mi">3</span><span class="p">)),</span>
+            <span class="n">std_llm_confidences</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;llm_confidences&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="mi">3</span><span class="p">)),</span>
+            <span class="n">count</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;mission&quot;</span><span class="p">,</span> <span class="s2">&quot;size&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mission&quot;</span><span class="p">:</span> <span class="s2">&quot;llm_mission&quot;</span><span class="p">,</span> <span class="s2">&quot;papertype&quot;</span><span class="p">:</span> <span class="s2">&quot;llm_papertype&quot;</span><span class="p">})</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">grouped_df</span></div>
+
+
+
+<div class="viewcode-block" id="group_by_mission">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.evaluate.group_by_mission">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">group_by_mission</span><span class="p">(</span><span class="n">grouped_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Groups the dataframe by mission</span>
+
+<span class="sd">    Groups the dataframe by mission and compute final confidence values and probabilities.</span>
+<span class="sd">    Important relevant columns are the &quot;prob_mission&quot; and &quot;total_weighted_conf&quot; columns.</span>
+<span class="sd">    Low &quot;prob_mission&quot; means the mission is likely hallucinated.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    grouped_df : pd.DataFrame</span>
+<span class="sd">        the input grouped dataframe</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        the output grouped dataframe</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># group by each mission and compute the total confidence values by mission</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">grouped_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;llm_mission&quot;</span><span class="p">,</span> <span class="n">as_index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span>
+        <span class="n">total_mission_conf</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;weighted_confs&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()),</span>
+        <span class="n">total_weighted_conf</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;weighted_confs&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">sum</span><span class="p">()),</span>
+    <span class="p">)</span>
+
+    <span class="c1"># compute columns for the probability of mission and within each mission, probability of each papertype</span>
+    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;prob_mission&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;total_mission_conf&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span> <span class="o">/</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;total_mission_conf&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;prob_papertype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;total_weighted_conf&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;total_mission_conf&quot;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">df</span></div>
+
+
+
+<div class="viewcode-block" id="get_human_classification">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.evaluate.get_human_classification">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_human_classification</span><span class="p">(</span><span class="n">paper</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get human&#39;s mission and paper types</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    paper: dict | str</span>
+<span class="sd">        dictionary or text (a row from the source dataset)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        human&#39;s mission and paper type</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">human_classes</span> <span class="o">=</span> <span class="n">paper</span><span class="p">[</span><span class="s2">&quot;class_missions&quot;</span><span class="p">]</span>
+    <span class="n">formatted_output</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mission</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;papertype&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">mission</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">human_classes</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Human Classifications:</span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">formatted_output</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">human_classes</span></div>
+
+
+
+<div class="viewcode-block" id="compute_consistency">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.evaluate.compute_consistency">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_consistency</span><span class="p">(</span><span class="n">paper</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">grouped_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">human_classes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compare consistency between llm&#39;s and human&#39;s classification</span>
+
+<span class="sd">    Compare llm classification with human&#39;s, get missing missions from human and llm,</span>
+<span class="sd">    check if mission names are found in the text body.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    paper: dict | str</span>
+<span class="sd">        dictionary or text (a row from the source dataset)</span>
+<span class="sd">    grouped_df: pd.DataFrame</span>
+<span class="sd">        pandas data frame grouped by mission and papertype</span>
+<span class="sd">    human_classes: dict</span>
+<span class="sd">        human&#39;s mission and paper type</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple</span>
+<span class="sd">        missing missions by human and those by llm</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># compute consistency of matches to human classification</span>
+    <span class="n">vv</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;papertype&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">human_classes</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+    <span class="n">grouped_df</span><span class="p">[</span><span class="s2">&quot;consistency&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">grouped_df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;n_runs&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">100</span> <span class="k">if</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;llm_mission&quot;</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;llm_papertype&quot;</span><span class="p">])</span> <span class="ow">in</span> <span class="n">vv</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+    <span class="p">)</span>
+    <span class="c1"># whether the mission is in human classification</span>
+    <span class="n">grouped_df</span><span class="p">[</span><span class="s2">&quot;in_human_class&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">grouped_df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;llm_mission&quot;</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;llm_papertype&quot;</span><span class="p">])</span> <span class="ow">in</span> <span class="n">vv</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># get missing missions</span>
+    <span class="n">missing_by_human</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">grouped_df</span><span class="p">[</span><span class="s2">&quot;llm_mission&quot;</span><span class="p">])</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">human_classes</span><span class="p">)</span>
+    <span class="n">missing_by_llm</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">human_classes</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">grouped_df</span><span class="p">[</span><span class="s2">&quot;llm_mission&quot;</span><span class="p">])</span>
+
+    <span class="c1"># check if missions are in the paper text body</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">paper</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">; </span><span class="si">{</span><span class="n">paper</span><span class="p">[</span><span class="s1">&#39;abstract&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">; </span><span class="si">{</span><span class="n">paper</span><span class="p">[</span><span class="s1">&#39;body&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">in_text</span> <span class="o">=</span> <span class="n">identify_missions_in_text</span><span class="p">(</span><span class="n">grouped_df</span><span class="p">[</span><span class="s2">&quot;llm_mission&quot;</span><span class="p">],</span> <span class="n">text</span><span class="p">)</span>
+    <span class="n">grouped_df</span><span class="p">[</span><span class="s2">&quot;mission_in_text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">in_text</span>
+
+    <span class="k">return</span> <span class="n">missing_by_human</span><span class="p">,</span> <span class="n">missing_by_llm</span></div>
+
+
+
+<div class="viewcode-block" id="check_hallucination">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.evaluate.check_hallucination">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_hallucination</span><span class="p">(</span><span class="n">grouped_df</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find missions by llm hallucination</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    grouped_df: pd.DataFrame</span>
+<span class="sd">        pandas data frame grouped by mission and papertype</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list</span>
+<span class="sd">        list of hallucinated missions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">grouped_df</span><span class="p">[</span><span class="s2">&quot;hallucination_by_llm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="kc">False</span> <span class="k">if</span> <span class="n">mission_in_text</span> <span class="k">else</span> <span class="kc">True</span> <span class="k">for</span> <span class="n">mission_in_text</span> <span class="ow">in</span> <span class="n">grouped_df</span><span class="p">[</span><span class="s2">&quot;mission_in_text&quot;</span><span class="p">]</span>
+    <span class="p">]</span>
+
+    <span class="c1"># Capture the hallucinated missions</span>
+    <span class="n">hallucinated_missions</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">grouped_df</span><span class="p">[</span><span class="s2">&quot;llm_mission&quot;</span><span class="p">][</span><span class="n">index</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">hallucination</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">grouped_df</span><span class="p">[</span><span class="s2">&quot;hallucination_by_llm&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">hallucination</span>
+    <span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">hallucinated_missions</span></div>
+
+
+
+<div class="viewcode-block" id="prepare_output">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.evaluate.prepare_output">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">prepare_output</span><span class="p">(</span>
+    <span class="n">bibcode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">inspection</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">grouped_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">mission_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">human_classes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">missing_by_human</span><span class="p">:</span> <span class="nb">set</span><span class="p">,</span>
+    <span class="n">missing_by_llm</span><span class="p">:</span> <span class="nb">set</span><span class="p">,</span>
+    <span class="n">hallucinated_missions</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prepare output and write summary</span>
+
+<span class="sd">    Preparing output by gathering information.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    bibcode: str</span>
+<span class="sd">        paper bibcode</span>
+<span class="sd">    grouped_df: pd.DataFrame</span>
+<span class="sd">        pandas dataframe grouped by mission and papertype</span>
+<span class="sd">    mission_df: pd.DataFrame</span>
+<span class="sd">        grouped_df dataframe grouped by mission</span>
+<span class="sd">    human classes: dict</span>
+<span class="sd">        human classifed missions and papertypes</span>
+<span class="sd">    missing_by_human: set</span>
+<span class="sd">        set of missions missed by human</span>
+<span class="sd">    missing_by_llm: set</span>
+<span class="sd">        set of missions missed by llm</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict[str, dict[str, Any]]</span>
+<span class="sd">        dictionary of paper, missions, and papertypes, pandas dataframe of llm assessment, and other</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># reindex mission</span>
+    <span class="n">mm</span> <span class="o">=</span> <span class="n">mission_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;llm_mission&quot;</span><span class="p">)</span>
+
+    <span class="c1"># pass its llm&#39;s classification if the maximum weighted-confidence value is higher than the threshold</span>
+    <span class="c1"># the maximum value is used because the papertype&#39;s confidence is aligned with the maximum value</span>
+    <span class="n">llm</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="n">i</span><span class="p">[</span><span class="s2">&quot;llm_mission&quot;</span><span class="p">]:</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;llm_papertype&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">mm</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="s2">&quot;llm_mission&quot;</span><span class="p">]][</span><span class="s2">&quot;total_weighted_conf&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+            <span class="s2">&quot;mission_probability&quot;</span><span class="p">:</span> <span class="n">mm</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="s2">&quot;llm_mission&quot;</span><span class="p">]][</span><span class="s2">&quot;prob_mission&quot;</span><span class="p">],</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">grouped_df</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s2">&quot;records&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s2">&quot;weighted_confs&quot;</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">threshold</span>
+    <span class="p">]</span>
+
+    <span class="c1"># human inspection list for ambiguous classification</span>
+    <span class="n">inspection_missions</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="n">i</span><span class="p">[</span><span class="s2">&quot;llm_mission&quot;</span><span class="p">]:</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;llm_papertype&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="n">mm</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="s2">&quot;llm_mission&quot;</span><span class="p">]][</span><span class="s2">&quot;total_weighted_conf&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+            <span class="s2">&quot;mission_probability&quot;</span><span class="p">:</span> <span class="n">mm</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="s2">&quot;llm_mission&quot;</span><span class="p">]][</span><span class="s2">&quot;prob_mission&quot;</span><span class="p">],</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">grouped_df</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s2">&quot;records&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s2">&quot;weighted_confs&quot;</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">inspection</span> <span class="ow">and</span> <span class="nb">max</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s2">&quot;weighted_confs&quot;</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">threshold</span>
+    <span class="p">]</span>
+
+    <span class="n">output</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">bibcode</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;human&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;papertype&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">human_classes</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+            <span class="s2">&quot;threshold_acceptance&quot;</span><span class="p">:</span> <span class="n">threshold</span><span class="p">,</span>
+            <span class="s2">&quot;threshold_inspection&quot;</span><span class="p">:</span> <span class="n">inspection</span><span class="p">,</span>
+            <span class="s2">&quot;llm&quot;</span><span class="p">:</span> <span class="n">llm</span><span class="p">,</span>
+            <span class="s2">&quot;inspection&quot;</span><span class="p">:</span> <span class="n">inspection_missions</span><span class="p">,</span>
+            <span class="s2">&quot;missing_by_human&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">missing_by_human</span><span class="p">),</span>
+            <span class="s2">&quot;missing_by_llm&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">missing_by_llm</span><span class="p">),</span>
+            <span class="s2">&quot;hallucinated_missions&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">hallucinated_missions</span><span class="p">)),</span>
+            <span class="s2">&quot;df&quot;</span><span class="p">:</span> <span class="n">grouped_df</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s2">&quot;records&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;mission_conf&quot;</span><span class="p">:</span> <span class="n">mission_df</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s2">&quot;records&quot;</span><span class="p">),</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">output</span></div>
+
+
+
+<div class="viewcode-block" id="identify_missions_in_text">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.evaluate.identify_missions_in_text">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">identify_missions_in_text</span><span class="p">(</span><span class="n">missions</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if a mission is in the paper text</span>
+
+<span class="sd">    Checks if a list of mission names are present in the title, abstract, and body of</span>
+<span class="sd">    the paper text.  The text comes from the &quot;body&quot; field of the</span>
+<span class="sd">    source dataset.  First, it loads the text into the bibcat Paper object,</span>
+<span class="sd">    parses, and retrieves the paragraphs matching all the bibcat mission</span>
+<span class="sd">    keywords.  Then it iterates over each item in the input mission list, e.g.</span>
+<span class="sd">    all the missions from the LLM output response, identifies the correct</span>
+<span class="sd">    keyword object, and checks if there is a corresponding paper paragraph.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    missions : list</span>
+<span class="sd">        a list of missions</span>
+<span class="sd">    text : str</span>
+<span class="sd">        the paper text body</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list</span>
+<span class="sd">        a list of boolean values indicating if the mission is in the text</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># get the paper object</span>
+    <span class="c1"># this is slow, only do this once for all missions</span>
+    <span class="n">paper</span> <span class="o">=</span> <span class="n">Paper</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">all_kobjs</span><span class="p">,</span> <span class="n">do_check_truematch</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">paper</span><span class="o">.</span><span class="n">process_paragraphs</span><span class="p">()</span>
+    <span class="n">paragraphs</span> <span class="o">=</span> <span class="n">paper</span><span class="o">.</span><span class="n">get_paragraphs</span><span class="p">()</span>
+
+    <span class="n">in_text</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">mission</span> <span class="ow">in</span> <span class="n">missions</span><span class="p">:</span>
+        <span class="c1"># get the relevant mission keyword</span>
+        <span class="n">keyword</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">_fetch_keyword_object</span><span class="p">(</span><span class="n">mission</span><span class="p">)</span>
+
+        <span class="c1"># identify the keyword in the text</span>
+        <span class="n">in_text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">True</span> <span class="k">if</span> <span class="n">paragraphs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">keyword</span><span class="o">.</span><span class="n">get_name</span><span class="p">())</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">in_text</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

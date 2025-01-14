@@ -1,0 +1,987 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat.core package &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="bibcat.core.classifiers package" href="bibcat.core.classifiers.html" />
+    <link rel="prev" title="bibcat package" href="bibcat.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">BibCat</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="bibcat.html">bibcat package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="bibcat.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">bibcat.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.data.html">bibcat.data package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html">bibcat.llm package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.pretrained.html">bibcat.pretrained package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.tests.html">bibcat.tests package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.utils.html">bibcat.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.html#bibcat-main-module">bibcat.main module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.html#module-bibcat.parameters">bibcat.parameters module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.html#module-bibcat">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">BibCat</a></li>
+          <li class="breadcrumb-item"><a href="bibcat.html">bibcat package</a></li>
+      <li class="breadcrumb-item active">bibcat.core package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/bibcat.core.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="bibcat-core-package">
+<h1>bibcat.core package<a class="headerlink" href="#bibcat-core-package" title="Link to this heading"></a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="bibcat.core.classifiers.html">bibcat.core.classifiers package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.core.classifiers.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.core.classifiers.html#bibcat-core-classifiers-ml-module">bibcat.core.classifiers.ml module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.core.classifiers.html#module-bibcat.core.classifiers.textdata">bibcat.core.classifiers.textdata module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.core.classifiers.html#bibcat.core.classifiers.textdata.ClassifierBase"><code class="docutils literal notranslate"><span class="pre">ClassifierBase</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.classifiers.html#bibcat.core.classifiers.textdata.ClassifierBase.classify_text"><code class="docutils literal notranslate"><span class="pre">ClassifierBase.classify_text()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.core.classifiers.html#module-bibcat.core.classifiers">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-bibcat.core.base">
+<span id="bibcat-core-base-module"></span><h2>bibcat.core.base module<a class="headerlink" href="#module-bibcat.core.base" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">title<span class="colon">:</span></dt>
+<dd class="field-odd"><p>base.py</p>
+</dd>
+</dl>
+<p>The class module is a collection of methods that other classes often use.</p>
+<p>The primary methods and use cases of _Base include:
+* <cite>_get_info</cite>, <cite>_store_info</cite>: Store and retrieve information (values, booleans, etc.)</p>
+<blockquote>
+<div><p>for a given class instance.</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt><cite>_assemble_keyword_wordchunks</cite>: Build noun chunks containing target mission keywords</dt><dd><p>from the text.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><cite>_check_importance</cite>: Check if some given text contains any important terms</dt><dd><p>(where important terms include mission keywords, 1st-person and 3rd-person pronouns,
+a paper citation, etc.).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><cite>_check_truematch</cite>: Check if some given ambiguous text relates to a given mission</dt><dd><p>(e.g., Hubble observations) or is instead likely a false match (e.g., Edwin Hubble).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><cite>_cleanse_text</cite>: Cleanse some given text, e.g., excessive whitespace and punctuation.</dt><dd><p>Can also, e.g., replace citations with an ‘Authoretal’ placeholder of sorts.</p>
+</dd>
+</dl>
+</li>
+<li><p><cite>_extract_core_from_phrase</cite>: Formulate a core representative ‘meaning’ for some given text.</p></li>
+<li><p><cite>_is_pos_word</cite>: Check if some given word (of the NLP type) has a particular part of speech.</p></li>
+<li><dl class="simple">
+<dt><cite>_process_database_ambig</cite>: Load, process, and store an external table of</dt><dd><p>ambiguous mission-related phrases.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><cite>_search_text</cite>: Search some given text for mission keywords/acronyms</dt><dd><p>(e.g., search for “HST”).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><cite>_streamline_phrase</cite>: Run _cleanse_text(), and also streamline, e.g.,</dt><dd><p>websites by replacing them with uniform placeholders.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<dl class="py class">
+<dt class="sig sig-object py" id="bibcat.core.base.Base">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bibcat.core.base.</span></span><span class="sig-name descname"><span class="pre">Base</span></span><a class="reference internal" href="../_modules/bibcat/core/base.html#Base"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.base.Base" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>WARNING! This class is <em>not</em> meant to be used directly by users.
+-
+Class: _Base
+Purpose:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Container for common underlying methods used in other classes.</p></li>
+<li><p>Purely meant to be inherited by other classes.</p></li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li></li>
+</ul>
+<p>Method: __init__
+WARNING! This method is <em>not</em> meant to be used directly by users.
+Purpose: Initializes instance of _Base class.</p>
+</dd></dl>
+
+</section>
+<section id="module-bibcat.core.config">
+<span id="bibcat-core-config-module"></span><h2>bibcat.core.config module<a class="headerlink" href="#module-bibcat.core.config" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="bibcat.core.config.ddict">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bibcat.core.config.</span></span><span class="sig-name descname"><span class="pre">ddict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/core/config.html#ddict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.config.ddict" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Any</span></code></a>]</p>
+<p>Create a dottable dictionary</p>
+<p>This allows for dictionary keys to be accessed
+like class attributes.  For example, in x = {‘a’: 1, ‘b’: 2},
+one can access x[‘a’] or x.a</p>
+<p>override init</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bibcat.core.config.get_config">
+<span class="sig-prename descclassname"><span class="pre">bibcat.core.config.</span></span><span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#bibcat.core.config.ddict" title="bibcat.core.config.ddict"><span class="pre">ddict</span></a></span></span><a class="reference internal" href="../_modules/bibcat/core/config.html#get_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.config.get_config" title="Link to this definition"></a></dt>
+<dd><p>Read in the bibcat configuration</p>
+<p>Reads in the bibcat configuration from a yaml file.
+The default config is in etc/bibcat_config.yaml.  It
+looks for an optional user configuration for bibcat,
+and merges it with the default. All user configs take
+precedence and override any default configs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the bibcat config object</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bibcat.core.config.get_custom_config">
+<span class="sig-prename descclassname"><span class="pre">bibcat.core.config.</span></span><span class="sig-name descname"><span class="pre">get_custom_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/bibcat/core/config.html#get_custom_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.config.get_custom_config" title="Link to this definition"></a></dt>
+<dd><p>Look up and read in any custom configuration</p>
+<p>Looks for a user custom configuration for bibcat and reads
+it in if found.  Looks for a “bibcat_config.yaml” file in
+a user environment variable directory, $BIBCAT_CONFIG_DIR,
+or the user’s home directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the custom yaml configuration</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a> | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bibcat.core.config.get_default_config">
+<span class="sig-prename descclassname"><span class="pre">bibcat.core.config.</span></span><span class="sig-name descname"><span class="pre">get_default_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#bibcat.core.config.ddict" title="bibcat.core.config.ddict"><span class="pre">ddict</span></a></span></span><a class="reference internal" href="../_modules/bibcat/core/config.html#get_default_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.config.get_default_config" title="Link to this definition"></a></dt>
+<dd><p>Read in the bibcat default configuration</p>
+<p>Reads in the bibcat configuration from a yaml file.
+The default config is in etc/bibcat_config.yaml.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the bibcat config object</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bibcat.core.config.read_yaml">
+<span class="sig-prename descclassname"><span class="pre">bibcat.core.config.</span></span><span class="sig-name descname"><span class="pre">read_yaml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.13)"><span class="pre">Path</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a></span></span><a class="reference internal" href="../_modules/bibcat/core/config.html#read_yaml"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.config.read_yaml" title="Link to this definition"></a></dt>
+<dd><p>Read a yaml configuration file</p>
+<p>Expands any environment variables in the yaml file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – the filepath to the configuration</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the yaml configuration</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bibcat.core.config.tuple_constructor">
+<span class="sig-prename descclassname"><span class="pre">bibcat.core.config.</span></span><span class="sig-name descname"><span class="pre">tuple_constructor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SafeLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SequenceNode</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a></span></span><a class="reference internal" href="../_modules/bibcat/core/config.html#tuple_constructor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.config.tuple_constructor" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-bibcat.core.grammar">
+<span id="bibcat-core-grammar-module"></span><h2>bibcat.core.grammar module<a class="headerlink" href="#module-bibcat.core.grammar" title="Link to this heading"></a></h2>
+<p>title: grammar.py</p>
+<p>The primary purpose of the Grammar class is to:
+1) Break a paragraph (generated by the Paper class) down into its grammatical components (e.g., parts-of-speech, flagging verbs, the hierarchical structure of each sentence, etc).
+2) Streamline, simplify, and/or anonymize the contents of the paragraph based on the user’s specifications.</p>
+<p>The Grammar class is to modify a given paragraph to remove any extra or unnecessary information from within each sentence in that paragraph.  These modifications further reduce the ‘noise’ that, e.g., the machine learning classifier must deal with later on to classify a given paragraph.  For clarity, we refer to these modified paragraphs as ‘modifs’.</p>
+<p>There are different modes for modifying a given paragraph (thus producing different ‘modifs’), which will do none or some combination of the following operations:
+* <cite>skim</cite>: Remove useless extra words (e.g., adjectives) that are likely not important for readability.
+* <cite>trim</cite>: Remove clauses and sentence snippets that are likely not relevant to the mission and are not important for readability.
+* <cite>anon</cite>: Replace any mission terms with a generic placeholder.
+* <cite>none</cite>: Do not apply any modification.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="bibcat.core.grammar.Grammar">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bibcat.core.grammar.</span></span><span class="sig-name descname"><span class="pre">Grammar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keyword_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_check_truematch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_verbose_deep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dict_ambigs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/core/grammar.html#Grammar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.grammar.Grammar" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bibcat.core.base.Base" title="bibcat.core.base.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<p>Class: Grammar
+Purpose:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Load in text.</p></li>
+<li><p>Extract ‘paragraph’ from text using Paper class and Keyword instance.</p></li>
+<li><p>Convert paragraph into grammar tree structure.</p></li>
+<li><p>Use grammar tree structure to simplify, streamline, and/or anonymize paragraph as directed by user.</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>Initialization Arguments:</dt><dd><ul class="simple">
+<li><p>buffer [int (default=0)]:
+- Number of +/- sentences around a sentence containing a target mission to include in the paragraph.</p></li>
+<li><p>dict_ambigs [None or dict (default=None)]:
+- If None, will load and process external database of ambiguous mission phrases. If given, will use what is given.</p></li>
+<li><p>do_check_truematch [bool]:
+- Whether or not to check that mission phrases found in text are known true vs. false matches. (E.g., ‘Edwin Hubble’ as false match for the Hubble Space Telescope).</p></li>
+<li><p>keyword_obj [Keyword instance]:
+- Target mission; terms will be used to search the text.</p></li>
+<li><p>text [str]:
+- Text to process for target terms.</p></li>
+<li><p>do_verbose [bool (default=False)]:
+- Whether or not to print surface-level log information and tests.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Method: __init__
+WARNING! This method is <em>not</em> meant to be used directly by users.
+Purpose: Initialize instance of Grammar class.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.core.grammar.Grammar.get_modifs">
+<span class="sig-name descname"><span class="pre">get_modifs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">which_modes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/core/grammar.html#Grammar.get_modifs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.grammar.Grammar.get_modifs" title="Link to this definition"></a></dt>
+<dd><p>Method: get_modifs
+Purpose: Fetch the modified paragraphs (‘modifs’) previously assembled and stored within this instance.
+:param - “which_modes” [list of str: List of modes for which modifs will be extracted. If None, then all previously assembled and stored modifs will be returned.
+:type - “which_modes” [list of str: default=None
+:param or None: List of modes for which modifs will be extracted. If None, then all previously assembled and stored modifs will be returned.
+:type or None: default=None</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p>keys = Names of the modes.</p></li>
+<li><p>values = The modif (the modified paragraph) for each mode.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>dict</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.core.grammar.Grammar.run_modifications">
+<span class="sig-name descname"><span class="pre">run_modifications</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">which_modes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/core/grammar.html#Grammar.run_modifications"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.grammar.Grammar.run_modifications" title="Link to this definition"></a></dt>
+<dd><p>Method: run_modifications
+Purpose: Parse paragraphs and process them into grammar structures using various modification schemes.
+Arguments: None
+Returns: None (internal storage updated)</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bibcat.core.keyword">
+<span id="bibcat-core-keyword-module"></span><h2>bibcat.core.keyword module<a class="headerlink" href="#module-bibcat.core.keyword" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">title<span class="colon">:</span></dt>
+<dd class="field-odd"><p>keyword.py</p>
+</dd>
+</dl>
+<p>This class’s primary purpose is to extract all sentences from within
+a larger text block that refers to a given mission(s).  This collection of sentences
+for each mission, denoted from here on as a ‘paragraph’, is created to focus
+on the portions of the original text related to the target mission.
+Using paragraphs for classification instead of the full text allows us to remove
+much of the ‘noise’ inherent to the rest of the text.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="bibcat.core.keyword.Keyword">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bibcat.core.keyword.</span></span><span class="sig-name descname"><span class="pre">Keyword</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keywords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acronyms_caseinsensitive</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acronyms_casesensitive</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">banned_overlap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ambig_words</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_not_classify</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/core/keyword.html#Keyword"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.keyword.Keyword" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bibcat.core.base.Base" title="bibcat.core.base.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<p>A Keyword instance stores terms, e.g. titles and acronyms, that describe a mission (e.g., HST, JWST, TESS) for a user.  Methods of a Keyword instance can identify and/or replace snippets within texts that match to the mission.</p>
+<p>Initialize an instance of the Keyword class, which stores terms, e.g. titles and acronyms, that describe a mission (e.g., HST, JWST, TESS) for a user.</p>
+<p>A Keyword instance is a container for a user-defined mission, such as HST or TESS.  Each instance contains phrases and acronyms that refer to the mission (e.g., “Hubble Space Telescope” and “HST” for HST).
+Each instance also contains optional lists of strings that handle potential overlap of the mission phrases with other phrases.  For example, “Hubble” is common between both HST and the Hubble Legacy Archive.  And so “Hubble Legacy Archive” can be flagged within a Keyword instance for HST to prevent “Hubble Legacy Archive” from being treated as a phrase matching to the HST Keyword instance.
+Additionally, each instance includes a boolean that determines whether or not this mission will be classified by the code (as opposed to only extracting and returning subtexts that contain text about this mission).  This boolean is useful for particularly ambiguous mission names.  The K2 mission is a prime example of an ambiguous mission, where “K2” can be used for both mission and non-mission contexts (like “K2” as a telescope and “K2” as a stellar spectral type) and is often hard for a machine to automatically distinguish.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>keywords</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – List of full phrases that name the mission (e.g., “Hubble Space Telescope”).  Not case-sensitive.</p></li>
+<li><p><strong>acronyms_caseinsensitive</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – List of acronyms that can describe the mission; capitalization is not preserved (e.g., “HST” and “hst” are treated in the same manner).  Punctuation should be omitted (as it is handled internally within the code).</p></li>
+<li><p><strong>acronyms_casesensitive</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – List of acronyms that can describe the mission; capitalization is preserved (e.g., “STScI”).  Punctuation should be omitted (as it is handled internally within the code).</p></li>
+<li><p><strong>banned_overlap</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – Phrases that overlap with the target mission keywords but should not be treated as the same mission.  E.g., “Hubble Legacy Archive” can be a distinct mission from “Hubble”; therefore “Hubble Legacy Archive” is banned overlap for the Hubble mission, to avoid matching “Hubble Legacy Archive” to a Keyword instance for HST.</p></li>
+<li><p><strong>ambig_words</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – Phrases for which the user requests false positive checks to be done against the internal database of false positives.  E.g., “Hubble” can be found in the mission phrase “Hubble Telescope” and also in the false positive (i.e., non-mission) phrase “Hubble constant”.  By specifying “Hubble” as a false positive phrase for the Hubble mission, the code knows to internally check phrases in the text associated with Hubble against the internal false positive database and procedure.</p></li>
+<li><p><strong>do_not_classify</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – If True, text for the mission will be processed, extracted, and presented to the user, but not classified.  This can be useful for missions for which only human classification is desired.  This can also be useful for missions for which false positives are too difficult to automatically screen out (e.g., “K2”, which can be a mission and also a stellar spectral type).</p></li>
+<li><p><strong>do_verbose</strong> (<em>bool = False</em>) – If True, will print statements and internal reports within applicable methods while the code is running.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.core.keyword.Keyword.get_name">
+<span class="sig-name descname"><span class="pre">get_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/core/keyword.html#Keyword.get_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.keyword.Keyword.get_name" title="Link to this definition"></a></dt>
+<dd><p>Fetch and return the representative name for the mission described by this Keyword instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>out</strong> – The representative name for this Keyword instance.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.core.keyword.Keyword.identify_keyword">
+<span class="sig-name descname"><span class="pre">identify_keyword</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/core/keyword.html#Keyword.identify_keyword"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.keyword.Keyword.identify_keyword" title="Link to this definition"></a></dt>
+<dd><p>Return whether or not the given text contains terms (keywords, acronyms) matching this instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The text to search within for terms.</p></li>
+<li><p><strong>mode</strong> (<em>{None</em><em>, </em><em>&quot;keyword&quot;</em><em>, </em><em>&quot;acronym&quot;}</em><em>, </em><em>optional</em>) – If a mode is specified, then the code will only search for terms of that type (i.e., either specifically for full phrases OR of acronyms matching to this Keyword instance).  The default is <cite>None</cite>, which searches for all term types.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p><strong>out</strong> –</p>
+<dl class="simple">
+<dt>Output is a key-value dictionary, containing the following keys and values:</dt><dd><dl class="simple">
+<dt>key=”bool”, value=bool</dt><dd><p>True if any matches exist.</p>
+</dd>
+<dt>key=”charspans”, value=list[list[int, int]]</dt><dd><p>List of character spans of all matches.  Each character span contains the index location within the string that contains the starting character of the matching substring, and the index location within the string that contains the final character of the matching substring.  For example: for the sentence “HST is a Hubble Space Telescope acronym”, the value would be [[0,2], [9, 30]].</p>
+</dd>
+<dt>key=”bool_acronym_only”, value=bool</dt><dd><p>True if any acronym matches exist.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.core.keyword.Keyword.replace_keyword">
+<span class="sig-name descname"><span class="pre">replace_keyword</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">placeholder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/core/keyword.html#Keyword.replace_keyword"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.keyword.Keyword.replace_keyword" title="Link to this definition"></a></dt>
+<dd><p>Replace any substrings within given text that contain terms (keywords, acronyms) matching this instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The text to search within for terms.</p></li>
+<li><p><strong>placeholder</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The substring to replace matched terms with.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>out</strong> – The updated text; in the updated text, any keywords/acronyms that matched to this Keyword instance will have been replaced with <cite>placeholder</cite>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bibcat.core.operator">
+<span id="bibcat-core-operator-module"></span><h2>bibcat.core.operator module<a class="headerlink" href="#module-bibcat.core.operator" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">title<span class="colon">:</span></dt>
+<dd class="field-odd"><p>operator.py</p>
+</dd>
+</dl>
+<p>The primary purpose of this class is to direct and run the entire workflow of ‘bibcat’,
+from reading in a given block of text to ultimately classifying that block of text.
+Using its <cite>classify</cite> method, the Operator class internally handles all calls to
+the other classes (Paper, Grammar, and the given classifier).</p>
+<p>The primary methods and use cases of Operator are:
+* <cite>classify</cite>: A method designed for users that prepares and runs the entire ‘bibcat’ workflow,</p>
+<blockquote>
+<div><p>from input raw text to classified output.</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt><cite>process</cite>: A method designed for users that processes given text into modifs,</dt><dd><p>from input raw text to output modifs. It does not include classification (for that, run <cite>classify</cite>);
+it is useful for preprocessing raw text.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><cite>train_model_ML</cite>: A method designed for users that trains a machine learning (ML) model</dt><dd><p>on input raw text. Under the hood, this is called <cite>process</cite> to preprocess the raw text.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<dl class="py class">
+<dt class="sig sig-object py" id="bibcat.core.operator.Operator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bibcat.core.operator.</span></span><span class="sig-name descname"><span class="pre">Operator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">classifier</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">keyword_objs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'operator'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load_check_truematch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deep_verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/core/operator.html#Operator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.operator.Operator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bibcat.core.base.Base" title="bibcat.core.base.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<p>Operator class for running a bibcat workflow</p>
+<p>Class for running the complete workflow of text classification, from input text to internal text processing,
+to output classification.  The <code class="docutils literal notranslate"><span class="pre">classsify</span></code> method is the primary method that handles the actual classification.
+<code class="docutils literal notranslate"><span class="pre">classify_set</span></code> is a wrapper method to classify a set of texts against all mission keywords.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>classifier</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><em>object</em></a>) – the ML classifier instance to use</p></li>
+<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – the mode of text modification to use when processing text using the Grammar class</p></li>
+<li><p><strong>keyword_objs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a>) – the target mission keywords</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Flag to turn on verbosity, by default False</p></li>
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>optional</em>) – A unique name for the operator, by default “operator”</p></li>
+<li><p><strong>load_check_truematch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Flag to check that mission phrases found in text are known true vs. false matches, by default True</p></li>
+<li><p><strong>deep_verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Flag to turn on deep verbosity, by default False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.13)"><strong>ValueError</strong></a> – when the reserved character ‘|’ is used in the name for the Operator</p>
+</dd>
+</dl>
+<p>Initialize the Operator class</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.core.operator.Operator.classify">
+<span class="sig-name descname"><span class="pre">classify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">keyword</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">modif</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_check_truematch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></span></span><a class="reference internal" href="../_modules/bibcat/core/operator.html#Operator.classify"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.operator.Operator.classify" title="Link to this definition"></a></dt>
+<dd><p>Classify a text</p>
+<p>Classify a text against a target mission keyword as “science”, “mention”, or “data_influencded”.
+First converts the input text into a modif, or uses the input modif if given.  Then runs the
+ml classifier’s classify_text method to predict the category probabilities.  The output is a dictionary
+with the original modif, verdict category, scores_comb (the final score), scores_indiv (the individual scores),
+and uncertainty (the prediction probabilities).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None</em>) – the text to classify</p></li>
+<li><p><strong>keyword</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – the target mission keyword</p></li>
+<li><p><strong>modif</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None</em><em>, </em><em>optional</em>) – the modif to classify, by default None</p></li>
+<li><p><strong>do_check_truematch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Flag to check that mission phrases found in text are known true vs. false matches, by default False</p></li>
+<li><p><strong>buffer</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>optional</em>) – Number of +/- sentences around a sentence containing a target mission to include in the paragraph, by default 0</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the classification results
+- modif (str): the modified text
+- modif_none (str): the unmodified text
+- verdict (str): the classification.
+- scores_comb (str|Any): the final score.
+- scores_indiv (str|Any): the individual scores.
+- uncertainty (dict[str, float]|None): the uncertainty of the classifications, e.g., “science”, “mention”</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, Any] | Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.core.operator.Operator.classify_set">
+<span class="sig-name descname"><span class="pre">classify_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">texts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">modifs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_check_truematch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_freq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">25</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/bibcat/core/operator.html#Operator.classify_set"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.operator.Operator.classify_set" title="Link to this definition"></a></dt>
+<dd><p>Classify a set of texts</p>
+<p>Classify a list of texts against the list of all mission keywords.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>texts</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>] </em><em>| </em><em>None</em>) – a list of texts to classify</p></li>
+<li><p><strong>modifs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>] </em><em>| </em><em>None</em><em>, </em><em>optional</em>) – a list of modifs to classify, by default None</p></li>
+<li><p><strong>do_check_truematch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Flag to check that mission phrases found in text are known true vs. false matches, by default False</p></li>
+<li><p><strong>buffer</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>optional</em>) – Number of +/- sentences around a sentence containing a target mission to include in the paragraph, by default 0</p></li>
+<li><p><strong>print_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>optional</em>) – The frequency to print updates, by default 25</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the output classification results for each text</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, Any] | Any]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.13)"><strong>ValueError</strong></a> – when both texts and modifs are given</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.core.operator.Operator.process">
+<span class="sig-name descname"><span class="pre">process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">lookup</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keyword_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#bibcat.core.keyword.Keyword" title="bibcat.core.keyword.Keyword"><span class="pre">Keyword</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_check_truematch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a></span></span><a class="reference internal" href="../_modules/bibcat/core/operator.html#Operator.process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.operator.Operator.process" title="Link to this definition"></a></dt>
+<dd><p>Process text into modifs</p>
+<p>Processes the text using the Grammar and Paper classes into modifs and forest.  A “modif” is a modified version of the text
+that has been processed to identify and remove references to the target keyword mission, i.e. ambiguates the text. A “modif_none” is a unmodified version of the text. “forest” contains a dictionary, which stores some determined ‘grammar’ data about a given text. For example, “forest” stores verbs that are identified in a sentence, the identified clauses of a sentence, the assigned noun chunks of a sentence, and so on. The “forest” dictionary is optionally used for some of the optional text trimming methods of bibcat - for example, if the user wants to remove adjectives from a sentence, which are often not relevant for classification. Ultimately, the goal was to reduce how much “noise” (e.g., irrelevant text) was fed into one of the trained classifiers for classification.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – the text to classify</p></li>
+<li><p><strong>lookup</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>optional</em>) – a term for looking up the target Keyword instance (e.g. HST), by default None</p></li>
+<li><p><strong>keyword_obj</strong> (<a class="reference internal" href="#bibcat.core.keyword.Keyword" title="bibcat.core.keyword.Keyword"><em>Keyword</em></a><em>, </em><em>optional</em>) – a target Keyword instance, by default None</p></li>
+<li><p><strong>do_check_truematch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – Flag to check that mission phrases found in text are known true vs. false matches, by default False</p></li>
+<li><p><strong>buffer</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>optional</em>) – Number of +/- sentences around a sentence containing a target mission to include in the paragraph, by default 0</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>dict</strong> – A dictionary containing the following keys:
+- modif (str): the modified paragraphs
+- modif_none (str): the unmodifed paragraphs
+- forest (str): a dictionary, which stores some determined ‘grammar’ data about a given text.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the output modif and forest (internal text processing output)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.core.operator.Operator.train_model_ML">
+<span class="sig-name descname"><span class="pre">train_model_ML</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dir_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dir_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_reuse_run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dict_texts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapper</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_check_truematch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed_TVT</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fraction_TVT</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.8,</span> <span class="pre">0.1,</span> <span class="pre">0.1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode_TVT</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'uniform'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">25</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/core/operator.html#Operator.train_model_ML"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.operator.Operator.train_model_ML" title="Link to this definition"></a></dt>
+<dd><p>Method: train_model_ML
+Purpose:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Accept set of texts and process them into modifs (using Grammar, Paper classes).</p></li>
+<li><p>Train stored machine learning (ML) classifier on the modifs.</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>[</strong><strong>int</strong> (<em>- buffer</em>) – <ul>
+<li><p>Number of +/- sentences around a sentence containing a target mission to include in the paragraph.</p></li>
+</ul>
+</p></li>
+<li><p><strong>[</strong><strong>bool</strong><strong>]</strong> (<em>- do_shuffle</em>) – <ul>
+<li><p>Whether or not to reuse outputs (e.g., existing training, validation directories) from any existing previous run with the same model name.</p></li>
+</ul>
+</p></li>
+<li><p><strong>[</strong><strong>bool</strong><strong>]</strong> – <ul>
+<li><p>Whether or not to check that mission phrases found in text are known true vs. false matches. (E.g., ‘Edwin Hubble’ as false match for the Hubble Space Telescope).</p></li>
+</ul>
+</p></li>
+<li><p><strong>[</strong><strong>bool</strong><strong>]</strong> – <ul>
+<li><p>Whether or not to shuffle texts when generating training, validation, and testing directories.</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>‘modif’: the modif.</p></li>
+<li><p>’verdict’: the classification.</p></li>
+<li><p>’scores_comb’: the final score.</p></li>
+<li><p>’scores_indiv’: the individual scores.</p></li>
+<li><p>’uncertainty’: the uncertainty of the classification.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p>dict</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bibcat.core.paper">
+<span id="bibcat-core-paper-module"></span><h2>bibcat.core.paper module<a class="headerlink" href="#module-bibcat.core.paper" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">title<span class="colon">:</span></dt>
+<dd class="field-odd"><p>paper.py</p>
+</dd>
+</dl>
+<p>The primary purpose is to extract all sentences within a larger text block
+that refers to a given mission(s).  This collection of sentences for each mission,
+denoted from here on as a ‘paragraph,’ is created to focus on the portions of
+the original text related to the target mission.  Using paragraphs for classification
+instead of the full text allows us to remove much of the ‘noise’ inherent to
+the rest of the text.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="bibcat.core.paper.Paper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bibcat.core.paper.</span></span><span class="sig-name descname"><span class="pre">Paper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keyword_objs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_check_truematch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dict_ambigs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_verbose_deep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/core/paper.html#Paper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.paper.Paper" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bibcat.core.base.Base" title="bibcat.core.base.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<p>Class: Paper
+Purpose:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Load in text.</p></li>
+<li><p>Split text into sentences containing target terms, if any found.</p></li>
+<li><p>Gather sentences into ‘paragraph’.</p></li>
+</ul>
+</div></blockquote>
+<dl>
+<dt>Initialization Arguments:</dt><dd><ul>
+<li><p>dict_ambigs [None or dict (default=None)]:
+- If None, will load and process external database of ambiguous mission phrases.</p>
+<blockquote>
+<div><p>If given, will use what is given.</p>
+</div></blockquote>
+</li>
+<li><p>do_check_truematch [bool]:
+- Whether or not to check that mission phrases found in text are known true</p>
+<blockquote>
+<div><p>vs. false matches. (E.g., ‘Edwin Hubble’ as false match for the Hubble Space Telescope).</p>
+</div></blockquote>
+</li>
+<li><p>keyword_objs [list of Keyword instances]:
+- Target missions; terms will be used to search the text.</p></li>
+<li><p>text [str]:
+- The text to search.</p></li>
+<li><p>do_verbose [bool (default=False)]:
+- Whether or not to print surface-level log information and tests.</p></li>
+<li><p>do_verbose_deep [bool (default=False)]:
+- Whether or not to print inner log information and tests.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Method: __init__
+WARNING! This method is <em>not</em> meant to be used directly by users.
+Purpose: Initialize instance of Paper class.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.core.paper.Paper.get_paragraphs">
+<span class="sig-name descname"><span class="pre">get_paragraphs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keyword_objs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/core/paper.html#Paper.get_paragraphs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.paper.Paper.get_paragraphs" title="Link to this definition"></a></dt>
+<dd><p>Method: get_paragraphs
+Purpose: Fetch and return paragraphs previously assembled for given Keyword instances.
+:param - “keyword_objs” [list of Keyword instances: List of Keyword instances for which previously constructed paragraphs will be extracted.
+:type - “keyword_objs” [list of Keyword instances: default=None
+:param or None: List of Keyword instances for which previously constructed paragraphs will be extracted.
+:type or None: default=None</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p>keys = Representative names of the Keyword instances.</p></li>
+<li><p>values = The paragraphs corresponding to the Keyword instances.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>dict</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.core.paper.Paper.process_paragraphs">
+<span class="sig-name descname"><span class="pre">process_paragraphs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">buffer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/core/paper.html#Paper.process_paragraphs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.paper.Paper.process_paragraphs" title="Link to this definition"></a></dt>
+<dd><p>Method: process_paragraphs
+Purpose: Assemble collection of sentences (a ‘paragraph’) that contain references</p>
+<blockquote>
+<div><p>to target missions (as indicated by stored keyword objects).</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>[</strong><strong>int</strong> (<em>- &quot;buffer&quot;</em>) – Number of +/- sentences around a sentence containing
+a target mission to include in the paragraph.</p></li>
+<li><p><strong>[</strong><strong>bool</strong> (<em>- &quot;do_overwrite&quot;</em>) – Whether or not to overwrite
+any previously extracted and stored paragraphs.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: None</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bibcat.core.performance">
+<span id="bibcat-core-performance-module"></span><h2>bibcat.core.performance module<a class="headerlink" href="#module-bibcat.core.performance" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">title<span class="colon">:</span></dt>
+<dd class="field-odd"><p>performance.py</p>
+</dd>
+</dl>
+<p>The <cite>Performance</cite> class contains user-friendly methods for estimating the performance
+of given classifiers and outputting that performance as, e.g., confusion matrices.
+This class can be used after creating the model, training, and saving
+a machine learning model.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="bibcat.core.performance.Performance">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bibcat.core.performance.</span></span><span class="sig-name descname"><span class="pre">Performance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">do_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_verbose_deep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/core/performance.html#Performance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.performance.Performance" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bibcat.core.base.Base" title="bibcat.core.base.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<p>Class: Performance
+Purpose:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>!</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>Initialization Arguments:</dt><dd><ul class="simple">
+<li><p>!</p></li>
+</ul>
+</dd>
+</dl>
+<p>Method: __init__
+WARNING! This method is <em>not</em> meant to be used directly by users.
+Purpose: Initializes instance of Performance class.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.core.performance.Performance.evaluate_performance_basic">
+<span class="sig-name descname"><span class="pre">evaluate_performance_basic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">operators</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dicts_texts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mappers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thresholds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_text_processed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_check_truematch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filepath_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_raise_innererror</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_save_evaluation=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_save_misclassif=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_plot='performance_confmatr_basic.png'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fileroot_evaluation=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fileroot_misclassif=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figcolor='white'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize=(20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">20)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontsize=16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hspace=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap_abs=&lt;matplotlib.colors.LinearSegmentedColormap</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap_norm=&lt;matplotlib.colors.LinearSegmentedColormap</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_freq=25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_verbose=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_verbose_deep=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/core/performance.html#Performance.evaluate_performance_basic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.performance.Performance.evaluate_performance_basic" title="Link to this definition"></a></dt>
+<dd><p>Method: evaluate_performance_basic
+Purpose:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Evaluate the performance of the internally stored classifier on a test set of data.</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>!</strong> (<em>-</em>)</p></li>
+<li><p><strong>[</strong><strong>bool</strong> (<em>- do_verbose_deep</em>) – <ul>
+<li><p>Whether or not to print surface-level log information and tests.</p></li>
+</ul>
+</p></li>
+<li><p><strong>[</strong><strong>bool</strong> – <ul>
+<li><p>Whether or not to print inner log information and tests.</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>!</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p>dict</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.core.performance.Performance.evaluate_performance_uncertainty">
+<span class="sig-name descname"><span class="pre">evaluate_performance_uncertainty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">operators</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dicts_texts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mappers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold_arrays</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_text_processed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_check_truematch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filepath_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_raise_innererror</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_save_evaluation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_save_misclassif</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'performance_grid_uncertainty.png'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fileroot_evaluation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fileroot_misclassif</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figcolor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'white'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(20,</span> <span class="pre">20)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ticksize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">14</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tickwidth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tickheight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['tomato',</span> <span class="pre">'dodgerblue',</span> <span class="pre">'purple',</span> <span class="pre">'dimgray',</span> <span class="pre">'silver',</span> <span class="pre">'darkgoldenrod',</span> <span class="pre">'darkgreen',</span> <span class="pre">'green',</span> <span class="pre">'cyan']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alphas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.75,</span> <span class="pre">0.75,</span> <span class="pre">0.75,</span> <span class="pre">0.75,</span> <span class="pre">0.75,</span> <span class="pre">0.75,</span> <span class="pre">0.75,</span> <span class="pre">0.75,</span> <span class="pre">0.75,</span> <span class="pre">0.75]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linestyles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['-',</span> <span class="pre">'-',</span> <span class="pre">'-',</span> <span class="pre">'--',</span> <span class="pre">'--',</span> <span class="pre">'--',</span> <span class="pre">':',</span> <span class="pre">':',</span> <span class="pre">':']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linewidths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[3,</span> <span class="pre">3,</span> <span class="pre">3,</span> <span class="pre">3,</span> <span class="pre">3,</span> <span class="pre">3,</span> <span class="pre">3,</span> <span class="pre">3,</span> <span class="pre">3,</span> <span class="pre">3]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">markers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['o',</span> <span class="pre">'o',</span> <span class="pre">'o',</span> <span class="pre">'o',</span> <span class="pre">'o',</span> <span class="pre">'o',</span> <span class="pre">'o',</span> <span class="pre">'o',</span> <span class="pre">'o',</span> <span class="pre">'o']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha_match</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_match</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linestyle_match</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'-'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linewidth_match</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marker_match</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'*'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_verbose_deep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/core/performance.html#Performance.evaluate_performance_uncertainty"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.performance.Performance.evaluate_performance_uncertainty" title="Link to this definition"></a></dt>
+<dd><p>Method: evaluate_performance_uncertainty
+Purpose:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Evaluate the performance of the internally stored classifier on a test set
+of data as a function of uncertainty.</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>!</strong> (<em>-</em>)</p></li>
+<li><p><strong>[</strong><strong>bool</strong> (<em>- do_verbose_deep</em>) – <ul>
+<li><p>Whether or not to print surface-level log information and tests.</p></li>
+</ul>
+</p></li>
+<li><p><strong>[</strong><strong>bool</strong> – <ul>
+<li><p>Whether or not to print inner log information and tests.</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>!</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p>dict</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.core.performance.Performance.plot_performance_confusion_matrix">
+<span class="sig-name descname"><span class="pre">plot_performance_confusion_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_evaluations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_mappers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_titles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filepath_plot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_plot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize=(20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">6)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figcolor='white'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontsize=16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hspace=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap_abs=&lt;matplotlib.colors.LinearSegmentedColormap</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap_norm=&lt;matplotlib.colors.LinearSegmentedColormap</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_verbose=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_verbose_deep=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/core/performance.html#Performance.plot_performance_confusion_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.core.performance.Performance.plot_performance_confusion_matrix" title="Link to this definition"></a></dt>
+<dd><p>Method: plot_performance_confusion_matrix
+Purpose:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>!</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>!</strong> (<em>-</em>)</p></li>
+<li><p><strong>[</strong><strong>bool</strong> (<em>- do_verbose_deep</em>) – <ul>
+<li><p>Whether or not to print surface-level log information and tests.</p></li>
+</ul>
+</p></li>
+<li><p><strong>[</strong><strong>bool</strong> – <ul>
+<li><p>Whether or not to print inner log information and tests.</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>!</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p>dict</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bibcat.core">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-bibcat.core" title="Link to this heading"></a></h2>
+<p>This module contains core scripts to run bibcat.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="bibcat.html" class="btn btn-neutral float-left" title="bibcat package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="bibcat.core.classifiers.html" class="btn btn-neutral float-right" title="bibcat.core.classifiers package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

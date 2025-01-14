@@ -1,0 +1,776 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat.core.operator &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">BibCat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bibcat.core.operator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bibcat.core.operator</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">:title: operator.py</span>
+
+<span class="sd">The primary purpose of this class is to direct and run the entire workflow of &#39;bibcat&#39;,</span>
+<span class="sd">from reading in a given block of text to ultimately classifying that block of text.</span>
+<span class="sd">Using its `classify` method, the Operator class internally handles all calls to</span>
+<span class="sd">the other classes (Paper, Grammar, and the given classifier).</span>
+
+<span class="sd">The primary methods and use cases of Operator are:</span>
+<span class="sd">* `classify`: A method designed for users that prepares and runs the entire &#39;bibcat&#39; workflow,</span>
+<span class="sd">   from input raw text to classified output.</span>
+<span class="sd">* `process`: A method designed for users that processes given text into modifs,</span>
+<span class="sd">   from input raw text to output modifs. It does not include classification (for that, run `classify`);</span>
+<span class="sd">   it is useful for preprocessing raw text.</span>
+<span class="sd">* `train_model_ML`: A method designed for users that trains a machine learning (ML) model</span>
+<span class="sd">   on input raw text. Under the hood, this is called `process` to preprocess the raw text.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.core.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">Base</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.core.grammar</span><span class="w"> </span><span class="kn">import</span> <span class="n">Grammar</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.core.keyword</span><span class="w"> </span><span class="kn">import</span> <span class="n">Keyword</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.data.partition_dataset</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_directory_TVT</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.utils.logger_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_logger</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="c1"># TODO - this class is too complicated and may be unneccesary; break down into smaller components and</span>
+<span class="c1"># TODO - move to other relevant classes like Paper, Grammar, Keyword, etc.</span>
+<div class="viewcode-block" id="Operator">
+<a class="viewcode-back" href="../../../api/bibcat.core.html#bibcat.core.operator.Operator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Operator</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Operator class for running a bibcat workflow</span>
+
+<span class="sd">    Class for running the complete workflow of text classification, from input text to internal text processing,</span>
+<span class="sd">    to output classification.  The ``classsify`` method is the primary method that handles the actual classification.</span>
+<span class="sd">    ``classify_set`` is a wrapper method to classify a set of texts against all mission keywords.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    classifier : object</span>
+<span class="sd">        the ML classifier instance to use</span>
+<span class="sd">    mode : str</span>
+<span class="sd">        the mode of text modification to use when processing text using the Grammar class</span>
+<span class="sd">    keyword_objs : list</span>
+<span class="sd">        the target mission keywords</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        Flag to turn on verbosity, by default False</span>
+<span class="sd">    name : str, optional</span>
+<span class="sd">        A unique name for the operator, by default &quot;operator&quot;</span>
+<span class="sd">    load_check_truematch : bool, optional</span>
+<span class="sd">        Flag to check that mission phrases found in text are known true vs. false matches, by default True</span>
+<span class="sd">    deep_verbose : bool, optional</span>
+<span class="sd">        Flag to turn on deep verbosity, by default False</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        when the reserved character &#39;|&#39; is used in the name for the Operator</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Initialize this class instance</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">classifier</span><span class="p">,</span>
+        <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">keyword_objs</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;operator&quot;</span><span class="p">,</span>
+        <span class="n">load_check_truematch</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">deep_verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the Operator class&quot;&quot;&quot;</span>
+        <span class="c1"># object attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">classifier</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deep_verbose</span> <span class="o">=</span> <span class="n">deep_verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_check_truematch</span> <span class="o">=</span> <span class="n">load_check_truematch</span>
+
+        <span class="c1"># Throw an error if reserved character &#39;|&#39; in name</span>
+        <span class="k">if</span> <span class="s2">&quot;|&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please do not use the reserved character &#39;|&#39; in the name for your Operator.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># keyword object info</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keyword_objs</span> <span class="o">=</span> <span class="n">keyword_objs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_keyobjs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">keyword_objs</span><span class="p">)</span>
+
+        <span class="c1"># ambiguous keyword data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dict_ambigs</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lookup_ambigs</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Load and process ambiguous (ambig.) data, if so requested</span>
+        <span class="k">if</span> <span class="n">load_check_truematch</span><span class="p">:</span>
+            <span class="c1"># Run method to load and process external ambig. database</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dict_ambigs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_database_ambig</span><span class="p">(</span><span class="n">keyword_objs</span><span class="o">=</span><span class="n">keyword_objs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lookup_ambigs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_ambigs</span><span class="p">[</span><span class="s2">&quot;lookup_ambigs&quot;</span><span class="p">]</span>
+
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">deep_verbose</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loaded+Assembled data for ambiguous phrases.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># print the keyword objects</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Instance of Operator successfully initialized!&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Keyword objects:&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">kobj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keyword_objs</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">kobj</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Fetch a keyword object that matches the given lookup</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fetch_keyword_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lookup</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">do_raise_emptyerror</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fetch a keyword object</span>
+
+<span class="sd">        Given an input lookup string, tries to match it to a stored Keyword instance.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        lookup : str</span>
+<span class="sd">            the input string</span>
+<span class="sd">        do_raise_emptyerror : bool, optional</span>
+<span class="sd">            Flag to raise an error, by default True</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Any | None</span>
+<span class="sd">            the matching Keyword instance</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            when no match is found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&gt; Running _fetch_keyword_object() for lookup term </span><span class="si">{</span><span class="n">lookup</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Find keyword object that matches to given lookup term</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">kobj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keyword_objs</span><span class="p">:</span>
+            <span class="c1"># If current keyword object matches, record and stop loop</span>
+            <span class="k">if</span> <span class="n">kobj</span><span class="o">.</span><span class="n">identify_keyword</span><span class="p">(</span><span class="n">lookup</span><span class="p">)[</span><span class="s2">&quot;bool&quot;</span><span class="p">]:</span>
+                <span class="n">match</span> <span class="o">=</span> <span class="n">kobj</span>
+                <span class="k">break</span>
+
+        <span class="c1"># Throw error if no matching keyword object found</span>
+        <span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">errstr</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;No matching keyword object for </span><span class="si">{</span><span class="n">lookup</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">errstr</span> <span class="o">+=</span> <span class="s2">&quot;Available keyword objects are:</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="c1"># just use the names of the keywords</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keyword_objs</span><span class="p">)</span>
+            <span class="n">errstr</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">names</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+            <span class="c1"># Raise error if so requested</span>
+            <span class="k">if</span> <span class="n">do_raise_emptyerror</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errstr</span><span class="p">)</span>
+
+        <span class="c1"># Return the matching keyword object</span>
+        <span class="k">return</span> <span class="n">match</span>
+
+    <span class="c1"># Inspect text and either reject as false target or give classifications</span>
+<div class="viewcode-block" id="Operator.classify">
+<a class="viewcode-back" href="../../../api/bibcat.core.html#bibcat.core.operator.Operator.classify">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">classify</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">keyword</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">modif</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">do_check_truematch</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">buffer</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Classify a text</span>
+
+<span class="sd">        Classify a text against a target mission keyword as &quot;science&quot;, &quot;mention&quot;, or &quot;data_influencded&quot;.</span>
+<span class="sd">        First converts the input text into a modif, or uses the input modif if given.  Then runs the</span>
+<span class="sd">        ml classifier&#39;s classify_text method to predict the category probabilities.  The output is a dictionary</span>
+<span class="sd">        with the original modif, verdict category, scores_comb (the final score), scores_indiv (the individual scores),</span>
+<span class="sd">        and uncertainty (the prediction probabilities).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        text : str | None</span>
+<span class="sd">            the text to classify</span>
+<span class="sd">        keyword : str</span>
+<span class="sd">            the target mission keyword</span>
+<span class="sd">        modif : str | None, optional</span>
+<span class="sd">            the modif to classify, by default None</span>
+<span class="sd">        do_check_truematch : bool, optional</span>
+<span class="sd">            Flag to check that mission phrases found in text are known true vs. false matches, by default False</span>
+<span class="sd">        buffer : int, optional</span>
+<span class="sd">            Number of +/- sentences around a sentence containing a target mission to include in the paragraph, by default 0</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict[str, Any] | Any</span>
+<span class="sd">            the classification results</span>
+<span class="sd">            - modif (str): the modified text</span>
+<span class="sd">            - modif_none (str): the unmodified text</span>
+<span class="sd">            - verdict (str): the classification.</span>
+<span class="sd">            - scores_comb (str|Any): the final score.</span>
+<span class="sd">            - scores_indiv (str|Any): the individual scores.</span>
+<span class="sd">            - uncertainty (dict[str, float]|None): the uncertainty of the classifications, e.g., &quot;science&quot;, &quot;mention&quot;</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">modif_none</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Process text into modifs using Grammar class, if modif not given</span>
+        <span class="k">if</span> <span class="n">modif</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Preprocessing and extracting modifs from the text...&quot;</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">keyword_obj</span><span class="o">=</span><span class="n">keyword</span><span class="p">,</span> <span class="n">do_check_truematch</span><span class="o">=</span><span class="n">do_check_truematch</span><span class="p">,</span> <span class="n">buffer</span><span class="o">=</span><span class="n">buffer</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                <span class="n">verdicts</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">dictverdict_error</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;-</span><span class="se">\n</span><span class="s2">The following err. was encountered in operate:&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Error was noted. Returning error as verdict.</span><span class="se">\n</span><span class="s2">-&quot;</span><span class="p">)</span>
+                <span class="n">verdicts</span><span class="p">[</span><span class="s2">&quot;modif&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&lt;PROCESSING ERROR:</span><span class="se">\n</span><span class="si">{</span><span class="n">err</span><span class="si">}</span><span class="s2">&gt;&quot;</span>
+                <span class="n">verdicts</span><span class="p">[</span><span class="s2">&quot;modif_none&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">return</span> <span class="n">verdicts</span>
+
+            <span class="c1"># Fetch the generated output</span>
+            <span class="n">modif</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="s2">&quot;modif&quot;</span><span class="p">]</span>
+            <span class="n">modif_none</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="s2">&quot;modif_none&quot;</span><span class="p">]</span>
+
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Text has been processed into modif.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Set rejected verdict if empty text</span>
+        <span class="k">if</span> <span class="n">modif</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No text found matching keyword object.&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Returning rejection verdict.&quot;</span><span class="p">)</span>
+
+            <span class="n">verdicts</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">dictverdict_rejection</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="c1"># Set not-classified verdict if flagged for no classification</span>
+        <span class="k">elif</span> <span class="n">keyword</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;do_not_classify&quot;</span><span class="p">):</span>
+            <span class="n">verdicts</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">dictverdict_donotclassify</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">verdicts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span><span class="o">.</span><span class="n">classify_text</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">modif</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                <span class="n">verdicts</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">dictverdict_error</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;-</span><span class="se">\n</span><span class="s2">The following err. was encountered in operate:&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Error was noted. Continuing.</span><span class="se">\n</span><span class="s2">-&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Return the verdict with modif included</span>
+        <span class="n">verdicts</span><span class="p">[</span><span class="s2">&quot;modif&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">modif</span>
+        <span class="n">verdicts</span><span class="p">[</span><span class="s2">&quot;modif_none&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">modif_none</span>
+        <span class="k">return</span> <span class="n">verdicts</span></div>
+
+
+    <span class="c1"># Classify set of texts as false target or give classifications</span>
+<div class="viewcode-block" id="Operator.classify_set">
+<a class="viewcode-back" href="../../../api/bibcat.core.html#bibcat.core.operator.Operator.classify_set">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">classify_set</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">texts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">modifs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">do_check_truematch</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">buffer</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">print_freq</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Classify a set of texts</span>
+
+<span class="sd">        Classify a list of texts against the list of all mission keywords.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        texts : list[str] | None</span>
+<span class="sd">            a list of texts to classify</span>
+<span class="sd">        modifs : list[str] | None, optional</span>
+<span class="sd">            a list of modifs to classify, by default None</span>
+<span class="sd">        do_check_truematch : bool, optional</span>
+<span class="sd">            Flag to check that mission phrases found in text are known true vs. false matches, by default False</span>
+<span class="sd">        buffer : int, optional</span>
+<span class="sd">            Number of +/- sentences around a sentence containing a target mission to include in the paragraph, by default 0</span>
+<span class="sd">        print_freq : int, optional</span>
+<span class="sd">            The frequency to print updates, by default 25</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list[dict[str, Any] | Any]</span>
+<span class="sd">            the output classification results for each text</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            when both texts and modifs are given</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Throw error if both texts and modifs given</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">texts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">modifs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Err: texts OR modifs should be given, not both.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># get the number of texts</span>
+        <span class="k">if</span> <span class="n">texts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">num_texts</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">modifs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">num_texts</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">modifs</span><span class="p">)</span>
+
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&gt; Running classify_set()!&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Classify every text against every mission</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[{}]</span> <span class="o">*</span> <span class="n">num_texts</span>
+
+        <span class="c1"># Iterate through texts</span>
+        <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">text</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">texts</span><span class="p">):</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># Dictionary to hold set of results</span>
+            <span class="n">results</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span>  <span class="c1"># Store this dictionary</span>
+
+            <span class="c1"># Extract current modifs if already processed text</span>
+            <span class="n">modif</span> <span class="o">=</span> <span class="n">modifs</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="k">if</span> <span class="n">modifs</span> <span class="k">else</span> <span class="kc">None</span>
+
+            <span class="c1"># Iterate through keyword objects</span>
+            <span class="k">for</span> <span class="n">kobj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keyword_objs</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">kobj</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+                <span class="c1"># Classify current text for current mission</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">classify</span><span class="p">(</span>
+                    <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">keyword</span><span class="o">=</span><span class="n">kobj</span><span class="p">,</span> <span class="n">modif</span><span class="o">=</span><span class="n">modif</span><span class="p">,</span> <span class="n">do_check_truematch</span><span class="o">=</span><span class="n">do_check_truematch</span><span class="p">,</span> <span class="n">buffer</span><span class="o">=</span><span class="n">buffer</span>
+                <span class="p">)</span>
+
+                <span class="c1"># Store current result</span>
+                <span class="n">item</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
+
+            <span class="c1"># Print some notes at given frequency, if requested</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="ow">and</span> <span class="p">(((</span><span class="n">ii</span> <span class="o">%</span> <span class="n">print_freq</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">ii</span> <span class="o">==</span> <span class="p">(</span><span class="n">num_texts</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Classification for text #</span><span class="si">{</span><span class="p">(</span><span class="n">ii</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="n">num_texts</span><span class="si">}</span><span class="s2"> complete...&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Return the classification results</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Run of classify_set() complete!</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">results</span></div>
+
+
+    <span class="c1"># Process text into modifs</span>
+<div class="viewcode-block" id="Operator.process">
+<a class="viewcode-back" href="../../../api/bibcat.core.html#bibcat.core.operator.Operator.process">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">lookup</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">keyword_obj</span><span class="p">:</span> <span class="n">Keyword</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">do_check_truematch</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">buffer</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process text into modifs</span>
+
+<span class="sd">        Processes the text using the Grammar and Paper classes into modifs and forest.  A &quot;modif&quot; is a modified version of the text</span>
+<span class="sd">        that has been processed to identify and remove references to the target keyword mission, i.e. ambiguates the text. A &quot;modif_none&quot; is a unmodified version of the text. &quot;forest&quot; contains a dictionary, which stores some determined &#39;grammar&#39; data about a given text. For example, &quot;forest&quot; stores verbs that are identified in a sentence, the identified clauses of a sentence, the assigned noun chunks of a sentence, and so on. The “forest” dictionary is optionally used for some of the optional text trimming methods of bibcat - for example, if the user wants to remove adjectives from a sentence, which are often not relevant for classification. Ultimately, the goal was to reduce how much &quot;noise&quot; (e.g., irrelevant text) was fed into one of the trained classifiers for classification.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        text : str</span>
+<span class="sd">            the text to classify</span>
+<span class="sd">        lookup : str, optional</span>
+<span class="sd">            a term for looking up the target Keyword instance (e.g. HST), by default None</span>
+<span class="sd">        keyword_obj : Keyword, optional</span>
+<span class="sd">            a target Keyword instance, by default None</span>
+<span class="sd">        do_check_truematch : bool, optional</span>
+<span class="sd">            Flag to check that mission phrases found in text are known true vs. false matches, by default False</span>
+<span class="sd">        buffer : int, optional</span>
+<span class="sd">            Number of +/- sentences around a sentence containing a target mission to include in the paragraph, by default 0</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict: the output modif and forest (internal text processing output)</span>
+<span class="sd">            A dictionary containing the following keys:</span>
+<span class="sd">            - modif (str): the modified paragraphs</span>
+<span class="sd">            - modif_none (str): the unmodifed paragraphs</span>
+<span class="sd">            - forest (str): a dictionary, which stores some determined ‘grammar’ data about a given text.</span>
+
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Running Grammar on the text...&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Fetch keyword object matching to the given keyword</span>
+        <span class="k">if</span> <span class="n">keyword_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">keyword_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fetch_keyword_object</span><span class="p">(</span><span class="n">lookup</span><span class="o">=</span><span class="n">lookup</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Best matching Keyword object for keyword </span><span class="si">{</span><span class="n">lookup</span><span class="si">}</span><span class="s2">:</span><span class="se">\n</span><span class="si">{</span><span class="n">keyword_obj</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Process text into modifs using Grammar class</span>
+        <span class="n">use_these_modes</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span> <span class="s2">&quot;none&quot;</span><span class="p">]</span>
+        <span class="n">grammar</span> <span class="o">=</span> <span class="n">Grammar</span><span class="p">(</span>
+            <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span>
+            <span class="n">keyword_obj</span><span class="o">=</span><span class="n">keyword_obj</span><span class="p">,</span>
+            <span class="n">do_check_truematch</span><span class="o">=</span><span class="n">do_check_truematch</span><span class="p">,</span>
+            <span class="n">dict_ambigs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dict_ambigs</span><span class="p">,</span>
+            <span class="n">do_verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">deep_verbose</span><span class="p">,</span>
+            <span class="n">buffer</span><span class="o">=</span><span class="n">buffer</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">grammar</span><span class="o">.</span><span class="n">run_modifications</span><span class="p">(</span><span class="n">which_modes</span><span class="o">=</span><span class="n">use_these_modes</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">grammar</span><span class="o">.</span><span class="n">get_modifs</span><span class="p">()</span>
+
+        <span class="c1"># update outputs</span>
+        <span class="n">modif</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="s2">&quot;modifs&quot;</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">]</span>
+        <span class="n">modif_none</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="s2">&quot;modifs&quot;</span><span class="p">][</span><span class="s2">&quot;none&quot;</span><span class="p">]</span>  <span class="c1"># Include unmodified vers. as well</span>
+        <span class="n">forest</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="s2">&quot;_forest&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Text has been processed into modifs.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Return the modif and internal processing output</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;modif&quot;</span><span class="p">:</span> <span class="n">modif</span><span class="p">,</span> <span class="s2">&quot;modif_none&quot;</span><span class="p">:</span> <span class="n">modif_none</span><span class="p">,</span> <span class="s2">&quot;forest&quot;</span><span class="p">:</span> <span class="n">forest</span><span class="p">}</span></div>
+
+
+    <span class="c1"># Process text into modifs and then train ML model on the modifs</span>
+    <span class="c1"># TODO - this is too complicated</span>
+<div class="viewcode-block" id="Operator.train_model_ML">
+<a class="viewcode-back" href="../../../api/bibcat.core.html#bibcat.core.operator.Operator.train_model_ML">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train_model_ML</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dir_model</span><span class="p">,</span>
+        <span class="n">dir_data</span><span class="p">,</span>
+        <span class="n">name_model</span><span class="p">,</span>
+        <span class="n">do_reuse_run</span><span class="p">,</span>
+        <span class="n">dict_texts</span><span class="p">,</span>
+        <span class="n">mapper</span><span class="p">,</span>
+        <span class="n">do_check_truematch</span><span class="p">,</span>
+        <span class="n">seed_TVT</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="n">buffer</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">fraction_TVT</span><span class="o">=</span><span class="p">[</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+        <span class="n">mode_TVT</span><span class="o">=</span><span class="s2">&quot;uniform&quot;</span><span class="p">,</span>
+        <span class="n">do_shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">print_freq</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method: train_model_ML</span>
+<span class="sd">        Purpose:</span>
+<span class="sd">          - Accept set of texts and process them into modifs (using Grammar, Paper classes).</span>
+<span class="sd">          - Train stored machine learning (ML) classifier on the modifs.</span>
+<span class="sd">        Arguments:</span>
+<span class="sd">          - buffer [int (default=0)]:</span>
+<span class="sd">            - Number of +/- sentences around a sentence containing a target mission to include in the paragraph.</span>
+<span class="sd">          - do_reuse_run [bool]:</span>
+<span class="sd">            - Whether or not to reuse outputs (e.g., existing training, validation directories) from any existing previous run with the same model name.</span>
+<span class="sd">          - do_check_truematch [bool]:</span>
+<span class="sd">            - Whether or not to check that mission phrases found in text are known true vs. false matches. (E.g., &#39;Edwin Hubble&#39; as false match for the Hubble Space Telescope).</span>
+<span class="sd">          - do_shuffle [bool]:</span>
+<span class="sd">            - Whether or not to shuffle texts when generating training, validation, and testing directories.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">          - dict:</span>
+<span class="sd">            - &#39;modif&#39;: the modif.</span>
+<span class="sd">            - &#39;verdict&#39;: the classification.</span>
+<span class="sd">            - &#39;scores_comb&#39;: the final score.</span>
+<span class="sd">            - &#39;scores_indiv&#39;: the individual scores.</span>
+<span class="sd">            - &#39;uncertainty&#39;: the uncertainty of the classification.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">dict_texts</span>
+        <span class="n">classifier</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span>
+        <span class="n">folders_TVT</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">folders_TVT</span>
+        <span class="n">savename_ML</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">tfoutput_prefix</span> <span class="o">+</span> <span class="n">name_model</span>
+        <span class="n">savename_model</span> <span class="o">=</span> <span class="n">name_model</span> <span class="o">+</span> <span class="s2">&quot;.npy&quot;</span>
+        <span class="n">filepath_dicterrors</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">paths</span><span class="o">.</span><span class="n">modiferrors</span>
+
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&gt; Running train_model_ML()for </span><span class="si">{</span><span class="n">name_model</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Throw error if invalid classifier given</span>
+        <span class="n">allowed_types</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;MachineLearningClassifier&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">classifier</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">allowed_types</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Err: Classifier (</span><span class="si">{0}</span><span class="s2">) not allowed type (</span><span class="si">{1}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">classifier</span><span class="p">),</span> <span class="n">allowed_types</span><span class="p">))</span>
+
+        <span class="c1"># Preprocess texts into modifs and store in TVT directories</span>
+        <span class="c1"># NOTE: TVT = training, validation, testing datasets</span>
+        <span class="n">is_exist</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_data</span><span class="p">,</span> <span class="n">folders_TVT</span><span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">]))</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_data</span><span class="p">,</span> <span class="n">folders_TVT</span><span class="p">[</span><span class="s2">&quot;validate&quot;</span><span class="p">])</span>
+        <span class="p">)</span>
+        <span class="c1"># If TVT directories already exist, either print note or raise error</span>
+        <span class="k">if</span> <span class="n">is_exist</span><span class="p">:</span>
+            <span class="n">str_err</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>  <span class="c1"># Placeholder</span>
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Previous training/validation directories already exist.&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Skip ahead if previous data should be reused</span>
+            <span class="k">if</span> <span class="n">do_reuse_run</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reusing the existing training/validation data in </span><span class="si">{</span><span class="n">dir_data</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                <span class="k">pass</span>
+
+            <span class="c1"># Otherwise, raise error if not to reuse previous run data</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Err: Training/validation data already exists &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;in </span><span class="si">{</span><span class="n">dir_data</span><span class="si">}</span><span class="s2">. Either delete it, or rerun method &quot;</span>
+                    <span class="s2">&quot;with do_reuse_run=True.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Otherwise, preprocess the text and store in TVT directories</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Processing text data into modifs...&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Process each text within the database into a modif</span>
+            <span class="n">dict_errors</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># Container for modifs with caught processing errors</span>
+            <span class="n">dict_modifs</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># Container for modifs and text classification info</span>
+            <span class="n">i_track</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">i_skipped</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">str_err</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">num_data</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">curr_key</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">:</span>
+                <span class="n">old_dict</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">curr_key</span><span class="p">]</span>
+                <span class="n">masked_class</span> <span class="o">=</span> <span class="n">mapper</span><span class="p">[</span><span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;class&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+
+                <span class="c1"># Extract modif for current text</span>
+                <span class="k">if</span> <span class="n">do_check_truematch</span><span class="p">:</span>  <span class="c1"># Catch and print unknown ambig. phrases</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">curr_res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">(</span>
+                            <span class="n">text</span><span class="o">=</span><span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">],</span>
+                            <span class="n">lookup</span><span class="o">=</span><span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;mission&quot;</span><span class="p">],</span>
+                            <span class="n">keyword_obj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">do_check_truematch</span><span class="o">=</span><span class="n">do_check_truematch</span><span class="p">,</span>
+                            <span class="n">buffer</span><span class="o">=</span><span class="n">buffer</span><span class="p">,</span>
+                        <span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">NotImplementedError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                        <span class="n">curr_str</span> <span class="o">=</span> <span class="p">(</span>
+                            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">-</span><span class="se">\n</span><span class="s2">&quot;</span>
+                            <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;Printing Error:</span><span class="se">\n</span><span class="s1">ID: </span><span class="si">{</span><span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s1">Bibcode: </span><span class="si">{</span><span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;bibcode&quot;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s1">&quot; + &quot;Mission: </span><span class="si">{</span><span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;mission&quot;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s1">Masked class: </span><span class="si">{</span><span class="n">masked_class</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
+                        <span class="p">)</span>
+                        <span class="n">curr_str</span> <span class="o">+=</span> <span class="s2">&quot;The following err. was encountered&quot;</span> <span class="o">+</span> <span class="s2">&quot; in train_model_ML:</span><span class="se">\n</span><span class="s2">&quot;</span>
+                        <span class="n">curr_str</span> <span class="o">+=</span> <span class="nb">repr</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+                        <span class="n">curr_str</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Error was noted. Skipping this paper.</span><span class="se">\n</span><span class="s2">-&quot;</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">curr_str</span><span class="p">)</span>  <span class="c1"># Print current error</span>
+                        <span class="c1">#</span>
+                        <span class="c1"># Store this error-modif</span>
+                        <span class="n">err_dict</span> <span class="o">=</span> <span class="p">{</span>
+                            <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">curr_str</span><span class="p">,</span>
+                            <span class="s2">&quot;class&quot;</span><span class="p">:</span> <span class="n">masked_class</span><span class="p">,</span>  <span class="c1"># Mask class</span>
+                            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span>
+                            <span class="s2">&quot;mission&quot;</span><span class="p">:</span> <span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;mission&quot;</span><span class="p">],</span>
+                            <span class="s2">&quot;forest&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                            <span class="s2">&quot;bibcode&quot;</span><span class="p">:</span> <span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;bibcode&quot;</span><span class="p">],</span>
+                        <span class="p">}</span>
+                        <span class="k">if</span> <span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;bibcode&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dict_errors</span><span class="p">:</span>
+                            <span class="n">dict_errors</span><span class="p">[</span><span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;bibcode&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+                        <span class="n">dict_errors</span><span class="p">[</span><span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;bibcode&quot;</span><span class="p">]][</span><span class="n">curr_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">err_dict</span>
+
+                        <span class="n">str_err</span> <span class="o">+=</span> <span class="n">curr_str</span>  <span class="c1"># Tack this error onto full string</span>
+                        <span class="n">i_skipped</span> <span class="o">+=</span> <span class="mi">1</span>  <span class="c1"># Increment count of skipped papers</span>
+                        <span class="k">continue</span>
+
+                <span class="k">else</span><span class="p">:</span>  <span class="c1"># Otherwise, run without ambig. phrase check</span>
+                    <span class="n">curr_res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">(</span>
+                        <span class="n">text</span><span class="o">=</span><span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">],</span>
+                        <span class="n">lookup</span><span class="o">=</span><span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;mission&quot;</span><span class="p">],</span>
+                        <span class="n">keyword_obj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">do_check_truematch</span><span class="o">=</span><span class="n">do_check_truematch</span><span class="p">,</span>
+                        <span class="n">buffer</span><span class="o">=</span><span class="n">buffer</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+                <span class="c1"># Store the modif and previous classification information</span>
+                <span class="n">new_dict</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">curr_res</span><span class="p">[</span><span class="s2">&quot;modif&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;class&quot;</span><span class="p">:</span> <span class="n">masked_class</span><span class="p">,</span>  <span class="c1"># Mask class</span>
+                    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;mission&quot;</span><span class="p">:</span> <span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;mission&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;forest&quot;</span><span class="p">:</span> <span class="n">curr_res</span><span class="p">[</span><span class="s2">&quot;forest&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;bibcode&quot;</span><span class="p">:</span> <span class="n">old_dict</span><span class="p">[</span><span class="s2">&quot;bibcode&quot;</span><span class="p">],</span>
+                <span class="p">}</span>
+                <span class="n">dict_modifs</span><span class="p">[</span><span class="n">curr_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_dict</span>
+
+                <span class="c1"># Increment count of modifs generated</span>
+                <span class="n">i_track</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="c1"># Print some notes at desired frequency</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="ow">and</span> <span class="p">((</span><span class="n">i_track</span> <span class="o">%</span> <span class="n">print_freq</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i_track</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="n">num_data</span><span class="si">}</span><span class="s2"> total texts have been processed...&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i_track</span><span class="si">}</span><span class="s2"> texts have been processed into modifs.&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">do_check_truematch</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i_skipped</span><span class="si">}</span><span class="s2"> texts skipped due to unknown ambig. phrases.&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Storing the data in train+validate+test directories...&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Store the modifs in new TVT directories</span>
+            <span class="n">generate_directory_TVT</span><span class="p">(</span>
+                <span class="n">dir_data</span><span class="o">=</span><span class="n">dir_data</span><span class="p">,</span>
+                <span class="n">fraction_TVT</span><span class="o">=</span><span class="n">fraction_TVT</span><span class="p">,</span>
+                <span class="n">mode_TVT</span><span class="o">=</span><span class="n">mode_TVT</span><span class="p">,</span>
+                <span class="n">dict_texts</span><span class="o">=</span><span class="n">dict_modifs</span><span class="p">,</span>
+                <span class="n">do_shuffle</span><span class="o">=</span><span class="n">do_shuffle</span><span class="p">,</span>
+                <span class="n">seed</span><span class="o">=</span><span class="n">seed_TVT</span><span class="p">,</span>
+                <span class="n">do_verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="c1"># Save the modifs with caught processing errors</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">filepath_dicterrors</span><span class="p">,</span> <span class="n">dict_errors</span><span class="p">)</span>
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Train+validate+test directories created in </span><span class="si">{</span><span class="n">dir_model</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Train a new machine learning (ML) model</span>
+        <span class="n">is_exist</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_model</span><span class="p">,</span> <span class="n">savename_model</span><span class="p">))</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_model</span><span class="p">,</span> <span class="n">savename_ML</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="c1"># If ML model or output already exists, either print note or raise error</span>
+        <span class="k">if</span> <span class="n">is_exist</span><span class="p">:</span>
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ML model already exists for </span><span class="si">{</span><span class="n">name_model</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">dir_model</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Skip ahead if previous data should be reused</span>
+            <span class="k">if</span> <span class="n">do_reuse_run</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reusing the existing ML model in </span><span class="si">{</span><span class="n">dir_model</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                <span class="k">pass</span>
+
+            <span class="c1"># Otherwise, raise error if not to reuse previous run data</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Err: ML model/output already exists &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;in </span><span class="si">{</span><span class="n">dir_model</span><span class="si">}</span><span class="s2">. Either delete it, or rerun method &quot;</span>
+                    <span class="s2">&quot;with do_reuse_run=True.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Otherwise, train new ML model on the TVT directories</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Training new ML model on training data in </span><span class="si">{</span><span class="n">dir_model</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Train new ML model</span>
+            <span class="n">classifier</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;New ML model trained and stored in </span><span class="si">{</span><span class="n">dir_model</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Exit the method with error string</span>
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Run of train_model_ML() complete!</span><span class="se">\n</span><span class="s2">Error string returned.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">str_err</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

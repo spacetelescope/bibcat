@@ -1,0 +1,455 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat.data.build_dataset &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">BibCat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bibcat.data.build_dataset</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bibcat.data.build_dataset</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">:title: build_dataset.py</span>
+
+<span class="sd">This module will produce the input corpus data in JSON format by</span>
+<span class="sd">combining the MAST papertrack JSON file and the ADS full text JSON file.</span>
+
+<span class="sd">Run example: bibcat train</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.utils.logger_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.utils.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_json_file</span><span class="p">,</span> <span class="n">save_json_file</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="file_exists">
+<a class="viewcode-back" href="../../../api/bibcat.data.html#bibcat.data.build_dataset.file_exists">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">file_exists</span><span class="p">(</span><span class="n">filelist</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="s2">&quot;Check if any file exists among the list of files&quot;</span>
+    <span class="k">return</span> <span class="nb">any</span><span class="p">([</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">filelist</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="save_text_file">
+<a class="viewcode-back" href="../../../api/bibcat.data.html#bibcat.data.build_dataset.save_text_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_text_file</span><span class="p">(</span><span class="n">path_filename</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">bibcodes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bibcodes</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;An error occurred while saving the file: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="load_datasets">
+<a class="viewcode-back" href="../../../api/bibcat.data.html#bibcat.data.build_dataset.load_datasets">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_datasets</span><span class="p">(</span><span class="n">path_papertext</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">path_papertrack</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load the papertrack and papertext JSON datasets</span>
+
+<span class="sd">    Loads the papertrack and papertext datasets and returns a tuple of the lists of dictionaries.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path_papertext: Path</span>
+<span class="sd">        the path to the papertext data file</span>
+<span class="sd">    path_papertrack: Path</span>
+<span class="sd">        the path to the papertrack data file</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[list[dict], list[dict]]</span>
+<span class="sd">        the tuple of the lists of the papertext and papertrack datasets</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Load paper texts and papertrack classes</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading papertext and papertrack datasets!&quot;</span><span class="p">)</span>
+    <span class="n">papertext_dataset</span> <span class="o">=</span> <span class="n">load_json_file</span><span class="p">(</span><span class="n">path_papertext</span><span class="p">)</span>
+    <span class="n">papertrack_dataset</span> <span class="o">=</span> <span class="n">load_json_file</span><span class="p">(</span><span class="n">path_papertrack</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loaded papertext and papertrack datasets!&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">papertext_dataset</span><span class="p">,</span> <span class="n">papertrack_dataset</span></div>
+
+
+
+<div class="viewcode-block" id="extract_papertext_info">
+<a class="viewcode-back" href="../../../api/bibcat.data.html#bibcat.data.build_dataset.extract_papertext_info">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_papertext_info</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract the papertext bibcodes and publish dates</span>
+
+<span class="sd">    Extracts and returns the papertext ``bibcodes`` and ``pubdates``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset: list[dict]</span>
+<span class="sd">        the papertext dataset</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[list[str], list[str]]</span>
+<span class="sd">        the tuple of a list of the ``bibbodes`` dict and the ``pubdates`` dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">bibcodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;bibcode&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">]</span>
+    <span class="n">pubdates</span> <span class="o">=</span> <span class="p">[</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;pubdate&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The earliest date of papers within text database: </span><span class="si">{</span><span class="nb">min</span><span class="p">(</span><span class="n">pubdates</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The latest date of papers within text database: </span><span class="si">{</span><span class="nb">max</span><span class="p">(</span><span class="n">pubdates</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">bibcodes</span><span class="p">,</span> <span class="n">pubdates</span></div>
+
+
+
+<div class="viewcode-block" id="extract_papertrack_info">
+<a class="viewcode-back" href="../../../api/bibcat.data.html#bibcat.data.build_dataset.extract_papertrack_info">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_papertrack_info</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="kc">None</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="kc">None</span> <span class="o">|</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="kc">None</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract papertrack info</span>
+
+<span class="sd">    Extracts and returns the papertrack values: searches, bibcodes, and missions and papertypes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset: list[dict]</span>
+<span class="sd">        the papertrack dataset</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[list[None | dict], list[None | str], list[None | dict]]</span>
+<span class="sd">        the tuple of a list of the ``searches`` dict, the ``bibcode`` dict, and the ``missions_and_papertypes`` dict</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        when the set of the bibcodes is different from the number of all the bibcodes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">searches</span> <span class="o">=</span> <span class="p">[</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;searches&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">]</span>
+    <span class="n">bibcodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;bibcode&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">]</span>
+    <span class="n">missions_and_papertypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;class_missions&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">]</span>
+
+    <span class="c1"># Throw an error if there are duplicate bibcodes in the papertrack classification dataset</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">bibcodes</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bibcodes</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Err: Duplicate bibcodes in database of paper classifications!&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">searches</span><span class="p">,</span> <span class="n">bibcodes</span><span class="p">,</span> <span class="n">missions_and_papertypes</span></div>
+
+
+
+<div class="viewcode-block" id="missing_bibcodes_in_papertext">
+<a class="viewcode-back" href="../../../api/bibcat.data.html#bibcat.data.build_dataset.missing_bibcodes_in_papertext">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">missing_bibcodes_in_papertext</span><span class="p">(</span>
+    <span class="n">bibcodes_papertext</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">bibcodes_papertrack</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the papertrack bibcodes are not in the papertext</span>
+
+<span class="sd">    Returns the list of the papertrack bibcodes not in the papertext.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    bibcodes_papertext: list[str]</span>
+<span class="sd">        the bibcodes in papertext</span>
+<span class="sd">    bibcodes_papertrack: list[str]</span>
+<span class="sd">        the bibcodes in papertrack</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list[str] | None</span>
+<span class="sd">        the list of the bibcodes are not in the papertext</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Verify that all papers within papertrack are within the papertext database</span>
+    <span class="n">bibcodes_notin_papertext</span> <span class="o">=</span> <span class="p">[</span><span class="n">val</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">bibcodes_papertrack</span><span class="p">)</span> <span class="k">if</span> <span class="p">(</span><span class="n">val</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">bibcodes_papertext</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bibcodes_notin_papertext</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;Note! Papers in papertrack not in text database!&quot;</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">bibcodes_notin_papertext</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">bibcodes_notin_papertext</span><span class="p">)</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">bibcodes_papertrack</span><span class="p">)</span><span class="si">}</span><span class="s2"> papertrack entries in all.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">bibcodes_notin_papertext</span></div>
+
+
+
+<div class="viewcode-block" id="trim_dict">
+<a class="viewcode-back" href="../../../api/bibcat.data.html#bibcat.data.build_dataset.trim_dict">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">trim_dict</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">keys</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Trim the papertext data with the only required keys</span>
+
+<span class="sd">    Trims the papertext data so that the dataset only has the values of</span>
+<span class="sd">    [abstract, author, bibcode, body, keyword, keyword_norm, pubdate, title].</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset: list[dict]</span>
+<span class="sd">        the papertext data</span>
+<span class="sd">    keys: list</span>
+<span class="sd">        the list of the necessary keys</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list[dict]</span>
+<span class="sd">        the list of the only dictionary required for the source dataset</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;trimming the papertext dict with </span><span class="si">{</span><span class="n">keys</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;the first entry of the loaded_papertext = </span><span class="si">{</span><span class="n">dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">trimmed_dict</span> <span class="o">=</span> <span class="p">[{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">thisdict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">)}</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">thisdict</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Show the first entry of the trimmed data: </span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">trimmed_dict</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Dict trimming is complete.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">trimmed_dict</span></div>
+
+
+
+<div class="viewcode-block" id="combine_datasets">
+<a class="viewcode-back" href="../../../api/bibcat.data.html#bibcat.data.build_dataset.combine_datasets">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">combine_datasets</span><span class="p">(</span><span class="n">trimmed_papertext_data</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">papertrack_data</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Combine the papertrack and papertext data</span>
+
+<span class="sd">    Combines two datasets into a source dataset to be used for llm models or transformer training models.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    trimmed_papertext_data: list[dict]</span>
+<span class="sd">        the trimmed papertext data with only necessary keys</span>
+<span class="sd">    papertrack_data: list[dict]</span>
+<span class="sd">        the papertrack data</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple</span>
+<span class="sd">        a tuple of the list of the dictionary of the combined data,</span>
+<span class="sd">        the list of the papertrack bibcodes not in the papertext data,</span>
+<span class="sd">        the list of the papertext bibcodes not in the papertrack data,</span>
+<span class="sd">        the list of the dictionary of the papertext not in the papertrack data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Start combining the two datasets.&quot;</span><span class="p">)</span>
+    <span class="c1"># Extract information from the papertrack classification dataset</span>
+    <span class="n">papertrack_searches</span><span class="p">,</span> <span class="n">bibcodes_papertrack</span><span class="p">,</span> <span class="n">missions_and_papertypes</span> <span class="o">=</span> <span class="n">extract_papertrack_info</span><span class="p">(</span><span class="n">papertrack_data</span><span class="p">)</span>
+
+    <span class="c1"># Extract information from the paper text dataset</span>
+    <span class="n">bibcodes_papertext</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">extract_papertext_info</span><span class="p">(</span><span class="n">trimmed_papertext_data</span><span class="p">)</span>
+
+    <span class="c1"># Verify that all papers within papertrack are within the papertext database and return the bibcodes</span>
+    <span class="n">bibcodes_notin_papertext</span> <span class="o">=</span> <span class="n">missing_bibcodes_in_papertext</span><span class="p">(</span><span class="n">bibcodes_papertext</span><span class="p">,</span> <span class="n">bibcodes_papertrack</span><span class="p">)</span>
+
+    <span class="n">bibcodes_notin_papertrack</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">papertext_index_notin_papertrack</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">combined_dataset</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">curr_index</span><span class="p">,</span> <span class="n">curr_dict</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">trimmed_papertext_data</span><span class="p">):</span>
+        <span class="n">new_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Extract information for current paper within text database</span>
+        <span class="n">curr_bibcode</span> <span class="o">=</span> <span class="n">curr_dict</span><span class="p">[</span><span class="s2">&quot;bibcode&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">curr_bibcode</span> <span class="ow">in</span> <span class="n">bibcodes_papertrack</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">bibcodes_papertrack</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">curr_bibcode</span><span class="p">)</span>
+            <span class="n">new_dict</span><span class="p">[</span><span class="s2">&quot;class_missions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">mission</span><span class="p">[</span><span class="s2">&quot;mission&quot;</span><span class="p">]:</span> <span class="p">{</span><span class="s2">&quot;bibcode&quot;</span><span class="p">:</span> <span class="n">curr_bibcode</span><span class="p">,</span> <span class="s2">&quot;papertype&quot;</span><span class="p">:</span> <span class="n">mission</span><span class="p">[</span><span class="s2">&quot;paper_type&quot;</span><span class="p">]}</span>
+                <span class="k">for</span> <span class="n">mission</span> <span class="ow">in</span> <span class="n">missions_and_papertypes</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+            <span class="p">}</span>
+
+            <span class="k">for</span> <span class="n">search</span> <span class="ow">in</span> <span class="n">papertrack_searches</span><span class="p">[</span><span class="n">index</span><span class="p">]:</span>
+                <span class="n">new_dict</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;is_ignored_</span><span class="si">{</span><span class="n">search</span><span class="p">[</span><span class="s1">&#39;search_key&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">search</span><span class="p">[</span><span class="s2">&quot;ignored&quot;</span><span class="p">]</span>
+
+            <span class="n">combined_dataset</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="o">**</span><span class="n">curr_dict</span><span class="p">,</span> <span class="o">**</span><span class="n">new_dict</span><span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;current papertext index = </span><span class="si">{</span><span class="n">curr_index</span><span class="si">}</span><span class="s2">, Bibcode (</span><span class="si">{</span><span class="n">curr_dict</span><span class="p">[</span><span class="s1">&#39;bibcode&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">) not in papertrack database. Continuing...&quot;</span>
+            <span class="p">)</span>
+            <span class="n">bibcodes_notin_papertrack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_bibcode</span><span class="p">)</span>
+            <span class="n">papertext_index_notin_papertrack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_index</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;NOTE: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">bibcodes_notin_papertrack</span><span class="p">)</span><span class="si">}</span><span class="s2"> papers in text data that were not in papertrack.&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done generating dictionaries of combined papertrack+text data.&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;papertext index not found in papertrack = </span><span class="si">{</span><span class="n">papertext_index_notin_papertrack</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">combined_dataset</span><span class="p">,</span>
+        <span class="n">bibcodes_notin_papertext</span><span class="p">,</span>
+        <span class="n">bibcodes_notin_papertrack</span><span class="p">,</span>
+        <span class="n">papertext_index_notin_papertrack</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="save_text_files">
+<a class="viewcode-back" href="../../../api/bibcat.data.html#bibcat.data.build_dataset.save_text_files">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_text_files</span><span class="p">(</span><span class="n">missing_papertext_bibcodes</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">missing_papertrack_bibcodes</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save the text files of the missing bibcodes</span>
+
+<span class="sd">    Save the missing bibcodes in the papertext and papertrack files as text files.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    -----------</span>
+<span class="sd">    missing_papertext_bibcodes: list</span>
+<span class="sd">        the list of the missing papertext bibcodes</span>
+<span class="sd">    missing_papertrack_bibcodes: list</span>
+<span class="sd">        the list of the missing papertrack bibcodes</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Also save the bibcodes of the paper-texts not found in papertrack and papertext</span>
+    <span class="n">save_text_file</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">path_not_in_papertext</span><span class="p">,</span> <span class="n">missing_papertext_bibcodes</span><span class="p">)</span>
+    <span class="n">save_text_file</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">path_not_in_papertrack</span><span class="p">,</span> <span class="n">missing_papertrack_bibcodes</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bibcodes not in papertext saved to:</span><span class="se">\n</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">path_not_in_papertext</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bibcodes not in papertrack saved to:</span><span class="se">\n</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">path_not_in_papertrack</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="build_dataset">
+<a class="viewcode-back" href="../../../api/bibcat.data.html#bibcat.data.build_dataset.build_dataset">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_dataset</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Building the source dataset</span>
+
+<span class="sd">    This data is used for transformer models or llm models by combining the papertrack data and the ADS full papertext data.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;The script is building the dataset for bibcat!&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Load paper texts and papertrack classes</span>
+    <span class="n">dataset_papertext_orig</span><span class="p">,</span> <span class="n">dataset_papertrack_orig</span> <span class="o">=</span> <span class="n">load_datasets</span><span class="p">(</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">inputs</span><span class="o">.</span><span class="n">path_papertext</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">inputs</span><span class="o">.</span><span class="n">path_papertrack</span>
+    <span class="p">)</span>
+    <span class="c1"># First, store trimmed papertext dictionary down to only columns to include</span>
+    <span class="n">trimmed_papertext_dataset</span> <span class="o">=</span> <span class="n">trim_dict</span><span class="p">(</span><span class="n">dataset_papertext_orig</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">inputs</span><span class="o">.</span><span class="n">keys_papertext</span><span class="p">)</span>
+    <span class="c1"># combine the papertrack and papertext into one dataset</span>
+    <span class="n">combined_dataset</span><span class="p">,</span> <span class="n">bibcodes_notin_papertext</span><span class="p">,</span> <span class="n">bibcodes_notin_papertrack</span><span class="p">,</span> <span class="n">papertext_index_notin_papertrack</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">combine_datasets</span><span class="p">(</span>
+            <span class="n">trimmed_papertext_dataset</span><span class="p">,</span>
+            <span class="n">dataset_papertrack_orig</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="c1"># Save the combined dataset and other files</span>
+    <span class="n">save_json_file</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">inputs</span><span class="o">.</span><span class="n">path_source_data</span><span class="p">,</span> <span class="n">combined_dataset</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;The combined dataset is saved!&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Save papertext data missing in the papertrack dataset; this may be used for ChatGPT use cases</span>
+    <span class="n">save_json_file</span><span class="p">(</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">path_papertext_not_in_papertrack</span><span class="p">,</span>
+        <span class="p">[</span><span class="n">dataset_papertext_orig</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">papertext_index_notin_papertrack</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saved the papertext data not in papertrack!&quot;</span><span class="p">)</span>
+    <span class="c1"># Save missing bibcodes from the datasets.</span>
+    <span class="n">save_text_files</span><span class="p">(</span><span class="n">bibcodes_notin_papertext</span><span class="p">,</span> <span class="n">bibcodes_notin_papertrack</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saved bibcodes_notin_papertext and bibcodes_notin_papertrack!&quot;</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

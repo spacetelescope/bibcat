@@ -1,0 +1,276 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat.pretrained.fetch_papers &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">BibCat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bibcat.pretrained.fetch_papers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bibcat.pretrained.fetch_papers</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">:title: fetch_papers.py</span>
+
+<span class="sd">This module fetches test input data for classification.</span>
+
+<span class="sd">- Context: the input full text JSON file (papertrack + ADS full texts) is</span>
+<span class="sd">  called via config.path_source_data configured in bibcat/config.py.</span>
+
+<span class="sd">- It fetches the set number of papers or all in the `bibcat/data/model_name/dir_test` folder</span>
+<span class="sd">for classification.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">parameters</span> <span class="k">as</span> <span class="n">params</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.utils.logger_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.utils.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_json_file</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="c1"># load TVTinfo when using JSON data in TVT directories</span>
+<div class="viewcode-block" id="load_tvt_info">
+<a class="viewcode-back" href="../../../api/bibcat.pretrained.html#bibcat.pretrained.fetch_papers.load_tvt_info">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_tvt_info</span><span class="p">(</span><span class="n">dir_datasets</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_datasets</span><span class="p">,</span> <span class="s2">&quot;dict_TVTinfo.npy&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;loading TVT info: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span></div>
+
+
+
+<span class="c1"># getting bibcodes for using dir_test</span>
+<div class="viewcode-block" id="get_bibcodes">
+<a class="viewcode-back" href="../../../api/bibcat.pretrained.html#bibcat.pretrained.fetch_papers.get_bibcodes">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_bibcodes</span><span class="p">(</span><span class="n">dict_TVTinfo</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">dir_test</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">dict_TVTinfo</span> <span class="k">if</span> <span class="n">dict_TVTinfo</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;folder_TVT&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">dir_test</span><span class="p">]</span></div>
+
+
+
+<span class="c1"># Extract text information for the bibcodes reserved for testing</span>
+<span class="c1"># Data for test set</span>
+<div class="viewcode-block" id="get_data">
+<a class="viewcode-back" href="../../../api/bibcat.pretrained.html#bibcat.pretrained.fetch_papers.get_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_data</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">bibcodes</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span> <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;bibcode&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">bibcodes</span><span class="p">]</span></div>
+
+
+
+<span class="c1">#  Shuffle, if requested</span>
+<div class="viewcode-block" id="shuffle_data">
+<a class="viewcode-back" href="../../../api/bibcat.pretrained.html#bibcat.pretrained.fetch_papers.shuffle_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">shuffle_data</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># set the maximum number of texts</span>
+<div class="viewcode-block" id="set_max_data">
+<a class="viewcode-back" href="../../../api/bibcat.pretrained.html#bibcat.pretrained.fetch_papers.set_max_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_max_data</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">max_texts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">data</span><span class="p">[:</span><span class="n">max_texts</span><span class="p">]</span> <span class="k">if</span> <span class="n">max_texts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">data</span></div>
+
+
+
+<span class="c1"># Process the text input into dictionary format for input text</span>
+<div class="viewcode-block" id="process_text_data">
+<a class="viewcode-back" href="../../../api/bibcat.pretrained.html#bibcat.pretrained.fetch_papers.process_text_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_text_data</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="n">texts</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;body&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">),</span>
+            <span class="s2">&quot;bibcode&quot;</span><span class="p">:</span> <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;bibcode&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;missions&quot;</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="p">}</span>
+        <span class="c1"># Iterate through missions for this paper</span>
+        <span class="k">for</span> <span class="n">mission</span> <span class="ow">in</span> <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;class_missions&quot;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">kobj</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">all_kobjs</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">kobj</span><span class="o">.</span><span class="n">get_name</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">kobj</span><span class="o">.</span><span class="n">identify_keyword</span><span class="p">(</span><span class="n">mission</span><span class="p">)[</span><span class="s2">&quot;bool&quot;</span><span class="p">]:</span>
+                    <span class="n">info</span><span class="p">[</span><span class="s2">&quot;missions&quot;</span><span class="p">][</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;mission&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+                        <span class="s2">&quot;class&quot;</span><span class="p">:</span> <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;class_missions&quot;</span><span class="p">][</span><span class="n">mission</span><span class="p">][</span><span class="s2">&quot;papertype&quot;</span><span class="p">],</span>
+                    <span class="p">}</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">info</span><span class="p">[</span><span class="s2">&quot;missions&quot;</span><span class="p">][</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;mission&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+                        <span class="s2">&quot;class&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">verdict_rejection</span><span class="p">,</span>
+                    <span class="p">}</span>
+        <span class="n">texts</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">)]</span> <span class="o">=</span> <span class="n">info</span>
+    <span class="k">return</span> <span class="n">texts</span></div>
+
+
+
+<span class="c1"># logging summary</span>
+<div class="viewcode-block" id="log_summary">
+<a class="viewcode-back" href="../../../api/bibcat.pretrained.html#bibcat.pretrained.fetch_papers.log_summary">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">log_summary</span><span class="p">(</span><span class="n">texts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Text Summary&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">texts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Entry: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ID: </span><span class="si">{</span><span class="n">value</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bibcode: </span><span class="si">{</span><span class="n">value</span><span class="p">[</span><span class="s1">&#39;bibcode&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missions: </span><span class="si">{</span><span class="n">value</span><span class="p">[</span><span class="s1">&#39;missions&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Start of text:</span><span class="se">\n</span><span class="si">{</span><span class="n">value</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">][:</span><span class="mi">500</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="fetch_papers">
+<a class="viewcode-back" href="../../../api/bibcat.pretrained.html#bibcat.pretrained.fetch_papers.fetch_papers">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fetch_papers</span><span class="p">(</span>
+    <span class="n">do_evaluation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">do_shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">do_verbose_text_summary</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">max_texts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="c1"># fetching papers for Operation</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">do_evaluation</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">load_json_file</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">inputs</span><span class="o">.</span><span class="n">path_ops_data</span><span class="p">)</span>
+
+    <span class="c1"># perpare papers to perform model evaluation</span>
+    <span class="c1"># For use of real papers from test dataset to test on</span>
+    <span class="c1"># Load information for processed bibcodes reserved for testing now but this needs to be updated in a simple way.</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># fetch the bibcodes of the test papers for evaluation</span>
+        <span class="n">dir_datasets</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">paths</span><span class="o">.</span><span class="n">partitioned</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">name_model</span><span class="p">)</span>
+        <span class="n">dir_test</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">folders_TVT</span><span class="p">[</span><span class="s2">&quot;test&quot;</span><span class="p">]</span>
+        <span class="n">dict_TVTinfo</span> <span class="o">=</span> <span class="n">load_tvt_info</span><span class="p">(</span><span class="n">dir_datasets</span><span class="p">)</span>
+        <span class="n">test_bibcodes</span> <span class="o">=</span> <span class="n">get_bibcodes</span><span class="p">(</span><span class="n">dict_TVTinfo</span><span class="p">,</span> <span class="n">dir_test</span><span class="p">)</span>
+        <span class="c1"># load the source dataset</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">load_json_file</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">inputs</span><span class="o">.</span><span class="n">path_source_data</span><span class="p">)</span>
+        <span class="c1"># extract the test papers with classification for evaluation</span>
+        <span class="n">test_data</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">test_bibcodes</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">do_shuffle</span><span class="p">:</span>
+            <span class="n">shuffle_data</span><span class="p">(</span><span class="n">test_data</span><span class="p">)</span>
+
+        <span class="n">selected_data</span> <span class="o">=</span> <span class="n">set_max_data</span><span class="p">(</span><span class="n">test_data</span><span class="p">,</span> <span class="n">max_texts</span><span class="p">)</span>
+        <span class="n">texts</span> <span class="o">=</span> <span class="n">process_text_data</span><span class="p">(</span><span class="n">selected_data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">do_verbose_text_summary</span><span class="p">:</span>
+            <span class="n">log_summary</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">texts</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;The script is running as a standalone script. Fetching papers!&quot;</span><span class="p">)</span>
+    <span class="n">fetch_papers</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

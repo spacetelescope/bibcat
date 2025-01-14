@@ -1,0 +1,485 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat.core.paper &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">BibCat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bibcat.core.paper</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bibcat.core.paper</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">:title: paper.py</span>
+
+<span class="sd">The primary purpose is to extract all sentences within a larger text block</span>
+<span class="sd">that refers to a given mission(s).  This collection of sentences for each mission,</span>
+<span class="sd">denoted from here on as a &#39;paragraph,&#39; is created to focus on the portions of</span>
+<span class="sd">the original text related to the target mission.  Using paragraphs for classification</span>
+<span class="sd">instead of the full text allows us to remove much of the &#39;noise&#39; inherent to</span>
+<span class="sd">the rest of the text.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.core.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">Base</span>
+
+
+<div class="viewcode-block" id="Paper">
+<a class="viewcode-back" href="../../../api/bibcat.core.html#bibcat.core.paper.Paper">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Paper</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class: Paper</span>
+<span class="sd">    Purpose:</span>
+<span class="sd">        - Load in text.</span>
+<span class="sd">        - Split text into sentences containing target terms, if any found.</span>
+<span class="sd">        - Gather sentences into &#39;paragraph&#39;.</span>
+<span class="sd">    Initialization Arguments:</span>
+<span class="sd">        - dict_ambigs [None or dict (default=None)]:</span>
+<span class="sd">          - If None, will load and process external database of ambiguous mission phrases.</span>
+<span class="sd">            If given, will use what is given.</span>
+<span class="sd">        - do_check_truematch [bool]:</span>
+<span class="sd">          - Whether or not to check that mission phrases found in text are known true</span>
+<span class="sd">             vs. false matches. (E.g., &#39;Edwin Hubble&#39; as false match for the Hubble Space Telescope).</span>
+<span class="sd">        - keyword_objs [list of Keyword instances]:</span>
+<span class="sd">          - Target missions; terms will be used to search the text.</span>
+<span class="sd">        - text [str]:</span>
+<span class="sd">          - The text to search.</span>
+<span class="sd">        - do_verbose [bool (default=False)]:</span>
+<span class="sd">          - Whether or not to print surface-level log information and tests.</span>
+<span class="sd">        - do_verbose_deep [bool (default=False)]:</span>
+<span class="sd">          - Whether or not to print inner log information and tests.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="p">,</span> <span class="n">do_check_truematch</span><span class="p">,</span> <span class="n">dict_ambigs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">do_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">do_verbose_deep</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method: __init__</span>
+<span class="sd">        WARNING! This method is *not* meant to be used directly by users.</span>
+<span class="sd">        Purpose: Initialize instance of Paper class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Initialize global storage variable</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_storage</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># Dictionary to hold all information</span>
+
+        <span class="c1"># Store information about this paper</span>
+        <span class="n">text_original</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">text_original</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;text_original&quot;</span><span class="p">)</span>  <span class="c1"># Original text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">keyword_objs</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;keyword_objs&quot;</span><span class="p">)</span>  <span class="c1"># Keyword groups</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">do_verbose</span><span class="p">,</span> <span class="s2">&quot;do_verbose&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">do_verbose_deep</span><span class="p">,</span> <span class="s2">&quot;do_verbose_deep&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">do_check_truematch</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;do_check_truematch&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Process ambig. phrase data, if not given</span>
+        <span class="k">if</span> <span class="n">do_check_truematch</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">dict_ambigs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">dict_ambigs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_database_ambig</span><span class="p">()</span>
+
+            <span class="n">lookup_ambigs</span> <span class="o">=</span> <span class="n">dict_ambigs</span><span class="p">[</span><span class="s2">&quot;lookup_ambigs&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">dict_ambigs</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;dict_ambigs&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">lookup_ambigs</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;lookup_ambigs&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Preprocess the data</span>
+        <span class="c1"># Cleanse extra whitespace, strange chars, etc.</span>
+        <span class="n">text_clean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_streamline_phrase</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">text_original</span><span class="p">,</span> <span class="n">do_streamline_etal</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># Split cleansed text into naive sentences</span>
+        <span class="n">text_clean_split</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_split_text</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">text_clean</span><span class="p">)</span>
+
+        <span class="c1"># Store the preprocessed text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">text_clean_split</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;text_clean_split&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span>
+
+    <span class="c1"># Purpose: Fetch paragraphs for given Keyword instances that were previously stored in this instance</span>
+<div class="viewcode-block" id="Paper.get_paragraphs">
+<a class="viewcode-back" href="../../../api/bibcat.core.html#bibcat.core.paper.Paper.get_paragraphs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_paragraphs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method: get_paragraphs</span>
+<span class="sd">        Purpose: Fetch and return paragraphs previously assembled for given Keyword instances.</span>
+<span class="sd">        Arguments:</span>
+<span class="sd">          - &quot;keyword_objs&quot; [list of Keyword instances, or None (default=None)]:</span>
+<span class="sd">             List of Keyword instances for which previously constructed paragraphs will be extracted.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">          - dict:</span>
+<span class="sd">            - keys = Representative names of the Keyword instances.</span>
+<span class="sd">            - values = The paragraphs corresponding to the Keyword instances.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Attempt to access previously extracted paragraphs</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">dict_paragraphs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;_paragraphs&quot;</span><span class="p">)</span>
+        <span class="c1"># Throw an error if no paragraphs extracted yet</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">errstring</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;Whoa there! Looks like you don&#39;t have any paragraphs &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;stored in this class instance yet. Please run the method &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;&#39;process_paragraphs(...)&#39; first.&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errstring</span><span class="p">)</span>
+
+        <span class="c1"># Extract paragraphs associated with keyword objects, if given</span>
+        <span class="k">if</span> <span class="n">keyword_objs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">paragraphs</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="o">.</span><span class="n">get_name</span><span class="p">():</span> <span class="n">dict_paragraphs</span><span class="p">[</span><span class="n">key</span><span class="o">.</span><span class="n">get_name</span><span class="p">()]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keyword_objs</span><span class="p">}</span>
+
+        <span class="c1"># Otherwise, return all paragraphs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">paragraphs</span> <span class="o">=</span> <span class="n">dict_paragraphs</span>
+
+        <span class="k">return</span> <span class="n">paragraphs</span></div>
+
+
+    <span class="c1">#</span>
+
+    <span class="c1"># Process paragraph that contains given keywords/verified acronyms</span>
+<div class="viewcode-block" id="Paper.process_paragraphs">
+<a class="viewcode-back" href="../../../api/bibcat.core.html#bibcat.core.paper.Paper.process_paragraphs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_paragraphs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buffer</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">do_overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method: process_paragraphs</span>
+<span class="sd">        Purpose: Assemble collection of sentences (a &#39;paragraph&#39;) that contain references</span>
+<span class="sd">                 to target missions (as indicated by stored keyword objects).</span>
+<span class="sd">        Arguments:</span>
+<span class="sd">          - &quot;buffer&quot; [int (default=0)]: Number of +/- sentences around a sentence containing</span>
+<span class="sd">             a target mission to include in the paragraph.</span>
+<span class="sd">          - &quot;do_overwrite&quot; [bool (default=False)]: Whether or not to overwrite</span>
+<span class="sd">             any previously extracted and stored paragraphs.</span>
+<span class="sd">        Returns: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Extract clean, naively split paragraphs</span>
+        <span class="n">keyword_objs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;keyword_objs&quot;</span><span class="p">)</span>
+
+        <span class="c1"># If overwrite not allowed, check if paragraphs already extracted+saved</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">do_overwrite</span><span class="p">:</span>
+            <span class="n">is_exist</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># Check for previously stored paragraphs</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;_paragraphs&quot;</span><span class="p">)</span>
+            <span class="c1"># Catch error raised if no paragraphs exist</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">is_exist</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="c1"># Raise error if previously stored paragraphs after all</span>
+            <span class="k">if</span> <span class="n">is_exist</span><span class="p">:</span>
+                <span class="n">errstring</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="s2">&quot;Whoa there. You already have paragraphs &quot;</span>
+                    <span class="o">+</span> <span class="s2">&quot;stored in this class instance, and we don&#39;t want you &quot;</span>
+                    <span class="o">+</span> <span class="s2">&quot;to accidentally overwrite them!</span><span class="se">\n</span><span class="s2">If you DO want to &quot;</span>
+                    <span class="o">+</span> <span class="s2">&quot;overwrite previously extracted paragraphs, please &quot;</span>
+                    <span class="o">+</span> <span class="s2">&quot;rerun this method with do_overwrite=True.&quot;</span>
+                <span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errstring</span><span class="p">)</span>
+
+        <span class="c1"># Extract paragraphs for each keyword</span>
+        <span class="n">dict_paragraphs</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># Dictionary to hold paragraphs for keyword objects</span>
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">keyword_objs</span><span class="p">)):</span>
+            <span class="c1"># Extract all paragraphs containing keywords/verified acronyms</span>
+            <span class="n">tmp_res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_paragraph</span><span class="p">(</span><span class="n">keyword_obj</span><span class="o">=</span><span class="n">keyword_objs</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span> <span class="n">buffer</span><span class="o">=</span><span class="n">buffer</span><span class="p">)</span>
+            <span class="n">paragraphs</span> <span class="o">=</span> <span class="n">tmp_res</span><span class="p">[</span><span class="s2">&quot;paragraph&quot;</span><span class="p">]</span>
+
+            <span class="c1"># Store the paragraphs under name of first given keyword</span>
+            <span class="n">dict_paragraphs</span><span class="p">[</span><span class="n">keyword_objs</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">.</span><span class="n">get_name</span><span class="p">()]</span> <span class="o">=</span> <span class="n">paragraphs</span>
+
+        <span class="c1"># Store the extracted paragraphs and setup information</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">dict_paragraphs</span><span class="p">,</span> <span class="s2">&quot;_paragraphs&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span></div>
+
+
+    <span class="c1"># Apply +/- buffer to given list of indices</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_buffer_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">max_index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method: _buffer_indices</span>
+<span class="sd">        WARNING! This method is *not* meant to be used directly by users.</span>
+<span class="sd">        Purpose:</span>
+<span class="sd">          - Add a +/- buffer to each index in a set of indices.</span>
+<span class="sd">          - Merge buffered indices that have overlapping buffers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Build spans for extent of each buffered index</span>
+        <span class="n">spans_buffered_init</span> <span class="o">=</span> <span class="p">[[(</span><span class="n">ind</span> <span class="o">-</span> <span class="n">buffer</span><span class="p">),</span> <span class="p">(</span><span class="n">ind</span> <span class="o">+</span> <span class="n">buffer</span><span class="p">)]</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">]</span>
+
+        <span class="c1"># Merge overlapping spans and truncate at min/max bounds</span>
+        <span class="n">spans_buffered_merged</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">spans_buffered_init</span><span class="p">)):</span>
+            <span class="c1"># First span starts at max([0, first_ind])</span>
+            <span class="k">if</span> <span class="n">ii</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">spans_buffered_merged</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="nb">max</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">spans_buffered_init</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]]),</span> <span class="n">spans_buffered_init</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]])</span>
+                <span class="c1"># Terminate loop early if latest span reaches maximum boundary</span>
+                <span class="k">if</span> <span class="n">spans_buffered_merged</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">max_index</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+                <span class="c1"># Otherwise, skip ahead</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># For all other spans:</span>
+            <span class="c1"># If overlap, expand previous span</span>
+            <span class="k">if</span> <span class="n">spans_buffered_merged</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">spans_buffered_init</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="n">spans_buffered_merged</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">spans_buffered_init</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="c1"># Otherwise, append new span</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">spans_buffered_merged</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">spans_buffered_init</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="nb">min</span><span class="p">([</span><span class="n">spans_buffered_init</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">max_index</span><span class="p">])]</span>
+                <span class="p">)</span>  <span class="c1"># Written out to avoid shallow copy</span>
+
+            <span class="c1"># Terminate loop early if latest span reaches maximum boundary</span>
+            <span class="k">if</span> <span class="n">spans_buffered_merged</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">max_index</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="c1"># Return the buffered index spans</span>
+        <span class="k">return</span> <span class="n">spans_buffered_merged</span>
+
+    <span class="c1"># Search for paragraphs that contain target mission terms</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extract_paragraph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keyword_obj</span><span class="p">,</span> <span class="n">buffer</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method: _extract_paragraph</span>
+<span class="sd">        WARNING! This method is *not* meant to be used directly by users.</span>
+<span class="sd">        Purpose:</span>
+<span class="sd">          - Extract sentences from stored text that contain target terms (based on Keyword instance).</span>
+<span class="sd">          - Keep sentences that do not have false-matches to external ambiguous phrase database.</span>
+<span class="sd">          - Buffer sentences if non-zero buffer given.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Fetch global variables</span>
+        <span class="n">do_verbose</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;do_verbose&quot;</span><span class="p">)</span>
+        <span class="c1"># do_verbose_deep = self._get_info(&quot;do_verbose_deep&quot;)</span>
+        <span class="n">do_check_truematch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;do_check_truematch&quot;</span><span class="p">)</span>
+        <span class="n">sentences</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;text_clean_split&quot;</span><span class="p">))</span>
+        <span class="n">do_not_classify</span> <span class="o">=</span> <span class="n">keyword_obj</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;do_not_classify&quot;</span><span class="p">)</span>
+        <span class="n">num_sentences</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sentences</span><span class="p">)</span>
+
+        <span class="c1"># Load ambiguous phrases, if necessary</span>
+        <span class="k">if</span> <span class="n">do_check_truematch</span><span class="p">:</span>
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;do_check_truematch=True, so will verify ambig. phrases.&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Load previously stored ambig. phrase data</span>
+            <span class="n">dict_ambigs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;dict_ambigs&quot;</span><span class="p">)</span>
+            <span class="n">lookup_ambigs</span> <span class="o">=</span> <span class="n">dict_ambigs</span><span class="p">[</span><span class="s2">&quot;lookup_ambigs&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fetching inds of target sentences...&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get indices of sentences that contain any target mission terms</span>
+        <span class="c1"># For keyword terms</span>
+        <span class="n">inds_with_keywords_init</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">ii</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_sentences</span><span class="p">)</span> <span class="k">if</span> <span class="n">keyword_obj</span><span class="o">.</span><span class="n">identify_keyword</span><span class="p">(</span><span class="n">sentences</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;keyword&quot;</span><span class="p">)[</span><span class="s2">&quot;bool&quot;</span><span class="p">]</span>
+        <span class="p">]</span>
+
+        <span class="c1"># For acronym terms</span>
+        <span class="n">inds_with_acronyms</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">ii</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_sentences</span><span class="p">)</span> <span class="k">if</span> <span class="n">keyword_obj</span><span class="o">.</span><span class="n">identify_keyword</span><span class="p">(</span><span class="n">sentences</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;acronym&quot;</span><span class="p">)[</span><span class="s2">&quot;bool&quot;</span><span class="p">]</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="p">(</span><span class="s2">&quot;Found:</span><span class="se">\n</span><span class="s2"># of keyword sentences: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;# of acronym sentences: </span><span class="si">{1}</span><span class="s2">...&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">inds_with_keywords_init</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">inds_with_acronyms</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="c1"># If requested, run a check for ambiguous phrases if any ambig. keywords</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="p">(</span><span class="ow">not</span> <span class="n">do_not_classify</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">do_check_truematch</span>
+            <span class="ow">and</span> <span class="nb">any</span><span class="p">([</span><span class="n">keyword_obj</span><span class="o">.</span><span class="n">identify_keyword</span><span class="p">(</span><span class="n">item</span><span class="p">)[</span><span class="s2">&quot;bool&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">lookup_ambigs</span><span class="p">])</span>
+        <span class="p">):</span>
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Verifying ambiguous phrases...&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Run ambiguous phrase check on all sentences with keyword terms</span>
+            <span class="n">output_truematch</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;ind&quot;</span><span class="p">:</span> <span class="n">ind</span><span class="p">,</span>
+                    <span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_truematch</span><span class="p">(</span>
+                        <span class="n">text</span><span class="o">=</span><span class="n">sentences</span><span class="p">[</span><span class="n">ind</span><span class="p">],</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="p">[</span><span class="n">keyword_obj</span><span class="p">],</span> <span class="n">dict_ambigs</span><span class="o">=</span><span class="n">dict_ambigs</span>
+                    <span class="p">),</span>
+                <span class="p">}</span>
+                <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">inds_with_keywords_init</span>
+            <span class="p">]</span>
+
+            <span class="c1"># Keep indices that have true matches</span>
+            <span class="n">inds_with_keywords_truematch</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;ind&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">output_truematch</span> <span class="k">if</span> <span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;result&quot;</span><span class="p">][</span><span class="s2">&quot;bool&quot;</span><span class="p">])]</span>
+
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Done verifying ambiguous phrases.&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Match output:</span><span class="se">\n</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_truematch</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Indices with true matches:</span><span class="se">\n</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">inds_with_keywords_truematch</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Keyword sentences with true matches:</span><span class="se">\n</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sentences</span><span class="p">[</span><span class="n">inds_with_keywords_truematch</span><span class="p">]))</span>
+
+        <span class="c1"># Otherwise, set empty</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">output_truematch</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">inds_with_keywords_truematch</span> <span class="o">=</span> <span class="n">inds_with_keywords_init</span>  <span class="c1"># Copy over</span>
+
+        <span class="c1"># Pool together unique indices of sentences with keywords, acronyms</span>
+        <span class="n">inds_with_terms</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">()</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">inds_with_keywords_truematch</span><span class="p">,</span> <span class="n">inds_with_acronyms</span><span class="p">))</span>
+
+        <span class="c1"># Determine buffered sentences, if requested</span>
+        <span class="k">if</span> <span class="n">buffer</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Buffering sentences with buffer=</span><span class="si">{0}</span><span class="s2">...&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">buffer</span><span class="p">))</span>
+            <span class="c1">#</span>
+            <span class="n">ranges_buffered</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer_indices</span><span class="p">(</span>
+                <span class="n">indices</span><span class="o">=</span><span class="n">inds_with_terms</span><span class="p">,</span> <span class="n">buffer</span><span class="o">=</span><span class="n">buffer</span><span class="p">,</span> <span class="n">max_index</span><span class="o">=</span><span class="p">(</span><span class="n">num_sentences</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">sentences_buffered</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sentences</span><span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">ranges_buffered</span>
+            <span class="p">]</span>  <span class="c1"># Combined sentences</span>
+            <span class="c1"># Print some notes</span>
+            <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Done buffering sentences.</span><span class="se">\n</span><span class="s2">Ranges = </span><span class="si">{0}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ranges_buffered</span><span class="p">))</span>
+
+        <span class="c1"># Otherwise, just copy over previous indices</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sentences_buffered</span> <span class="o">=</span> <span class="n">sentences</span><span class="p">[</span><span class="n">inds_with_terms</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="c1"># Return outputs</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;paragraph&quot;</span><span class="p">:</span> <span class="n">sentences_buffered</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="c1"># Split text into sentences at assumed sentence breaks</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_split_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method: _split_text</span>
+<span class="sd">        WARNING! This method is *not* meant to be used directly by users.</span>
+<span class="sd">        Purpose: Split given text into sentences based on assumed sentence boundaries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Split by line breaks first</span>
+        <span class="n">text_lines</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># Split by sentences starting with brackets</span>
+        <span class="n">text_flat</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">item</span> <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">text_lines</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">grammar</span><span class="o">.</span><span class="n">regex</span><span class="o">.</span><span class="n">exp_splitbracketstarts</span><span class="p">,</span> <span class="n">phrase</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="c1"># Split by sentences ending with brackets</span>
+        <span class="n">text_flat</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">item</span> <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">text_flat</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">grammar</span><span class="o">.</span><span class="n">regex</span><span class="o">.</span><span class="n">exp_splitbracketends</span><span class="p">,</span> <span class="n">phrase</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="c1"># Then split by assumed sentence structure</span>
+        <span class="n">text_flat</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">text_flat</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">grammar</span><span class="o">.</span><span class="n">regex</span><span class="o">.</span><span class="n">exp_splittext</span><span class="p">,</span> <span class="n">phrase</span><span class="p">)]</span>
+        <span class="c1"># Return the split text</span>
+        <span class="k">return</span> <span class="n">text_flat</span></div>
+
+
+    <span class="c1">#</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

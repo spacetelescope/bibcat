@@ -1,0 +1,469 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat.core.keyword &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">BibCat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bibcat.core.keyword</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bibcat.core.keyword</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">:title: keyword.py</span>
+
+<span class="sd">This class&#39;s primary purpose is to extract all sentences from within</span>
+<span class="sd">a larger text block that refers to a given mission(s).  This collection of sentences</span>
+<span class="sd">for each mission, denoted from here on as a &#39;paragraph&#39;, is created to focus</span>
+<span class="sd">on the portions of the original text related to the target mission.</span>
+<span class="sd">Using paragraphs for classification instead of the full text allows us to remove</span>
+<span class="sd">much of the &#39;noise&#39; inherent to the rest of the text.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.core.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">Base</span>
+
+
+<div class="viewcode-block" id="Keyword">
+<a class="viewcode-back" href="../../../api/bibcat.core.html#bibcat.core.keyword.Keyword">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Keyword</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A Keyword instance stores terms, e.g. titles and acronyms, that describe a mission (e.g., HST, JWST, TESS) for a user.  Methods of a Keyword instance can identify and/or replace snippets within texts that match to the mission.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">keywords</span><span class="p">,</span>
+        <span class="n">acronyms_caseinsensitive</span><span class="p">,</span>
+        <span class="n">acronyms_casesensitive</span><span class="p">,</span>
+        <span class="n">banned_overlap</span><span class="p">,</span>
+        <span class="n">ambig_words</span><span class="p">,</span>
+        <span class="n">do_not_classify</span><span class="p">,</span>
+        <span class="n">do_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize an instance of the Keyword class, which stores terms, e.g. titles and acronyms, that describe a mission (e.g., HST, JWST, TESS) for a user.</span>
+
+<span class="sd">        A Keyword instance is a container for a user-defined mission, such as HST or TESS.  Each instance contains phrases and acronyms that refer to the mission (e.g., &quot;Hubble Space Telescope&quot; and &quot;HST&quot; for HST).</span>
+<span class="sd">        Each instance also contains optional lists of strings that handle potential overlap of the mission phrases with other phrases.  For example, &quot;Hubble&quot; is common between both HST and the Hubble Legacy Archive.  And so &quot;Hubble Legacy Archive&quot; can be flagged within a Keyword instance for HST to prevent &quot;Hubble Legacy Archive&quot; from being treated as a phrase matching to the HST Keyword instance.</span>
+<span class="sd">        Additionally, each instance includes a boolean that determines whether or not this mission will be classified by the code (as opposed to only extracting and returning subtexts that contain text about this mission).  This boolean is useful for particularly ambiguous mission names.  The K2 mission is a prime example of an ambiguous mission, where &quot;K2&quot; can be used for both mission and non-mission contexts (like &quot;K2&quot; as a telescope and &quot;K2&quot; as a stellar spectral type) and is often hard for a machine to automatically distinguish.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        keywords : list[str]</span>
+<span class="sd">            List of full phrases that name the mission (e.g., &quot;Hubble Space Telescope&quot;).  Not case-sensitive.</span>
+<span class="sd">        acronyms_caseinsensitive : list[str]</span>
+<span class="sd">            List of acronyms that can describe the mission; capitalization is not preserved (e.g., &quot;HST&quot; and &quot;hst&quot; are treated in the same manner).  Punctuation should be omitted (as it is handled internally within the code).</span>
+<span class="sd">        acronyms_casesensitive : list[str]</span>
+<span class="sd">            List of acronyms that can describe the mission; capitalization is preserved (e.g., &quot;STScI&quot;).  Punctuation should be omitted (as it is handled internally within the code).</span>
+<span class="sd">        banned_overlap : list[str]</span>
+<span class="sd">            Phrases that overlap with the target mission keywords but should not be treated as the same mission.  E.g., &quot;Hubble Legacy Archive&quot; can be a distinct mission from &quot;Hubble&quot;; therefore &quot;Hubble Legacy Archive&quot; is banned overlap for the Hubble mission, to avoid matching &quot;Hubble Legacy Archive&quot; to a Keyword instance for HST.</span>
+<span class="sd">        ambig_words : list[str]</span>
+<span class="sd">            Phrases for which the user requests false positive checks to be done against the internal database of false positives.  E.g., &quot;Hubble&quot; can be found in the mission phrase &quot;Hubble Telescope&quot; and also in the false positive (i.e., non-mission) phrase &quot;Hubble constant&quot;.  By specifying &quot;Hubble&quot; as a false positive phrase for the Hubble mission, the code knows to internally check phrases in the text associated with Hubble against the internal false positive database and procedure.</span>
+<span class="sd">        do_not_classify : bool</span>
+<span class="sd">            If True, text for the mission will be processed, extracted, and presented to the user, but not classified.  This can be useful for missions for which only human classification is desired.  This can also be useful for missions for which false positives are too difficult to automatically screen out (e.g., &quot;K2&quot;, which can be a mission and also a stellar spectral type).</span>
+<span class="sd">        do_verbose : bool = False</span>
+<span class="sd">            If True, will print statements and internal reports within applicable methods while the code is running.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize storage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_storage</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">do_verbose</span><span class="p">,</span> <span class="s2">&quot;do_verbose&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">banned_overlap</span><span class="p">,</span> <span class="s2">&quot;banned_overlap&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">ambig_words</span><span class="p">,</span> <span class="s2">&quot;ambig_words&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">do_not_classify</span><span class="p">,</span> <span class="s2">&quot;do_not_classify&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Cleanse keywords of extra whitespace, punctuation, etc.</span>
+        <span class="n">keywords_clean</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_cleanse_text</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">phrase</span><span class="p">,</span> <span class="n">do_streamline_etal</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">keywords</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="p">(</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">))</span>
+        <span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Sort by desc. length</span>
+        <span class="c1"># Store keywords</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">keywords_clean</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;keywords&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Cleanse banned overlap of extra whitespace, punctuation, etc.</span>
+        <span class="n">banned_overlap_lowercase</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cleanse_text</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">phrase</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">do_streamline_etal</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">banned_overlap</span>
+        <span class="p">]</span>
+        <span class="c1"># Store keywords</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">banned_overlap_lowercase</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;banned_overlap_lowercase&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Also cleanse+store acronyms, if given</span>
+        <span class="c1"># For case-insensitive acronyms</span>
+        <span class="k">if</span> <span class="n">acronyms_caseinsensitive</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">acronyms_mid</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">grammar</span><span class="o">.</span><span class="n">regex</span><span class="o">.</span><span class="n">exp_nopunct</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">acronyms_caseinsensitive</span>
+            <span class="p">]</span>
+            <span class="c1"># Remove all whitespace</span>
+            <span class="n">acronyms_mid</span> <span class="o">=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">acronyms_mid</span><span class="p">]</span>
+            <span class="n">acronyms_clean</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">acronyms_mid</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="p">(</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)))[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Sort by desc. length</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">acronyms_clean</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;acronyms_caseinsensitive&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">([],</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;acronyms_caseinsensitive&quot;</span><span class="p">)</span>
+        <span class="c1"># For case-sensitive acronyms</span>
+        <span class="k">if</span> <span class="n">acronyms_casesensitive</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">acronyms_mid</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">grammar</span><span class="o">.</span><span class="n">regex</span><span class="o">.</span><span class="n">exp_nopunct</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">acronyms_casesensitive</span>
+            <span class="p">]</span>
+            <span class="c1"># Remove all whitespace</span>
+            <span class="n">acronyms_mid</span> <span class="o">=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">acronyms_mid</span><span class="p">]</span>
+            <span class="n">acronyms_clean</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">acronyms_mid</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="p">(</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)))[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Sort by desc. length</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">acronyms_clean</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;acronyms_casesensitive&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">([],</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;acronyms_casesensitive&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Store representative name for this keyword object</span>
+        <span class="n">repr_name</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;keywords&quot;</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;acronyms_casesensitive&quot;</span><span class="p">)</span>
+            <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;acronyms_caseinsensitive&quot;</span><span class="p">)</span>
+        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Take shortest keyword or longest acronym as repr. name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">repr_name</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Store regular expression for keywords</span>
+        <span class="n">exps_k</span> <span class="o">=</span> <span class="p">[(</span><span class="sa">r</span><span class="s2">&quot;\b&quot;</span> <span class="o">+</span> <span class="n">phrase</span> <span class="o">+</span> <span class="sa">r</span><span class="s2">&quot;\b&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;keywords&quot;</span><span class="p">)]</span>
+
+        <span class="c1"># Store regular expression for case-insensitive acronyms</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">acronyms_caseinsensitive</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">acronyms_caseinsensitive</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="c1"># Update acronyms to allow optional spaces</span>
+            <span class="n">acronyms_upd</span> <span class="o">=</span> <span class="p">[(</span><span class="sa">r</span><span class="s2">&quot;(\.?)( ?)&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">item</span><span class="p">))</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;acronyms_caseinsensitive&quot;</span><span class="p">)]</span>
+            <span class="c1"># Build regular expression to recognize acronyms</span>
+            <span class="n">exp_a_caseinsensitive</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">r</span><span class="s2">&quot;(^|[^\.])((\b&quot;</span> <span class="o">+</span> <span class="sa">r</span><span class="s2">&quot;\b)|(\b&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">phrase</span> <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">acronyms_upd</span><span class="p">])</span> <span class="o">+</span> <span class="sa">r</span><span class="s2">&quot;\b)(\.?))($|[^A-Z|a-z])&quot;</span>
+            <span class="p">)</span>  <span class="c1"># Matches any acronym</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exp_a_caseinsensitive</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Store regular expression for case-sensitive acronyms</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">acronyms_casesensitive</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">acronyms_casesensitive</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="c1"># Update acronyms to allow optional spaces</span>
+            <span class="n">acronyms_upd</span> <span class="o">=</span> <span class="p">[(</span><span class="sa">r</span><span class="s2">&quot;(\.?)( ?)&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">item</span><span class="p">))</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;acronyms_casesensitive&quot;</span><span class="p">)]</span>
+            <span class="c1"># Build regular expression to recognize acronyms</span>
+            <span class="n">exp_a_casesensitive</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">r</span><span class="s2">&quot;(^|[^\.])((\b&quot;</span> <span class="o">+</span> <span class="sa">r</span><span class="s2">&quot;\b)|(\b&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">phrase</span> <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">acronyms_upd</span><span class="p">])</span> <span class="o">+</span> <span class="sa">r</span><span class="s2">&quot;\b)(\.?))($|[^A-Z|a-z])&quot;</span>
+            <span class="p">)</span>  <span class="c1"># Matches any acronym</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exp_a_casesensitive</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">exps_k</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;exps_keywords&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">exp_a_caseinsensitive</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;exp_acronyms_caseinsensitive&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store_info</span><span class="p">(</span><span class="n">exp_a_casesensitive</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;exp_acronyms_casesensitive&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&lt;Keyword (name=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_name</span><span class="p">()</span><span class="si">}</span><span class="s2">&#39;)&quot;</span>
+
+    <span class="c1"># Generate string representation of this class instance</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Build string of characteristics of this instance</span>
+        <span class="n">print_str</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;Keyword Object:</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;Name: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_name</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;Keywords: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;keywords&quot;</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;Acronyms (Case-Insensitive): </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;acronyms_caseinsensitive&quot;</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;Acronyms (Case-Sensitive): </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;acronyms_casesensitive&quot;</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;Banned Overlap: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;banned_overlap&quot;</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Return the completed string for printing</span>
+        <span class="k">return</span> <span class="n">print_str</span>
+
+    <span class="c1"># Purpose: Fetch the representative name for this keyword object</span>
+<div class="viewcode-block" id="Keyword.get_name">
+<a class="viewcode-back" href="../../../api/bibcat.core.html#bibcat.core.keyword.Keyword.get_name">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fetch and return the representative name for the mission described by this Keyword instance.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        out : str</span>
+<span class="sd">            The representative name for this Keyword instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Fetch and return representative name</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span></div>
+
+
+    <span class="c1"># Purpose: Check if text matches to this keyword object; return match inds</span>
+<div class="viewcode-block" id="Keyword.identify_keyword">
+<a class="viewcode-back" href="../../../api/bibcat.core.html#bibcat.core.keyword.Keyword.identify_keyword">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">identify_keyword</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return whether or not the given text contains terms (keywords, acronyms) matching this instance.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        text : str</span>
+<span class="sd">            The text to search within for terms.</span>
+<span class="sd">        mode : {None, &quot;keyword&quot;, &quot;acronym&quot;}, optional</span>
+<span class="sd">            If a mode is specified, then the code will only search for terms of that type (i.e., either specifically for full phrases OR of acronyms matching to this Keyword instance).  The default is `None`, which searches for all term types.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        out : dict</span>
+<span class="sd">            Output is a key-value dictionary, containing the following keys and values:</span>
+<span class="sd">                key=&quot;bool&quot;, value=bool</span>
+<span class="sd">                    True if any matches exist.</span>
+<span class="sd">                key=&quot;charspans&quot;, value=list[list[int, int]]</span>
+<span class="sd">                    List of character spans of all matches.  Each character span contains the index location within the string that contains the starting character of the matching substring, and the index location within the string that contains the final character of the matching substring.  For example: for the sentence &quot;HST is a Hubble Space Telescope acronym&quot;, the value would be [[0,2], [9, 30]].</span>
+<span class="sd">                key=&quot;bool_acronym_only&quot;, value=bool</span>
+<span class="sd">                    True if any acronym matches exist.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Fetch global variables</span>
+        <span class="n">exps_k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;exps_keywords&quot;</span><span class="p">)</span>
+        <span class="n">keywords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;keywords&quot;</span><span class="p">)</span>
+        <span class="n">exp_a_yescase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;exp_acronyms_casesensitive&quot;</span><span class="p">)</span>
+        <span class="n">exp_a_nocase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;exp_acronyms_caseinsensitive&quot;</span><span class="p">)</span>
+        <span class="n">acronyms_casesensitive</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;acronyms_casesensitive&quot;</span><span class="p">)</span>
+        <span class="n">acronyms_caseinsensitive</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;acronyms_caseinsensitive&quot;</span><span class="p">)</span>
+        <span class="n">banned_overlap_lowercase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;banned_overlap_lowercase&quot;</span><span class="p">)</span>
+        <span class="n">do_verbose</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;do_verbose&quot;</span><span class="p">)</span>
+        <span class="n">allowed_modes</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;keyword&quot;</span><span class="p">,</span> <span class="s2">&quot;acronym&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Throw error is specified mode not recognized</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">mode</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">allowed_modes</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Err: Invalid mode &#39;</span><span class="si">{0}</span><span class="s2">&#39;.</span><span class="se">\n</span><span class="s2">Allowed modes: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">allowed_modes</span><span class="p">))</span>
+
+        <span class="c1"># Modify text (locally only) to block banned overlap</span>
+        <span class="n">text_mod</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="k">for</span> <span class="n">curr_ban</span> <span class="ow">in</span> <span class="n">banned_overlap_lowercase</span><span class="p">:</span>
+            <span class="c1"># Below replaces banned phrases with mask &#39;#&#39; string of custom length</span>
+            <span class="n">text_mod</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">curr_ban</span><span class="p">,</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;#&quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">group</span><span class="p">()))),</span> <span class="n">text_mod</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+        <span class="c1">#</span>
+
+        <span class="c1"># Check if this text contains keywords</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">mode</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;keyword&quot;</span><span class="p">):</span>
+            <span class="n">set_keywords</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">item1</span><span class="p">,</span> <span class="n">text_mod</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">))</span> <span class="k">for</span> <span class="n">item1</span> <span class="ow">in</span> <span class="n">exps_k</span><span class="p">]</span>
+            <span class="n">charspans_keywords</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">(</span><span class="n">item2</span><span class="o">.</span><span class="n">start</span><span class="p">(),</span> <span class="p">(</span><span class="n">item2</span><span class="o">.</span><span class="n">end</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">item1</span> <span class="ow">in</span> <span class="n">set_keywords</span> <span class="k">for</span> <span class="n">item2</span> <span class="ow">in</span> <span class="n">item1</span>
+            <span class="p">]</span>  <span class="c1"># Char. span of matches</span>
+            <span class="n">check_keywords</span> <span class="o">=</span> <span class="nb">any</span><span class="p">([(</span><span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">set_keywords</span><span class="p">])</span>  <span class="c1"># If any matches</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">charspans_keywords</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">check_keywords</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Check if this text contains case-sensitive acronyms</span>
+        <span class="k">if</span> <span class="p">((</span><span class="n">mode</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">mode</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;acronym&quot;</span><span class="p">))</span> <span class="ow">and</span> <span class="p">(</span><span class="n">exp_a_yescase</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">set_acronyms_yescase</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">exp_a_yescase</span><span class="p">,</span> <span class="n">text_mod</span><span class="p">))</span>
+            <span class="n">charspans_acronyms_yescase</span> <span class="o">=</span> <span class="p">[(</span><span class="n">item</span><span class="o">.</span><span class="n">start</span><span class="p">(),</span> <span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">end</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">set_acronyms_yescase</span><span class="p">]</span>
+            <span class="n">check_acronyms_yescase</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">set_acronyms_yescase</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">charspans_acronyms_yescase</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">check_acronyms_yescase</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Check if this text contains case-insensitive acronyms</span>
+        <span class="k">if</span> <span class="p">((</span><span class="n">mode</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">mode</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;acronym&quot;</span><span class="p">))</span> <span class="ow">and</span> <span class="p">(</span><span class="n">exp_a_nocase</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">set_acronyms_nocase</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">exp_a_nocase</span><span class="p">,</span> <span class="n">text_mod</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">))</span>
+            <span class="n">charspans_acronyms_nocase</span> <span class="o">=</span> <span class="p">[(</span><span class="n">item</span><span class="o">.</span><span class="n">start</span><span class="p">(),</span> <span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">end</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">set_acronyms_nocase</span><span class="p">]</span>
+            <span class="n">check_acronyms_nocase</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">set_acronyms_nocase</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">charspans_acronyms_nocase</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">check_acronyms_nocase</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Combine acronym results</span>
+        <span class="n">check_acronyms_all</span> <span class="o">=</span> <span class="n">check_acronyms_nocase</span> <span class="ow">or</span> <span class="n">check_acronyms_yescase</span>
+        <span class="n">charspans_acronyms_all</span> <span class="o">=</span> <span class="n">charspans_acronyms_nocase</span> <span class="o">+</span> <span class="n">charspans_acronyms_yescase</span>
+
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Keywords: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Keyword regex:</span><span class="se">\n</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">keywords</span><span class="p">,</span> <span class="n">exps_k</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Acronyms (Case-Sensitive): </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Acronym regex:</span><span class="se">\n</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">acronyms_casesensitive</span><span class="p">,</span> <span class="n">exp_a_yescase</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;Acronyms (Case-Insensitive): </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Acronym regex:</span><span class="se">\n</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">acronyms_caseinsensitive</span><span class="p">,</span> <span class="n">exp_a_nocase</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Keyword bool: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Acronym bool: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">check_keywords</span><span class="p">,</span> <span class="n">check_acronyms_all</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;Keyword char. spans: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Acronym char. spans: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">charspans_keywords</span><span class="p">,</span> <span class="n">charspans_acronyms_all</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Return booleans</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;bool&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">check_acronyms_all</span> <span class="ow">or</span> <span class="n">check_keywords</span><span class="p">),</span>
+            <span class="s2">&quot;charspans&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">charspans_keywords</span> <span class="o">+</span> <span class="n">charspans_acronyms_all</span><span class="p">),</span>
+            <span class="s2">&quot;bool_acronym_only&quot;</span><span class="p">:</span> <span class="n">check_acronyms_all</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+    <span class="c1"># Purpose: Replace any text that matches to this keyword object</span>
+<div class="viewcode-block" id="Keyword.replace_keyword">
+<a class="viewcode-back" href="../../../api/bibcat.core.html#bibcat.core.keyword.Keyword.replace_keyword">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">replace_keyword</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">placeholder</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Replace any substrings within given text that contain terms (keywords, acronyms) matching this instance.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        text : str</span>
+<span class="sd">            The text to search within for terms.</span>
+<span class="sd">        placeholder : str</span>
+<span class="sd">            The substring to replace matched terms with.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        out : str</span>
+<span class="sd">            The updated text; in the updated text, any keywords/acronyms that matched to this Keyword instance will have been replaced with `placeholder`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Fetch global variables</span>
+        <span class="n">exps_k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;exps_keywords&quot;</span><span class="p">)</span>
+        <span class="n">exp_a_yescase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;exp_acronyms_casesensitive&quot;</span><span class="p">)</span>
+        <span class="n">exp_a_nocase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;exp_acronyms_caseinsensitive&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">exp_a_yescase</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">exps_a_yescase</span> <span class="o">=</span> <span class="p">[</span><span class="n">exp_a_yescase</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exps_a_yescase</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">exp_a_nocase</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">exps_a_nocase</span> <span class="o">=</span> <span class="p">[</span><span class="n">exp_a_nocase</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exps_a_nocase</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1">#</span>
+        <span class="n">do_verbose</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;do_verbose&quot;</span><span class="p">)</span>
+        <span class="n">text_new</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="c1">#</span>
+
+        <span class="c1"># Replace terms with given placeholder</span>
+        <span class="c1"># For keywords</span>
+        <span class="k">for</span> <span class="n">curr_exp</span> <span class="ow">in</span> <span class="n">exps_k</span><span class="p">:</span>
+            <span class="n">text_new</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">curr_exp</span><span class="p">,</span> <span class="n">placeholder</span><span class="p">,</span> <span class="n">text_new</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+        <span class="c1"># For acronyms: avoids matches to acronyms in larger acronyms</span>
+        <span class="c1"># For case-sensitive acronyms</span>
+        <span class="k">for</span> <span class="n">curr_exp</span> <span class="ow">in</span> <span class="n">exps_a_yescase</span><span class="p">:</span>
+            <span class="c1"># Group processing below prevents substitution of spaces around acr.</span>
+            <span class="n">str_tot</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">curr_exp</span><span class="p">)</span><span class="o">.</span><span class="n">groups</span><span class="p">)</span>  <span class="c1"># Get # of last group</span>
+            <span class="n">text_new</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">curr_exp</span><span class="p">,</span> <span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\1&quot;</span> <span class="o">+</span> <span class="n">placeholder</span> <span class="o">+</span> <span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">str_tot</span><span class="p">)),</span> <span class="n">text_new</span><span class="p">)</span>
+        <span class="c1"># For case-insensitive acronyms</span>
+        <span class="k">for</span> <span class="n">curr_exp</span> <span class="ow">in</span> <span class="n">exps_a_nocase</span><span class="p">:</span>
+            <span class="c1"># Group processing below prevents substitution of spaces around acr.</span>
+            <span class="n">str_tot</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">curr_exp</span><span class="p">)</span><span class="o">.</span><span class="n">groups</span><span class="p">)</span>  <span class="c1"># Get # of last group</span>
+            <span class="n">text_new</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">curr_exp</span><span class="p">,</span> <span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\1&quot;</span> <span class="o">+</span> <span class="n">placeholder</span> <span class="o">+</span> <span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">str_tot</span><span class="p">)),</span> <span class="n">text_new</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+
+        <span class="c1"># Print some notes</span>
+        <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Keyword regex:</span><span class="se">\n</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">exps_k</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Acronyms (Case-Sensitive) regex: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">exp_a_yescase</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Acronyms (Case-Insensitive) regex: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">exp_a_nocase</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Updated text: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">text_new</span><span class="p">))</span>
+
+        <span class="c1"># Return updated text</span>
+        <span class="k">return</span> <span class="n">text_new</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

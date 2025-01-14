@@ -1,0 +1,772 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat.llm.openai &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">BibCat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bibcat.llm.openai</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bibcat.llm.openai</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">openai</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openai.types.beta.assistant</span><span class="w"> </span><span class="kn">import</span> <span class="n">Assistant</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.llm.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_file</span><span class="p">,</span> <span class="n">get_llm_prompt</span><span class="p">,</span> <span class="n">get_source</span><span class="p">,</span> <span class="n">write_output</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.utils.logger_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_logger</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">level</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MissionInfo">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.MissionInfo">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MissionInfo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Pydantic model for a mission entry &quot;&quot;&quot;</span>
+    <span class="n">mission</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The name of the mission.&quot;</span><span class="p">)</span>
+    <span class="n">papertype</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The type of paper you think it is&quot;</span><span class="p">)</span>
+    <span class="n">confidence</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A list of float values of your confidence&quot;</span><span class="p">)</span>
+    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A short sentence summarizing your reasoning for classifying this mission + papertype&quot;</span><span class="p">)</span>
+    <span class="n">quotes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A list of exact quotes from the paper that support your reason&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InfoModel">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.InfoModel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">InfoModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Pydantic model for the parsed response from the LLM &quot;&quot;&quot;</span>
+    <span class="n">notes</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;all your notes and thoughts you have written down during your process&quot;</span><span class="p">)</span>
+    <span class="n">missions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">MissionInfo</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;a list of your identified missions&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="OpenAIHelper">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.OpenAIHelper">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OpenAIHelper</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper class for interacting with the OpenAI API</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    use_assistant : bool, optional</span>
+<span class="sd">        Flag to use the file-search OpenAI Assistant or not, by default None</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        Flag to turn on verbose logging, by default None</span>
+<span class="sd">    structured : bool, optional</span>
+<span class="sd">        Flag to use structured response, by default True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_assistant</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">structured</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;init&quot;&quot;&quot;</span>
+        <span class="c1"># input parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_assistant</span> <span class="o">=</span> <span class="n">use_assistant</span> <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="o">.</span><span class="n">openai</span><span class="o">.</span><span class="n">use_assistant</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span> <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">structured</span> <span class="o">=</span> <span class="n">structured</span>
+
+        <span class="c1"># llm attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;OPENAI_API_KEY&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assistant</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vector_store</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stores</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assistants</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_response</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">response</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">response_classes</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_prompt</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">agent_prompt</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># paper attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bibcode</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">paper</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;&lt;OpenAIHelper use_assistant=&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">use_assistant</span><span class="si">}</span><span class="s1">&quot;,&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;asst_id=&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">assistant</span><span class="o">.</span><span class="n">id</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">assistant</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="kc">None</span><span class="si">}</span><span class="s1">&quot;,&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;vs_id=&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">vector_store</span><span class="o">.</span><span class="n">id</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">vector_store</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="kc">None</span><span class="si">}</span><span class="s1">&quot;&gt;&#39;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># upload the file</span>
+<div class="viewcode-block" id="OpenAIHelper.upload_file">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.upload_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">upload_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Upload a file to the OpenAI API</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file_path : str</span>
+<span class="sd">            the path to a file</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            the file id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">files</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">),</span> <span class="n">purpose</span><span class="o">=</span><span class="s2">&quot;assistants&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OpenAIHelper.create_vector_store">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.create_vector_store">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_vector_store</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Papers&quot;</span><span class="p">,</span> <span class="n">files</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new vector store</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str, optional</span>
+<span class="sd">            the name of the vector store, by default &#39;Papers&#39;</span>
+<span class="sd">        files : list, optional</span>
+<span class="sd">            a list of file_ids to attach to the store, by default None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        VectorStore</span>
+<span class="sd">            a new OpenAI vector store</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vector_store</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">vector_stores</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">file_ids</span><span class="o">=</span><span class="n">files</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OpenAIHelper.get_vector_store">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.get_vector_store">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_vector_store</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vs_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a vector store by id</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vs_id : str</span>
+<span class="sd">            the id of the vector store</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        VectorStore</span>
+<span class="sd">            the requested vector store</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">vector_store</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">vector_stores</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span><span class="n">vs_id</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">openai</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="OpenAIHelper.list_vector_stores">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.list_vector_stores">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">list_vector_stores</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;List all vector stores</span>
+
+<span class="sd">        List all vector stores, and convert each response</span>
+<span class="sd">        to a dictionary.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list[dict]</span>
+<span class="sd">            a list of vector store dictionaries</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">vs</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">vector_stores</span><span class="o">.</span><span class="n">list</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vs</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stores</span></div>
+
+
+<div class="viewcode-block" id="OpenAIHelper.create_assistant">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.create_assistant">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_assistant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Paper Reader&quot;</span><span class="p">,</span> <span class="n">vs_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Assistant</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new OpenAI assistant</span>
+
+<span class="sd">        Creates a new OpenAI assistant with file search capabilities.  The llm model</span>
+<span class="sd">        to use for the assistant is set in the config file by ``config.llms.openai.model``.</span>
+<span class="sd">        Custom instructions and behavior for the assistant is set through a custom agent prompt file,</span>
+<span class="sd">        or a config value, otherwise the default agent instructions will be used.</span>
+<span class="sd">        See ``bibcat.llm.io.get_llm_prompt`` for more information.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str, optional, by default &#39;Paper Reader&#39;</span>
+<span class="sd">            the name of the assistant</span>
+<span class="sd">        vs_id : str, optional</span>
+<span class="sd">            the vector store id to attach, by default None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Assistant</span>
+<span class="sd">            the new OpenAI assistant</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># create a new vector store for the assistant, if none provided</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">vs_id</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_vector_store</span><span class="p">()</span>
+            <span class="n">vs_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vector_store</span><span class="o">.</span><span class="n">id</span>
+
+        <span class="c1"># create the new assistant</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assistant</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">assistants</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">instructions</span><span class="o">=</span><span class="n">get_llm_prompt</span><span class="p">(</span><span class="s2">&quot;agent&quot;</span><span class="p">),</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="o">.</span><span class="n">openai</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+            <span class="n">tools</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;file_search&quot;</span><span class="p">}],</span>
+            <span class="n">tool_resources</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;file_search&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;vector_store_ids&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">vs_id</span><span class="p">]}},</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OpenAIHelper.list_assistants">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.list_assistants">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">list_assistants</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;List all assistants</span>
+
+<span class="sd">        List all OpenAI Assistants, and convert each response</span>
+<span class="sd">        to a dictionary.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list[dict]</span>
+<span class="sd">            a list of assistant dictionaries</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">aa</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">assistants</span><span class="o">.</span><span class="n">list</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assistants</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">aa</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">assistants</span></div>
+
+
+<div class="viewcode-block" id="OpenAIHelper.get_assistant">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.get_assistant">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_assistant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">asst_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get an OpenAI Assistant</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        asst_id : str</span>
+<span class="sd">            the assistant id</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Assistant</span>
+<span class="sd">            the requested assistant</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            when no assistant id is provided</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            when the assistant for the given id is not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">asst_id</span> <span class="o">=</span> <span class="n">asst_id</span> <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="o">.</span><span class="n">openai</span><span class="o">.</span><span class="n">asst_id</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">asst_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;No assistant id provided.  Either provide or set an assistant id, or first create a new assistant.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using assistant id: </span><span class="si">{</span><span class="n">asst_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assistant</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">assistants</span><span class="o">.</span><span class="n">retrieve</span><span class="p">(</span><span class="n">asst_id</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">openai</span><span class="o">.</span><span class="n">NotFoundError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Assistant id </span><span class="si">{</span><span class="n">asst_id</span><span class="si">}</span><span class="s2"> not found.&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span></div>
+
+
+<div class="viewcode-block" id="OpenAIHelper.send_assistant_request">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.send_assistant_request">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">send_assistant_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">asst_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Send a prompt request to an OpenAI assistant</span>
+
+<span class="sd">        Sends a user prompt request to an OpenAI assistant to search</span>
+<span class="sd">        through a given file for content.  It retrieves the requested agent via</span>
+<span class="sd">        the assistant id, ``asst_id``.  It creates a new message thread, attaching</span>
+<span class="sd">        the input file id to the message thread, then submits the user prompt request.</span>
+
+<span class="sd">        When attaching a file to a message thread, a temporary vector store is created, where the</span>
+<span class="sd">        file is stored.  The assistant searches both the temporary vector store and any vector</span>
+<span class="sd">        store attached to the assistant to answer the user prompt.</span>
+
+<span class="sd">        The prompt response is then extracted and converted to JSON content. The response is</span>
+<span class="sd">        stored in the instance ``response`` attribute.  The original message content</span>
+<span class="sd">        can be found in the ``original_response`` attribute.</span>
+
+<span class="sd">        At the end, the uploaded file and the temporary vector store are deleted.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file_id : str</span>
+<span class="sd">            the file id of the uploaded file, to search on</span>
+<span class="sd">        asst_id : str, optional</span>
+<span class="sd">            the id of the assistant to use, by default None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            the output respsonse from the assistant</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            when no assistant id is provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># get an OpenAI Assistant</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_assistant</span><span class="p">(</span><span class="n">asst_id</span><span class="p">)</span>
+
+        <span class="c1"># create a new thread</span>
+        <span class="c1"># attach the input file id to the message thread</span>
+        <span class="c1"># this creates a temporary vector store for the file</span>
+        <span class="n">thread</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">threads</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">get_llm_prompt</span><span class="p">(</span><span class="s2">&quot;user&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;attachments&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;file_id&quot;</span><span class="p">:</span> <span class="n">file_id</span><span class="p">,</span> <span class="s2">&quot;tools&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;file_search&quot;</span><span class="p">}]}],</span>
+                <span class="p">}</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="c1"># submit the prompt request</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;File search thread: </span><span class="si">{</span><span class="n">thread</span><span class="o">.</span><span class="n">tool_resources</span><span class="o">.</span><span class="n">file_search</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">threads</span><span class="o">.</span><span class="n">runs</span><span class="o">.</span><span class="n">create_and_poll</span><span class="p">(</span><span class="n">thread_id</span><span class="o">=</span><span class="n">thread</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">assistant_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">assistant</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+
+        <span class="c1"># get the response content</span>
+        <span class="n">messages</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">threads</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">thread_id</span><span class="o">=</span><span class="n">thread</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">run_id</span><span class="o">=</span><span class="n">run</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+        <span class="n">message_content</span> <span class="o">=</span> <span class="n">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">content</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Original response message content: </span><span class="si">{</span><span class="n">message_content</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_response</span> <span class="o">=</span> <span class="n">message_content</span><span class="o">.</span><span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">response</span> <span class="o">=</span> <span class="n">extract_response</span><span class="p">(</span><span class="n">message_content</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># do some cleanup; delete the file and the temporary vector store</span>
+        <span class="n">vs</span> <span class="o">=</span> <span class="n">thread</span><span class="o">.</span><span class="n">tool_resources</span><span class="o">.</span><span class="n">file_search</span><span class="o">.</span><span class="n">vector_store_ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">vector_stores</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">vs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">files</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">file_id</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">response</span></div>
+
+
+<div class="viewcode-block" id="OpenAIHelper.populate_user_template">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.populate_user_template">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">populate_user_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paper</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Format a user prompt template with paper data</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        paper : dict</span>
+<span class="sd">            the input JSON paper content</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            the fully formatted user prompt</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            when the prompt fields are missing from the paper data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">get_llm_prompt</span><span class="p">(</span><span class="s2">&quot;user&quot;</span><span class="p">)</span>
+
+        <span class="c1"># check the user template fields match the paper dictionary keys</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;{(.*?)}&quot;</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">paper</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missing user template fields in input paper data: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># format the user prompt the paper content</span>
+        <span class="k">return</span> <span class="n">user</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">paper</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OpenAIHelper.send_message">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.send_message">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">send_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_prompt</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Send a straight chat message to the LLM</span>
+
+<span class="sd">        Can pass a custom user prompt into method, otherwise it uses the prompt</span>
+<span class="sd">        pulled from ``get_llm_prompt``.  The response is stored in the instance</span>
+<span class="sd">        ``response`` attribute.  The original message content can be found in the</span>
+<span class="sd">        ``original_response`` attribute.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        user_prompt : str, optional</span>
+<span class="sd">            A customized user prompt, by default None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict | str</span>
+<span class="sd">            the output respsonse from the model</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="o">.</span><span class="n">openai</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+            <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+                <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">get_llm_prompt</span><span class="p">(</span><span class="s2">&quot;agent&quot;</span><span class="p">)},</span>
+                <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">user_prompt</span> <span class="ow">or</span> <span class="n">get_llm_prompt</span><span class="p">(</span><span class="s2">&quot;user&quot;</span><span class="p">)},</span>
+            <span class="p">],</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_response</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">response</span> <span class="o">=</span> <span class="n">extract_response</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">original_response</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">response</span></div>
+
+
+<div class="viewcode-block" id="OpenAIHelper.send_structured_message">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.send_structured_message">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">send_structured_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_prompt</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Send a chat message to the LLM using Structured Response</span>
+
+<span class="sd">        Sends your prompt to the LLM model with an expected response format</span>
+<span class="sd">        of InfoModel.  The LLM will parse its response into the structure you</span>
+<span class="sd">        provide. See https://openai.com/index/introducing-structured-outputs-in-the-api/</span>
+<span class="sd">        Works with minimum gpt-4o-mini-2024-07-18 and gpt-4o-2024-08-06 models, but</span>
+<span class="sd">        structured outputs with response formats is available on gpt-4o-mini and gpt-4o-2024-08-06 and</span>
+<span class="sd">        any fine tunes based on these models.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        user_prompt : str, optional</span>
+<span class="sd">            A customized user prompt, by default None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict | str</span>
+<span class="sd">            the output response from the model</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            when the model is not one of the supported models</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="o">.</span><span class="n">openai</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+            <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+                <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">get_llm_prompt</span><span class="p">(</span><span class="s1">&#39;agent&#39;</span><span class="p">)},</span>
+                <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span><span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">user_prompt</span> <span class="ow">or</span> <span class="n">get_llm_prompt</span><span class="p">(</span><span class="s2">&quot;user&quot;</span><span class="p">)}</span>
+                <span class="p">],</span>
+            <span class="n">response_format</span><span class="o">=</span><span class="n">InfoModel</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_response</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span>
+
+        <span class="n">message</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span>
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">parsed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">response</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">parsed</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">response</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">refusal</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">response</span></div>
+
+
+<div class="viewcode-block" id="OpenAIHelper.submit_paper">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.submit_paper">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">submit_paper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">bibcode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Submit a paper to the OpenAI LLM model</span>
+
+<span class="sd">        Submit a paper to the OpenAI LLM model for processing, either using an AI Assistant</span>
+<span class="sd">        with file-search capability, or a straight chat message.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filepath : str, optional</span>
+<span class="sd">            a path to a local input paper file on disk, by default None</span>
+<span class="sd">        bibcode : str, optional</span>
+<span class="sd">            the bibcode of an entry in the source papetrack combined dataset, by default None</span>
+<span class="sd">        index : int, optional</span>
+<span class="sd">            a list item array index in the source papetrack combined dataset, by default None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict | str</span>
+<span class="sd">            The output response from the model for the given paper</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            when a file_path is given and the AI Assistant is not being used</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_assistant</span> <span class="ow">and</span> <span class="n">filepath</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot use a local file when not using the AI Assistant.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># set the user / agent prompts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_prompt</span> <span class="o">=</span> <span class="n">get_llm_prompt</span><span class="p">(</span><span class="s2">&quot;user&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">agent_prompt</span> <span class="o">=</span> <span class="n">get_llm_prompt</span><span class="p">(</span><span class="s2">&quot;agent&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_assistant</span><span class="p">:</span>
+            <span class="c1"># get the file path</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">get_file</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="n">filepath</span><span class="p">,</span> <span class="n">bibcode</span><span class="o">=</span><span class="n">bibcode</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using file: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># upload the file to openai</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upload_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Uploaded file id: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># send the prompt request to the assistant</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_assistant_request</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># get the paper source</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">paper</span> <span class="o">=</span> <span class="n">get_source</span><span class="p">(</span><span class="n">bibcode</span><span class="o">=</span><span class="n">bibcode</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bibcode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">paper</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bibcode&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using paper bibcode: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">bibcode</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># populate the user template with paper data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">user_prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">populate_user_template</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">paper</span><span class="p">)</span>
+
+            <span class="c1"># send the prompt</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">structured</span> <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">llms</span><span class="o">.</span><span class="n">openai</span><span class="o">.</span><span class="n">model</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;gpt-4o-mini-2024-07-18&#39;</span><span class="p">,</span> <span class="s1">&#39;gpt-4o-2024-08-06&#39;</span><span class="p">]:</span>
+                <span class="c1"># automatically use the structured response if we&#39;re using the right models</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Using structured response.&quot;</span><span class="p">)</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_structured_message</span><span class="p">(</span><span class="n">user_prompt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">user_prompt</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># otherwise, use the regular response</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Using unstructured response.&quot;</span><span class="p">)</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_message</span><span class="p">(</span><span class="n">user_prompt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">user_prompt</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">response</span></div>
+
+
+<div class="viewcode-block" id="OpenAIHelper.get_output_key">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.get_output_key">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_output_key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the output key for writing the response to a file</span>
+
+<span class="sd">        Returns either the name of a file or the bibcode of a paper source.</span>
+<span class="sd">        This key is used to organize the output JSON file content.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bibcode</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bibcode</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">name</span>
+            <span class="c1"># extract bibcode from temp file</span>
+            <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;temp&quot;</span><span class="p">):</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="k">return</span> <span class="n">name</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="extract_response">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.extract_response">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_response</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract the agent response</span>
+
+<span class="sd">    Check the agent response for proper JSON content and</span>
+<span class="sd">    extract.  If no JSON content is found, return an error message.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value : str</span>
+<span class="sd">        the original agent response message_content.value</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        the extracted JSON content</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># extract the json content</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;```json\n(.*?)\n```&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">response</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;Error decoding JSON content: &quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;No JSON content found in response&quot;</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="convert_to_classification">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.convert_to_classification">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_to_classification</span><span class="p">(</span><span class="n">output</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">bibcode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert response to classification format</span>
+
+<span class="sd">    Converts the JSON response to conform to the format from the</span>
+<span class="sd">    data source ``class_missions`` field.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    output : dict</span>
+<span class="sd">        the JSON response</span>
+<span class="sd">    bibcode : str</span>
+<span class="sd">        the bibcode of the paper</span>
+<span class="sd">    threshold : float, optional</span>
+<span class="sd">        the threshold for rejection, by default 0.5</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        the formatted classification output</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;error&quot;</span> <span class="ow">in</span> <span class="n">output</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Error in prompt JSON response. Cannot convert output.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">try</span><span class="p">:</span>  <span class="c1"># NEED to REVISIT what to do when max(p[0], p[1]) == 0.5</span>
+        <span class="n">class_missions</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;bibcode&quot;</span><span class="p">:</span> <span class="n">bibcode</span><span class="p">,</span> <span class="s2">&quot;papertype&quot;</span><span class="p">:</span> <span class="n">papertype</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="p">[</span><span class="n">papertype</span><span class="p">,</span> <span class="n">p</span><span class="p">]</span> <span class="ow">in</span> <span class="n">output</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">threshold</span> <span class="ow">or</span> <span class="nb">max</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="mf">0.5</span>
+        <span class="p">}</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error converting output to classification format: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">class_missions</span></div>
+
+
+
+<div class="viewcode-block" id="classify_paper">
+<a class="viewcode-back" href="../../../api/bibcat.llm.html#bibcat.llm.openai.classify_paper">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">classify_paper</span><span class="p">(</span>
+    <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">bibcode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">n_runs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">use_assistant</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">structured</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Send a prompt to an OpenAI LLM model to classify a paper</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file_path : str, optional</span>
+<span class="sd">        a path to a local file on disk, by default None</span>
+<span class="sd">    bibcode : str, optional</span>
+<span class="sd">        the bibcode of an entry in the source papetrack combined dataset, by default None</span>
+<span class="sd">    index : int, optional</span>
+<span class="sd">        a list item array index in the source papetrack combined dataset, by default None</span>
+<span class="sd">    n_runs : int, optional</span>
+<span class="sd">        the number of runs to do, by default 1</span>
+<span class="sd">    use_assistant : bool, optional</span>
+<span class="sd">        Flag to use the OpenAI file-search Assistant or not, by default None</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        Flag to turn on verbose logging, by default None</span>
+<span class="sd">    structured : bool, optional</span>
+<span class="sd">        Flag to use structured response, by default True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">oa</span> <span class="o">=</span> <span class="n">OpenAIHelper</span><span class="p">(</span><span class="n">use_assistant</span><span class="o">=</span><span class="n">use_assistant</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">structured</span><span class="o">=</span><span class="n">structured</span><span class="p">)</span>
+
+    <span class="c1"># iterate for number of runs</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_runs</span><span class="p">):</span>
+        <span class="c1"># submit the paper to the LLM</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">oa</span><span class="o">.</span><span class="n">submit_paper</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="n">file_path</span><span class="p">,</span> <span class="n">bibcode</span><span class="o">=</span><span class="n">bibcode</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span>
+
+        <span class="c1"># log the prompts if verbosity set</span>
+        <span class="k">if</span> <span class="n">oa</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent Prompt: </span><span class="si">{</span><span class="n">oa</span><span class="o">.</span><span class="n">agent_prompt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;User Prompt: </span><span class="si">{</span><span class="n">oa</span><span class="o">.</span><span class="n">user_prompt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Original Prompt Response: </span><span class="si">{</span><span class="n">oa</span><span class="o">.</span><span class="n">original_response</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Output: </span><span class="si">{</span><span class="n">response</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># write the output response to a file</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">oa</span><span class="o">.</span><span class="n">get_output_key</span><span class="p">()</span>
+        <span class="n">write_output</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

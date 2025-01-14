@@ -1,0 +1,379 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat.tests.core.test_paper &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/modules.html">BibCat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bibcat.tests.core.test_paper</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bibcat.tests.core.test_paper</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">:title: test_paper.py</span>
+
+<span class="sd">Testing the Paper class and its methods.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">unittest</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">parameters</span> <span class="k">as</span> <span class="n">params</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">paper</span>
+
+
+<div class="viewcode-block" id="TestPaper">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_paper.TestPaper">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TestPaper</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+    <span class="c1"># For tests of process_paragraphs and get_paragraphs:</span>
+    <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># Test processing and extraction of paragraphs of target terms</span>
+<div class="viewcode-block" id="TestPaper.test_processandget_paragraphs__variety">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_paper.TestPaper.test_processandget_paragraphs__variety">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test_processandget_paragraphs__variety</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># placeholder = config.string_anymatch_ambig</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">text1</span> <span class="o">=</span> <span class="s2">&quot;Despite the low S/N of the data, we still detect the stars. Figure 1 plots the Hubble Space Telescope (HST) observations. The HST stars are especially bright. We analyze them in the next section. A filler sentence. Here is another filler sentence (with parentheses). Some more filler content. We summarize our Hubble results next.&quot;</span>
+            <span class="c1"># meanings1 = None #{&quot;Hubble&quot;: [&quot;Hubble Space Telescope&quot;], &quot;Kepler&quot;: None, &quot;K2&quot;: None}</span>
+            <span class="c1"># ambigs1 = [(&quot;our Hubble results&quot;, True)]</span>
+
+            <span class="n">text2</span> <span class="o">=</span> <span class="s2">&quot;Kepler observations are presented in Section 1. Table 1 then gives the measured Kepler velocity data and Kepler planets. The Kepler images and Kepler plots indicate a correlation. The Kepler results are further shown in part 2. Note the Keplerian rotation.&quot;</span>
+            <span class="c1"># meanings2 = None #{&quot;Hubble&quot;: None, &quot;Kepler&quot;: None, &quot;K2&quot;: None}</span>
+            <span class="c1"># ambigs2 = [</span>
+            <span class="c1">#    (&quot;Kepler observations&quot;, True),</span>
+            <span class="c1">#    (&quot;measured Kepler velocity data&quot;, False),</span>
+            <span class="c1">#    (&quot;Kepler planets&quot;, False),</span>
+            <span class="c1">#    (&quot;Kepler images&quot;, True),</span>
+            <span class="c1">#    (&quot;Kepler plots&quot;, True),</span>
+            <span class="c1">#    (&quot;Kepler results&quot;, True),</span>
+            <span class="c1"># ]</span>
+
+            <span class="n">list_acts</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">text1</span><span class="p">,</span>
+                    <span class="s2">&quot;kobj&quot;</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span><span class="p">,</span>
+                    <span class="s2">&quot;buffer&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;answer&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="s2">&quot;Figure 1 plots the Hubble Space Telescope (HST) observations.&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;The HST stars are especially bright.&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;We summarize our Hubble results next.&quot;</span><span class="p">,</span>
+                    <span class="p">],</span>
+                    <span class="c1"># &quot;acronym_meanings&quot;: meanings1,</span>
+                    <span class="c1"># &quot;results_ambig&quot;: ambigs1,</span>
+                <span class="p">},</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">text1</span><span class="p">,</span>
+                    <span class="s2">&quot;kobj&quot;</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span><span class="p">,</span>
+                    <span class="s2">&quot;buffer&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;answer&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="s2">&quot;Despite the low S/N of the data, we still detect the stars. Figure 1 plots the Hubble Space Telescope (HST) observations. The HST stars are especially bright. We analyze them in the next section.&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;Some more filler content. We summarize our Hubble results next.&quot;</span><span class="p">,</span>
+                    <span class="p">],</span>
+                    <span class="c1"># &quot;acronym_meanings&quot;: meanings1,</span>
+                    <span class="c1"># &quot;results_ambig&quot;: ambigs1,</span>
+                <span class="p">},</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">text1</span><span class="p">,</span>
+                    <span class="s2">&quot;kobj&quot;</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span><span class="p">,</span>
+                    <span class="s2">&quot;buffer&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                    <span class="s2">&quot;answer&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="s2">&quot;Despite the low S/N of the data, we still detect the stars. Figure 1 plots the Hubble Space Telescope (HST) observations. The HST stars are especially bright. We analyze them in the next section. A filler sentence. Here is another filler sentence (with parentheses). Some more filler content. We summarize our Hubble results next.&quot;</span>
+                    <span class="p">],</span>
+                    <span class="c1"># &quot;acronym_meanings&quot;: meanings1,</span>
+                    <span class="c1"># &quot;results_ambig&quot;: ambigs1,</span>
+                <span class="p">},</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">text1</span><span class="p">,</span>
+                    <span class="s2">&quot;kobj&quot;</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span><span class="p">,</span>
+                    <span class="s2">&quot;buffer&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+                    <span class="s2">&quot;answer&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="s2">&quot;Despite the low S/N of the data, we still detect the stars. Figure 1 plots the Hubble Space Telescope (HST) observations. The HST stars are especially bright. We analyze them in the next section. A filler sentence. Here is another filler sentence (with parentheses). Some more filler content. We summarize our Hubble results next.&quot;</span>
+                    <span class="p">],</span>
+                    <span class="c1"># &quot;acronym_meanings&quot;: meanings1,</span>
+                    <span class="c1"># &quot;results_ambig&quot;: ambigs1,</span>
+                <span class="p">},</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">text2</span><span class="p">,</span>
+                    <span class="s2">&quot;kobj&quot;</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">kobj_kepler</span><span class="p">,</span>
+                    <span class="s2">&quot;buffer&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;answer&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="s2">&quot;Kepler observations are presented in Section 1.&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;The Kepler images and Kepler plots indicate a correlation.&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;The Kepler results are further shown in part 2.&quot;</span><span class="p">,</span>
+                    <span class="p">],</span>
+                    <span class="c1"># &quot;acronym_meanings&quot;: meanings2,</span>
+                    <span class="c1"># &quot;results_ambig&quot;: ambigs2,</span>
+                <span class="p">},</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">text2</span><span class="p">,</span>
+                    <span class="s2">&quot;kobj&quot;</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">kobj_kepler</span><span class="p">,</span>
+                    <span class="s2">&quot;buffer&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s2">&quot;answer&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="s2">&quot;Kepler observations are presented in Section 1. Table 1 then gives the measured Kepler velocity data and Kepler planets. The Kepler images and Kepler plots indicate a correlation. The Kepler results are further shown in part 2. Note the Keplerian rotation.&quot;</span>
+                    <span class="p">],</span>
+                    <span class="c1"># &quot;acronym_meanings&quot;: meanings2,</span>
+                    <span class="c1"># &quot;results_ambig&quot;: ambigs2,</span>
+                <span class="p">},</span>
+            <span class="p">]</span>
+
+            <span class="c1"># Determine and check answers</span>
+            <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">list_acts</span><span class="p">:</span>
+                <span class="n">curr_text</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span>
+                <span class="n">curr_kobj</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;kobj&quot;</span><span class="p">]</span>
+                <span class="n">curr_buffer</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;buffer&quot;</span><span class="p">]</span>
+                <span class="n">curr_answer</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;answer&quot;</span><span class="p">]</span>
+                <span class="c1"># curr_ambig = info[&quot;results_ambig&quot;]</span>
+                <span class="c1"># curr_acr_meanings = info[&quot;acronym_meanings&quot;]</span>
+                <span class="n">curr_name</span> <span class="o">=</span> <span class="n">curr_kobj</span><span class="o">.</span><span class="n">get_name</span><span class="p">()</span>
+
+                <span class="c1"># Prepare and run test for bibcat class instance</span>
+                <span class="n">testbase</span> <span class="o">=</span> <span class="n">paper</span><span class="o">.</span><span class="n">Paper</span><span class="p">(</span>
+                    <span class="n">text</span><span class="o">=</span><span class="n">curr_text</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">test_list_lookup_kobj</span><span class="p">,</span> <span class="n">do_check_truematch</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+                <span class="n">_</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">process_paragraphs</span><span class="p">(</span><span class="n">buffer</span><span class="o">=</span><span class="n">curr_buffer</span><span class="p">)</span>
+                <span class="n">test_res</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">get_paragraphs</span><span class="p">()[</span><span class="n">curr_name</span><span class="p">]</span>
+
+                <span class="c1"># ambig_output = testbase._get_info(&quot;_results_ambig&quot;)[curr_name]</span>
+                <span class="c1"># test_ambig = [</span>
+                <span class="c1">#    (item2[&quot;text_wordchunk&quot;], item2[&quot;bool&quot;])</span>
+                <span class="c1">#    for item1 in ambig_output</span>
+                <span class="c1">#    for item2 in item1[&quot;info&quot;]</span>
+                <span class="c1">#    if (item2[&quot;matcher&quot;] is not None)</span>
+                <span class="c1"># ]</span>
+                <span class="c1"># test_acr_meanings = testbase._get_info(&quot;_dict_acronym_meanings&quot;)</span>
+
+                <span class="c1"># Check answer</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">)</span>
+                    <span class="c1"># self.assertEqual(test_ambig, curr_ambig)</span>
+                    <span class="c1"># self.assertEqual(test_acr_meanings, curr_acr_meanings)</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Text: </span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">,</span> <span class="n">curr_text</span><span class="p">))</span>
+                    <span class="c1"># print(&quot;Test ambig: {0}\nAct. ambig: {1}&quot;.format(test_ambig, curr_ambig))</span>
+                    <span class="c1"># print(</span>
+                    <span class="c1">#    &quot;Test acronym matches: {0}\nAct. acronym matches: {1}&quot;.format(</span>
+                    <span class="c1">#        test_acr_meanings, curr_acr_meanings</span>
+                    <span class="c1">#    )</span>
+                    <span class="c1"># )</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">)</span></div>
+
+                    <span class="c1"># self.assertEqual(test_ambig, curr_ambig)</span>
+                    <span class="c1"># self.assertEqual(test_acr_meanings, curr_acr_meanings)</span>
+
+    <span class="c1"># For tests of _buffer_indices:</span>
+    <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># Test split of text into sentences based on naive sentence boundaries</span>
+<div class="viewcode-block" id="TestPaper.test__buffer_indices__variety">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_paper.TestPaper.test__buffer_indices__variety">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test__buffer_indices__variety</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">list_acts</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;inds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
+                    <span class="s2">&quot;buffer&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">11</span><span class="p">,</span>
+                    <span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="mi">9</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">]],</span>
+                <span class="p">},</span>
+                <span class="p">{</span><span class="s2">&quot;inds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="s2">&quot;buffer&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">11</span><span class="p">,</span> <span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">11</span><span class="p">]]},</span>
+                <span class="p">{</span><span class="s2">&quot;inds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="s2">&quot;buffer&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">11</span><span class="p">,</span> <span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">11</span><span class="p">]]},</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;inds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">],</span>
+                    <span class="s2">&quot;buffer&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">11</span><span class="p">,</span>
+                    <span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="p">[</span><span class="mi">11</span><span class="p">,</span> <span class="mi">11</span><span class="p">]],</span>
+                <span class="p">},</span>
+                <span class="p">{</span><span class="s2">&quot;inds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">11</span><span class="p">],</span> <span class="s2">&quot;buffer&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">]]},</span>
+                <span class="p">{</span><span class="s2">&quot;inds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">11</span><span class="p">],</span> <span class="s2">&quot;buffer&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">11</span><span class="p">,</span> <span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">]]},</span>
+                <span class="p">{</span><span class="s2">&quot;inds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">11</span><span class="p">],</span> <span class="s2">&quot;buffer&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">12</span><span class="p">]]},</span>
+                <span class="p">{</span><span class="s2">&quot;inds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">11</span><span class="p">],</span> <span class="s2">&quot;buffer&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">13</span><span class="p">,</span> <span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">12</span><span class="p">]]},</span>
+                <span class="p">{</span><span class="s2">&quot;inds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">12</span><span class="p">],</span> <span class="s2">&quot;buffer&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">13</span><span class="p">,</span> <span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">13</span><span class="p">]]},</span>
+                <span class="p">{</span><span class="s2">&quot;inds&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">12</span><span class="p">],</span> <span class="s2">&quot;buffer&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">11</span><span class="p">,</span> <span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">]]},</span>
+            <span class="p">]</span>
+
+            <span class="c1"># Determine and check answers</span>
+            <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">list_acts</span><span class="p">:</span>
+                <span class="n">curr_inds</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;inds&quot;</span><span class="p">]</span>
+                <span class="n">curr_buffer</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;buffer&quot;</span><span class="p">]</span>
+                <span class="n">curr_max</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">]</span>
+                <span class="n">curr_answer</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;result&quot;</span><span class="p">]</span>
+
+                <span class="c1"># Prepare and run test for bibcat class instance</span>
+                <span class="n">testbase</span> <span class="o">=</span> <span class="n">paper</span><span class="o">.</span><span class="n">Paper</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="p">[</span><span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span><span class="p">],</span> <span class="n">do_check_truematch</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">test_res</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">_buffer_indices</span><span class="p">(</span><span class="n">indices</span><span class="o">=</span><span class="n">curr_inds</span><span class="p">,</span> <span class="n">buffer</span><span class="o">=</span><span class="n">curr_buffer</span><span class="p">,</span> <span class="n">max_index</span><span class="o">=</span><span class="n">curr_max</span><span class="p">)</span>
+
+                <span class="c1"># Check answer</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Setup: </span><span class="si">{2}</span><span class="se">\n</span><span class="s2">Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">,</span> <span class="n">info</span><span class="p">))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">curr_answer</span><span class="p">)</span></div>
+
+
+    <span class="c1"># For tests of _split_text:</span>
+    <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># Test split of text into sentences based on naive sentence boundaries</span>
+<div class="viewcode-block" id="TestPaper.test__split_text__variety">
+<a class="viewcode-back" href="../../../../api/bibcat.tests.core.html#bibcat.tests.core.test_paper.TestPaper.test__split_text__variety">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">test__split_text__variety</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># Prepare text and answers for test</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;We need to split this text into sentences. H.S.T. is an&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; acronym for the Hubble Space Telescope. We show the&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; recently observed data in Fig. 3 and Tab. 4. Fig. 7 then&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; shows the rest of the results (see also the Appendix.)&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; More work is described in the next section.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;We see trends in the data. (Those trends are highlighted&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; in another paper). This sentence contains an ellipses...&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; And should still be split into its own sentence.&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; Acronyms like J.W.S.T and H.S.T. could mess up&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; sentence extraction (as could parentheses.). End.&quot;</span>
+            <span class="p">)</span>
+            <span class="c1">#</span>
+            <span class="n">answer</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="s2">&quot;We need to split this text into sentences.&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;H.S.T. is an acronym for the Hubble Space Telescope.&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;We show the recently observed data in Fig. 3 and Tab. 4.&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Fig. 7 then shows the rest of the results (see also the Appendix.)&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;More work is described in the next section.&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;We see trends in the data.&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;(Those trends are highlighted in another paper).&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;This sentence contains an ellipses...&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;And should still be split into its own sentence.&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Acronyms like J.W.S.T and H.S.T. could mess up sentence extraction (as could parentheses.).&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;End.&quot;</span><span class="p">,</span>
+            <span class="p">]</span>
+
+            <span class="c1"># Prepare and run test for bibcat class instance</span>
+            <span class="n">testbase</span> <span class="o">=</span> <span class="n">paper</span><span class="o">.</span><span class="n">Paper</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">keyword_objs</span><span class="o">=</span><span class="p">[</span><span class="n">params</span><span class="o">.</span><span class="n">kobj_hubble</span><span class="p">],</span> <span class="n">do_check_truematch</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">test_res</span> <span class="o">=</span> <span class="n">testbase</span><span class="o">.</span><span class="n">_split_text</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">)</span>
+            <span class="c1"># Check answer</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">answer</span><span class="p">)):</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Test answer: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Act. answer: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test_res</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span> <span class="n">answer</span><span class="p">[</span><span class="n">ii</span><span class="p">]))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">test_res</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

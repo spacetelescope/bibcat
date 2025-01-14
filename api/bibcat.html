@@ -1,0 +1,473 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat package &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="bibcat.core package" href="bibcat.core.html" />
+    <link rel="prev" title="BibCat" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">BibCat</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">bibcat package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#subpackages">Subpackages</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.html">bibcat.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.data.html">bibcat.data package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html">bibcat.llm package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.pretrained.html">bibcat.pretrained package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.tests.html">bibcat.tests package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.utils.html">bibcat.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bibcat-main-module">bibcat.main module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-bibcat.parameters">bibcat.parameters module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-bibcat">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">BibCat</a></li>
+      <li class="breadcrumb-item active">bibcat package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/bibcat.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="bibcat-package">
+<h1>bibcat package<a class="headerlink" href="#bibcat-package" title="Link to this heading"></a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="bibcat.core.html">bibcat.core package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.core.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.core.classifiers.html">bibcat.core.classifiers package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.classifiers.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.classifiers.html#bibcat-core-classifiers-ml-module">bibcat.core.classifiers.ml module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.classifiers.html#module-bibcat.core.classifiers.textdata">bibcat.core.classifiers.textdata module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.classifiers.html#module-bibcat.core.classifiers">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.core.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.core.html#module-bibcat.core.base">bibcat.core.base module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.core.html#bibcat.core.base.Base"><code class="docutils literal notranslate"><span class="pre">Base</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.core.html#module-bibcat.core.config">bibcat.core.config module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.core.html#bibcat.core.config.ddict"><code class="docutils literal notranslate"><span class="pre">ddict</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.core.html#bibcat.core.config.get_config"><code class="docutils literal notranslate"><span class="pre">get_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.core.html#bibcat.core.config.get_custom_config"><code class="docutils literal notranslate"><span class="pre">get_custom_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.core.html#bibcat.core.config.get_default_config"><code class="docutils literal notranslate"><span class="pre">get_default_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.core.html#bibcat.core.config.read_yaml"><code class="docutils literal notranslate"><span class="pre">read_yaml()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.core.html#bibcat.core.config.tuple_constructor"><code class="docutils literal notranslate"><span class="pre">tuple_constructor()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.core.html#module-bibcat.core.grammar">bibcat.core.grammar module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.core.html#bibcat.core.grammar.Grammar"><code class="docutils literal notranslate"><span class="pre">Grammar</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.html#bibcat.core.grammar.Grammar.get_modifs"><code class="docutils literal notranslate"><span class="pre">Grammar.get_modifs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.html#bibcat.core.grammar.Grammar.run_modifications"><code class="docutils literal notranslate"><span class="pre">Grammar.run_modifications()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.core.html#module-bibcat.core.keyword">bibcat.core.keyword module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.core.html#bibcat.core.keyword.Keyword"><code class="docutils literal notranslate"><span class="pre">Keyword</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.html#bibcat.core.keyword.Keyword.get_name"><code class="docutils literal notranslate"><span class="pre">Keyword.get_name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.html#bibcat.core.keyword.Keyword.identify_keyword"><code class="docutils literal notranslate"><span class="pre">Keyword.identify_keyword()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.html#bibcat.core.keyword.Keyword.replace_keyword"><code class="docutils literal notranslate"><span class="pre">Keyword.replace_keyword()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.core.html#module-bibcat.core.operator">bibcat.core.operator module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.core.html#bibcat.core.operator.Operator"><code class="docutils literal notranslate"><span class="pre">Operator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.html#bibcat.core.operator.Operator.classify"><code class="docutils literal notranslate"><span class="pre">Operator.classify()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.html#bibcat.core.operator.Operator.classify_set"><code class="docutils literal notranslate"><span class="pre">Operator.classify_set()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.html#bibcat.core.operator.Operator.process"><code class="docutils literal notranslate"><span class="pre">Operator.process()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.html#bibcat.core.operator.Operator.train_model_ML"><code class="docutils literal notranslate"><span class="pre">Operator.train_model_ML()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.core.html#module-bibcat.core.paper">bibcat.core.paper module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.core.html#bibcat.core.paper.Paper"><code class="docutils literal notranslate"><span class="pre">Paper</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.html#bibcat.core.paper.Paper.get_paragraphs"><code class="docutils literal notranslate"><span class="pre">Paper.get_paragraphs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.html#bibcat.core.paper.Paper.process_paragraphs"><code class="docutils literal notranslate"><span class="pre">Paper.process_paragraphs()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.core.html#module-bibcat.core.performance">bibcat.core.performance module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.core.html#bibcat.core.performance.Performance"><code class="docutils literal notranslate"><span class="pre">Performance</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.html#bibcat.core.performance.Performance.evaluate_performance_basic"><code class="docutils literal notranslate"><span class="pre">Performance.evaluate_performance_basic()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.html#bibcat.core.performance.Performance.evaluate_performance_uncertainty"><code class="docutils literal notranslate"><span class="pre">Performance.evaluate_performance_uncertainty()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.html#bibcat.core.performance.Performance.plot_performance_confusion_matrix"><code class="docutils literal notranslate"><span class="pre">Performance.plot_performance_confusion_matrix()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.core.html#module-bibcat.core">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="bibcat.data.html">bibcat.data package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.data.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.data.html#module-bibcat.data.build_dataset">bibcat.data.build_dataset module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.data.html#bibcat.data.build_dataset.build_dataset"><code class="docutils literal notranslate"><span class="pre">build_dataset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.data.html#bibcat.data.build_dataset.combine_datasets"><code class="docutils literal notranslate"><span class="pre">combine_datasets()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.data.html#bibcat.data.build_dataset.extract_papertext_info"><code class="docutils literal notranslate"><span class="pre">extract_papertext_info()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.data.html#bibcat.data.build_dataset.extract_papertrack_info"><code class="docutils literal notranslate"><span class="pre">extract_papertrack_info()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.data.html#bibcat.data.build_dataset.file_exists"><code class="docutils literal notranslate"><span class="pre">file_exists()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.data.html#bibcat.data.build_dataset.load_datasets"><code class="docutils literal notranslate"><span class="pre">load_datasets()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.data.html#bibcat.data.build_dataset.missing_bibcodes_in_papertext"><code class="docutils literal notranslate"><span class="pre">missing_bibcodes_in_papertext()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.data.html#bibcat.data.build_dataset.save_text_file"><code class="docutils literal notranslate"><span class="pre">save_text_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.data.html#bibcat.data.build_dataset.save_text_files"><code class="docutils literal notranslate"><span class="pre">save_text_files()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.data.html#bibcat.data.build_dataset.trim_dict"><code class="docutils literal notranslate"><span class="pre">trim_dict()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.data.html#module-bibcat.data.partition_dataset">bibcat.data.partition_dataset module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.data.html#bibcat.data.partition_dataset.generate_directory_TVT"><code class="docutils literal notranslate"><span class="pre">generate_directory_TVT()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.data.html#module-bibcat.data.streamline_dataset">bibcat.data.streamline_dataset module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.data.html#bibcat.data.streamline_dataset.load_source_dataset"><code class="docutils literal notranslate"><span class="pre">load_source_dataset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.data.html#bibcat.data.streamline_dataset.streamline_dataset"><code class="docutils literal notranslate"><span class="pre">streamline_dataset()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.data.html#module-bibcat.data">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="bibcat.llm.html">bibcat.llm package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.llm.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.llm.html#module-bibcat.llm.evaluate">bibcat.llm.evaluate module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.evaluate.check_hallucination"><code class="docutils literal notranslate"><span class="pre">check_hallucination()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.evaluate.compute_consistency"><code class="docutils literal notranslate"><span class="pre">compute_consistency()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.evaluate.evaluate_output"><code class="docutils literal notranslate"><span class="pre">evaluate_output()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.evaluate.get_human_classification"><code class="docutils literal notranslate"><span class="pre">get_human_classification()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.evaluate.group_by_mission"><code class="docutils literal notranslate"><span class="pre">group_by_mission()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.evaluate.group_by_mission_papertype"><code class="docutils literal notranslate"><span class="pre">group_by_mission_papertype()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.evaluate.identify_missions_in_text"><code class="docutils literal notranslate"><span class="pre">identify_missions_in_text()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.evaluate.prepare_output"><code class="docutils literal notranslate"><span class="pre">prepare_output()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.llm.html#module-bibcat.llm.io">bibcat.llm.io module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.io.get_file"><code class="docutils literal notranslate"><span class="pre">get_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.io.get_llm_prompt"><code class="docutils literal notranslate"><span class="pre">get_llm_prompt()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.io.get_source"><code class="docutils literal notranslate"><span class="pre">get_source()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.io.read_output"><code class="docutils literal notranslate"><span class="pre">read_output()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.io.write_output"><code class="docutils literal notranslate"><span class="pre">write_output()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.io.write_summary"><code class="docutils literal notranslate"><span class="pre">write_summary()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.llm.html#module-bibcat.llm.metrics">bibcat.llm.metrics module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.metrics.extract_eval_data"><code class="docutils literal notranslate"><span class="pre">extract_eval_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.metrics.get_roc_metrics"><code class="docutils literal notranslate"><span class="pre">get_roc_metrics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.metrics.prepare_roc_inputs"><code class="docutils literal notranslate"><span class="pre">prepare_roc_inputs()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.llm.html#module-bibcat.llm.openai">bibcat.llm.openai module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.InfoModel"><code class="docutils literal notranslate"><span class="pre">InfoModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.InfoModel.missions"><code class="docutils literal notranslate"><span class="pre">InfoModel.missions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.InfoModel.model_config"><code class="docutils literal notranslate"><span class="pre">InfoModel.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.InfoModel.notes"><code class="docutils literal notranslate"><span class="pre">InfoModel.notes</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.MissionInfo"><code class="docutils literal notranslate"><span class="pre">MissionInfo</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.MissionInfo.confidence"><code class="docutils literal notranslate"><span class="pre">MissionInfo.confidence</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.MissionInfo.mission"><code class="docutils literal notranslate"><span class="pre">MissionInfo.mission</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.MissionInfo.model_config"><code class="docutils literal notranslate"><span class="pre">MissionInfo.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.MissionInfo.papertype"><code class="docutils literal notranslate"><span class="pre">MissionInfo.papertype</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.MissionInfo.quotes"><code class="docutils literal notranslate"><span class="pre">MissionInfo.quotes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.MissionInfo.reason"><code class="docutils literal notranslate"><span class="pre">MissionInfo.reason</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.OpenAIHelper"><code class="docutils literal notranslate"><span class="pre">OpenAIHelper</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.create_assistant"><code class="docutils literal notranslate"><span class="pre">OpenAIHelper.create_assistant()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.create_vector_store"><code class="docutils literal notranslate"><span class="pre">OpenAIHelper.create_vector_store()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.get_assistant"><code class="docutils literal notranslate"><span class="pre">OpenAIHelper.get_assistant()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.get_output_key"><code class="docutils literal notranslate"><span class="pre">OpenAIHelper.get_output_key()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.get_vector_store"><code class="docutils literal notranslate"><span class="pre">OpenAIHelper.get_vector_store()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.list_assistants"><code class="docutils literal notranslate"><span class="pre">OpenAIHelper.list_assistants()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.list_vector_stores"><code class="docutils literal notranslate"><span class="pre">OpenAIHelper.list_vector_stores()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.populate_user_template"><code class="docutils literal notranslate"><span class="pre">OpenAIHelper.populate_user_template()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.send_assistant_request"><code class="docutils literal notranslate"><span class="pre">OpenAIHelper.send_assistant_request()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.send_message"><code class="docutils literal notranslate"><span class="pre">OpenAIHelper.send_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.send_structured_message"><code class="docutils literal notranslate"><span class="pre">OpenAIHelper.send_structured_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.submit_paper"><code class="docutils literal notranslate"><span class="pre">OpenAIHelper.submit_paper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.OpenAIHelper.upload_file"><code class="docutils literal notranslate"><span class="pre">OpenAIHelper.upload_file()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.classify_paper"><code class="docutils literal notranslate"><span class="pre">classify_paper()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.convert_to_classification"><code class="docutils literal notranslate"><span class="pre">convert_to_classification()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.openai.extract_response"><code class="docutils literal notranslate"><span class="pre">extract_response()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.llm.html#module-bibcat.llm.plots">bibcat.llm.plots module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.plots.confusion_matrix_plot"><code class="docutils literal notranslate"><span class="pre">confusion_matrix_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.plots.fetch_data"><code class="docutils literal notranslate"><span class="pre">fetch_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.plots.roc_plot"><code class="docutils literal notranslate"><span class="pre">roc_plot()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.llm.html#module-bibcat.llm.stats">bibcat.llm.stats module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.stats.group_by_agg"><code class="docutils literal notranslate"><span class="pre">group_by_agg()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.stats.save_evaluation_stats"><code class="docutils literal notranslate"><span class="pre">save_evaluation_stats()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.stats.save_operation_stats"><code class="docutils literal notranslate"><span class="pre">save_operation_stats()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.llm.html#bibcat.llm.stats.write_stats"><code class="docutils literal notranslate"><span class="pre">write_stats()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.llm.html#module-bibcat.llm">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="bibcat.pretrained.html">bibcat.pretrained package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.pretrained.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.pretrained.html#bibcat-pretrained-build-model-module">bibcat.pretrained.build_model module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.pretrained.html#bibcat-pretrained-classify-papers-module">bibcat.pretrained.classify_papers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.pretrained.html#bibcat-pretrained-evaluate-basic-performance-module">bibcat.pretrained.evaluate_basic_performance module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.pretrained.html#module-bibcat.pretrained.fetch_papers">bibcat.pretrained.fetch_papers module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.pretrained.html#bibcat.pretrained.fetch_papers.fetch_papers"><code class="docutils literal notranslate"><span class="pre">fetch_papers()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.pretrained.html#bibcat.pretrained.fetch_papers.get_bibcodes"><code class="docutils literal notranslate"><span class="pre">get_bibcodes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.pretrained.html#bibcat.pretrained.fetch_papers.get_data"><code class="docutils literal notranslate"><span class="pre">get_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.pretrained.html#bibcat.pretrained.fetch_papers.load_tvt_info"><code class="docutils literal notranslate"><span class="pre">load_tvt_info()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.pretrained.html#bibcat.pretrained.fetch_papers.log_summary"><code class="docutils literal notranslate"><span class="pre">log_summary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.pretrained.html#bibcat.pretrained.fetch_papers.process_text_data"><code class="docutils literal notranslate"><span class="pre">process_text_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.pretrained.html#bibcat.pretrained.fetch_papers.set_max_data"><code class="docutils literal notranslate"><span class="pre">set_max_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.pretrained.html#bibcat.pretrained.fetch_papers.shuffle_data"><code class="docutils literal notranslate"><span class="pre">shuffle_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.pretrained.html#module-bibcat.pretrained.operate_classifier">bibcat.pretrained.operate_classifier module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.pretrained.html#bibcat.pretrained.operate_classifier.operate_classifier"><code class="docutils literal notranslate"><span class="pre">operate_classifier()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.pretrained.html#module-bibcat.pretrained">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="bibcat.tests.html">bibcat.tests package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.tests.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.tests.core.html">bibcat.tests.core package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.tests.core.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.tests.core.html#module-bibcat.tests.core.test_base">bibcat.tests.core.test_base module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.tests.core.html#module-bibcat.tests.core.test_config">bibcat.tests.core.test_config module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.tests.core.html#module-bibcat.tests.core.test_grammar">bibcat.tests.core.test_grammar module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.tests.core.html#module-bibcat.tests.core.test_keyword">bibcat.tests.core.test_keyword module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.tests.core.html#bibcat-tests-core-test-ml-module">bibcat.tests.core.test_ml module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.tests.core.html#module-bibcat.tests.core.test_operator">bibcat.tests.core.test_operator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.tests.core.html#module-bibcat.tests.core.test_paper">bibcat.tests.core.test_paper module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.tests.core.html#module-bibcat.tests.core">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.tests.data.html">bibcat.tests.data package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.tests.data.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.tests.data.html#module-bibcat.tests.data.test_build_dataset">bibcat.tests.data.test_build_dataset module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.tests.data.html#module-bibcat.tests.data.test_dataset">bibcat.tests.data.test_dataset module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.tests.data.html#module-bibcat.tests.data">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.tests.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.tests.html#module-bibcat.tests.conftest">bibcat.tests.conftest module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.tests.html#bibcat.tests.conftest.pytest_sessionstart"><code class="docutils literal notranslate"><span class="pre">pytest_sessionstart()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.tests.html#bibcat.tests.conftest.reconfig"><code class="docutils literal notranslate"><span class="pre">reconfig()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.tests.html#bibcat.tests.conftest.setconfig"><code class="docutils literal notranslate"><span class="pre">setconfig()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.tests.html#bibcat.tests.conftest.setenv"><code class="docutils literal notranslate"><span class="pre">setenv()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.tests.html#bibcat-tests-test-cli-module">bibcat.tests.test_cli module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.tests.html#module-bibcat.tests">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="bibcat.utils.html">bibcat.utils package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.utils.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.utils.html#module-bibcat.utils.logger_config">bibcat.utils.logger_config module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.utils.html#bibcat.utils.logger_config.setup_logger"><code class="docutils literal notranslate"><span class="pre">setup_logger()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.utils.html#module-bibcat.utils.utils">bibcat.utils.utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.utils.html#bibcat.utils.utils.NumpyEncoder"><code class="docutils literal notranslate"><span class="pre">NumpyEncoder</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.utils.html#bibcat.utils.utils.NumpyEncoder.default"><code class="docutils literal notranslate"><span class="pre">NumpyEncoder.default()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.utils.html#bibcat.utils.utils.convert_sets"><code class="docutils literal notranslate"><span class="pre">convert_sets()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.utils.html#bibcat.utils.utils.load_json_file"><code class="docutils literal notranslate"><span class="pre">load_json_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.utils.html#bibcat.utils.utils.save_json_file"><code class="docutils literal notranslate"><span class="pre">save_json_file()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bibcat.utils.html#module-bibcat.utils">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="bibcat-main-module">
+<h2>bibcat.main module<a class="headerlink" href="#bibcat-main-module" title="Link to this heading"></a></h2>
+</section>
+<section id="module-bibcat.parameters">
+<span id="bibcat-parameters-module"></span><h2>bibcat.parameters module<a class="headerlink" href="#module-bibcat.parameters" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">title<span class="colon">:</span></dt>
+<dd class="field-odd"><p>parameters.py</p>
+</dd>
+</dl>
+<p>User-specified variables that describe, e.g., the user’s target missions (e.g., HST, JWST, TESS) and allowed classification types (e.g., science, mention, data-influenced).</p>
+<p>This module contains keyword parameters for bibcat such as MAST mission names.  It also gathers Keyword objects and classification types into lists for use by the user.  For easy reference, the Keyword class initialization parameters are noted below.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param acronyms_caseinsensitive<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of acronyms that can describe the mission; capitalization is not preserved (e.g., “HST” and “hst” are treated in the same manner).  Punctuation should be omitted (as it is handled internally within the code).</p>
+</dd>
+<dt class="field-even">type acronyms_caseinsensitive<span class="colon">:</span></dt>
+<dd class="field-even"><p>{empty list, list of strings}</p>
+</dd>
+<dt class="field-odd">param acronyms_casesensitive<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of acronyms that can describe the mission; capitalization is preserved (e.g., “STScI”).  Punctuation should be omitted (as it is handled internally within the code).</p>
+</dd>
+<dt class="field-even">type acronyms_casesensitive<span class="colon">:</span></dt>
+<dd class="field-even"><p>{empty list, list of strings}</p>
+</dd>
+<dt class="field-odd">param ambig_words<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Phrases for which the user requests false positive checks to be done against the internal database of false positives.  E.g., “Hubble” can be found in the mission phrase “Hubble Telescope” and also in the false positive (i.e., non-mission) phrase “Hubble constant”.  By specifying “Hubble” as a false positive phrase for the Hubble mission, the code knows to internally check phrases in the text with “Hubble” against the internal false positive database and procedure.</p>
+</dd>
+<dt class="field-even">type ambig_words<span class="colon">:</span></dt>
+<dd class="field-even"><p>{empty list, list of strings}</p>
+</dd>
+<dt class="field-odd">param banned_overlap<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Phrases that overlap with the target mission keywords but should not be treated as the same mission.  E.g., “Hubble Legacy Archive” can be a distinct mission from “Hubble”; therefore “Hubble Legacy Archive” is banned overlap for the Hubble mission, to avoid matching “Hubble Legacy Archive” to a Keyword instance for HST.</p>
+</dd>
+<dt class="field-even">type banned_overlap<span class="colon">:</span></dt>
+<dd class="field-even"><p>{empty list, list of strings}</p>
+</dd>
+<dt class="field-odd">param do_not_classify<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If True, text for the mission will be processed, extracted, and presented to the user, but not classified.  This can be useful for missions for which only human classification is desired.  This can also be useful for missions for which false positives are too difficult to automatically screen out (e.g., “K2”, which can be a mission and also a stellar spectral type).</p>
+</dd>
+<dt class="field-even">type do_not_classify<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+<dt class="field-odd">param do_verbose<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If True, will print statements and internal reports within applicable methods while the code is running.</p>
+</dd>
+<dt class="field-even">type do_verbose<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool = False</p>
+</dd>
+<dt class="field-odd">param keywords<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of full phrases that name the mission (e.g., “Hubble Space Telescope”).  Not case-sensitive.</p>
+</dd>
+<dt class="field-even">type keywords<span class="colon">:</span></dt>
+<dd class="field-even"><p>{empty list, list of strings}</p>
+</dd>
+</dl>
+</section>
+<section id="module-bibcat">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-bibcat" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-left" title="BibCat" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="bibcat.core.html" class="btn btn-neutral float-right" title="bibcat.core package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

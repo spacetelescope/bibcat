@@ -1,0 +1,423 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat.tests.core package &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="bibcat.tests.data package" href="bibcat.tests.data.html" />
+    <link rel="prev" title="bibcat.tests package" href="bibcat.tests.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">BibCat</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="bibcat.html">bibcat package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="bibcat.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="bibcat.core.html">bibcat.core package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.data.html">bibcat.data package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.llm.html">bibcat.llm package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.pretrained.html">bibcat.pretrained package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="bibcat.tests.html">bibcat.tests package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bibcat.utils.html">bibcat.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.html#bibcat-main-module">bibcat.main module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.html#module-bibcat.parameters">bibcat.parameters module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bibcat.html#module-bibcat">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">BibCat</a></li>
+          <li class="breadcrumb-item"><a href="bibcat.html">bibcat package</a></li>
+          <li class="breadcrumb-item"><a href="bibcat.tests.html">bibcat.tests package</a></li>
+      <li class="breadcrumb-item active">bibcat.tests.core package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/bibcat.tests.core.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="bibcat-tests-core-package">
+<h1>bibcat.tests.core package<a class="headerlink" href="#bibcat-tests-core-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-bibcat.tests.core.test_base">
+<span id="bibcat-tests-core-test-base-module"></span><h2>bibcat.tests.core.test_base module<a class="headerlink" href="#module-bibcat.tests.core.test_base" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">title<span class="colon">:</span></dt>
+<dd class="field-odd"><p>test_base.py</p>
+</dd>
+</dl>
+<p>Testing the Base class and its methods.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bibcat.tests.core.test_base.</span></span><span class="sig-name descname"><span class="pre">TestBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">methodName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'runTest'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TestCase</span></code></p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase.test__assemble_keyword_wordchunks__variety">
+<span class="sig-name descname"><span class="pre">test__assemble_keyword_wordchunks__variety</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase.test__assemble_keyword_wordchunks__variety"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase.test__assemble_keyword_wordchunks__variety" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase.test__check_importance__variety">
+<span class="sig-name descname"><span class="pre">test__check_importance__variety</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase.test__check_importance__variety"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase.test__check_importance__variety" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase.test__cleanse_text__variety">
+<span class="sig-name descname"><span class="pre">test__cleanse_text__variety</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase.test__cleanse_text__variety"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase.test__cleanse_text__variety" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase.test_check_truematch__variety1">
+<span class="sig-name descname"><span class="pre">test_check_truematch__variety1</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase.test_check_truematch__variety1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase.test_check_truematch__variety1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase.test_extract_core_from_phrase__variety">
+<span class="sig-name descname"><span class="pre">test_extract_core_from_phrase__variety</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase.test_extract_core_from_phrase__variety"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase.test_extract_core_from_phrase__variety" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase.test_is_pos_word__adjective">
+<span class="sig-name descname"><span class="pre">test_is_pos_word__adjective</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase.test_is_pos_word__adjective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase.test_is_pos_word__adjective" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase.test_is_pos_word__aux">
+<span class="sig-name descname"><span class="pre">test_is_pos_word__aux</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase.test_is_pos_word__aux"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase.test_is_pos_word__aux" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase.test_is_pos_word__directobject">
+<span class="sig-name descname"><span class="pre">test_is_pos_word__directobject</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase.test_is_pos_word__directobject"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase.test_is_pos_word__directobject" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase.test_is_pos_word__marker">
+<span class="sig-name descname"><span class="pre">test_is_pos_word__marker</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase.test_is_pos_word__marker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase.test_is_pos_word__marker" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase.test_is_pos_word__preposition">
+<span class="sig-name descname"><span class="pre">test_is_pos_word__preposition</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase.test_is_pos_word__preposition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase.test_is_pos_word__preposition" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase.test_is_pos_word__prepositionobject">
+<span class="sig-name descname"><span class="pre">test_is_pos_word__prepositionobject</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase.test_is_pos_word__prepositionobject"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase.test_is_pos_word__prepositionobject" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase.test_is_pos_word__prepositionsubject">
+<span class="sig-name descname"><span class="pre">test_is_pos_word__prepositionsubject</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase.test_is_pos_word__prepositionsubject"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase.test_is_pos_word__prepositionsubject" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase.test_is_pos_word__subject">
+<span class="sig-name descname"><span class="pre">test_is_pos_word__subject</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase.test_is_pos_word__subject"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase.test_is_pos_word__subject" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase.test_is_pos_word__useless">
+<span class="sig-name descname"><span class="pre">test_is_pos_word__useless</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase.test_is_pos_word__useless"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase.test_is_pos_word__useless" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase.test_is_pos_word__verb">
+<span class="sig-name descname"><span class="pre">test_is_pos_word__verb</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase.test_is_pos_word__verb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase.test_is_pos_word__verb" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase.test_search_text__variety">
+<span class="sig-name descname"><span class="pre">test_search_text__variety</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase.test_search_text__variety"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase.test_search_text__variety" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase.test_streamline_phrase__abbreviations">
+<span class="sig-name descname"><span class="pre">test_streamline_phrase__abbreviations</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase.test_streamline_phrase__abbreviations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase.test_streamline_phrase__abbreviations" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_base.TestBase.test_streamline_phrase__citations">
+<span class="sig-name descname"><span class="pre">test_streamline_phrase__citations</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_base.html#TestBase.test_streamline_phrase__citations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_base.TestBase.test_streamline_phrase__citations" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bibcat.tests.core.test_config">
+<span id="bibcat-tests-core-test-config-module"></span><h2>bibcat.tests.core.test_config module<a class="headerlink" href="#module-bibcat.tests.core.test_config" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_config.fakeyaml">
+<span class="sig-prename descclassname"><span class="pre">bibcat.tests.core.test_config.</span></span><span class="sig-name descname"><span class="pre">fakeyaml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tmp_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.13)"><span class="pre">Path</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Generator" title="(in Python v3.13)"><span class="pre">Generator</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.13)"><span class="pre">Path</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/bibcat/tests/core/test_config.html#fakeyaml"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_config.fakeyaml" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_config.test_get_config_nouser">
+<span class="sig-prename descclassname"><span class="pre">bibcat.tests.core.test_config.</span></span><span class="sig-name descname"><span class="pre">test_get_config_nouser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/bibcat/tests/core/test_config.html#test_get_config_nouser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_config.test_get_config_nouser" title="Link to this definition"></a></dt>
+<dd><p>test we can get the default config</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_config.test_user_config">
+<span class="sig-prename descclassname"><span class="pre">bibcat.tests.core.test_config.</span></span><span class="sig-name descname"><span class="pre">test_user_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">monkeypatch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">MonkeyPatch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fakeyaml</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/bibcat/tests/core/test_config.html#test_user_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_config.test_user_config" title="Link to this definition"></a></dt>
+<dd><p>test we can read in a custom config</p>
+</dd></dl>
+
+</section>
+<section id="module-bibcat.tests.core.test_grammar">
+<span id="bibcat-tests-core-test-grammar-module"></span><h2>bibcat.tests.core.test_grammar module<a class="headerlink" href="#module-bibcat.tests.core.test_grammar" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">title<span class="colon">:</span></dt>
+<dd class="field-odd"><p>test_grammar.py</p>
+</dd>
+</dl>
+<p>Testing the Grammar class and its methods.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_grammar.TestGrammar">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bibcat.tests.core.test_grammar.</span></span><span class="sig-name descname"><span class="pre">TestGrammar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">methodName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'runTest'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_grammar.html#TestGrammar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_grammar.TestGrammar" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TestCase</span></code></p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_grammar.TestGrammar.test__modifs__basic">
+<span class="sig-name descname"><span class="pre">test__modifs__basic</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_grammar.html#TestGrammar.test__modifs__basic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_grammar.TestGrammar.test__modifs__basic" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_grammar.TestGrammar.test__modifs__importantclause_1stperson">
+<span class="sig-name descname"><span class="pre">test__modifs__importantclause_1stperson</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_grammar.html#TestGrammar.test__modifs__importantclause_1stperson"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_grammar.TestGrammar.test__modifs__importantclause_1stperson" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_grammar.TestGrammar.test__modifs__importantclause_mission">
+<span class="sig-name descname"><span class="pre">test__modifs__importantclause_mission</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_grammar.html#TestGrammar.test__modifs__importantclause_mission"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_grammar.TestGrammar.test__modifs__importantclause_mission" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_grammar.TestGrammar.test__modifs__manyclauses">
+<span class="sig-name descname"><span class="pre">test__modifs__manyclauses</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_grammar.html#TestGrammar.test__modifs__manyclauses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_grammar.TestGrammar.test__modifs__manyclauses" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_grammar.TestGrammar.test__modifs__unimportantclause">
+<span class="sig-name descname"><span class="pre">test__modifs__unimportantclause</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_grammar.html#TestGrammar.test__modifs__unimportantclause"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_grammar.TestGrammar.test__modifs__unimportantclause" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_grammar.TestGrammar.test__modifs__unimportantconjunction">
+<span class="sig-name descname"><span class="pre">test__modifs__unimportantconjunction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_grammar.html#TestGrammar.test__modifs__unimportantconjunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_grammar.TestGrammar.test__modifs__unimportantconjunction" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bibcat.tests.core.test_keyword">
+<span id="bibcat-tests-core-test-keyword-module"></span><h2>bibcat.tests.core.test_keyword module<a class="headerlink" href="#module-bibcat.tests.core.test_keyword" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">title<span class="colon">:</span></dt>
+<dd class="field-odd"><p>test_paper.py</p>
+</dd>
+</dl>
+<p>Testing the Paper class and its methods.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_keyword.TestKeyword">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bibcat.tests.core.test_keyword.</span></span><span class="sig-name descname"><span class="pre">TestKeyword</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">methodName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'runTest'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_keyword.html#TestKeyword"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_keyword.TestKeyword" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TestCase</span></code></p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_keyword.TestKeyword.test_get_name__variety">
+<span class="sig-name descname"><span class="pre">test_get_name__variety</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_keyword.html#TestKeyword.test_get_name__variety"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_keyword.TestKeyword.test_get_name__variety" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_keyword.TestKeyword.test_is_keyword__variety">
+<span class="sig-name descname"><span class="pre">test_is_keyword__variety</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_keyword.html#TestKeyword.test_is_keyword__variety"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_keyword.TestKeyword.test_is_keyword__variety" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_keyword.TestKeyword.test_replace_keyword__variety">
+<span class="sig-name descname"><span class="pre">test_replace_keyword__variety</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_keyword.html#TestKeyword.test_replace_keyword__variety"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_keyword.TestKeyword.test_replace_keyword__variety" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="bibcat-tests-core-test-ml-module">
+<h2>bibcat.tests.core.test_ml module<a class="headerlink" href="#bibcat-tests-core-test-ml-module" title="Link to this heading"></a></h2>
+</section>
+<section id="module-bibcat.tests.core.test_operator">
+<span id="bibcat-tests-core-test-operator-module"></span><h2>bibcat.tests.core.test_operator module<a class="headerlink" href="#module-bibcat.tests.core.test_operator" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">title<span class="colon">:</span></dt>
+<dd class="field-odd"><p>test_keyword.py</p>
+</dd>
+</dl>
+<p>Testing the Keyword class and its methods.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_operator.TestOperator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bibcat.tests.core.test_operator.</span></span><span class="sig-name descname"><span class="pre">TestOperator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">methodName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'runTest'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_operator.html#TestOperator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_operator.TestOperator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TestCase</span></code></p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_operator.TestOperator.test__fetch_keyword_object__overlap">
+<span class="sig-name descname"><span class="pre">test__fetch_keyword_object__overlap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_operator.html#TestOperator.test__fetch_keyword_object__overlap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_operator.TestOperator.test__fetch_keyword_object__overlap" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bibcat.tests.core.test_paper">
+<span id="bibcat-tests-core-test-paper-module"></span><h2>bibcat.tests.core.test_paper module<a class="headerlink" href="#module-bibcat.tests.core.test_paper" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">title<span class="colon">:</span></dt>
+<dd class="field-odd"><p>test_paper.py</p>
+</dd>
+</dl>
+<p>Testing the Paper class and its methods.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_paper.TestPaper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bibcat.tests.core.test_paper.</span></span><span class="sig-name descname"><span class="pre">TestPaper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">methodName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'runTest'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_paper.html#TestPaper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_paper.TestPaper" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">TestCase</span></code></p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_paper.TestPaper.test__buffer_indices__variety">
+<span class="sig-name descname"><span class="pre">test__buffer_indices__variety</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_paper.html#TestPaper.test__buffer_indices__variety"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_paper.TestPaper.test__buffer_indices__variety" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_paper.TestPaper.test__split_text__variety">
+<span class="sig-name descname"><span class="pre">test__split_text__variety</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_paper.html#TestPaper.test__split_text__variety"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_paper.TestPaper.test__split_text__variety" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bibcat.tests.core.test_paper.TestPaper.test_processandget_paragraphs__variety">
+<span class="sig-name descname"><span class="pre">test_processandget_paragraphs__variety</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bibcat/tests/core/test_paper.html#TestPaper.test_processandget_paragraphs__variety"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bibcat.tests.core.test_paper.TestPaper.test_processandget_paragraphs__variety" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bibcat.tests.core">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-bibcat.tests.core" title="Link to this heading"></a></h2>
+<p>This module contains package tests.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="bibcat.tests.html" class="btn btn-neutral float-left" title="bibcat.tests package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="bibcat.tests.data.html" class="btn btn-neutral float-right" title="bibcat.tests.data package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

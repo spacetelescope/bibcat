@@ -1,0 +1,517 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bibcat.data.partition_dataset &mdash; bibcat .version documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=6fb1109f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bibcat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">User Configuration and Data Filepaths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quick_start.html">Quick start</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Pretrained</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../pretrained.html">Using Pretrained Models (BERT)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">LLM Prompting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../llm.html">LLM Prompting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages and Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">BibCat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bibcat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bibcat.data.partition_dataset</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bibcat.data.partition_dataset</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">:title: partition_dataset.py</span>
+
+<span class="sd">This module splits the streamlined dataset into training,</span>
+<span class="sd">validation, and testing datasets for each run for ML classifier.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bibcat.core.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">Base</span>
+
+
+<div class="viewcode-block" id="generate_directory_TVT">
+<a class="viewcode-back" href="../../../api/bibcat.data.html#bibcat.data.partition_dataset.generate_directory_TVT">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_directory_TVT</span><span class="p">(</span>
+    <span class="n">dir_data</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fraction_TVT</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">dict_texts</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">mode_TVT</span><span class="o">=</span><span class="s2">&quot;uniform&quot;</span><span class="p">,</span> <span class="n">do_shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">do_verbose</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Method: generate_directory_TVT</span>
+<span class="sd">    Purpose: !!!</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Load global variables</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">dict_texts</span>
+    <span class="n">name_folderTVT</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">folders_TVT</span><span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">],</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">folders_TVT</span><span class="p">[</span><span class="s2">&quot;validate&quot;</span><span class="p">],</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">folders_TVT</span><span class="p">[</span><span class="s2">&quot;test&quot;</span><span class="p">],</span>
+    <span class="p">]</span>
+
+    <span class="n">num_TVT</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">name_folderTVT</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">num_TVT</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fraction_TVT</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Err: fraction_TVT (</span><span class="si">{0}</span><span class="s2">) needs </span><span class="si">{1}</span><span class="s2"> fractions.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fraction_TVT</span><span class="p">,</span> <span class="n">num_TVT</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">do_verbose</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">do_verbose</span> <span class="o">=</span> <span class="n">Base</span><span class="o">.</span><span class="n">_get_info</span><span class="p">(</span><span class="s2">&quot;do_verbose&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Set random seed, if requested</span>
+    <span class="k">if</span> <span class="n">do_shuffle</span><span class="p">:</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+    <span class="c1"># Print some notes</span>
+    <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&gt; Running generate_directory_TVT() with fraction_TVT = </span><span class="si">{</span><span class="n">fraction_TVT</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">do_shuffle</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Random seed set to: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">seed</span><span class="p">))</span>
+
+    <span class="c1"># Load all unique paper identifiers (the bibcodes) from across texts</span>
+    <span class="n">unique_bibcodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">([</span><span class="n">dataset</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;bibcode&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">])</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="c1"># Print some notes</span>
+    <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Dataset contains </span><span class="si">{0}</span><span class="s2"> papers with </span><span class="si">{1}</span><span class="s2"> unique bibcodes.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_bibcodes</span><span class="p">)))</span>
+
+    <span class="c1"># Load all unique classifs across all texts</span>
+    <span class="n">count_classes</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">Counter</span><span class="p">([</span><span class="n">dataset</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;class&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">])</span>
+    <span class="n">unique_classes</span> <span class="o">=</span> <span class="n">count_classes</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="c1"># Print some notes</span>
+    <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Class breakdown of given dataset:</span><span class="se">\n</span><span class="si">{0}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">count_classes</span><span class="p">))</span>
+
+    <span class="c1"># Invert dataset so that classifs are stored under bibcode keys</span>
+    <span class="n">dict_bibcode_classifs</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">unique_bibcodes</span><span class="p">}</span>
+    <span class="n">dict_bibcode_textids</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">unique_bibcodes</span><span class="p">}</span>
+    <span class="k">for</span> <span class="n">curr_key</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">:</span>
+        <span class="c1"># curr_id = curr_key</span>
+        <span class="n">curr_classif</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">curr_key</span><span class="p">][</span><span class="s2">&quot;class&quot;</span><span class="p">]</span>
+        <span class="n">curr_bibcode</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">curr_key</span><span class="p">][</span><span class="s2">&quot;bibcode&quot;</span><span class="p">]</span>
+        <span class="c1"># Store id for this bibcode</span>
+        <span class="n">dict_bibcode_textids</span><span class="p">[</span><span class="n">curr_bibcode</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_key</span><span class="p">)</span>
+        <span class="c1"># Store this classif for this bibcode, if not already stored</span>
+        <span class="k">if</span> <span class="n">curr_classif</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dict_bibcode_classifs</span><span class="p">[</span><span class="n">curr_bibcode</span><span class="p">]:</span>
+            <span class="n">dict_bibcode_classifs</span><span class="p">[</span><span class="n">curr_bibcode</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_classif</span><span class="p">)</span>  <span class="c1"># Store</span>
+
+    <span class="c1"># Record the number of processed text ids for later</span>
+    <span class="n">num_textids</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">dict_bibcode_textids</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">unique_bibcodes</span><span class="p">])</span>
+
+    <span class="c1"># Print some notes</span>
+    <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Given dataset inverted. Bibcode count: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dict_bibcode_classifs</span><span class="p">)))</span>
+
+    <span class="c1"># Label bibcodes with representative classif</span>
+    <span class="c1"># Separate bibcodes based on number of unique associated classifs</span>
+    <span class="n">all_bibcodes_oneclassif</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">key1</span><span class="p">:</span> <span class="p">[</span><span class="n">key2</span> <span class="k">for</span> <span class="n">key2</span> <span class="ow">in</span> <span class="n">unique_bibcodes</span> <span class="k">if</span> <span class="p">(</span><span class="n">dict_bibcode_classifs</span><span class="p">[</span><span class="n">key2</span><span class="p">]</span> <span class="o">==</span> <span class="p">[</span><span class="n">key1</span><span class="p">])]</span> <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">unique_classes</span>
+    <span class="p">}</span>
+    <span class="n">all_bibcodes_multiclassif</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">unique_bibcodes</span> <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dict_bibcode_classifs</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)]</span>
+
+    <span class="c1"># Print some notes</span>
+    <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Number of processed text ids: </span><span class="si">{2}</span><span class="s2">&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Number of bibcodes with single unique classif: </span><span class="si">{0}</span><span class="s2">&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Number of bibcodes with multiple classifs: </span><span class="si">{1}</span><span class="s2">&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Number of bibcodes with multiple text ids: </span><span class="si">{3}</span><span class="s2">&quot;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="nb">sum</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">all_bibcodes_oneclassif</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">unique_classes</span><span class="p">]),</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">all_bibcodes_multiclassif</span><span class="p">),</span>
+                <span class="n">num_textids</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">([</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">dict_bibcode_textids</span> <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dict_bibcode_textids</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)]),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Throw an error if separated bibcode count does not equal original count</span>
+    <span class="n">tmp_check</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">all_bibcodes_oneclassif</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">unique_classes</span><span class="p">])</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_bibcodes_multiclassif</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tmp_check</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_bibcodes</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Err: Invalid separation of bibcodes occurred.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2"> + </span><span class="si">{1}</span><span class="s2"> != </span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="nb">len</span><span class="p">([</span><span class="n">all_bibcodes_oneclassif</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">unique_classes</span><span class="p">]),</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">all_bibcodes_multiclassif</span><span class="p">),</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">unique_bibcodes</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Shuffle the list of multi-classif bibcodes, if requested</span>
+    <span class="k">if</span> <span class="n">do_shuffle</span><span class="p">:</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">all_bibcodes_multiclassif</span><span class="p">)</span>
+
+    <span class="c1"># Partition multi-classif bibcodes into representative classif lists</span>
+    <span class="n">all_bibcodes_partitioned_lists</span> <span class="o">=</span> <span class="n">all_bibcodes_oneclassif</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">all_bibcodes_partitioned_counts</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">key</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_bibcodes_partitioned_lists</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">unique_classes</span>
+    <span class="p">}</span>  <span class="c1"># Starting count of bibcodes per repr.clf.</span>
+
+    <span class="c1"># Iterate through multi-classif bibcodes</span>
+    <span class="k">for</span> <span class="n">curr_bibcode</span> <span class="ow">in</span> <span class="n">all_bibcodes_multiclassif</span><span class="p">:</span>
+        <span class="n">curr_classifs</span> <span class="o">=</span> <span class="n">dict_bibcode_classifs</span><span class="p">[</span><span class="n">curr_bibcode</span><span class="p">]</span>
+        <span class="c1"># Determine which classif has least number of bibcodes so far</span>
+        <span class="n">curr_counts</span> <span class="o">=</span> <span class="p">[</span><span class="n">all_bibcodes_partitioned_counts</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">curr_classifs</span><span class="p">]</span>  <span class="c1"># Current bibcode counts</span>
+        <span class="c1"># Store this bibcode under representative classif with min. count</span>
+        <span class="n">ind_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">curr_counts</span><span class="p">)</span>  <span class="c1"># Index of classif with min. count</span>
+        <span class="n">min_classif</span> <span class="o">=</span> <span class="n">curr_classifs</span><span class="p">[</span><span class="n">ind_min</span><span class="p">]</span>
+        <span class="n">all_bibcodes_partitioned_lists</span><span class="p">[</span><span class="n">min_classif</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_bibcode</span><span class="p">)</span>  <span class="c1"># Append bibc.</span>
+        <span class="c1"># Update count of this representative classif</span>
+        <span class="n">all_bibcodes_partitioned_counts</span><span class="p">[</span><span class="n">min_classif</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># Throw an error if any bibcodes are missing/duplicated in partition</span>
+    <span class="n">tmp_check</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">all_bibcodes_partitioned_counts</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+    <span class="k">if</span> <span class="n">tmp_check</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_bibcodes</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Err: Bibcode count does not match original&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; bibcodes.</span><span class="se">\n</span><span class="si">{0}</span><span class="se">\n</span><span class="s2">vs. </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tmp_check</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_bibcodes</span><span class="p">))</span>
+        <span class="p">)</span>
+    <span class="n">tmp_check</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">item</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_bibcodes_partitioned_lists</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">all_bibcodes_partitioned_lists</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    <span class="p">]</span>  <span class="c1"># Part. bibc.</span>
+
+    <span class="k">if</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">tmp_check</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">unique_bibcodes</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Err: Bibcode partitioning does not match original&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; bibcodes.</span><span class="se">\n</span><span class="si">{0}</span><span class="se">\n</span><span class="s2">vs. </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tmp_check</span><span class="p">,</span> <span class="n">unique_bibcodes</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Print some notes</span>
+    <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Bibcode partitioning of representative classifs.:</span><span class="se">\n</span><span class="si">{0}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">all_bibcodes_partitioned_counts</span><span class="p">))</span>
+
+    <span class="c1"># Split bibcode counts into TVT sets: training, validation, testing =TVT</span>
+    <span class="n">valid_modes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;uniform&quot;</span><span class="p">,</span> <span class="s2">&quot;available&quot;</span><span class="p">]</span>
+    <span class="n">fraction_TVT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">fraction_TVT</span><span class="p">)</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="n">fraction_TVT</span><span class="p">)</span>  <span class="c1"># Normalize</span>
+    <span class="c1"># For mode where training sets should be uniform in size</span>
+    <span class="k">if</span> <span class="n">mode_TVT</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;uniform&quot;</span><span class="p">:</span>
+        <span class="n">min_count</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">all_bibcodes_partitioned_counts</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="n">dict_split</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">key</span><span class="p">:</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">fraction_TVT</span> <span class="o">*</span> <span class="n">min_count</span><span class="p">)))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">unique_classes</span>
+        <span class="p">}</span>  <span class="c1"># Partition per classif per TVT</span>
+        <span class="c1"># Update split to send remaining bibcodes into testing datasets</span>
+        <span class="k">for</span> <span class="n">curr_key</span> <span class="ow">in</span> <span class="n">unique_classes</span><span class="p">:</span>
+            <span class="n">curr_max</span> <span class="o">=</span> <span class="n">all_bibcodes_partitioned_counts</span><span class="p">[</span><span class="n">curr_key</span><span class="p">]</span>
+            <span class="n">curr_used</span> <span class="o">=</span> <span class="n">dict_split</span><span class="p">[</span><span class="n">curr_key</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">dict_split</span><span class="p">[</span><span class="n">curr_key</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">dict_split</span><span class="p">[</span><span class="n">curr_key</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">curr_max</span> <span class="o">-</span> <span class="n">curr_used</span>
+
+    <span class="c1"># For mode where training sets should use fraction of data available</span>
+    <span class="k">elif</span> <span class="n">mode_TVT</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;available&quot;</span><span class="p">:</span>
+        <span class="c1"># max_count = max(all_bibcodes_partitioned_counts.values())</span>
+        <span class="n">dict_split</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">key</span><span class="p">:</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">fraction_TVT</span> <span class="o">*</span> <span class="n">all_bibcodes_partitioned_counts</span><span class="p">[</span><span class="n">key</span><span class="p">])))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">unique_classes</span>
+        <span class="p">}</span>  <span class="c1"># Partition per class per TVT</span>
+
+    <span class="c1"># Otherwise, throw error if mode not recognized</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="p">(</span><span class="s2">&quot;Err: The given mode for generating the TVT&quot;</span> <span class="o">+</span> <span class="s2">&quot; directory </span><span class="si">{0}</span><span class="s2"> is invalid. Valid modes are: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">mode_TVT</span><span class="p">,</span> <span class="n">valid_modes</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Print some notes</span>
+    <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fractions given for TVT split: </span><span class="si">{0}</span><span class="se">\n</span><span class="s2">Mode requested: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fraction_TVT</span><span class="p">,</span> <span class="n">mode_TVT</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Target TVT partition for bibcodes:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">curr_key</span> <span class="ow">in</span> <span class="n">unique_classes</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">curr_key</span><span class="p">,</span> <span class="n">dict_split</span><span class="p">[</span><span class="n">curr_key</span><span class="p">]))</span>
+
+    <span class="c1"># Verify splits add up to original file count</span>
+    <span class="k">for</span> <span class="n">curr_key</span> <span class="ow">in</span> <span class="n">unique_classes</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">all_bibcodes_partitioned_counts</span><span class="p">[</span><span class="n">curr_key</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">dict_split</span><span class="p">[</span><span class="n">curr_key</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Err: Split did not use all data available!&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Prepare indices for extracting TVT sets per class</span>
+    <span class="n">dict_bibcodes_perTVT</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_TVT</span><span class="p">)]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">unique_classes</span><span class="p">}</span>
+    <span class="k">for</span> <span class="n">curr_key</span> <span class="ow">in</span> <span class="n">unique_classes</span><span class="p">:</span>
+        <span class="c1"># Fetch bibcodes represented by this class</span>
+        <span class="n">curr_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">all_bibcodes_partitioned_lists</span><span class="p">[</span><span class="n">curr_key</span><span class="p">])</span>
+
+        <span class="c1"># Fetch available indices to select these bibcodes</span>
+        <span class="n">curr_inds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">all_bibcodes_partitioned_counts</span><span class="p">[</span><span class="n">curr_key</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># Shuffle, if requested</span>
+        <span class="k">if</span> <span class="n">do_shuffle</span><span class="p">:</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">curr_inds</span><span class="p">)</span>
+
+        <span class="c1"># Split out the bibcodes</span>
+        <span class="n">i_start</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Accumulated place within overarching index array</span>
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_TVT</span><span class="p">):</span>  <span class="c1"># Iterate through TVT</span>
+            <span class="n">i_end</span> <span class="o">=</span> <span class="n">i_start</span> <span class="o">+</span> <span class="n">dict_split</span><span class="p">[</span><span class="n">curr_key</span><span class="p">][</span><span class="n">ii</span><span class="p">]</span>  <span class="c1"># Ending point</span>
+            <span class="n">dict_bibcodes_perTVT</span><span class="p">[</span><span class="n">curr_key</span><span class="p">][</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">curr_list</span><span class="p">[</span><span class="n">curr_inds</span><span class="p">[</span><span class="n">i_start</span><span class="p">:</span><span class="n">i_end</span><span class="p">]]</span>
+            <span class="n">i_start</span> <span class="o">=</span> <span class="n">i_end</span>  <span class="c1"># Update latest starting place in array</span>
+
+    <span class="c1"># Throw an error if any bibcodes not accounted for</span>
+    <span class="n">tmp_check</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">item2</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">dict_bibcodes_perTVT</span> <span class="k">for</span> <span class="n">item1</span> <span class="ow">in</span> <span class="n">dict_bibcodes_perTVT</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">item2</span> <span class="ow">in</span> <span class="n">item1</span>
+    <span class="p">]</span>  <span class="c1"># All bibcodes used</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">tmp_check</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">unique_bibcodes</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Err: Split bibcodes do not match up with&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; original bibcodes:</span><span class="se">\n\n</span><span class="si">{0}</span><span class="se">\n</span><span class="s2">vs.</span><span class="se">\n</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">tmp_check</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">unique_bibcodes</span><span class="p">))</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Print some notes</span>
+    <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Indices split per bibcode, per TVT. Shuffling=</span><span class="si">{0}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">do_shuffle</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Number of indices per class, per TVT:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">curr_key</span> <span class="ow">in</span> <span class="n">unique_classes</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">curr_key</span><span class="p">,</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">dict_bibcodes_perTVT</span><span class="p">[</span><span class="n">curr_key</span><span class="p">]]))</span>
+
+    <span class="c1"># Build new directories to hold TVT (or throw error if exists)</span>
+    <span class="c1"># Build model directory, if does not already exist</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dir_data</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">dir_data</span><span class="p">)</span>
+
+    <span class="c1"># Verify TVT directories do not already exist</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_data</span><span class="p">,</span> <span class="n">item</span><span class="p">))</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">name_folderTVT</span><span class="p">]):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Err: TVT directories exist in model directory&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; and will not be overwritten. Please remove or&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; change the given model directory (dir_data).&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Current dir_data: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dir_data</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Otherwise, make the directories</span>
+    <span class="k">for</span> <span class="n">curr_folder</span> <span class="ow">in</span> <span class="n">name_folderTVT</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">paths</span><span class="o">.</span><span class="n">partitioned</span><span class="p">,</span> <span class="n">dir_data</span><span class="p">,</span> <span class="n">curr_folder</span><span class="p">))</span>
+        <span class="c1"># Iterate through classes and create subfolder per class</span>
+        <span class="k">for</span> <span class="n">curr_key</span> <span class="ow">in</span> <span class="n">unique_classes</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">paths</span><span class="o">.</span><span class="n">partitioned</span><span class="p">,</span> <span class="n">dir_data</span><span class="p">,</span> <span class="n">curr_folder</span><span class="p">,</span> <span class="n">curr_key</span><span class="p">))</span>
+
+    <span class="c1"># Print some notes</span>
+    <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Created new directories for TVT files.</span><span class="se">\n</span><span class="s2">Stored in: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dir_data</span><span class="p">))</span>
+
+    <span class="c1"># Save texts to .txt files within class directories</span>
+    <span class="n">dict_info</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">saved_filenames</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_textids</span>
+    <span class="n">used_bibcodes</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_bibcodes</span><span class="p">)</span>
+    <span class="n">used_textids</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">num_textids</span>
+    <span class="n">all_texts_partitioned_counts</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">key1</span><span class="p">:</span> <span class="p">{</span><span class="n">key2</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">key2</span> <span class="ow">in</span> <span class="n">unique_classes</span><span class="p">}</span> <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">name_folderTVT</span>
+    <span class="p">}</span>  <span class="c1"># Count of texts per TVT, per classif</span>
+
+    <span class="c1"># Iterate through classes</span>
+    <span class="n">i_track</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">i_bibcode</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">curr_key</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">repr_key</span> <span class="ow">in</span> <span class="n">unique_classes</span><span class="p">:</span>
+        <span class="c1"># Save each text to assigned TVT</span>
+        <span class="k">for</span> <span class="n">ind_TVT</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_TVT</span><span class="p">):</span>  <span class="c1"># Iterate through TVT</span>
+            <span class="c1"># Iterate through bibcodes assigned to this TVT</span>
+            <span class="k">for</span> <span class="n">curr_bibcode</span> <span class="ow">in</span> <span class="n">dict_bibcodes_perTVT</span><span class="p">[</span><span class="n">repr_key</span><span class="p">][</span><span class="n">ind_TVT</span><span class="p">]:</span>
+                <span class="c1"># Throw error if used bibcode</span>
+                <span class="k">if</span> <span class="n">curr_bibcode</span> <span class="ow">in</span> <span class="n">used_bibcodes</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Err: Used bibcode </span><span class="si">{0}</span><span class="s2"> in </span><span class="si">{1}</span><span class="s2">:TVT=</span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">curr_bibcode</span><span class="p">,</span> <span class="n">repr_key</span><span class="p">,</span> <span class="n">ind_TVT</span><span class="p">))</span>
+
+                <span class="c1"># Record assigned TVT and representative classif for bibcode</span>
+                <span class="n">dict_info</span><span class="p">[</span><span class="n">curr_bibcode</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;repr_class&quot;</span><span class="p">:</span> <span class="n">repr_key</span><span class="p">,</span>
+                    <span class="s2">&quot;folder_TVT&quot;</span><span class="p">:</span> <span class="n">name_folderTVT</span><span class="p">[</span><span class="n">ind_TVT</span><span class="p">],</span>
+                    <span class="s2">&quot;storage&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                <span class="p">}</span>
+
+                <span class="c1"># Iterate through texts associated with this bibcode</span>
+                <span class="k">for</span> <span class="n">curr_textid</span> <span class="ow">in</span> <span class="n">dict_bibcode_textids</span><span class="p">[</span><span class="n">curr_bibcode</span><span class="p">]:</span>
+                    <span class="n">curr_data</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">curr_textid</span><span class="p">]</span>  <span class="c1"># Data for this text</span>
+                    <span class="n">act_key</span> <span class="o">=</span> <span class="n">curr_data</span><span class="p">[</span><span class="s2">&quot;class&quot;</span><span class="p">]</span>  <span class="c1"># Actual class of text id</span>
+                    <span class="n">curr_filename</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">_</span><span class="si">{1}</span><span class="s2">_</span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="n">act_key</span><span class="p">,</span> <span class="n">curr_textid</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">curr_data</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># Add id</span>
+                        <span class="n">curr_filename</span> <span class="o">+=</span> <span class="s2">&quot;_</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">curr_data</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">])</span>
+
+                    <span class="c1"># Throw error if used text id</span>
+                    <span class="k">if</span> <span class="n">curr_textid</span> <span class="ow">in</span> <span class="n">used_textids</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Err: Used text id: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">curr_textid</span><span class="p">))</span>
+
+                    <span class="c1"># Throw error if not unique filename</span>
+                    <span class="k">if</span> <span class="n">curr_filename</span> <span class="ow">in</span> <span class="n">saved_filenames</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Err: Non-unique filename: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">curr_filename</span><span class="p">))</span>
+
+                    <span class="c1"># Write this text to new file</span>
+                    <span class="n">curr_filebase</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                        <span class="n">dir_data</span><span class="p">,</span> <span class="n">name_folderTVT</span><span class="p">[</span><span class="n">ind_TVT</span><span class="p">],</span> <span class="n">act_key</span>
+                    <span class="p">)</span>  <span class="c1"># TVT path; use actual class!</span>
+                    <span class="n">Base</span><span class="o">.</span><span class="n">_write_text</span><span class="p">(</span>
+                        <span class="n">text</span><span class="o">=</span><span class="n">curr_data</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">],</span> <span class="n">filepath</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">curr_filebase</span><span class="p">,</span> <span class="p">(</span><span class="n">curr_filename</span> <span class="o">+</span> <span class="s2">&quot;.txt&quot;</span><span class="p">))</span>
+                    <span class="p">)</span>
+
+                    <span class="c1"># Store record of this storage in info dictionary</span>
+                    <span class="n">dict_info</span><span class="p">[</span><span class="n">curr_bibcode</span><span class="p">][</span><span class="s2">&quot;storage&quot;</span><span class="p">][</span><span class="n">curr_textid</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;filename&quot;</span><span class="p">:</span> <span class="n">curr_filename</span><span class="p">,</span>
+                        <span class="s2">&quot;class&quot;</span><span class="p">:</span> <span class="n">act_key</span><span class="p">,</span>
+                        <span class="s2">&quot;mission&quot;</span><span class="p">:</span> <span class="n">dataset</span><span class="p">[</span><span class="n">curr_textid</span><span class="p">][</span><span class="s2">&quot;mission&quot;</span><span class="p">],</span>
+                    <span class="p">}</span>
+
+                    <span class="c1"># Increment count of texts in this classif. and TVT dir.</span>
+                    <span class="n">all_texts_partitioned_counts</span><span class="p">[</span><span class="n">name_folderTVT</span><span class="p">[</span><span class="n">ind_TVT</span><span class="p">]][</span><span class="n">act_key</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">used_textids</span><span class="p">[</span><span class="n">i_track</span><span class="p">]</span> <span class="o">=</span> <span class="n">curr_textid</span>  <span class="c1"># Check off text id</span>
+                    <span class="n">saved_filenames</span><span class="p">[</span><span class="n">i_track</span><span class="p">]</span> <span class="o">=</span> <span class="n">curr_filename</span>  <span class="c1"># Check off file</span>
+                    <span class="n">i_track</span> <span class="o">+=</span> <span class="mi">1</span>  <span class="c1"># Increment place in list of filenames</span>
+
+            <span class="c1"># Store and increment count of used bibcodes</span>
+            <span class="n">used_bibcodes</span><span class="p">[</span><span class="n">i_bibcode</span><span class="p">]</span> <span class="o">=</span> <span class="n">curr_bibcode</span>
+            <span class="n">i_bibcode</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># Throw an error if any bibcodes not accounted for in partitioning</span>
+    <span class="n">tmp_check</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dict_info</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tmp_check</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_bibcodes</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Err: Count of bibcodes does not match original&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; bibcode count.</span><span class="se">\n</span><span class="si">{0}</span><span class="s2"> vs. </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tmp_check</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_bibcodes</span><span class="p">))</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Throw an error if any text ids not accounted for in partitioning</span>
+    <span class="n">tmp_check</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">sum</span><span class="p">(</span><span class="n">all_texts_partitioned_counts</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_texts_partitioned_counts</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">tmp_check</span> <span class="o">!=</span> <span class="n">num_textids</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Err: Count of text ids does not match original&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; text id count.</span><span class="se">\n</span><span class="si">{0}</span><span class="se">\n</span><span class="s2">vs. </span><span class="si">{1}</span><span class="se">\n</span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tmp_check</span><span class="p">,</span> <span class="n">num_textids</span><span class="p">,</span> <span class="n">all_texts_partitioned_counts</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Throw an error if not enough filenames saved</span>
+    <span class="k">if</span> <span class="kc">None</span> <span class="ow">in</span> <span class="n">saved_filenames</span><span class="p">:</span>
+        <span class="n">tmp_check</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">saved_filenames</span> <span class="k">if</span> <span class="p">(</span><span class="n">item</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)])</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Err: Only subset of filenames saved: </span><span class="si">{0}</span><span class="s2"> vs </span><span class="si">{1}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tmp_check</span><span class="p">,</span> <span class="n">num_textids</span><span class="p">))</span>
+
+    <span class="c1"># Print some notes</span>
+    <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Files saved to new TVT directories.&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Final partition of texts across classes and TVT dirs.:</span><span class="se">\n</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">all_texts_partitioned_counts</span><span class="p">))</span>
+
+    <span class="c1"># Save the dictionary of TVT bibcode partitioning to its own file</span>
+    <span class="c1"># tmp_filesave = config.path_TVTinfo</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">paths</span><span class="o">.</span><span class="n">TVTinfo</span><span class="p">,</span> <span class="n">dict_info</span><span class="p">)</span>
+    <span class="c1"># Print some notes</span>
+    <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Dictionary of TVT bibcode partitioning info saved at: </span><span class="si">{0}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">paths</span><span class="o">.</span><span class="n">TVTinfo</span><span class="p">))</span>
+
+    <span class="c1"># Verify that count of saved .txt files adds up to original data count</span>
+    <span class="k">for</span> <span class="n">curr_key</span> <span class="ow">in</span> <span class="n">unique_classes</span><span class="p">:</span>
+        <span class="c1"># Count items in this class across TVT directories</span>
+        <span class="n">curr_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="nb">len</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">item2</span> <span class="k">for</span> <span class="n">item2</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_data</span><span class="p">,</span> <span class="n">item1</span><span class="p">,</span> <span class="n">curr_key</span><span class="p">))</span> <span class="k">if</span> <span class="p">(</span><span class="n">item2</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.txt&quot;</span><span class="p">))]</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">item1</span> <span class="ow">in</span> <span class="n">name_folderTVT</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Verify count</span>
+        <span class="k">if</span> <span class="n">curr_count</span> <span class="o">!=</span> <span class="n">count_classes</span><span class="p">[</span><span class="n">curr_key</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Err: Unequal class count in </span><span class="si">{0}</span><span class="s2">!</span><span class="se">\n</span><span class="si">{1}</span><span class="s2"> vs </span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">curr_key</span><span class="p">,</span> <span class="n">curr_count</span><span class="p">,</span> <span class="n">count_classes</span><span class="p">[</span><span class="n">curr_key</span><span class="p">])</span>
+            <span class="p">)</span>
+        <span class="c1">#</span>
+    <span class="c1">#</span>
+
+    <span class="c1"># Exit the method</span>
+    <span class="k">if</span> <span class="n">do_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Run of generate_directory_TVT() complete.</span><span class="se">\n</span><span class="s2">---</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, MAST at STScI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
