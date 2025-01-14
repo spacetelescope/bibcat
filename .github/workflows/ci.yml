@@ -62,3 +62,8 @@ jobs:
       - name: Run tests
         # run: pytest --ignore=bibcat/tests/llm/
         run: pytest bibcat/tests/llm/
+
+      - name: Build documentation
+        run: |
+          cd docs
+          make html

@@ -10,7 +10,7 @@ There are two main branches for bibcat work:
 
 ## Installation
 ### Required packages and versions
-- tensorflow-macos 2.15.1
+- tensorflow-macos 2.15.0
 - tensorflow-metal 1.1.0
 - tensorflow 2.15.0
 - tensorflow-hub 0.16.1
@@ -28,7 +28,11 @@ conda activate env_name
 python -m spacy download en_core_web_sm
 ```
 #### Extra required pacakge for Apple M1/M2/M3 chip
-For Apple Silicon chips, to utilize your GPU, you install `tensorflow-metal`.  You can run `pip install tensorflow-metal`.  To verify if tensorflow is set up to utilize your GPU, do the following:
+For Apple Silicon chips, to utilize your GPU, you should install `tensorflow-metal`.
+```
+pip install tensorflow-metal
+```
+ To verify if tensorflow is set up to utilize your GPU, do the following:
 ```
 import tensorflow as tf
 tf.config.list_physical_devices('GPU')
@@ -38,7 +42,7 @@ You should see the following output: `[PhysicalDevice(name='/physical_device:GPU
 #### Install `tensorflow-text`
 - You need to install this package manually. Follow the instruction order below.
 
-- To install `tensorflow-text`, the command `pip install -U "tensorflow-text"` does not work due to some package version conflict (as of sometime 2024, need to revisit). You need to download the latest release library compatible with your system from [the Tensorflow library link.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases); For instance, if you have MacOSX with python 3.10, download [this library.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl)
+- To install `tensorflow-text`, the command `pip install -U "tensorflow-text"` **does not work** due to some package version conflict (as of sometime 2024, need to revisit). You need to download the latest release library compatible with your system from [the Tensorflow library link.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases); For instance, if you have MacOSX with python 3.10, download [this library.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl)
 - Then `pip install /path-to-download/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl`
 
 
