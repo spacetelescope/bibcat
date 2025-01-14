@@ -14,9 +14,9 @@ Build The Dataset
 Using Pretrained Models (BERT flavors)
 --------------------------------------
 
-You can classify papers using the pretrained models like `BERT` or `RoBERTa`. Please see the following [Quick Start Guide using Pretrained Models](bibcat/pretrained/PRETRAINED.md) to get started.
+You can classify papers using the pretrained models like `BERT` or `RoBERTa`. Please see the :doc:`pretrained` to get started.
 
 Using LLM Prompting Method
 ------------------------------
 
-You can submit paper content to OpenAI's gpt models.  Please see the following [Quick Start Guide using LLM Prompting](bibcat/llm/README.md) to get started.
+You can submit paper content to OpenAI's gpt models.  Please see the :doc:`llm` to get started.
