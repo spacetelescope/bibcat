@@ -9,6 +9,7 @@ dependencies:
   - pip
   - pip:
     - click==8.1.7
+    - enchant==0.0.1
     - nltk=3.8.1
     - spacy==3.7.2
     - tensorflow==2.15.0
@@ -29,3 +30,5 @@ dependencies:
     - sphinx-astropy==1.9.1
     - sphinx-automodapi==0.18.0
     - sphinx-rtd-theme==3.0.2
+    - sphinx-copybutton-0.5.2
+    - sphinxcontrib-spelling-8.0.1

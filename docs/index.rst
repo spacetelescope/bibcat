@@ -10,12 +10,20 @@ This is the documentation for BibCat.
    :caption: GETTING STARTED
 
    installation
+   configuration
+   quick_start
 
-Pretrained
-==========
+.. toctree::
+   :maxdepth: 3
+   :caption: Pretrained
 
-LLM Prompting
-=============
+   pretrained
+
+.. toctree::
+   :maxdepth: 3
+   :caption: LLM Prompting
+
+   llm
 
 .. toctree::
    :maxdepth: 3

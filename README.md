@@ -14,6 +14,7 @@ There are two main branches for bibcat work:
 - tensorflow-hub 0.16.1
 - tensorflow-text 2.15.0
 - See more packages found in the [conda evn file](envs/bibcat_py310.yml).
+- A few packages required for Apple silicon chip computers should be installed manually; see below.
 
 ### Conda env installation
 Change `env_name` below with whatever you want to name the environment.
@@ -110,6 +111,14 @@ output:
 ### When testing with pytest or unittest
 
 For testing, you need to install the extra test dependencies.  You do this with `pip install -e ".[test]"`.  The test suite is located in `tests/`. We can recommend using `pytest` for running tests.  Navigate to `/tests/` and run `pytest`, or for extra verbosity run `pytest -vs`. `pytest` can find and run tests written with pytest or unittests.
+
+### Building the documentation
+Sphinx will create the documentation automatically using the module docstrings. To build it, move to `docs/` and run
+
+```shell
+cd docs
+make html
+```
 
 ## Quick start
 
