@@ -5,17 +5,17 @@
 # This file does only contain a selection of the most common options. For a
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
-from bibcat import __version__
 
 # -- Project information -----------------------------------------------------
 
 project = "bibcat"
-copyright = "2022, Jamila Pegues, Jinmi Yoon, Brian Cherinka"
-author = "Jamila Pegues, Jinmi Yoon, Brian Cherinka"
+copyright = "2022, MAST at STScI"
+author = "MAST staff"
 
 # The full version, including alpha/beta/rc tags
 
-release = __version__
+# release = __version__
+release = ".version"
 
 # -- General configuration ---------------------------------------------------
 
@@ -60,7 +60,7 @@ intersphinx_mapping = {"python": ("https://docs.python.org/", None)}
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = "alabaster"
+html_theme = "sphinx_rtd_theme"  # "bootstrap-astropy" # "alabaster"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

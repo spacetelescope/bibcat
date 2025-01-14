@@ -24,8 +24,11 @@ dependencies = [
   "click >= 8.1.0",
   "spacy >= 3.7.2 ",
   "nltk >= 3.8.1 ",
+  "tensorflow-macos==2.15.1",
+  "tensorflow-metal==1.1.1",
   "tensorflow >=2.15.0",
-  "tensorflow-text >=2.15.0",
+  "tensorflow-hub==0.16.1",
+  # "tensorflow-text >=2.15.0", # this needs to be installed manually; see the README.md
   "deepmerge >=1.1.1",
   "pandas >= 2.1.4",
   "openai >= 1.40.0",
@@ -45,14 +48,15 @@ dev = [
     "ruff >= 0.8.2",
 ]
 test = [
-    "pytest",
-    "pytest-mock",
+    "pytest==8.2.1",
     "pytest-doctestplus",
+    "pytest-mock>=3.14.0",
 ]
 docs = [
     "sphinx",
     "sphinx-astropy",
     "sphinx-automodapi",
+    "sphinx-rtd-theme",
     "tomli; python_version <\"3.10\"",
 ]
 

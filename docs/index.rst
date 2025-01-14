@@ -1,14 +1,27 @@
-bibcat Documentation
+:ref:`genindex`  |  :ref:`modindex`  | :ref:`search`
+
+BibCat Documentation
 --------------------
 
-This is the documentation for bibcat.
+This is the documentation for BibCat.
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 3
+   :caption: GETTING STARTED
 
-Indices and tables
-==================
+   installation
+
+Pretrained
+==========
+
+LLM Prompting
+=============
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Packages and Modules
+
+   api/modules.rst
 
 * :ref:`genindex`
 * :ref:`modindex`
