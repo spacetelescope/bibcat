@@ -26,9 +26,9 @@ dependencies = [
   "nltk >= 3.8.1 ",
   # "tensorflow-macos==2.15.0", # only for MACOS M1-M3 apple chip
   # "tensorflow-metal==1.1.1",  # only for MacOS M1-M3 apple chip
-  "tensorflow >=2.15.0",
+  "tensorflow ==2.15.0",
   "tensorflow-hub==0.16.1",
-  # "tensorflow-text >=2.15.0", # this needs to be installed manually; see the README.md
+  # "tensorflow-text ==2.15.0", # this needs to be installed manually; see the README.md
   "deepmerge >=1.1.1",
   "pandas >= 2.1.4",
   "openai >= 1.40.0",
