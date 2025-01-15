@@ -42,7 +42,7 @@ python -m spacy download en_core_web_sm
 - If you have an Apple Silicon chip computer and want to utilize your GPU, you should install `tensorflow-macos` and `tensorflow-metal`. If not, skip this part.
 
   ```
-  pip install tensorflow-macos tensorflow-metal
+  pip install tensorflow-macos==2.15.0 tensorflow-metal==1.1.0
   ```
   To verify if tensorflow is set up to utilize your GPU, do the following:
 
