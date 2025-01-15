@@ -54,7 +54,7 @@ python -m spacy download en_core_web_sm
 
 #### Install `tensorflow-text`
 
-- To install `tensorflow-text`, the command `pip install -U "tensorflow-text"` **does not work** due to some package version conflict (as of sometime 2024, need to revisit). You need to download the latest release library compatible with your system and the tensorflow version from [the Tensorflow library link.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases); For instance, if you have MacOSX with python 3.10, download [this library.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl)
+- To install `tensorflow-text`, the command `pip install -U "tensorflow-text"` **does not work** due to some package version conflict (as of sometime 2024, need to revisit). You need to download the latest release library compatible with your system and the tensorflow version (2.15.0 in the example) from [the Tensorflow library link.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases); For instance, if you have MacOSX with python 3.10, download [this library.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl)
 - Then `pip install /path-to-download/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl`
 
 
