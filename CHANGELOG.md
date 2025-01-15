@@ -1,18 +1,14 @@
 # Change Log
 
 ## [Unreleased]
-- [PR #46]
-    - Grouping the BERT model method into the pretrained folder
-    - Created PRETRAINED_README.md and updated the main README.md
 - Bibcat to do list
     - Refactor performance.py
     - Adding tutorial notebooks back
-- [PR #44](https://github.com/spacetelescope/bibcat/pull/44)
-    - Updated LLM prompt to include its rationale and reasoning in the output
-    - Switch to OpenAI Structured Response output, using pydantic models to control output
 
 
 ### Removed
+- [PP #48]
+    - Removed conda env file.
 - [PR #9]
     - Deleted test_bibcat.py
     - Deleted the same set of test gloabal variables assigned in multiple test scripts
@@ -21,7 +17,13 @@
     - Deleted all previous codes and files for a fresh start
 
 ### Changed
-- [PR #29](https://github.com/spacetelescope/bibcat/pull/29) Refactored the ML classifier to allow for other `tensorflow` models, and for adding other libraries, e.g. `pytorch`, down the line.
+- [PR #47] New calculations for evaluation confidence values for multiple GPT runs
+- [PR #46]
+    - Grouping the BERT model method into the pretrained folder
+    - Created PRETRAINED_README.md and updated the main README.md
+
+- [PR #29](https://github.com/spacetelescope/bibcat/pull/29)
+    - Refactored the ML classifier to allow for other `tensorflow` models, and for adding other libraries, e.g. `pytorch`, down the line.
 
 - [PR # 23](https://github.com/spacetelescope/bibcat/pull/23)
     - Setting a new config for the directory of papers for operational classification with a fake JSON file
@@ -91,6 +93,13 @@
     - updated formatting and styling
 
 ### Added
+- [PR #48]
+    - Set up Sphinx autodoc build
+
+- [PR #44](https://github.com/spacetelescope/bibcat/pull/44)
+    - Updated LLM prompt to include its rationale and reasoning in the output
+    - Switch to OpenAI Structured Response output, using pydantic models to control output
+
 - [PR #43]
     - pre-commit-hook setup
     - GitHub CI/CD action pipeline for linting/formatting and pytests

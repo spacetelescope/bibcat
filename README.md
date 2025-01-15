@@ -10,46 +10,54 @@ There are two main branches for bibcat work:
 
 ## Installation
 ### Required packages and versions
-- tensorflow 2.15.0
-- tensorflow-hub 0.16.1
-- tensorflow-text 2.15.0
-- See more packages found in the [conda evn file](envs/bibcat_py310.yml).
-- A few packages required for Apple silicon chip computers should be installed manually; see below.
+- See the required package dependencies found in the [pyproject.toml](pyproject.toml).
+- A few tensorflow packages required for Apple silicon chip computers should be installed manually; see below.
 
-### Conda env installation
-Change `env_name` below with whatever you want to name the environment.
-- Download the conda installation yml file [here](envs/bibcat_py310.yml).
+### Conda environment installation
+Change `<env_name>` below with whatever you want to name the environment.
 - In the terminal, run these commands.
 
+
 ```shell
-conda env create -n env_name -f bibcat_py310.yml
-conda activate env_name
-python -m spacy download en_core_web_sm
+conda env create -n <env_name> python=3.10
+conda activate <env_name>
 ```
-#### Extra required pacakge for Apple M1/M2/M3 chip
-For Apple Silicon chips, to utilize your GPU, you should install `tensorflow-macos` and `tensorflow-metal`.
-```
-pip install tensorflow-macos tensorflow-metal
-```
- To verify if tensorflow is set up to utilize your GPU, do the following:
-```python
-import tensorflow as tf
-tf.config.list_physical_devices('GPU')
-```
-You should see the following output: `[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]`.  If the output is an empty list, you are not setup for GPU use.
-
-#### Install `tensorflow-text`
-- You need to install this package manually. Follow the instruction order below.
-
-- To install `tensorflow-text`, the command `pip install -U "tensorflow-text"` **does not work** due to some package version conflict (as of sometime 2024, need to revisit). You need to download the latest release library compatible with your system from [the Tensorflow library link.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases); For instance, if you have MacOSX with python 3.10, download [this library.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl)
-- Then `pip install /path-to-download/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl`
-
 
 ### Bibcat installation
-The `bibcat` directory contains the python package itself, installable via pip.
+The `bibcat` directory contains the python package itself, installable via pip. Move to the main bibcat root directory where `pyproject.toml` is located and run this command. This will install all dependencies for `[dev,test,doc]`
+
 ```shell
 pip install -e .
 ```
+
+### Spacy model downloads
+This model is used for the [pretrained model method](bibcat/pretrained/PRETRAINED.md)
+```
+python -m spacy download en_core_web_sm
+```
+### Tensorflow package installation
+`tensorflow` packages are used for the [pretrained model method](bibcat/pretrained/PRETRAINED.md)
+
+#### Extra required tensorflow pacakges for Apple silicon M1/M2/M3 chip
+- If you have an Apple Silicon chip computer and want to utilize your GPU, you should install `tensorflow-macos` and `tensorflow-metal`. If not, skip this part.
+
+  ```
+  pip install tensorflow-macos tensorflow-metal
+  ```
+  To verify if tensorflow is set up to utilize your GPU, do the following:
+
+  ```python
+  import tensorflow as tf
+  tf.config.list_physical_devices('GPU')
+  ```
+  You should see the following output: `[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]`.  If the output is an empty list, you are not setup for GPU use.
+
+#### Install `tensorflow-text`
+
+- To install `tensorflow-text`, the command `pip install -U "tensorflow-text"` **does not work** due to some package version conflict (as of sometime 2024, need to revisit). You need to download the latest release library compatible with your system and the tensorflow version from [the Tensorflow library link.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases); For instance, if you have MacOSX with python 3.10, download [this library.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl)
+- Then `pip install /path-to-download/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl`
+
+
 ## pre-commit for development
 
 [pre-commit](https://pre-commit.com/) allows all collaborators push their commits compliant with the same set of lint and format rules in [pyproject.toml](pyproject.toml) by checking all files in the project at different stages of the git workflow. It runs commands specified in the [.pre-commit-config.yaml](.pre-commit-config.yaml) config file and runs checks before committing or pushing, to catch errors that would have caused a build failure before they reach CI.
