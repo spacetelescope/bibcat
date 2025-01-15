@@ -118,28 +118,30 @@ version following the instructions below as full released versions may lag behin
 <section id="required-packages-and-versions">
 <h3>Required packages and versions<a class="headerlink" href="#required-packages-and-versions" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p>tensorflow-macos 2.15.1</p></li>
-<li><p>tensorflow-metal 1.1.0</p></li>
 <li><p>tensorflow 2.15.0</p></li>
 <li><p>tensorflow-hub 0.16.1</p></li>
 <li><p>tensorflow-text 2.15.0</p></li>
-<li><p>See more packages found in the conda evn file (envs/bibcat_py310.yml).</p></li>
+<li><p>See more packages found in the conda environment file (envs/bibcat_py310.yml).</p></li>
+<li><p>A few packages required for Apple silicon chip computers should be installed manually; see below.</p></li>
 </ul>
 </section>
 <section id="conda-env-installation">
 <h3>Conda env installation<a class="headerlink" href="#conda-env-installation" title="Link to this heading"></a></h3>
-<p>Change <cite>env_name</cite> below with whatever you want to name the environment.
-- Download the conda installation yml file (envs/bibcat_py310.yml).
-- In the terminal, run these commands.:</p>
+<p>Change <cite>env_name</cite> below with whatever you want to name the environment.</p>
+<ul>
+<li><p>Download the conda installation yml file (bibcat/envs/bibcat_py310.yml).</p></li>
+<li><p>In the terminal, run these commands.:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">env</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">env_name</span> <span class="o">-</span><span class="n">f</span> <span class="n">bibcat_py310</span><span class="o">.</span><span class="n">yml</span>
 <span class="n">conda</span> <span class="n">activate</span> <span class="n">env_name</span>
 <span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">spacy</span> <span class="n">download</span> <span class="n">en_core_web_sm</span>
 </pre></div>
 </div>
+</li>
+</ul>
 </section>
 <section id="extra-required-pacakge-for-apple-m1-m2-m3-chip-and-gpu-use">
 <h3>Extra required pacakge for Apple M1/M2/M3 chip and GPU use<a class="headerlink" href="#extra-required-pacakge-for-apple-m1-m2-m3-chip-and-gpu-use" title="Link to this heading"></a></h3>
-<p>For Apple Silicon chips, to utilize your GPU, you install <cite>**tensorflow-macos**</cite> and <cite>**tensorflow-metal**</cite>.  You can run:</p>
+<p>For Apple Silicon chips, to utilize your GPU, you install <cite>tensorflow-macos</cite> and <cite>tensorflow-metal</cite>.  You can run:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">tensorflow</span><span class="o">-</span><span class="n">macos</span> <span class="n">tensorflow</span><span class="o">-</span><span class="n">metal</span>
 </pre></div>
 </div>
@@ -158,7 +160,7 @@ version following the instructions below as full released versions may lag behin
 <h3>Install <cite>tensorflow-text</cite><a class="headerlink" href="#install-tensorflow-text" title="Link to this heading"></a></h3>
 <ul>
 <li><p>You need to install this package manually. Follow the instruction order below.</p></li>
-<li><p>To install <em>tensorflow-text</em>, the command <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-U</span> <span class="pre">&quot;tensorflow-text&quot;</span></code> <strong>does not work</strong> due to some package version conflict (as of sometime 2024, need to revisit). You need to download the latest release library compatible with your system from the <a class="reference external" href="https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases">Tensorflow library link.</a>; For instance, if you have MacOSX with python 3.10, download <a class="reference external" href="https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl">this library.</a> Then,:</p>
+<li><p>To install <code class="docutils literal notranslate"><span class="pre">tensorflow-text</span></code>, the command <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-U</span> <span class="pre">&quot;tensorflow-text&quot;</span></code> <strong>does not work</strong> due to some package version conflict (as of sometime 2024, need to revisit). You need to download the latest release library compatible with your system from the <a class="reference external" href="https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases">Tensorflow library link.</a>; For instance, if you have MacOSX with python 3.10, download <a class="reference external" href="https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl">this library.</a> Then,:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">/</span><span class="n">path</span><span class="o">-</span><span class="n">to</span><span class="o">-</span><span class="n">download</span><span class="o">/</span><span class="n">tensorflow_text</span><span class="o">-</span><span class="mf">2.15.0</span><span class="o">-</span><span class="n">cp310</span><span class="o">-</span><span class="n">cp310</span><span class="o">-</span><span class="n">macosx_11_0_arm64</span><span class="o">.</span><span class="n">whl</span>
 </pre></div>
 </div>
@@ -168,7 +170,7 @@ version following the instructions below as full released versions may lag behin
 </section>
 <section id="bibcat-installation">
 <h2>BibCat installation<a class="headerlink" href="#bibcat-installation" title="Link to this heading"></a></h2>
-<p>The <cite>bibcat</cite> directory contains the python package itself, installable via pip.:</p>
+<p>The <cite>bibcat</cite> directory contains the python package itself, installable via <code class="docutils literal notranslate"><span class="pre">pip</span></code>.:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">.</span>
 </pre></div>
 </div>
