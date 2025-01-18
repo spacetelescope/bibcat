@@ -6,6 +6,8 @@
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 
+import os
+
 # -- Project information -----------------------------------------------------
 
 project = "bibcat"
@@ -23,6 +25,7 @@ release = ".version"
 # extensions coming with Sphinx (named "sphinx.ext.*") or your custom
 # ones.
 extensions = [
+    "myst_parser",
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
     "sphinx.ext.todo",
@@ -39,8 +42,29 @@ extensions = [
     "sphinxcontrib.spelling",
 ]
 
+myst_enable_extensions = [
+    "amsmath",
+    "attrs_inline",
+    "colon_fence",
+    "deflist",
+    "dollarmath",
+    "fieldlist",
+    "html_admonition",
+    "html_image",
+    "linkify",
+    "replacements",
+    "smartquotes",
+    "strikethrough",
+    "substitution",
+    "tasklist",
+]
 # Add any paths that contain templates here, relative to this directory.
 # templates_path = ["_templates"]
+
+templates_path = [
+    os.path.abspath("../"),
+]
+# templates_path = [os.path.abspath("../"), os.path.abspath("../bibcat/pretrained/"), os.path.abspath("../bibcat/llm/")]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -49,7 +73,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
-source_suffix = ".rst"
+source_suffix = [".rst", ".md"]
 
 # The master toctree document.
 master_doc = "index"

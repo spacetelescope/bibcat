@@ -67,10 +67,3 @@ jobs:
         run: |
           cd docs
           make html
-
-      # - name: Upload documentation # when bibcat becomes public
-      #  if: success()
-      #  uses: peaceiris/actions-gh-pages@v3
-      #  with:
-      #    github_token: ${{ secrets.GITHUB_TOKEN }}
-      #    publish_dir: docs/_build/html

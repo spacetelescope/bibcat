@@ -9,21 +9,21 @@ This is the documentation for BibCat.
    :maxdepth: 3
    :caption: GETTING STARTED
 
-   installation
-   configuration
-   quick_start
+   ../README.md
+   ../CHANGELOG.md
 
 .. toctree::
    :maxdepth: 3
    :caption: Pretrained
 
-   pretrained
+   ../bibcat/pretrained/PRETRAINED
 
 .. toctree::
    :maxdepth: 3
    :caption: LLM Prompting
 
-   llm
+   ../bibcat/llm/README
+
 
 .. toctree::
    :maxdepth: 3

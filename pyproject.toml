@@ -52,6 +52,8 @@ test = [
     "pytest-mock>=3.14.0",
 ]
 docs = [
+    "linkify-it-py",
+    "myst-parser",
     "sphinx",
     "sphinx-astropy",
     "sphinx-automodapi",
