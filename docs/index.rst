@@ -9,20 +9,20 @@ This is the documentation for BibCat.
    :maxdepth: 3
    :caption: GETTING STARTED
 
-   ../README.md
-   ../CHANGELOG.md
+   readme
+   changelog
 
 .. toctree::
    :maxdepth: 3
    :caption: Pretrained
 
-   ../bibcat/pretrained/PRETRAINED
+   pretrained
 
 .. toctree::
    :maxdepth: 3
-   :caption: LLM Prompting
+   :caption: LLM
 
-   ../bibcat/llm/README
+   llm
 
 
 .. toctree::

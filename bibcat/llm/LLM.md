@@ -1,7 +1,6 @@
 
 
-# LLM Prompting
-
+#  Using LLM Prompting
 Here we describe the `bibcat` options for extracting paper information using LLMs.  It currently only supports using the OpenAI API to prompt ``gpt`` models.  The default model used is `gpt4o-mini`, but can be customized using the ``config.llms.openai.model`` field.
 
 This code requires the `openai` python package.  Install it with `pip install openai`.
