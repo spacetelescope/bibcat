@@ -16,13 +16,13 @@ This is the documentation for BibCat.
    :maxdepth: 3
    :caption: Pretrained
 
-   pretrained
+   PRETRAINED
 
 .. toctree::
    :maxdepth: 3
    :caption: LLM
 
-   llm
+   LLM
 
 
 .. toctree::

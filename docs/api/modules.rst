@@ -1,4 +1,4 @@
-BibCat
+bibcat
 ======
 
 .. toctree::

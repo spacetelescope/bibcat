@@ -58,13 +58,19 @@ myst_enable_extensions = [
     "substitution",
     "tasklist",
 ]
+# Suppress unnecessary warnings
+suppress_warnings = [
+    "myst.xref_missing",  # Suppress cross-reference missing warnings
+    "myst.header",  # Suppress Non-consecutive header level increase; H1 to H3
+]
+# Ensure relative links are supported
+myst_url_schemes = ("http", "https", "")
 # Add any paths that contain templates here, relative to this directory.
 # templates_path = ["_templates"]
 
 templates_path = [
     os.path.abspath("../"),
 ]
-# templates_path = [os.path.abspath("../"), os.path.abspath("../bibcat/pretrained/"), os.path.abspath("../bibcat/llm/")]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

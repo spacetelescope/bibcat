@@ -11,7 +11,6 @@ Subpackages
    bibcat.data
    bibcat.llm
    bibcat.pretrained
-   bibcat.tests
    bibcat.utils
 
 Submodules
