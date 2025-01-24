@@ -29,8 +29,8 @@ This is the documentation for BibCat.
    :maxdepth: 3
    :caption: Packages and Modules
 
-   api/modules.rst
    cli.rst
+   api/modules.rst
 
 * :ref:`genindex`
 * :ref:`modindex`
