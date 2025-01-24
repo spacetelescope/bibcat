@@ -40,6 +40,7 @@ extensions = [
     "sphinx_automodapi.automodapi",
     "sphinx_automodapi.smart_resolver",
     "sphinxcontrib.spelling",
+    "sphinx_click"
 ]
 
 myst_enable_extensions = [
