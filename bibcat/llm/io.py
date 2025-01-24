@@ -56,7 +56,7 @@ def get_file(filepath: str = None, bibcode: str = None, index: int = None) -> st
     Get a file path of a paper to upload to an LLM.  If a file path is provided, e.g.
     a local pdf file, it is returned.  If a bibcode or index is provided, retrieves the
     source dataset and writes it out to a temporary json file.  The name of the temporary file
-    is "temp_****_[bibcode].json", prefixed with "temp_" and suffixed with the bibcode of the paper.
+    is `temp_****_[bibcode].json`, prefixed with `temp_` and suffixed with the bibcode of the paper.
 
     Parameters
     ----------

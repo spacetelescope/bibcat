@@ -5,17 +5,19 @@
 # This file does only contain a selection of the most common options. For a
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
-from bibcat import __version__
+
+import os
 
 # -- Project information -----------------------------------------------------
 
 project = "bibcat"
-copyright = "2022, Jamila Pegues, Jinmi Yoon, Brian Cherinka"
-author = "Jamila Pegues, Jinmi Yoon, Brian Cherinka"
+copyright = "2022, MAST at STScI"
+author = "MAST staff"
 
 # The full version, including alpha/beta/rc tags
 
-release = __version__
+# release = __version__
+release = ".version"
 
 # -- General configuration ---------------------------------------------------
 
@@ -23,21 +25,53 @@ release = __version__
 # extensions coming with Sphinx (named "sphinx.ext.*") or your custom
 # ones.
 extensions = [
+    "myst_parser",
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
     "sphinx.ext.todo",
     "sphinx.ext.coverage",
     "sphinx.ext.inheritance_diagram",
+    "sphinx.ext.graphviz",
+    "sphinx_copybutton",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
     "sphinx.ext.doctest",
     "sphinx.ext.mathjax",
     "sphinx_automodapi.automodapi",
     "sphinx_automodapi.smart_resolver",
+    "sphinxcontrib.spelling",
+    "sphinx_click"
 ]
 
+myst_enable_extensions = [
+    "amsmath",
+    "attrs_inline",
+    "colon_fence",
+    "deflist",
+    "dollarmath",
+    "fieldlist",
+    "html_admonition",
+    "html_image",
+    "linkify",
+    "replacements",
+    "smartquotes",
+    "strikethrough",
+    "substitution",
+    "tasklist",
+]
+# Suppress unnecessary warnings
+suppress_warnings = [
+    "myst.xref_missing",  # Suppress cross-reference missing warnings
+    "myst.header",  # Suppress Non-consecutive header level increase; H1 to H3
+]
+# Ensure relative links are supported
+myst_url_schemes = ("http", "https", "")
 # Add any paths that contain templates here, relative to this directory.
 # templates_path = ["_templates"]
+
+templates_path = [
+    os.path.abspath("../"),
+]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -46,7 +80,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
-source_suffix = ".rst"
+source_suffix = [".rst", ".md"]
 
 # The master toctree document.
 master_doc = "index"
@@ -60,7 +94,7 @@ intersphinx_mapping = {"python": ("https://docs.python.org/", None)}
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = "alabaster"
+html_theme = "sphinx_rtd_theme"  # "bootstrap-astropy" # "alabaster"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

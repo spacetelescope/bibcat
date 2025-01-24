@@ -1,4 +1,4 @@
-# Bibcat
+# BibCat
 Bibcat classifies astronomical journal papers into multiple paper categories. The primary categories are "science", "mention", "data-influenced", and "ignore".
 
 ## Development Workflow
@@ -10,43 +10,57 @@ There are two main branches for bibcat work:
 
 ## Installation
 ### Required packages and versions
-- tensorflow 2.15.0
-- tensorflow-hub 0.16.1
-- tensorflow-text 2.15.0
-- See more packages found in the [conda evn file](envs/bibcat_py310.yml).
+- See the required package dependencies found in the [pyproject.toml](https://github.com/spacetelescope/bibcat/blob/dev/pyproject.toml).
+- A few tensorflow packages required for Apple silicon chip computers should be installed manually; see below.
 
-### Conda env installation
-Change `env_name` below with whatever you want to name the environment.
-- Download the conda installation yml file [here](envs/bibcat_py310.yml).
+### Conda environment installation
+Change `<env_name>` below with whatever you want to name the environment.
 - In the terminal, run these commands.
+
+
 ```shell
-conda env create -n env_name -f bibcat_py310.yml
-conda activate env_name
-python -m spacy download en_core_web_sm
+conda env create -n <env_name> python=3.10
+conda activate <env_name>
 ```
-#### Extra required pacakge for Apple M1/M2/M3 chip
-For Apple Silicon chips, to utilize your GPU, you install `tensorflow-metal`.  You can run `pip install tensorflow-metal`.  To verify if tensorflow is set up to utilize your GPU, do the following:
-```
-import tensorflow as tf
-tf.config.list_physical_devices('GPU')
-```
-You should see the following output: `[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]`.  If the output is an empty list, you are not setup for GPU use.
-
-#### Install `tensorflow-text`
-- You need to install this package separately. Follow the instruction order below.
-
-- To install `tensorflow-text`, the command `pip install -U "tensorflow-text"` does not work due to some package version conflict. You need to download the latest release library compatible with your system from [the Tensorflow library link.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases); For instance, if you have MacOSX with python 3.10, download [this library.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl)
-- Then `pip install /path-to-download/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl`
-
 
 ### Bibcat installation
-The `bibcat` directory contains the python package itself, installable via pip.
+The `bibcat` directory contains the python package itself, installable via pip. Move to the main bibcat root directory where `pyproject.toml` is located and run this command. This will install all dependencies for `[dev,test,doc]`
+
 ```shell
 pip install -e .
 ```
+
+### Spacy model downloads
+This model is used for the [Pretrained model method](https://github.com/spacetelescope/bibcat/blob/dev/docs/PRETRAINED.md)
+```
+python -m spacy download en_core_web_sm
+```
+### Tensorflow package installation
+`tensorflow` packages are used for the [Pretrained model method](https://github.com/spacetelescope/bibcat/blob/dev/docs/PRETRAINED.md)
+
+#### Extra required tensorflow pacakges for Apple silicon M1/M2/M3 chip
+- If you have an Apple Silicon chip computer and want to utilize your GPU, you should install `tensorflow-macos` and `tensorflow-metal`. If not, skip this part.
+
+  ```
+  pip install tensorflow-macos==2.15.0 tensorflow-metal==1.1.0
+  ```
+  To verify if tensorflow is set up to utilize your GPU, do the following:
+
+  ```python
+  import tensorflow as tf
+  tf.config.list_physical_devices('GPU')
+  ```
+  You should see the following output: `[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]`.  If the output is an empty list, you are not setup for GPU use.
+
+#### Install `tensorflow-text`
+
+- To install `tensorflow-text`, the command `pip install -U "tensorflow-text"` **does not work** due to some package version conflict (as of sometime 2024, need to revisit). You need to download the latest release library compatible with your system and the tensorflow version (2.15.0 in the example) from [the Tensorflow library link.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases); For instance, if you have MacOSX with python 3.10, download [this library.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl)
+- Then `pip install /path-to-download/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl`
+
+
 ## pre-commit for development
 
-[pre-commit](https://pre-commit.com/) allows all collaborators push their commits compliant with the same set of lint and format rules in [pyproject.toml](pyproject.toml) by checking all files in the project at different stages of the git workflow. It runs commands specified in the [.pre-commit-config.yaml](.pre-commit-config.yaml) config file and runs checks before committing or pushing, to catch errors that would have caused a build failure before they reach CI.
+[pre-commit](https://pre-commit.com/) allows all collaborators push their commits compliant with the same set of lint and format rules in [pyproject.toml](https://github.com/spacetelescope/bibcat/blob/dev/pyproject.toml) by checking all files in the project at different stages of the git workflow. It runs commands specified in the [.pre-commit-config.yaml](https://github.com/spacetelescope/bibcat/blob/dev/.pre-commit-config.yaml) config file and runs checks before committing or pushing, to catch errors that would have caused a build failure before they reach CI.
 
 ### Install pre-commit
 You will need to install `pre-commit` manually.
@@ -68,8 +82,9 @@ pre-commit autoupdate
 ```
 For other configuration options and more detailed information, check out at the [pre-commit](https://pre-commit.com/) page.
 
+
 ## Setup
-### Input JSON file
+### Input JSON file <!--- THIS NEEDS A REVISION to remove the Box Links for PRODUCTION --->
 Download several data files (the ADS full text file and the papertrack file) to create models for training or combined fulltext dataset files for the input text. These files can be accessed only by authorized users. Downloading the files requires a single sign-on.
 Save the files outside the `bibcat` folder on your local computer, and you will set up the paths to the files. See more details in **User Configuration and Data Filepaths** below.
 We refer
@@ -106,6 +121,29 @@ output:
 
 For testing, you need to install the extra test dependencies.  You do this with `pip install -e ".[test]"`.  The test suite is located in `tests/`. We can recommend using `pytest` for running tests.  Navigate to `/tests/` and run `pytest`, or for extra verbosity run `pytest -vs`. `pytest` can find and run tests written with pytest or unittests.
 
+### Building the documentation
+Sphinx will create the documentation automatically using the module docstrings.
+
+Use `sphinx-apidoc` to automatically generate documentation from your docstrings.
+
+From the docs directory, run
+```shell
+sphinx-apidoc -o api ../bibcat ../bibcat/tests/* # the last pattern indicates all test modules excluded from API Doc
+```
+To build documentation, run
+
+```shell
+cd docs
+make html
+```
+Then navigate to `docs/_build/html` and open `index.html` on your browser to see the built documentation.
+
+To remove existing output,
+
+```shell
+make clean
+```
+
 ## Quick start
 
 There is a CLI interface to bibcat.  After installation with `pip install -e .`, a `bibcat` cli will be available from the terminal.  Run `bibcat --help` from the terminal to display the available commands.  All commands also have their own help.  For example to see the options
@@ -119,11 +157,11 @@ for classifying papers, run `bibcat train --help`.
 
 ### Using Pretrained Models (BERT flavors)
 
-You can classify papers using the pretrained models like `BERT` or `RoBERTa`. Please see the following [Quick Start Guide using Pretrained Models](bibcat/pretrained/PRETRAINED.md) to get started.
+You can classify papers using the pretrained models like `BERT` or `RoBERTa`. Please see the following [Quick Start Guide using Pretrained Models](https://github.com/spacetelescope/bibcat/blob/dev/docs/PRETRAINED.md) to get started.
 
 ### Using LLM Prompting Method
 
-You can submit paper content to OpenAI's gpt models.  Please see the following [Quick Start Guide using LLM Prompting](bibcat/llm/README.md) to get started.
+You can submit paper content to OpenAI's gpt models.  Please see the following [Quick Start Guide using LLM Prompting](https://github.com/spacetelescope/bibcat/blob/dev/docs/LLM.md) to get started.
 
 
 ## License

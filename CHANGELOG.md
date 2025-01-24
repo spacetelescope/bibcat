@@ -1,19 +1,15 @@
 # Change Log
 
-## [Unreleased]
-- [PR #46]
-    - Grouping the BERT model method into the pretrained folder
-    - Created PRETRAINED_README.md and updated the main README.md
+### [Unreleased]
 - Bibcat to do list
     - Refactor performance.py
     - Adding tutorial notebooks back
-- [PR #44](https://github.com/spacetelescope/bibcat/pull/44)
-    - Updated LLM prompt to include its rationale and reasoning in the output
-    - Switch to OpenAI Structured Response output, using pydantic models to control output
 
 
 ### Removed
-- [PR #9]
+- [PP #48](https://github.com/spacetelescope/bibcat/pull/48)
+    - Removed conda env file.
+- [PR #9](https://github.com/spacetelescope/bibcat/pull/9)
     - Deleted test_bibcat.py
     - Deleted the same set of test gloabal variables assigned in multiple test scripts
 
@@ -21,61 +17,67 @@
     - Deleted all previous codes and files for a fresh start
 
 ### Changed
-- [PR #29](https://github.com/spacetelescope/bibcat/pull/29) Refactored the ML classifier to allow for other `tensorflow` models, and for adding other libraries, e.g. `pytorch`, down the line.
+- [PR #47](https://github.com/spacetelescope/bibcat/pull/47) New calculations for evaluation confidence values for multiple GPT runs
+- [PR #46](https://github.com/spacetelescope/bibcat/pull/46)
+    - Grouping the BERT model method into the pretrained folder
+    - Created PRETRAINED_README.md and updated the main README.md
 
-- [PR # 23](https://github.com/spacetelescope/bibcat/pull/23)
+- [PR #29](https://github.com/spacetelescope/bibcat/pull/29)
+    - Refactored the ML classifier to allow for other `tensorflow` models, and for adding other libraries, e.g. `pytorch`, down the line.
+
+- [PR #23](https://github.com/spacetelescope/bibcat/pull/23)
     - Setting a new config for the directory of papers for operational classification with a fake JSON file
     - Refactored `fetch_paper.py`
     - Other relevant updates and minor updates
-- [PR # 22, 23]
+- [PR #22](https://github.com/spacetelescope/bibcat/pull/22), [PR #23](https://github.com/spacetelescope/bibcat/pull/23)
     - The `is_keyword` method is replaced with the `identify_keyword` method.
 
-- [PR # 21]
+- [PR # 21](https://github.com/spacetelescope/bibcat/pull/22)
     - `evaluate` and `classify` are now separate CLI options.
 
-- [PR # 19, 20]
+- [PR #19](https://github.com/spacetelescope/bibcat/pull/19) [PR #20](https://github.com/spacetelescope/bibcat/pull/20)
     - `get_config()` error fix
     - `_add_word()` temporary fix
     - `merger` erorr fix for config parameters
 
-- [PR #18]
+- [PR #18](https://github.com/spacetelescope/bibcat/pull/18)
     - Fix ddict type errors
 
-- [PR #16 # 17]
+- [PR #16](https://github.com/spacetelescope/bibcat/pull/16) [# 17](https://github.com/spacetelescope/bibcat/pull/17)
     - Consolidated all config into a single `bibcat_config.yaml` YAML file.
     - Moved `bibcat` output to outside the package directory
     - Added support for user custom configuration and settings
     - Migrated code to use new `config` object, a dottable dictionary to retain the old config syntax
 
-- [PR #14]
+- [PR #14](https://github.com/spacetelescope/bibcat/pull/14)
     - fixed various type annotation errors while refactoring `classify_papers.py` and other related modules such as `performance.py` or `operator.py`.
     - all output results will be saved under a subdirectory of the given model run in the `output` directory.
     - classify_papers.py will produce both evaluation results and classification results per method, rather than combined results of both the RB and ML methods. This way will allow users to choose a classification method using CLI once CLI is enabled.
 
-- [PR #13]
+- [PR #13](https://github.com/spacetelescope/bibcat/pull/13)
     - Enabling build_model.py to be both a module and a main script.
 
-- [PR #12]
+- [PR #12](https://github.com/spacetelescope/bibcat/pull/12)
     - Refactoring build_model.py has started, the first part includes to
         - extract generate_direcotry_TVT() from `core/classifiers/textdata.py` to create a stand-alone module, `split_dataset.py`
         - modify to store the training, validation, and test (TVT) data set directories under the `data/partitioned_datasets` directory
     - The second part in refactoring required some relevant changes to implement the new modules and updating build_module.py accordingly.
         - `build_model.py`,`base.py`, `operator.py`, `config.py`, etc.
 
-- [PR #11]
+- [PR #11](https://github.com/spacetelescope/bibcat/pull/11)
     - Renamed create_model.py to build_model.py
     - Updated README.md
     - Updated config.py to create variables to support the new script, build_dataset.py
 
-- [PR #10]
+- [PR #10](https://github.com/spacetelescope/bibcat/pull/10)
     - Renamed `test_core` to `core`
     - Renamed `test_data` to `data`
 
-- [PR #9]
+- [PR #9](https://github.com/spacetelescope/bibcat/pull/9)
     - The test global variables are called directly in the script rather than using redundantly reassigned to other variables.
     - Moved test Keyword-object lookup variables to parameters.py
 
-- [PR #8]
+- [PR #8](https://github.com/spacetelescope/bibcat/pull/8)
     - Refactored classes.py into several individual class files below, which were moved to the new folder names, `core` and `core/classifiers`.
         - `core`: base.py, grammar.py, keyword.py, operator.py, paper.py, performance.py
         - `core/classifiers`:
@@ -91,23 +93,30 @@
     - updated formatting and styling
 
 ### Added
-- [PR #43]
+- [PR #48](https://github.com/spacetelescope/bibcat/pull/48)
+    - Set up Sphinx autodoc build
+
+- [PR #44](https://github.com/spacetelescope/bibcat/pull/44)
+    - Updated LLM prompt to include its rationale and reasoning in the output
+    - Switch to OpenAI Structured Response output, using pydantic models to control output
+
+- [PR #43](https://github.com/spacetelescope/bibcat/pull/43)
     - pre-commit-hook setup
     - GitHub CI/CD action pipeline for linting/formatting and pytests
-- [PR #40]
+- [PR #40](https://github.com/spacetelescope/bibcat/pull/40)
     - Add `stats-llm.py` to output statistics results from the evaluation summary output and the operational gpt results
     - pytests (`test_stats_llm.py`) and llm `README.md` updated
 
-- [PR #38]
+- [PR #38](https://github.com/spacetelescope/bibcat/pull/38)
     - Add option to run gpt-batch multiple times
-- [PR #35]
+- [PR #35](https://github.com/spacetelescope/bibcat/pull/35)
     - Implement performance evaluation metrics and plots
 
-- [PR #34]
+- [PR #34](https://github.com/spacetelescope/bibcat/pull/34)
     - Added a summary output code for evaluation
-- [PR #32]
+- [PR #32](https://github.com/spacetelescope/bibcat/pull/32)
     - Added unit test for `build_dataset.py`
-- [PR #31]
+- [PR #31](https://github.com/spacetelescope/bibcat/pull/31)
     - Implemented ChatGPT agent prompt engineering approach to classify papers
     - Added a basic classification output
 - [PR #27](https://github.com/spacetelescope/bibcat/pull/27)
@@ -115,10 +124,10 @@
     - Enabled dynamic version control
     - Readme update: clarify the workflow in Quick Start; the use of fetching papers using the `do_evaluation` keyword when `bibcat classify` and `bibcat evaluate`
 
-- [PR #18]
+- [PR #18](https://github.com/spacetelescope/bibcat/pull/18)
     - Added new `click` cli for `bibcat`
 
-- [PR #14]
+- [PR #14](https://github.com/spacetelescope/bibcat/pull/14)
     - Refactored `classify_papers.py` and created a few modules, which are called in `classify_papers.py`. These modules could be executed based on CLI options once they are employed.
         - `fetch_papers.py` : fetching papers from the `dir_test` data directory to the bibcat pipeline. This needs an update to fetch operational data using the `dir_datasets` argument in this module.
         - `operate_classifier.py`: the main purpose of this module is to use only one method, classify the input papers, and output classification results as a JSON file for operation.
@@ -127,17 +136,17 @@
     - created `fake_testdata.json`, which has paper classification with its associated simple text, for testing and performance evaluation.
     - included additional VS code ruff setting to `pyproject.toml`
 
-- [PR #12]
+- [PR #12](https://github.com/spacetelescope/bibcat/pull/12)
     - The second part of refactoring `build_model.py` includes
         - create a new module, `model_settings.py` to set up various model related variables. This eventually will relocating other model related variables in `config.py` to this module in the near future.
         - Created `streamline_dataset.py` to streamline the source data equipped to be ML input dataset. It does load the source dataset and streamline the dataset.
         - Created `partition_dataset.py` to split the streamlined dataset into the train, validation, and test dataset for DL models.
-- [PR # 11]
+- [PR # 11](https://github.com/spacetelescope/bibcat/pull/11)
     - Create a new script to build the input dataset. It's called build_dataset.py
     - Added some information about the data folder in README.rst
     - Added __init__.py
 
-- [PR #9]
+- [PR #9](https://github.com/spacetelescope/bibcat/pull/9)
     - test_bibcat.py was refactored into several sub test scripts.
         - tests/test_core/test_base.py
         - tests/test_core/test_grammar.py
@@ -146,7 +155,7 @@
         - tests/test_core/test_paper.py
         - tests/test_data/test_dataset.py
 
-- [PR #8]
+- [PR #8](https://github.com/spacetelescope/bibcat/pull/8)
     - Created a new folder named `core` to store all refactored class scripts
     - Added more description to each class script and other main scripts.
 

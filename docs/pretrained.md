@@ -3,7 +3,7 @@
 Here we describe the `bibcat` options for classifying papers using pretrain models like BERT or RoBERTa.
 
 ## Quick Start
-Here is a quick start guide. If this is your first time running `bibcat`, you will need to create and build a training model first, then classify papers using the trained model. 
+Here is a quick start guide. If this is your first time running `bibcat`, you will need to create and build a training model first, then classify papers using the trained model.
 
 ### Train the ML models
 
@@ -23,7 +23,7 @@ Here is a quick start guide. If this is your first time running `bibcat`, you wi
 
 ### Changing Models
 
-`bibcat` now supports the ability to use other Tensorflow models for paper classification. The default model used is `bert`.  New models are added into bibcat via the bibcat [configuration yaml](bibcat/etc/bibcat_config.yaml) file, under the `ml` section, similar to the existing `bert` section.  Then, update the `ML_model_type` and `ML_model_key` keys to the new model values.
+`bibcat` now supports the ability to use other Tensorflow models for paper classification. The default model used is `bert`.  New models are added into bibcat via the bibcat [configuration yaml](https://github.com/spacetelescope/bibcat/blob/dev/bibcat/etc/bibcat_config.yaml) file, under the `ml` section, similar to the existing `bert` section.  Then, update the `ML_model_type` and `ML_model_key` keys to the new model values.
 
 For example to use the `roberta` model, with roberta-specific encoders/preprocessors, within your user `$BIBCAT_CONFIG_DIR/bibcat_config.yaml`, you would set:
 ```yaml

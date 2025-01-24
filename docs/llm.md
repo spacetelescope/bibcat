@@ -1,7 +1,6 @@
 
 
-# LLM Prompting
-
+#  Using LLM Prompting
 Here we describe the `bibcat` options for extracting paper information using LLMs.  It currently only supports using the OpenAI API to prompt ``gpt`` models.  The default model used is `gpt4o-mini`, but can be customized using the ``config.llms.openai.model`` field.
 
 This code requires the `openai` python package.  Install it with `pip install openai`.
@@ -13,7 +12,7 @@ To use this code you must have an OpenAI API key. Follow [these instructions](ht
 
 Here is a quick start guide.
 
-1. Follow the [Setup](../../README.md#setup) instructions from the main README
+1. Follow the [Setup](https://github.com/spacetelescope/bibcat/blob/dev/README.md#setup) instructions from the main README file.
 2. Select a paper bibcode or index
    1. run: `bibcat run-gpt -b "2023MNRAS.521..497M"`
    2. or: `bibcat run-gpt -i 50`
