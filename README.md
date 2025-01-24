@@ -36,7 +36,8 @@ You should see the following output: `[PhysicalDevice(name='/physical_device:GPU
 - You need to install this package separately. Follow the instruction order below.
 
 - To install `tensorflow-text`, the command `pip install -U "tensorflow-text"` does not work due to some package version conflict. You need to download the latest release library compatible with your system from [the Tensorflow library link.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases). The version of `tensorflow-text` should match the version of python and tensorflow on your system:
-```python -c "import sys; import tensorflow as tf; print('python version:    ', sys.version.split()[0]); print('tensorflow version:', tf.__version__)"
+```
+python -c "import sys; import tensorflow as tf; print('python version:    ', sys.version.split()[0]); print('tensorflow version:', tf.__version__)"
 ```
 For instance, if you have MacOSX with python 3.10 and tensorflow 2.16, download [this library.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.16/tensorflow_text-2.16.1-cp310-cp310-macosx_11_0_arm64.whl)
 - Then `pip install /path-to-download/tensorflow_text-2.16.1-cp310-cp310-macosx_11_0_arm64.whl`
