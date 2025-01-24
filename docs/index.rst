@@ -30,6 +30,7 @@ This is the documentation for BibCat.
    :caption: Packages and Modules
 
    api/modules.rst
+   cli.rst
 
 * :ref:`genindex`
 * :ref:`modindex`
