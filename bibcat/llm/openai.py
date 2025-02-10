@@ -382,10 +382,11 @@ class OpenAIHelper:
         result = self.client.beta.chat.completions.parse(
             model=config.llms.openai.model,
             messages=[
-                {"role": "system", "content": get_llm_prompt('agent')},
-                {"role":'user', 'content': user_prompt or get_llm_prompt("user")}
-                ],
-            response_format=InfoModel)
+                {"role": "system", "content": get_llm_prompt("agent")},
+                {"role": "user", "content": user_prompt or get_llm_prompt("user")},
+            ],
+            response_format=InfoModel,
+        )
 
         self.original_response = result.choices[0].message.content
 
@@ -444,7 +445,12 @@ class OpenAIHelper:
         else:
             # get the paper source
             self.paper = get_source(bibcode=bibcode, index=index)
-            self.bibcode = self.paper.get("bibcode")
+            if not self.paper:
+                self.bibcode = bibcode
+                logger.warning(f"No paper source found for bibcode: {bibcode}")
+                return {"error": f"Bibcode {bibcode} not found in source data."}
+
+            self.bibcode = bibcode or self.paper.get("bibcode")
             logger.info(f"Using paper bibcode: {self.bibcode}")
 
             # populate the user template with paper data

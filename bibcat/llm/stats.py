@@ -148,8 +148,12 @@ def save_operation_stats(
     """
 
     data = read_output(bibcode=None, filename=input_path)
-
     logger.debug(f"Loaded data: {data}")
+
+    # filter out bad data
+    n_data = len(data)
+    data = {b: a for b, a in data.items() for mi in a if "error" not in mi.keys() and mi["missions"]}
+    logger.debug(f"Filtered {n_data - len(data)} bad data from {n_data} total entries.")
 
     # Validate data structure
     for bibcode, assessment in data.items():

@@ -53,11 +53,15 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     )
 
     paper = get_source(bibcode=bibcode, index=index)
+    if not paper:
+        logger.warning(f"No paper source found for {bibcode}")
+        return None
+
     bibcode = paper["bibcode"]
     response = read_output(bibcode=bibcode, filename=paper_output)
 
-    # filter out any cases where the llm returns an error
-    response = [i for i in response if "error" not in i.keys()]
+    # filter out any cases where the llm returns an error, or there is no missions in output
+    response = [i for i in response if "error" not in i.keys() and i["missions"]]
 
     # response is structured as:
     # - notes: str
@@ -65,7 +69,7 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
 
     # exit if no bibcode found in output
     if not response:
-        logger.info(f"No output found for {bibcode}")
+        logger.warning(f"No output found for {bibcode}")
         return None
 
     n_runs = len(response)
@@ -382,15 +386,30 @@ def identify_missions_in_text(missions: list, text: str) -> list:
     # get the paper object
     # this is slow, only do this once for all missions
     paper = Paper(text, keyword_objs=params.all_kobjs, do_check_truematch=True)
-    paper.process_paragraphs()
-    paragraphs = paper.get_paragraphs()
+    try:
+        paper.process_paragraphs()
+        paragraphs = paper.get_paragraphs()
+    except NotImplementedError as ee:
+        logger.warning("Error processing paper paragraphs: %s.", ee)
+        paragraphs = None
 
     in_text = []
     for mission in missions:
+        # if no paper paragraphs, just check if mission is in straight text
+        if not paragraphs:
+            in_text.append(mission in text)
+            continue
+
         # get the relevant mission keyword
-        keyword = op._fetch_keyword_object(mission)
+        try:
+            keyword = op._fetch_keyword_object(mission)
+        except ValueError:
+            # if the keyword doesn't exist, just use the provided mission name
+            keywd = mission
+        else:
+            keywd = keyword.get_name()
 
         # identify the keyword in the text
-        in_text.append(True if paragraphs.get(keyword.get_name()) else False)
+        in_text.append(True if paragraphs.get(keywd) else False)
 
     return in_text
