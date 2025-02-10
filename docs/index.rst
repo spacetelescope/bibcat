@@ -14,15 +14,21 @@ This is the documentation for BibCat.
 
 .. toctree::
    :maxdepth: 3
+   :caption: About the Data
+
+   data_readme
+
+.. toctree::
+   :maxdepth: 3
    :caption: Pretrained
 
-   PRETRAINED
+   pretrained
 
 .. toctree::
    :maxdepth: 3
    :caption: LLM
 
-   LLM
+   llm
 
 
 .. toctree::
