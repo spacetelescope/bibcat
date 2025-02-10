@@ -31,12 +31,12 @@ pip install -e .
 ```
 
 ### Spacy model downloads
-This model is used for the [Pretrained model method](https://github.com/spacetelescope/bibcat/blob/dev/docs/PRETRAINED.md)
+This model is used for the [Pretrained model method](https://github.com/spacetelescope/bibcat/blob/dev/docs/pretrained.md)
 ```
 python -m spacy download en_core_web_sm
 ```
 ### Tensorflow package installation
-`tensorflow` packages are used for the [Pretrained model method](https://github.com/spacetelescope/bibcat/blob/dev/docs/PRETRAINED.md)
+`tensorflow` packages are used for the [Pretrained model method](https://github.com/spacetelescope/bibcat/blob/dev/docs/pretrained.md)
 
 #### Extra required tensorflow pacakges for Apple silicon M1/M2/M3 chip
 - If you have an Apple Silicon chip computer and want to utilize your GPU, you should install `tensorflow-macos` and `tensorflow-metal`. If not, skip this part.
@@ -157,11 +157,11 @@ for classifying papers, run `bibcat train --help`.
 
 ### Using Pretrained Models (BERT flavors)
 
-You can classify papers using the pretrained models like `BERT` or `RoBERTa`. Please see the following [Quick Start Guide using Pretrained Models](https://github.com/spacetelescope/bibcat/blob/dev/docs/PRETRAINED.md) to get started.
+You can classify papers using the pretrained models like `BERT` or `RoBERTa`. Please see the following [Quick Start Guide using Pretrained Models](https://github.com/spacetelescope/bibcat/blob/dev/docs/pretrained.md) to get started.
 
 ### Using LLM Prompting Method
 
-You can submit paper content to OpenAI's gpt models.  Please see the following [Quick Start Guide using LLM Prompting](https://github.com/spacetelescope/bibcat/blob/dev/docs/LLM.md) to get started.
+You can submit paper content to OpenAI's gpt models.  Please see the following [Quick Start Guide using LLM Prompting](https://github.com/spacetelescope/bibcat/blob/dev/docs/llm.md) to get started.
 
 
 ## License
