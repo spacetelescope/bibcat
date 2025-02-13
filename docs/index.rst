@@ -10,6 +10,7 @@ This is the documentation for BibCat.
    :caption: GETTING STARTED
 
    readme
+   data_readme
    changelog
 
 .. toctree::
