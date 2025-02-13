@@ -70,7 +70,7 @@ jobs:
 
       # you can download the artifact from the workflow summary in the GitHub Actions interface.
       - name: Upload Documentation as Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: sphinx-docs
           path: docs/_build/html
