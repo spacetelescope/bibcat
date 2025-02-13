@@ -124,19 +124,31 @@ For testing, you need to install the extra test dependencies.  You do this with 
 ### Building the documentation
 Sphinx will create the documentation automatically using the module docstrings.
 
-Use `sphinx-apidoc` to automatically generate documentation from your docstrings.
+Use `sphinx-apidoc` to automatically generate API documentation from your docstrings.
 
-From the docs directory, run
+Run
 ```shell
-sphinx-apidoc -o api ../bibcat ../bibcat/tests/* # the last pattern indicates all test modules excluded from API Doc
+
+sphinx-apidoc -o docs/api bibcat bibcat/tests/* # the last pattern indicates all test modules excluded from API Doc
 ```
-To build documentation, run
+To build live-reload documentation, run
 
 ```shell
-cd docs
-make html
+sphinx-autobuild docs docs/_build/html
 ```
+
+For one time build,
+```shell
+make -C docs html
+```
+
 Then navigate to `docs/_build/html` and open `index.html` on your browser to see the built documentation.
+
+However, you can build live API docs and htmls together with this one command,
+
+```shell
+make live-docs
+```
 
 To remove existing output,
 
