@@ -23,7 +23,6 @@ from bibcat.core.classifiers import ml
 from bibcat.core.classifiers.textdata import ClassifierBase
 from bibcat.pretrained.fetch_papers import fetch_papers
 from bibcat.pretrained.operate_classifier import operate_classifier
-from bibcat.utils.logger_config import setup_logger
 
 
 def classify_papers(classifier_name: str = "ML") -> None:
