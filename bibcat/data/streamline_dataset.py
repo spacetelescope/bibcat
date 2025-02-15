@@ -3,7 +3,7 @@ from functools import lru_cache
 from typing import Dict
 
 from bibcat import config
-from bibcat import parameters as params
+from bibcat.core import parameters as params
 from bibcat.core.operator import Operator
 
 # map model_settings back to settings
@@ -63,7 +63,7 @@ def streamline_dataset(source_dataset: Dict, operator_ML: Operator, do_verbose_t
         i_mission = 0
         for curr_key in curr_missions:
             # If this is not an allowed mission, skip
-            if curr_missions[curr_key]["papertype"] not in params.allowed_classifications:
+            if curr_missions[curr_key]["papertype"] not in config.pretrained.papertypes:
                 continue
 
             # Otherwise, check if this mission is a target mission

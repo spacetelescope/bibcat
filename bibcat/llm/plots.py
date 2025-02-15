@@ -45,7 +45,7 @@ def confusion_matrix_plot(missions: list[str]) -> None:
 
     fig, ax = plt.subplots(1, 2, figsize=(10, 5), sharex=True, sharey=True)
     bbox_args = dict(boxstyle="round", fc="0.8")
-    labels = config.llms.classifications
+    labels = config.llms.papertypes
 
     # Absolute label counts
     ax[0].set_title("Count")
@@ -121,7 +121,7 @@ def roc_plot(missions: list[str]) -> None:
                 tpr[i],
                 color=colors[i],
                 lw=2,
-                label=f"{config.llms.classifications[i]} (AUC = {roc_auc[i]:.2f})",
+                label=f"{config.llms.papertypes[i]} (AUC = {roc_auc[i]:.2f})",
             )
     else:
         ax.plot(fpr, tpr, color="b", lw=2, label=f"SCIENCE (AUC={roc_auc:.2f})")

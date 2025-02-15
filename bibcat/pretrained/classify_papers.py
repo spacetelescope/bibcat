@@ -18,14 +18,12 @@ This module fetches test input data for classification and classify streamlined 
 import os
 
 from bibcat import config
-from bibcat import parameters as params
+from bibcat.core import parameters as params
 from bibcat.core.classifiers import ml
 from bibcat.core.classifiers.textdata import ClassifierBase
 from bibcat.pretrained.fetch_papers import fetch_papers
 from bibcat.pretrained.operate_classifier import operate_classifier
 from bibcat.utils.logger_config import setup_logger
-
-logger = setup_logger(__name__)
 
 
 def classify_papers(classifier_name: str = "ML") -> None:

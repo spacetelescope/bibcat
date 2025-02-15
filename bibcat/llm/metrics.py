@@ -4,8 +4,6 @@ from sklearn.metrics import auc, roc_curve
 from sklearn.preprocessing import LabelBinarizer
 
 from bibcat import config
-
-# from bibcat import parameters as params
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
@@ -29,7 +27,7 @@ def map_papertype(papertype: str):
     try:
         if papertype.lower() in config.llms.map_papertypes:
             mapped_value = config.llms.map_papertypes.get(papertype.lower())
-            if mapped_value.upper() in config.llms.classifications:
+            if mapped_value.upper() in config.llms.papertypes:
                 mapped_papertype = mapped_value.upper()
                 logger.debug(f"map_papertype(): mapped papertype is '{mapped_papertype}'")
             else:
@@ -66,9 +64,9 @@ def extract_eval_data(data: dict, missions: list[str]):
     tuple
         a tuple of the list of human labels, llm labels, and the hreshold value for verdict acceptance.
     human_labels: list[str]
-        papertype, .e.g, "SCIENCE" or "MENTION", see the allowed classifications in `config.llms.classifications`
+        papertype, .e.g, "SCIENCE" or "MENTION", see the allowed classifications in `config.llms.papertypes`
     llm_labels: list[str]
-        papertype, .e.g, "SCIENCE" or "MENTION", see the allowed classifications in `config.llms.classifications`
+        papertype, .e.g, "SCIENCE" or "MENTION", see the allowed classifications in `config.llms.papertypes`
     threshold: float
         The threshold value used to determine if the LLM papertype is accepted.
         If the papertype's confidence is greater than or equal to this threshold,
@@ -180,7 +178,9 @@ def prepare_roc_inputs(data: dict, missions: list[str]):
     return llm_confidences, binarized_human_labels, n_papertype, n_verdicts
 
 
-def get_roc_metrics(llm_confidences: npt.NDArray[np.float64], binarized_human_labels: list[int], n_papertype: int):
+def get_roc_metrics(
+    llm_confidences: npt.NDArray[np.float64], binarized_human_labels: list[int] | list[list[int]], n_papertype: int
+):
     """Compute ROC curve and ROC AUC (area under curve)
 
     Parameters

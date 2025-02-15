@@ -16,7 +16,7 @@ import os
 import numpy as np
 
 from bibcat import config
-from bibcat import parameters as params
+from bibcat.core import parameters as params
 from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import load_json_file
 

@@ -36,7 +36,7 @@ paths:
 # the library does not care "HLA", "HSC", we will need to fix this and find a way to include other keywords in parameters.py
 missions: ["HST", "JWST", "Roman", "HLA", "HSC", "TESS", "KEPLER", "K2", "GALEX", "PanSTARRS", "FUSE", "IUE", "HUT", "UIT", "WUPPE", "BEFS", "TUES", "IMAPS", "EUVE"]
 
-# configs for LLMs
+#### configs for LLMs
 llms:
   user_prompt: null
   agent_prompt: null
@@ -53,7 +53,7 @@ llms:
     model: gpt-4o-mini
     asst_id: null
     use_assistant: false
-  classifications: ["SCIENCE", "MENTION"]
+  papertypes: ["SCIENCE", "MENTION"]
   map_papertypes: {
     "science": "science",
     "mention": "mention",
@@ -69,7 +69,23 @@ llms:
     inspection: 0.5
   ops: false # false if in evaluation, true if in operation
 
-# configs for pretrained models
+#### configs for pretrained models
+
+# papertypes and map_papertypes below should be removed after test_dataset.py is revised.
+pretrained:
+  papertypes: ["SCIENCE", "DATA_INFLUENCED", "MENTION", "SUPERMENTION"]
+  map_papertypes: {
+    "science": "science",
+    "mention": "mention",
+    "supermention": "mention",
+    "data_influenced": "data_influenced",
+    "unresolved_grey": "other",
+    "unresolved_gray": "other",
+    "engineering": "other",
+    "instrument": "other",
+  }
+
+
 dataprep:
   do_reuse_run: true # whether or not to reuse saved data from previous model run
   num_papers: 100  # the number of papers to use. Set to null to use all available papers in external dataset

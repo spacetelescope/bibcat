@@ -7,8 +7,8 @@ Testing the Paper class and its methods.
 import unittest
 
 from bibcat import config
-from bibcat import parameters as params
 from bibcat.core import keyword
+from bibcat.core import parameters as params
 
 
 class TestKeyword(unittest.TestCase):

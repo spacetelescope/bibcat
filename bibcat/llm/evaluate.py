@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from bibcat import config
-from bibcat import parameters as params
+from bibcat.core import parameters as params
 from bibcat.core.operator import Operator
 from bibcat.core.paper import Paper
 from bibcat.llm.io import get_source, read_output, write_summary

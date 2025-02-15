@@ -11,10 +11,21 @@ import spacy
 from nltk.corpus import wordnet  # type: ignore
 
 from bibcat import config
-from bibcat import parameters as params
+from bibcat.core import parameters as params
 from bibcat.core.base import Base
 
 nlp = spacy.load(config.grammar.spacy_language_model)
+
+# test Keyword-object lookups
+test_dict_lookup_kobj = {
+    "Hubble": params.kobj_hubble,
+    "Kepler": params.kobj_kepler,
+    "K2": params.kobj_k2,
+    "HLA": params.kobj_hla,
+}
+
+# test Keyword-object lookups
+test_list_lookup_kobj = [params.kobj_hubble, params.kobj_kepler, params.kobj_k2]
 
 
 class TestBase(unittest.TestCase):
@@ -54,7 +65,7 @@ class TestBase(unittest.TestCase):
             # For tests where verbs are not included
             for phrase in dict_acts_noverbs:
                 test_res = testbase._assemble_keyword_wordchunks(
-                    text=phrase, keyword_objs=params.test_list_lookup_kobj, do_include_verbs=False, do_verbose=False
+                    text=phrase, keyword_objs=test_list_lookup_kobj, do_include_verbs=False, do_verbose=False
                 )
                 test_res = [item.text for item in test_res]
 
@@ -77,7 +88,7 @@ class TestBase(unittest.TestCase):
             # For tests where verbs are indeed included
             for phrase in dict_acts_yesverbs:
                 test_res = testbase._assemble_keyword_wordchunks(
-                    text=phrase, keyword_objs=params.test_list_lookup_kobj, do_include_verbs=True, do_verbose=False
+                    text=phrase, keyword_objs=test_list_lookup_kobj, do_include_verbs=True, do_verbose=False
                 )
                 test_res = [item.text for item in test_res]
 
@@ -195,9 +206,7 @@ class TestBase(unittest.TestCase):
                 dict_acts[key1]["roots"] = []
                 for curr_word in curr_text:
                     curr_syns = wordnet.synsets(curr_word)
-                    curr_kobjs = [
-                        item for item in params.test_list_lookup_kobj if (item.identify_keyword(curr_word)["bool"])
-                    ]
+                    curr_kobjs = [item for item in test_list_lookup_kobj if (item.identify_keyword(curr_word)["bool"])]
                     curr_set = [item.name() for item in curr_syns if (".n." in item.name())]
                     # Store as name if keyword
                     if len(curr_kobjs) > 0:
@@ -223,7 +232,7 @@ class TestBase(unittest.TestCase):
                     phrase_NLP=nlp(key1),
                     do_skip_useless=False,
                     do_verbose=False,
-                    keyword_objs=params.test_list_lookup_kobj,
+                    keyword_objs=test_list_lookup_kobj,
                 )
 
                 # Check answer
@@ -277,13 +286,13 @@ class TestBase(unittest.TestCase):
 
             # Prepare and run tests for bibcat class instance
             testbase = Base()
-            dict_ambigs = testbase._process_database_ambig(do_verbose=False, keyword_objs=params.test_list_lookup_kobj)
+            dict_ambigs = testbase._process_database_ambig(do_verbose=False, keyword_objs=test_list_lookup_kobj)
 
             # Check answers
             for key1 in dict_tests:
                 try:
                     curr_phrase = key1
-                    curr_kobjs = [params.test_dict_lookup_kobj[dict_tests[key1]["lookup"]]]
+                    curr_kobjs = [test_dict_lookup_kobj[dict_tests[key1]["lookup"]]]
                     answer = dict_tests[key1]["bool"]
                     test_res = testbase._check_truematch(
                         text=curr_phrase,
@@ -333,7 +342,7 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array(
                         [
-                            testbase._is_pos_word(word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos)
+                            testbase._is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos)
                             for item in curr_NLP
                         ]
                     )
@@ -383,7 +392,7 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array(
                         [
-                            testbase._is_pos_word(word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos)
+                            testbase._is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos)
                             for item in curr_NLP
                         ]
                     )
@@ -427,7 +436,7 @@ class TestBase(unittest.TestCase):
                     test_bools = np.array(
                         [
                             testbase._is_pos_word(
-                                word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos, do_verbose=False
+                                word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos, do_verbose=False
                             )
                             for item in curr_NLP
                         ]
@@ -480,7 +489,7 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array(
                         [
-                            testbase._is_pos_word(word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos)
+                            testbase._is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos)
                             for item in curr_NLP
                         ]
                     )
@@ -530,7 +539,7 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array(
                         [
-                            testbase._is_pos_word(word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos)
+                            testbase._is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos)
                             for item in curr_NLP
                         ]
                     )
@@ -581,7 +590,7 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array(
                         [
-                            testbase._is_pos_word(word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos)
+                            testbase._is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos)
                             for item in curr_NLP
                         ]
                     )
@@ -627,7 +636,7 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array(
                         [
-                            testbase._is_pos_word(word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos)
+                            testbase._is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos)
                             for item in curr_NLP
                         ]
                     )
@@ -680,7 +689,7 @@ class TestBase(unittest.TestCase):
                     test_bools = np.array(
                         [
                             testbase._is_pos_word(
-                                word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos, do_verbose=False
+                                word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos, do_verbose=False
                             )
                             for item in curr_NLP
                         ]
@@ -726,7 +735,7 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array(
                         [
-                            testbase._is_pos_word(word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos)
+                            testbase._is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos)
                             for item in curr_NLP
                         ]
                     )
@@ -783,7 +792,7 @@ class TestBase(unittest.TestCase):
                     test_bools = np.array(
                         [
                             testbase._is_pos_word(
-                                word=item, keyword_objs=params.test_list_lookup_kobj, pos=test_pos, do_verbose=False
+                                word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos, do_verbose=False
                             )
                             for item in curr_NLP
                         ]
@@ -834,7 +843,7 @@ class TestBase(unittest.TestCase):
             for key1 in dict_tests:
                 try:
                     answer = dict_tests[key1]
-                    test_res = testbase._search_text(text=key1, keyword_objs=params.test_list_lookup_kobj)["bool"]
+                    test_res = testbase._search_text(text=key1, keyword_objs=test_list_lookup_kobj)["bool"]
                     self.assertEqual(test_res, answer)
                 except AssertionError:
                     print("")

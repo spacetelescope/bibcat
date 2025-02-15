@@ -6,8 +6,16 @@ Testing the Keyword class and its methods.
 
 import unittest
 
-from bibcat import parameters as params
+from bibcat.core import parameters as params
 from bibcat.core.operator import Operator
+
+# test Keyword-object lookups
+test_dict_lookup_kobj = {
+    "Hubble": params.kobj_hubble,
+    "Kepler": params.kobj_kepler,
+    "K2": params.kobj_k2,
+    "HLA": params.kobj_hla,
+}
 
 
 # Purpose: Testing the Operator class
@@ -43,7 +51,7 @@ class TestOperator(unittest.TestCase):
                 # Otherwise, check generated modif
                 curr_lookup = key1
                 test_res = testbase._fetch_keyword_object(lookup=curr_lookup, do_raise_emptyerror=True)
-                curr_answer = params.test_dict_lookup_kobj[dict_acts[key1]]
+                curr_answer = test_dict_lookup_kobj[dict_acts[key1]]
 
                 # Check answer
                 try:
