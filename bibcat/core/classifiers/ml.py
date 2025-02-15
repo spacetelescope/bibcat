@@ -293,7 +293,7 @@ class TensorFlow(AbstractModel):
 
         # setup optimizer and fitting parameters
         # TODO - revisit the type of optimizer, lamb vs adam vs others
-        optimizer = tf.keras.optimizers.Adam(learning_rate=self.init_lr)
+        optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=self.init_lr)
 
         # Print some notes
         if self.verbose:

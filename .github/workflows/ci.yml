@@ -1,4 +1,4 @@
-name: CI Test Suite
+name: CI Suite
 on:
   push:
   pull_request:
