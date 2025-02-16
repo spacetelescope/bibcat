@@ -9,23 +9,13 @@ import unittest
 import numpy as np
 import spacy
 from nltk.corpus import wordnet  # type: ignore
+from test_config import test_dict_lookup_kobj, test_list_lookup_kobj
 
 from bibcat import config
 from bibcat.core import parameters as params
 from bibcat.core.base import Base
 
 nlp = spacy.load(config.grammar.spacy_language_model)
-
-# test Keyword-object lookups
-test_dict_lookup_kobj = {
-    "Hubble": params.kobj_hubble,
-    "Kepler": params.kobj_kepler,
-    "K2": params.kobj_k2,
-    "HLA": params.kobj_hla,
-}
-
-# test Keyword-object lookups
-test_list_lookup_kobj = [params.kobj_hubble, params.kobj_kepler, params.kobj_k2]
 
 
 class TestBase(unittest.TestCase):

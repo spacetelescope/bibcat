@@ -6,16 +6,10 @@ Testing the Keyword class and its methods.
 
 import unittest
 
+from test_config import test_dict_lookup_kobj
+
 from bibcat.core import parameters as params
 from bibcat.core.operator import Operator
-
-# test Keyword-object lookups
-test_dict_lookup_kobj = {
-    "Hubble": params.kobj_hubble,
-    "Kepler": params.kobj_kepler,
-    "K2": params.kobj_k2,
-    "HLA": params.kobj_hla,
-}
 
 
 # Purpose: Testing the Operator class

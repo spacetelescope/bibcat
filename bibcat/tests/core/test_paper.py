@@ -6,11 +6,10 @@ Testing the Paper class and its methods.
 
 import unittest
 
+from test_config import test_list_lookup_kobj
+
 from bibcat.core import paper
 from bibcat.core import parameters as params
-
-# test Keyword-object lookups
-test_list_lookup_kobj = [params.kobj_hubble, params.kobj_kepler, params.kobj_k2]
 
 
 class TestPaper(unittest.TestCase):
