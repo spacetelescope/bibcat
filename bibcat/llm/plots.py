@@ -41,10 +41,9 @@ def confusion_matrix_plot(missions: list[str]) -> None:
     """
     data = fetch_data()
 
-    human, llm, threshold = extract_eval_data(missions=missions, data=data)
+    human, llm, threshold, _, valid_missions = extract_eval_data(missions=missions, data=data, is_cm=True)
 
     fig, ax = plt.subplots(1, 2, figsize=(10, 5), sharex=True, sharey=True)
-    bbox_args = dict(boxstyle="round", fc="0.8")
     labels = config.llms.papertypes
 
     # Absolute label counts
@@ -60,28 +59,37 @@ def confusion_matrix_plot(missions: list[str]) -> None:
     for axis in ax:
         axis.set_xlabel("LLM label")
         axis.set_ylabel("Human label")
-        axis.annotate(
-            f"Threshold={threshold}",
-            xy=(1, 1),
-            xycoords="axes fraction",
-            xytext=(-10, -10),
-            textcoords="offset points",
-            ha="right",
-            va="top",
-            bbox=bbox_args,
-        )
-    # Suptitle
-    if len(missions) < 5:
-        fig.suptitle(f"Confusion Matrix\nMissions: {missions}", fontsize=14)
-    elif missions == config.missions:
-        fig.suptitle("Confusion Matrix\nAll MAST missions", fontsize=14)
-    else:
-        fig.suptitle("Confusion Matrix\nMulti-missions", fontsize=14)
 
-    plt.tight_layout()
+    # Suptitle
+    fig.suptitle(f"Confusion Matrix at threshold = {threshold}", fontsize=14, fontweight="bold")
+
+    if len(valid_missions) > 13:
+        fig.text(
+            0.5,
+            0.9,
+            f"More than 12 MAST Missions",
+            ha="center",
+            fontsize=12,
+            fontstyle="italic",
+            color="gray",
+        )
+    else:
+        fig.text(
+            0.5,
+            0.9,
+            f"Mission(s): {', '.join(valid_missions)}",
+            ha="center",
+            fontsize=12,
+            fontstyle="italic",
+            color="gray",
+        )
+    plt.tight_layout(rect=[0, 0.05, 1, 0.95])
 
     # Saving the figure
-    cm_plot = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.cm_plot}"
+    cm_plot = (
+        pathlib.Path(config.paths.output)
+        / f"llms/openai_{config.llms.openai.model}/{config.llms.cm_plot}_t{config.llms.performance.threshold}.png"
+    )
     plt.savefig(cm_plot)
     logger.info(f"The confusion matrix plot is saved on {cm_plot}!")
 
@@ -103,11 +111,19 @@ def roc_plot(missions: list[str]) -> None:
 
     # read the evaluation summary output file
     data = fetch_data()
+    human_labels, _, _, llm_confidences, valid_missions = extract_eval_data(missions=missions, data=data)
 
-    llm_confidences, binarized_human_labels, n_papertypes, n_verdicts = prepare_roc_inputs(data, missions)
+    binarized_human_labels, llm_confidences, n_papertypes, n_verdicts = prepare_roc_inputs(
+        human_labels, llm_confidences
+    )
 
     # compute ROC curve and ROC AUC (area under curve) for each class
-    fpr, tpr, roc_auc = get_roc_metrics(llm_confidences, binarized_human_labels, n_papertypes)
+    if n_papertypes > 2:
+        fpr, tpr, roc_auc, macro_roc_auc_ovr, micro_roc_auc_ovr = get_roc_metrics(
+            llm_confidences, binarized_human_labels, n_papertypes
+        )
+    else:
+        fpr, tpr, roc_auc = get_roc_metrics(llm_confidences, binarized_human_labels, n_papertypes)
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     bbox_args = dict(boxstyle="round", fc="0.8")
@@ -123,6 +139,17 @@ def roc_plot(missions: list[str]) -> None:
                 lw=2,
                 label=f"{config.llms.papertypes[i]} (AUC = {roc_auc[i]:.2f})",
             )
+        ax.annotate(
+            f" : macro_roc_auc_ovr = {macro_roc_auc_ovr}\n micro_roc_auc_ovr = {micro_roc_auc_ovr}",
+            xy=(1, 0.35),
+            xycoords="axes fraction",
+            xytext=(-10, -10),
+            textcoords="offset points",
+            ha="right",
+            va="top",
+            bbox=bbox_args,
+        )
+
     else:
         ax.plot(fpr, tpr, color="b", lw=2, label=f"SCIENCE (AUC={roc_auc:.2f})")
     ax.plot([0, 1], [0, 1], "k--", lw=2, label="Random guessing")
@@ -143,15 +170,31 @@ def roc_plot(missions: list[str]) -> None:
     ax.set_ylabel("True Positive Rate")
     ax.grid(True)
     ax.legend(loc="lower right")
-    # plt.title("Reciever Operating Characteristic (ROC)")
 
     # Suptitle
-    if len(missions) < 5:
-        fig.suptitle(f"Reciever Operating Characteristic (ROC)\n\nMissions: {missions}", fontsize=14)
-    elif missions == config.missions:
-        fig.suptitle("Reciever Operating Characteristic (ROC)\n\nAll MAST missions", fontsize=14)
+    fig.suptitle(f"Reciever Operating Characteristic (ROC)", fontsize=14, fontweight="bold")
+
+    if len(valid_missions) > 13:
+        fig.text(
+            0.5,
+            0.9,
+            f"More than 12 MAST Missions",
+            ha="center",
+            fontsize=10,
+            fontstyle="italic",
+            color="gray",
+        )
     else:
-        fig.suptitle("Reciever Operating Characteristic (ROC)\n\nMulti-missions", fontsize=14)
+        fig.text(
+            0.5,
+            0.9,
+            f"Mission(s): {', '.join(valid_missions)}",
+            ha="center",
+            fontsize=10,
+            fontstyle="italic",
+            color="gray",
+        )
+    plt.tight_layout(rect=[0, 0.05, 1, 0.95])
 
     # Saving the figure
     roc = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.roc_plot}"

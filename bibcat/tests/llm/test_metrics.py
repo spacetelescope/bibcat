@@ -23,20 +23,26 @@ def test_map_papertype():
 
 
 def test_extract_eval_data():
-    human_labels, llm_labels, threshold = extract_eval_data(data, missions)
+    human_labels, llm_labels, threshold, llm_confidences, valid_missions = extract_eval_data(data, missions)
 
     assert human_labels == ["SCIENCE", "MENTION"]
     assert llm_labels == ["SCIENCE", "MENTION"]
     assert threshold == 0.7
+    assert sorted(valid_missions) == sorted(["JWST", "Roman"])
+    assert llm_confidences == [[0.8, 0.2], [0.3, 0.7]]
 
 
 def test_prepare_roc_inpuits():
-    llm_confidences, binarized_human_labels, n_papertypes, n_verdicts = prepare_roc_inputs(data, missions)
+    human_labels = ["SCIENCE", "MENTION", "MENTION"]
+    llm_confidences = [[0.8, 0.2], [0.3, 0.7], [0.25, 0.75]]
+    binarized_human_labels, llm_confidences_array, n_papertypes, n_verdicts = prepare_roc_inputs(
+        human_labels, llm_confidences
+    )
 
-    assert np.array_equal(llm_confidences, np.array([[0.8, 0.2], [0.3, 0.7]]))
-    assert np.array_equal(binarized_human_labels, np.array([[1], [0]]))
+    assert np.array_equal(llm_confidences_array, np.array([[0.8, 0.2], [0.3, 0.7], [0.25, 0.75]]))
+    assert np.array_equal(binarized_human_labels, np.array([[1], [0], [0]]))
     assert n_papertypes == 2
-    assert n_verdicts == 2
+    assert n_verdicts == 3
 
 
 def test_get_roc_metrics():
