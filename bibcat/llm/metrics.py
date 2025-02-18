@@ -130,8 +130,8 @@ def extract_eval_data(data: dict, missions: list[str], is_cm: bool = False):
                 confs = [i["prob_papertype"] for i in llm_mission_conf if i["llm_mission"] == mission]
                 llm_confidences.extend(confs)
 
-        threshold = data[bibcode]["threshold_acceptance"]
-        valid_missions = sorted(list(set(valid_mission_callouts)))
+    valid_missions = sorted(list(set(valid_mission_callouts)))
+    threshold = data[next(iter(data))]["threshold_acceptance"]
 
     logger.debug(f"threshold = {threshold}")
     logger.debug(f"human_labels = {human_labels}")
@@ -147,7 +147,7 @@ def extract_eval_data(data: dict, missions: list[str], is_cm: bool = False):
             n_bibcodes,
             n_human_mission_callouts,
             n_llm_mission_callouts,
-            len(valid_missions),
+            len(valid_mission_callouts),
             valid_missions,
             human_labels,
             llm_labels,

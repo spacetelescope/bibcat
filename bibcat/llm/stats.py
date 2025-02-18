@@ -103,11 +103,7 @@ def save_evaluation_stats(
         / f"llms/openai_{config.llms.openai.model}/{config.llms.inconsistent_classifications_file}_t{config.llms.performance.threshold}.json"
     )
 
-    inconsistent_classification_df.to_json(
-        inconsistency_filename,
-        orient="records",
-        lines=True,
-    )
+    inconsistent_classification_df.to_json(inconsistency_filename, orient="records", indent=2)
 
 
 def save_operation_stats(
@@ -148,7 +144,7 @@ def save_operation_stats(
     """
 
     data = read_output(bibcode=None, filename=input_path)
-    logger.debug(f"Loaded data: {data}")
+    logger.debug(f"The number of the loaded data: {len(data)}")
 
     # filter out bad data
     n_data = len(data)
@@ -165,10 +161,15 @@ def save_operation_stats(
 
     # Build Pandas DataFrame
     try:
-        df = pd.DataFrame([[item['mission'].lower(), item['papertype'].lower(), item['confidence'], bibcode]
-                           for bibcode, assessment in data.items()
-                           for mission_item in assessment for item in mission_item['missions']],
-                          columns=['mission', 'papertype', 'llm_confidences', 'bibcode'])
+        df = pd.DataFrame(
+            [
+                [item["mission"].lower(), item["papertype"].lower(), item["confidence"], bibcode]
+                for bibcode, assessment in data.items()
+                for mission_item in assessment
+                for item in mission_item["missions"]
+            ],
+            columns=["mission", "papertype", "llm_confidences", "bibcode"],
+        )
     except Exception as e:
         logger.error(f"Error during operation DataFrame creation: {e}")
         raise
@@ -265,12 +266,6 @@ def write_stats(output_path, threshold_acceptance, threshold_inspection, grouped
     Returns
     -------
     None
-
-    Raises
-    ------
-    FileExistsError
-    If the output file specified by `output_path` already exists.
-
     """
     logger.info(
         "Production counts by LLM Mission and Paper Type:\n"
@@ -285,14 +280,9 @@ def write_stats(output_path, threshold_acceptance, threshold_inspection, grouped
     )
 
     # writing the stats table JSON
-    if not os.path.exists(output_path):
-        save_json_file(
-            output_path,
-            list_of_dicts,
-        )
-    else:
-        raise FileExistsError(
-            f"{output_path} already exists. Are you sure you want to overwrite the file? Choose a different name for the output in 'bibcat_config.yaml', if you want to keep the existing file"
-        )
+    save_json_file(
+        output_path,
+        list_of_dicts,
+    )
 
     logger.info(f"bibcode lists for both acceptance and inspection were generated in {output_path}")
