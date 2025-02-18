@@ -67,7 +67,7 @@ def confusion_matrix_plot(missions: list[str]) -> None:
         fig.text(
             0.5,
             0.9,
-            f"More than 12 MAST Missions",
+            "More than 12 MAST Missions",
             ha="center",
             fontsize=12,
             fontstyle="italic",
