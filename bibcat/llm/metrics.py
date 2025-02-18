@@ -361,24 +361,3 @@ def get_roc_metrics(llm_confidences: NDArray[np.float64], binarized_human_labels
     logger.info(f"fpr={fpr}")
     logger.info(f"tpr={tpr}")
     logger.info(f"auc ={roc_auc}")
-
-
-# compute metrics and save results
-def compute_and_save_metrics(y_true, y_pred, output_file="metrics_results.txt"):
-    # Encode string labels into numeric values using LabelEncoder
-    label_encoder = LabelEncoder()
-    y_true_encoded = label_encoder.fit_transform(y_true)  # Converts labels to integers
-    y_pred_encoded = label_encoder.transform(y_pred)
-
-    # Determine number of classes
-    n_classes = len(label_encoder.classes_)
-
-    # Compute metrics (single computation for all cases)
-    accuracy = accuracy_score(y_true_encoded, y_pred_encoded)
-    precision_macro = precision_score(y_true_encoded, y_pred_encoded, average="macro")
-    recall_macro = recall_score(y_true_encoded, y_pred_encoded, average="macro")
-    f1_macro = f1_score(y_true_encoded, y_pred_encoded, average="macro")
-
-
-# Call function to compute metrics and save results
-compute_and_save_metrics(y_true_example, y_pred_example)

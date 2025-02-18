@@ -172,13 +172,13 @@ def roc_plot(missions: list[str]) -> None:
     ax.legend(loc="lower right")
 
     # Suptitle
-    fig.suptitle(f"Reciever Operating Characteristic (ROC)", fontsize=14, fontweight="bold")
+    fig.suptitle("Reciever Operating Characteristic (ROC)", fontsize=14, fontweight="bold")
 
     if len(valid_missions) > 13:
         fig.text(
             0.5,
             0.9,
-            f"More than 12 MAST Missions",
+            "More than 12 MAST Missions",
             ha="center",
             fontsize=10,
             fontstyle="italic",
