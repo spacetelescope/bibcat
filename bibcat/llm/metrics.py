@@ -2,7 +2,16 @@ from pathlib import Path
 
 import numpy as np
 from numpy.typing import NDArray
-from sklearn.metrics import accuracy_score, auc, f1_score, precision_score, recall_score, roc_auc_score, roc_curve
+from sklearn.metrics import (
+    accuracy_score,
+    auc,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+    roc_curve,
+)
 from sklearn.preprocessing import LabelBinarizer, LabelEncoder
 
 from bibcat import config
@@ -198,6 +207,9 @@ def compute_and_save_metrics(
     None
 
     """
+    # t: true, f: false, p: positive, n: negative
+    tn, fp, fn, tp = confusion_matrix(human_labels, llm_labels).ravel()
+
     # Encode string labels into numeric values using LabelEncoder
     label_encoder = LabelEncoder()
     human_labels_encoded = label_encoder.fit_transform(human_labels)
@@ -230,7 +242,9 @@ def compute_and_save_metrics(
         f.write(f"The number of mission callouts by both human and llm: {n_valid_mission_callouts}\n\n")
 
         f.write(f"Missions called out by both human and llm: {', '.join(valid_missions)}\n")
-        f.write(f"{n_classes} papertypes: {', '.join(label_encoder.classes_)}\n\n")
+        f.write(f"{n_classes} papertypes: {', '.join(label_encoder.classes_)} are labeled\n\n")
+
+        f.write(f"True Negative = {tn}, False Positive = {fp}, False Negative = {fn}, True Positive = {tp}\n\n")
 
         f.write(f"Accuracy Score: {accuracy:.4f}\n")
         f.write(f"Precision (Macro): {precision_macro:.4f}\n")
