@@ -129,7 +129,7 @@ def extract_eval_data(data: dict, missions: list[str], is_cm: bool = False):
                 # To generate an ROC curve, we need the full range of confidence values. Use "prob_papertype" for each mission, as "mean_llm_confidences" only reflect the scores of the finally accepted papertypes in "llm:[]", which are always above the threshold. We require the varying values provided by "prob_papertype where human labels exist."
                 confs = [i["prob_papertype"] for i in llm_mission_conf if i["llm_mission"] == mission]
                 llm_confidences.extend(confs)
-
+    n_valid_mission_callouts = len(valid_mission_callouts)
     valid_missions = sorted(list(set(valid_mission_callouts)))
     threshold = data[next(iter(data))]["threshold_acceptance"]
 
@@ -138,7 +138,7 @@ def extract_eval_data(data: dict, missions: list[str], is_cm: bool = False):
     logger.debug(f"llm_labels = {llm_labels}")
     logger.debug(f"llm_confidences = {llm_confidences}")
     logger.info(
-        f"The total numbers of mission callouts by human and llm are {n_human_mission_callouts} and {n_llm_mission_callouts} respectively. \n Among these callouts, only {len(valid_mission_callouts)} cases are called out by both llm and human and valid for further evaluations!"
+        f"The total numbers of mission callouts by human and llm are {n_human_mission_callouts} and {n_llm_mission_callouts} respectively. \n Among these callouts, only {n_valid_mission_callouts} cases are called out by both llm and human and valid for further evaluations!"
     )
 
     if is_cm:
@@ -147,7 +147,7 @@ def extract_eval_data(data: dict, missions: list[str], is_cm: bool = False):
             n_bibcodes,
             n_human_mission_callouts,
             n_llm_mission_callouts,
-            len(valid_mission_callouts),
+            n_valid_mission_callouts,
             valid_missions,
             human_labels,
             llm_labels,
@@ -168,11 +168,11 @@ def compute_and_save_metrics(
     n_bibcodes: int,
     n_human_mission_callouts: int,
     n_llm_mission_callouts: int,
-    n_valid_missions_callouts: int,
+    n_valid_mission_callouts: int,
     valid_missions: list[str],
     human_labels: list[str],
     llm_labels: list[str],
-    output_file: str = "metrics_summary.txt",
+    output_file: str | Path = "metrics_summary.txt",
 ):
     """Compute evaluation metrics (accuracy, f1, precision, and recall scores) and save results to an ascii file
 
@@ -184,7 +184,7 @@ def compute_and_save_metrics(
         The number of mission callouts by human classification
     n_llm_mission_callouts: int
         The number of mission callouts by llm classification
-    n_valid_missions_callouts: int
+    n_valid_mission_callouts: int
         The number of mission callouts by both human and llm
     valid_missions: list[str]
         The missions called out by both human and llm
@@ -227,7 +227,7 @@ def compute_and_save_metrics(
         f.write(f"The number of bibcodes (papers) for evaluation metrics: {n_bibcodes}\n")
         f.write(f"The number of mission callouts by human: {n_human_mission_callouts}\n")
         f.write(f"The number of mission callouts by llm: {n_llm_mission_callouts}\n")
-        f.write(f"The number of mission callouts by both human and llm: {n_valid_missions_callouts}\n\n")
+        f.write(f"The number of mission callouts by both human and llm: {n_valid_mission_callouts}\n\n")
 
         f.write(f"Missions called out by both human and llm: {', '.join(valid_missions)}\n")
         f.write(f"{n_classes} papertypes: {', '.join(label_encoder.classes_)}\n\n")
