@@ -1,12 +1,20 @@
+from pathlib import Path
+
 import numpy as np
 
-from bibcat.llm.metrics import extract_eval_data, get_roc_metrics, map_papertype, prepare_roc_inputs
+from bibcat.llm.metrics import (
+    compute_and_save_metrics,
+    extract_eval_data,
+    get_roc_metrics,
+    map_papertype,
+    prepare_roc_inputs,
+)
 
 data = {
     "Bibcode2024": {
         "human": {"JWST": "SCIENCE", "Roman": "MENTION", "TESS": "SUPERMENTION"},
-        "threshold_acceptance": 0.7,
         "llm": [{"JWST": "SCIENCE"}, {"Roman": "MENTION"}, {"GALEX": "SCIENCE"}],
+        "threshold_acceptance": 0.7,
         "mission_conf": [
             {"llm_mission": "JWST", "prob_papertype": [0.8, 0.2]},
             {"llm_mission": "Roman", "prob_papertype": [0.3, 0.7]},
@@ -30,6 +38,22 @@ def test_extract_eval_data():
     assert threshold == 0.7
     assert sorted(valid_missions) == sorted(["JWST", "Roman"])
     assert llm_confidences == [[0.8, 0.2], [0.3, 0.7]]
+
+
+def test_compute_and_save(tmp_path: str | Path):
+    temp_output_filepath = tmp_path / "output.txt"
+    compute_and_save_metrics(
+        n_bibcodes=10,
+        n_human_mission_callouts=21,
+        n_llm_mission_callouts=25,
+        n_valid_mission_callouts=15,
+        valid_missions=["JWST", "HST"],
+        human_labels=["SCIENCE", "MENTION", "MENTION"],
+        llm_labels=["SCIENCE", "SCIENCE", "MENTION"],
+        output_file=temp_output_filepath,
+    )
+    assert temp_output_filepath.exists(), f"{temp_output_filepath} was not created."
+    assert temp_output_filepath.is_file(), f"{temp_output_filepath} is not a file."
 
 
 def test_prepare_roc_inpuits():
