@@ -20,5 +20,5 @@ help:
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 live-docs:
-	sphinx-apidoc -o docs/api ../bibcat
-	sphinx-autobuild docs docs/_build/html
+	sphinx-apidoc -o api ../bibcat
+	sphinx-autobuild . _build/html

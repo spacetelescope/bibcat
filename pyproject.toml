@@ -56,6 +56,7 @@ docs = [
     "myst-parser",
     "sphinx",
     "sphinx-astropy",
+    "sphinx-autobuild",
     "sphinx-automodapi",
     "sphinx-rtd-theme",
     "sphinx-copybutton",
