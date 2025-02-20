@@ -43,6 +43,7 @@ def test_extract_eval_data():
 def test_compute_and_save(tmp_path: str | Path):
     temp_output_filepath = tmp_path / "output.txt"
     compute_and_save_metrics(
+        threshold=0.7,
         n_bibcodes=10,
         n_human_mission_callouts=21,
         n_llm_mission_callouts=25,

@@ -153,6 +153,7 @@ def extract_eval_data(data: dict, missions: list[str], is_cm: bool = False):
     if is_cm:
         # compute accuracy, f1 score, precision score, and recall score
         compute_and_save_metrics(
+            threshold,
             n_bibcodes,
             n_human_mission_callouts,
             n_llm_mission_callouts,
@@ -161,7 +162,7 @@ def extract_eval_data(data: dict, missions: list[str], is_cm: bool = False):
             human_labels,
             llm_labels,
             output_file=Path(config.paths.output)
-            / f"llms/openai_{config.llms.openai.model}/metrics_summary_t{config.llms.performance.threshold}.txt",
+            / f"llms/openai_{config.llms.openai.model}/metrics_summary_t{threshold}.txt",
         )
 
     return (
@@ -174,6 +175,7 @@ def extract_eval_data(data: dict, missions: list[str], is_cm: bool = False):
 
 
 def compute_and_save_metrics(
+    threshold: float,
     n_bibcodes: int,
     n_human_mission_callouts: int,
     n_llm_mission_callouts: int,
@@ -238,7 +240,9 @@ def compute_and_save_metrics(
     with open(output_file, "w") as f:
         f.write(f"The number of bibcodes (papers) for evaluation metrics: {n_bibcodes}\n")
         f.write(f"The number of mission callouts by human: {n_human_mission_callouts}\n")
-        f.write(f"The number of mission callouts by llm: {n_llm_mission_callouts}\n")
+        f.write(
+            f"The number of mission callouts by llm with the threshold value, {threshold}: {n_llm_mission_callouts}\n"
+        )
         f.write(f"The number of mission callouts by both human and llm: {n_valid_mission_callouts}\n\n")
 
         f.write(f"Missions called out by both human and llm: {', '.join(valid_missions)}\n")
