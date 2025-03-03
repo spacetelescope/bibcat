@@ -1,3 +1,4 @@
+import os
 import pathlib
 
 import numpy as np
@@ -55,6 +56,18 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     paper = get_source(bibcode=bibcode, index=index)
     if not paper:
         logger.warning(f"No paper source found for {bibcode}")
+        # write the missing source bibcodes
+        missing_bibcode_file = (
+            pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/missing_source_bibcodes.txt"
+        )
+        if not os.path.exists(missing_bibcode_file):
+            # create a new file
+            with open(missing_bibcode_file, "w+") as f:
+                f.write(f"{bibcode}\n")
+        else:
+            # append to an existing file
+            with open(missing_bibcode_file, "a") as f:
+                f.write(f"{bibcode}\n")
         return None
 
     bibcode = paper["bibcode"]
@@ -80,6 +93,9 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     # convert output to a dataframe
     df = pd.DataFrame([j | {"notes": i["notes"]} for i in response for j in i["missions"]])
     df = df.rename(columns={"confidence": "llm_confidences"})
+    # Convert 'mission' column values to uppercase
+    df["mission"] = df["mission"].str.upper()
+
     df = df.sort_values("mission").reset_index(drop=True)
 
     # group by mission and paper type,
@@ -207,7 +223,8 @@ def get_human_classification(paper: dict | str):
     dict
         human's mission and paper type
     """
-    human_classes = paper["class_missions"]
+    # Convert mission names to uppercase
+    human_classes = {key.upper(): value for key, value in paper["class_missions"].items()}
     formatted_output = "\n".join([f"{mission}: {info['papertype']}" for mission, info in human_classes.items()])
     logger.info(f"Human Classifications:\n {formatted_output}")
     return human_classes
@@ -392,6 +409,9 @@ def identify_missions_in_text(missions: list, text: str) -> list:
     except NotImplementedError as ee:
         logger.warning("Error processing paper paragraphs: %s.", ee)
         paragraphs = None
+
+    # paper.process_paragraphs()
+    # paragraphs = paper.get_paragraphs()
 
     in_text = []
     for mission in missions:

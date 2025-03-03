@@ -45,6 +45,7 @@ llms:
   eval_stats_file: evaluation_stats  # llm evaluation high-level statistics output
   inconsistent_classifications_file: inconsistent_classifications # list of inconsistent classifications between llm and human
   ops_stats_file: operation_stats  # llm operation high-level statistics output
+  metrics_file: metrics_summary # metrics summary file with the implemented threshold
   cm_plot: confusion_matrix_llm.png # confusion matrix plot
   roc_plot: roc_plot_llm.png # receiver operating charateristic curve
   llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt

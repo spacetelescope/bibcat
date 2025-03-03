@@ -162,7 +162,7 @@ def extract_eval_data(data: dict, missions: list[str], is_cm: bool = False):
             human_labels,
             llm_labels,
             output_file=Path(config.paths.output)
-            / f"llms/openai_{config.llms.openai.model}/metrics_summary_t{threshold}.txt",
+            / f"llms/openai_{config.llms.openai.model}/{config.llms.metrics_file}_t{threshold}.txt",
         )
 
     return (
