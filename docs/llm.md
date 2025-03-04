@@ -489,6 +489,7 @@ An example output file would look like:
   }
 }
 ```
+This evaluation command will create a file of the bibcodes missing from the source dataset, `missing_source_bibcodes.txt`.
 
 
 ### Batch Evaluation
@@ -504,14 +505,17 @@ bibcat evaluate-llm-batch -p bibcode_list.txt -s -n 20
 You can assess model performance using confusion matrix plots or Receiver Operating Characteristic (ROC) curves. A [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) plot helps evaluation classification model performance by showing true positives ($TP$), true negatives ($TN$), false positives ($FP$), and false negatives ($FN$), making it useful for understanding evaluation metrics such as accuracy ($\frac{TP+TN}{TP+TB+FP+FN}$), precision ($\frac{TP}{TP+FP}$), recall (sensitivity, $\frac{TP}{(TP+FN)}$), and F1 score ($2\times \frac{precision \times recall}{ precison + recall}$). A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curve evaluates a model's ability to distinguish between classes by plotting the true positive rate against the false positive rate at various thresholds, with the area under the curve (AUC) which represents the degree of separability between classes. For instance, AUC=1.0 indicates perfect and AUC =0.5 is as good as random guessing. To provide more reliable and stable performance metrics, larger datasets (hundreds or thousands) are recommended. With small datasets, you make interpreations less reliable.
 
 ### Confusion Matrix Plot
-To plot a confusion matrix for specific missions, run:
+To plot a confusion matrix for specific missions (default threshold probability = 0.7), run:
 ```bash
 bibcat eval-plot -c -m HST -m JWST
 ```
+
 To plot a confusion matrix for all missions, run:
 ```bash
 bibcat eval-plot -c -a
 ```
+These commands will also create a metrics summary file (e.g., `metrics_file_t0.7.json`).
+
 ### Receiver Operating Characteristic (ROC) Plot
 To plot a confusion matrix for specific missions, run:
 ```bash
@@ -543,7 +547,7 @@ This command line will also create a file for the list of the papers where human
 ### Operation classification statistics for mission+papertype pairs
 This output will provide various number counts including the number of papers with accepted papertype which meets this condition `threshold_acceptance >= confidence` and the number of papers required for human inspection (`threshold_inspection <= confidence < threshold_acceptance`) for final papertype assignment. It also includes the lists of bibcodes of accepted papertypes and inspection required for human inspection.
 
-To create a statisitics output,`operation_stats_t0.7.json`  from the llm classification output for *o*peration, `paper_output.json`, run:
+To create statisitics output files,`operation_stats_t0.7.json` and `operation_stats_t0.7.txt` from the llm classification output for *o*peration, `paper_output.json`, run:
 ```bash
 bibcat stats-llm -o
 ```
@@ -566,7 +570,7 @@ Both the evaluation and operation statistics files share the same column names.
 
 
 #### Statistics Output
-The definitions of the output columns are following.
+The definitions of the JSON output columns are following.
 
 - **threshold_acceptance**: The threshold value to accept the LLM papertype classification
 - **threshold_inspection**: The threshold value to require human inspection
@@ -578,6 +582,16 @@ The definitions of the output columns are following.
 - **inspection_count**: The count of papers required for human inspection
 - **inspection_bibcodes**: The bibcode list of the papers for papertype required human inspection
 
+The statistics `.txt`output file shows the table view of mission, papertype, total_count  accepted_count, and inspection_count.
+```bash
+   mission papertype  total_count  accepted_count  inspection_count
+     GALEX   MENTION            4               4                 0
+     GALEX   SCIENCE            2               2                 0
+       HST   MENTION           22              21                 1
+       HST   SCIENCE            4               4                 0
+      JWST   MENTION            8               8                 0
+      JWST   SCIENCE           17              17                 0
+```
 #### File output for the inconsistent classifications
 The output columns are `mission`, `papertype`, `mean_llm_confidences`,`bibcode`, `in_human_class`, `mission_in_text`, and `consistency`.
 The column definitions can be found in the [Output Columns](#output-columns).

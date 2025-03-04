@@ -266,19 +266,28 @@ def write_stats(output_path, threshold_acceptance, threshold_inspection, grouped
     -------
     None
     """
-    logger.info(
-        "Production counts by LLM Mission and Paper Type:\n"
-        + grouped_df[["mission", "papertype", "total_count", "accepted_count", "inspection_count"]].to_string(
-            index=False
-        )
-    )
+    tsv_df = grouped_df[["mission", "papertype", "total_count", "accepted_count", "inspection_count"]]
 
+    logger.info("Production counts by LLM Mission and Paper Type:\n" + tsv_df.to_string(index=False))
+    # Write to an ascii file
+    summary_file = (
+        pathlib.Path(config.paths.output)
+        / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_stats_file}_t{config.llms.performance.threshold}.txt"
+    )
+    try:
+        # Format and save to a text file with proper alignment
+        with open(summary_file, "w") as f:
+            f.write(tsv_df.to_string(index=False))
+        print(f"Data successfully written to {summary_file}")
+    except IOError as e:
+        print(f"Error writing to file: {e}")
+
+    # writing the stats table JSON
     list_of_dicts = grouped_df.to_dict(orient="records")
     list_of_dicts.insert(
         0, {"threshold_acceptance": threshold_acceptance, "threshold_inspection": threshold_inspection}
     )
 
-    # writing the stats table JSON
     save_json_file(
         output_path,
         list_of_dicts,
