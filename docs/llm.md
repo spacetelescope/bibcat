@@ -489,6 +489,7 @@ An example output file would look like:
   }
 }
 ```
+This evaluation command will create a file of the bibcodes missing from the source dataset, `missing_source_bibcodes.txt`.
 
 
 ### Batch Evaluation
