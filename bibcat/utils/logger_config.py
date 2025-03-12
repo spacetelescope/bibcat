@@ -1,5 +1,9 @@
 import logging
 import os
+import time
+
+# Get the start time in a readable format
+start_time = time.strftime("%Y-%m-%d_%H-%M-%S")
 
 
 def setup_logger(name: str, level: int = logging.DEBUG) -> logging.Logger:
@@ -9,7 +13,7 @@ def setup_logger(name: str, level: int = logging.DEBUG) -> logging.Logger:
 
     # Create handlers
     c_handler = logging.StreamHandler()
-    f_handler = logging.FileHandler(os.path.join(os.path.dirname(__file__), "app.log"))
+    f_handler = logging.FileHandler(os.path.join(os.path.dirname(__file__), f"bibcat_log_{start_time}.log"))
     c_handler.setLevel(level)
     f_handler.setLevel(level)
 
