@@ -54,12 +54,13 @@ llms:
     model: gpt-4o-mini
     asst_id: null
     use_assistant: false
-  papertypes: ["SCIENCE", "MENTION"]
+  papertypes: ["SCIENCE", "NONSCIENCE"]
   map_papertypes: {
     "science": "science",
-    "mention": "mention",
-    "supermention": "mention",
-    "data_influenced": "data_influenced",
+    "mention": "nonscience",
+    "supermention": "nonscience",
+    "data_influenced": "nonscience",
+    "ignore": "nonscience",
     "unresolved_grey": "other",
     "unresolved_gray": "other",
     "engineering": "other",

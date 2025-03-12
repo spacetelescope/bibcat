@@ -6,7 +6,7 @@ from sklearn.metrics import ConfusionMatrixDisplay
 
 from bibcat import config
 from bibcat.llm.io import read_output
-from bibcat.llm.metrics import extract_eval_data, get_roc_metrics, prepare_roc_inputs
+from bibcat.llm.metrics import extract_eval_data, extract_roc_data, get_roc_metrics, prepare_roc_inputs
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
@@ -41,19 +41,24 @@ def confusion_matrix_plot(missions: list[str]) -> None:
     """
     data = fetch_data()
 
-    human, llm, threshold, _, valid_missions = extract_eval_data(missions=missions, data=data, is_cm=True)
+    metrics_data = extract_eval_data(missions=missions, data=data)
+
+    human = metrics_data["human_labels"]
+    llm = metrics_data["llm_labels"]
+    threshold = metrics_data["threshold"]
+    valid_missions = metrics_data["valid_missions"]
 
     fig, ax = plt.subplots(1, 2, figsize=(10, 5), sharex=True, sharey=True)
-    labels = config.llms.papertypes
+    papertypes = config.llms.papertypes
 
     # Absolute label counts
     ax[0].set_title("Count")
-    ConfusionMatrixDisplay.from_predictions(human, llm, ax=ax[0], cmap=plt.cm.BuPu, colorbar=False, labels=labels)
+    ConfusionMatrixDisplay.from_predictions(human, llm, ax=ax[0], cmap=plt.cm.BuPu, colorbar=False, labels=papertypes)
 
     # Normalized confusion matrix
     ax[1].set_title("Normalized")
     ConfusionMatrixDisplay.from_predictions(
-        human, llm, ax=ax[1], normalize="true", cmap=plt.cm.PuRd, colorbar=False, labels=labels
+        human, llm, ax=ax[1], normalize="true", cmap=plt.cm.PuRd, colorbar=False, labels=papertypes
     )
 
     for axis in ax:
@@ -111,7 +116,7 @@ def roc_plot(missions: list[str]) -> None:
 
     # read the evaluation summary output file
     data = fetch_data()
-    human_labels, _, _, llm_confidences, valid_missions = extract_eval_data(missions=missions, data=data)
+    human_labels, llm_confidences, valid_missions = extract_roc_data(missions=missions, data=data)
 
     binarized_human_labels, llm_confidences, n_papertypes, n_verdicts = prepare_roc_inputs(
         human_labels, llm_confidences
@@ -119,11 +124,11 @@ def roc_plot(missions: list[str]) -> None:
 
     # compute ROC curve and ROC AUC (area under curve) for each class
     if n_papertypes > 2:
-        fpr, tpr, roc_auc, macro_roc_auc_ovr, micro_roc_auc_ovr = get_roc_metrics(
+        fpr, tpr, thresholds, roc_auc, macro_roc_auc_ovr, micro_roc_auc_ovr = get_roc_metrics(
             llm_confidences, binarized_human_labels, n_papertypes
         )
     else:
-        fpr, tpr, roc_auc = get_roc_metrics(llm_confidences, binarized_human_labels, n_papertypes)
+        fpr, tpr, thresholds, roc_auc = get_roc_metrics(llm_confidences, binarized_human_labels, n_papertypes)
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     bbox_args = dict(boxstyle="round", fc="0.8")
@@ -152,6 +157,24 @@ def roc_plot(missions: list[str]) -> None:
 
     else:
         ax.plot(fpr, tpr, color="b", lw=2, label=f"SCIENCE (AUC={roc_auc:.2f})")
+
+    # Define the target threshold values to mark
+    target_thresholds = np.arange(0.1, 1.0, 0.1)
+
+    # For each target threshold, find the index of the closest threshold in the computed array
+    for p in target_thresholds:
+        idx = np.abs(thresholds - p).argmin()
+        ax.scatter(fpr[idx], tpr[idx], marker="o", color="r")
+        ax.annotate(
+            f"{thresholds[idx]:.1f}",
+            (fpr[idx], tpr[idx]),
+            textcoords="offset points",
+            xytext=(5, 5),
+            fontsize=8,
+            color="r",
+        )
+
+    # Plot the diagonal line
     ax.plot([0, 1], [0, 1], "k--", lw=2, label="Random guessing")
     ax.annotate(
         f"The number of verdicts : {n_verdicts}",
@@ -163,6 +186,9 @@ def roc_plot(missions: list[str]) -> None:
         va="top",
         bbox=bbox_args,
     )
+
+    # dummy scatter for the thresholds label
+    ax.scatter([], [], marker="o", color="red", label="Thresholds")
 
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.05])
@@ -199,4 +225,5 @@ def roc_plot(missions: list[str]) -> None:
     # Saving the figure
     roc = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.roc_plot}"
     plt.savefig(roc)
+
     logger.info(f"The roc plot is saved on {roc}!")
