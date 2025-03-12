@@ -120,6 +120,7 @@ textprocessing:
   - [Kepler, Kepler Algol, 'FALSE']
   - [Kepler, Kepler binary, 'FALSE']
   - [Kepler, Kepler CBP, 'FALSE']
+  - [Kepler, Kepler census, 'FALSE']
   - [Kepler, Kepler code, 'FALSE']
   - [Kepler, Kepler dichotomy, 'FALSE']
   - [Kepler, Kepler dwarf, 'FALSE']
@@ -154,7 +155,6 @@ textprocessing:
   - [Kepler, Koester Kepler, 'FALSE']
   - [Kepler, Romero Kepler, 'FALSE']
   - [Kepler, Winget Kepler, 'FALSE']
-  # - [Kepler, Kepler’s, 'FALSE'] # This fails TestBase::test_check_truematch__variety1(). THIS NEEDS AN UNDERSTANDING HOW text processing is done first. NLP work seems to clean `'s` before feeding.
   - [Kepler, NASA Kepler, 'TRUE']
   - [Kepler, two Kepler, 'TRUE']
   - [Kepler, 2.2 Kepler, 'TRUE']
@@ -215,7 +215,6 @@ textprocessing:
   - [K2, K2 year, 'TRUE']
   - [K2, K2 yield, 'TRUE']
   - [K2, Kepler / K2, 'TRUE']
-  # - [K2, K2', 'TRUE'] # This fails TestBase::test_check_truematch__variety1() and TestPaper::test_processandget_paragraphs__variety(). THIS NEEDS AN UNDERSTANDING HOW text processing is done first. NLP work seems to clean `'s` before feeding.
   - [Hubble, Edwin Hubble, 'FALSE']
   - [Hubble, generalised Hubble, 'FALSE']
   - [Hubble, Hubble 000, 'FALSE']
