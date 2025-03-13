@@ -35,9 +35,15 @@ kobj_hubble = keyword.Keyword(
     ambig_words=["Hubble"],
 )
 kobj_jwst = keyword.Keyword(
-    keywords=["James Webb Space Telescope", "James Webb Telescope", "Webb Space Telescope", "Webb Telescope"],
+    keywords=[
+        "James Webb Space Telescope",
+        "James Webb Telescope",
+        "Webb Space Telescope",
+        "Webb Telescope",
+        "Next Generation Space Telescope",
+    ],
     acronyms_casesensitive=[],
-    acronyms_caseinsensitive=["JWST", "JST", "JT"],
+    acronyms_caseinsensitive=["JWST", "JST", "JT", "NGST"],
     do_not_classify=False,
     banned_overlap=[],
     ambig_words=[],
