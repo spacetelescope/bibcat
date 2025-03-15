@@ -25,7 +25,7 @@ def map_papertype(papertype: str):
     Returns
     =======
     mapped_papertype: str, uppercase
-        the mapped papertype follwing `config.map_papertypes`, e.g., "MENTION" if `papertype` is "SUPERMETION"
+        the mapped papertype follwing `config.llms.map_papertypes`, e.g., "MENTION" if `papertype` is "SUPERMENTION"
     """
     logger.debug(f"map_papertype(): human classified papertype to map = '{papertype}'")
     try:
