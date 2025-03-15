@@ -1,7 +1,10 @@
 from pathlib import Path
+from typing import Any
 
 import numpy as np
+import pytest
 
+from bibcat import config
 from bibcat.llm.metrics import (
     compute_and_save_metrics,
     extract_eval_data,
@@ -10,77 +13,107 @@ from bibcat.llm.metrics import (
     prepare_roc_inputs,
 )
 
-data = {
-    "Bibcode2024": {
-        "human": {"JWST": "SCIENCE", "ROMAN": "SCIENCE", "TESS": "SUPERMENTION"},
-        "llm": [{"JWST": "SCIENCE"}, {"ROMAN": "SUPERMENTION"}, {"LAMOST": "SCIENCE"}],
-        "threshold_acceptance": 0.7,
-        "mission_conf": [
-            {"llm_mission": "JWST", "prob_papertype": [0.8, 0.2]},
-            {"llm_mission": "Roman", "prob_papertype": [0.3, 0.7]},
-            {"llm_mission": "GALEX", "prob_papertype": [0.4, 0.6]},
-        ],
+
+@pytest.fixture
+def data() -> dict[str, dict[str, Any]]:
+    """Fixture for sample evaluation data"""
+    return {
+        "Bibcode2024": {
+            "human": {"JWST": "SCIENCE", "ROMAN": "SCIENCE", "TESS": "SUPERMENTION"},
+            "llm": [{"JWST": "SCIENCE"}, {"ROMAN": "SUPERMENTION"}, {"LAMOST": "SCIENCE"}],
+            "threshold_acceptance": 0.7,
+            "mission_conf": [
+                {"llm_mission": "JWST", "prob_papertype": [0.8, 0.2]},
+                {"llm_mission": "ROMAN", "prob_papertype": [0.3, 0.7]},
+                {"llm_mission": "GALEX", "prob_papertype": [0.4, 0.6]},
+            ],
+        }
     }
-}
-missions = ["HST", "JWST", "ROMAN"]
-
-expected_data = {
-    "threshold": 0.7,
-    "n_bibcodes": 1,
-    "n_human_mission_callouts": 3,
-    "n_llm_mission_callouts": 3,
-    "n_non_mast_mission_callouts": 1,
-    "n_valid_mission_callouts": 2,
-    "valid_missions": ["JWST", "ROMAN"],
-    "non_mast_missions": ["LAMOST"],
-    "human_labels": ["NONSCIENCE", "SCIENCE", "SCIENCE"],
-    "llm_labels": ["NONSCIENCE", "SCIENCE", "NONSCIENCE"],
-}
 
 
-def test_map_papertype():
+@pytest.fixture
+def missions() -> list[str]:
+    return ["HST", "JWST", "ROMAN"]
+
+
+@pytest.fixture
+def sample_metrics_data() -> dict[str, Any]:
+    """Fixture providing sample input data for testing."""
+    return {
+        "threshold": 0.7,
+        "n_bibcodes": 1,
+        "n_human_mission_callouts": 3,
+        "n_llm_mission_callouts": 3,
+        "n_non_mast_mission_callouts": 1,
+        "n_valid_mission_callouts": 2,
+        "valid_missions": ["JWST", "ROMAN"],
+        "non_mast_missions": ["LAMOST"],
+        "human_labels": ["NONSCIENCE", "SCIENCE", "SCIENCE"],
+        "llm_labels": ["NONSCIENCE", "SCIENCE", "NONSCIENCE"],
+    }
+
+
+def test_map_papertype(mocker, data) -> None:
+    """Test map_papertype() function"""
     mapped_papertype = map_papertype(data["Bibcode2024"]["human"]["TESS"])
     assert mapped_papertype == "NONSCIENCE", "wrong papertype mapping"
 
 
-def test_extract_eval_data():
+def test_extract_eval_data(mocker, data, missions, sample_metrics_data) -> None:
+    """Test extract_eval_data function"""
+
+    # Mock dependencies
+    mock_compute_and_save_metrics = mocker.patch("bibcat.llm.metrics.compute_and_save_metrics")
+    mocker.patch("bibcat.llm.metrics.logger")
+
+    # Set mock specific config values only
+    mocker.patch.object(config.paths, "output", "/mock/output")
+    mocker.patch.object(config.llms.openai, "model", "gpt-4o-mini")
+    mocker.patch.object(config.llms, "metrics_file", "metrics_summary")
+
+    # Call function using fixture
     metrics_data = extract_eval_data(data, missions)
+    # Expected results
 
+    expected_metrics_data = sample_metrics_data
     assert isinstance(metrics_data, dict), "metrics_data should be a dictionary"
-    assert set(expected_data.keys()) == set(metrics_data.keys()), "keys mismatch in metrics_data"
-    # assert metrics_data["threshold"] == 0.7, "threshold mismatch in metrics_data"
+    assert set(metrics_data.keys()) == set(expected_metrics_data.keys()), "keys mismatch in metrics_data"
 
-    for key, value in expected_data.items():
-        assert metrics_data[key] == value, f"{key} mismatch"
+    for key, value in expected_metrics_data.items():
+        assert value == metrics_data[key], f"{key} mismatch"
 
-
-def test_compute_and_save(tmp_path: str | Path):
-    # metrics_data = {
-    #     "threshold": 0.7,
-    #     "n_bibcodes": 10,
-    #     "n_human_mission_callouts": 21,
-    #     "n_llm_mission_callouts": 25,
-    #     "n_non_mast_mission_callouts": 2,
-    #     "n_valid_mission_callouts": 10,
-    #     "valid_missions": ["JWST", "HST"],
-    #     "non_mast_missions": ["LAMOST", "EDEN"],
-    #     "human_labels": ["SCIENCE", "NONSCIENCE"],
-    #     "llm_labels": ["SCIENCE", "NONSCIENCE"],
-    # }
-
-    temp_output_filepath_1 = tmp_path / "output.txt"
-    temp_output_filepath_2 = tmp_path / "output.json"
-
-    compute_and_save_metrics(
-        metrics_data=expected_data, output_ascii=temp_output_filepath_1, output_json=temp_output_filepath_2
-    )
-    assert temp_output_filepath_1.exists(), f"{temp_output_filepath_1} was not created."
-    assert temp_output_filepath_1.is_file(), f"{temp_output_filepath_1} is not a file."
-    assert temp_output_filepath_2.exists(), f"{temp_output_filepath_2} was not created."
-    assert temp_output_filepath_2.is_file(), f"{temp_output_filepath_2} is not a file."
+    # Expected file path
+    expected_json_path = str(Path("/mock/output") / "llms/openai_gpt-4o-mini/metrics_summary_t0.7.json")
+    expected_ascii_path = str(Path("/mock/output") / "llms/openai_gpt-4o-mini/metrics_summary_t0.7.txt")
+    mock_compute_and_save_metrics.assert_any_call(metrics_data, expected_ascii_path, expected_json_path)
 
 
-def test_prepare_roc_inputs():
+def test_compute_and_save_metrics(mocker, sample_metrics_data) -> None:
+    """Test test_compute_and_save_metrics function"""
+
+    # Mock dependencies
+    mock_open = mocker.patch("builtins.open", mocker.mock_open())
+    mocker.patch("bibcat.llm.metrics.config")
+    mock_save_json_file = mocker.patch("bibcat.llm.metrics.save_json_file")
+    mocker.patch("bibcat.llm.metrics.logger")
+
+    output_ascii_filepath = "mock_output.ascii"
+    output_json_filepath = "mock_output.json"
+
+    compute_and_save_metrics(sample_metrics_data, output_ascii_filepath, output_json_filepath)
+
+    mock_open.assert_called_with(output_ascii_filepath, "w")
+    file_handle = mock_open.return_value.__enter__.return_value
+    file_handle.write.assert_called()
+
+    mock_save_json_file.assert_called_once()
+    json_data = mock_save_json_file.call_args[0][1]
+
+    assert json_data["n_bibcodes"] == 1
+    assert json_data["SCIENCE"]["precision"] == 1.0
+
+
+def test_prepare_roc_inputs() -> None:
     human_labels = ["SCIENCE", "NONSCIENCE", "NONSCIENCE"]
     llm_confidences = [[0.8, 0.2], [0.3, 0.7], [0.25, 0.75]]
     binarized_human_labels, llm_confidences_array, n_papertypes, n_verdicts = prepare_roc_inputs(
@@ -93,7 +126,7 @@ def test_prepare_roc_inputs():
     assert n_verdicts == 3
 
 
-def test_get_roc_metrics():
+def test_get_roc_metrics() -> None:
     llm_confidences = np.array([[0.8, 0.2], [0.6, 0.4], [0.1, 0.9], [0.7, 0.3], [0.9, 0.1]])
     binarized_labels = [[1], [0], [0], [1], [1]]
     n_classes = 2
