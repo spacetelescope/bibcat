@@ -20,7 +20,7 @@ def map_papertype(papertype: str):
     Parameters
     ==========
     papertype: str, uppercase
-        human classified papertype, e.g., "SCIENCE", "DATA_INFLUECED"
+        human classified papertype, e.g., "SCIENCE", "DATA_INFLUENCED"
 
     Returns
     =======
