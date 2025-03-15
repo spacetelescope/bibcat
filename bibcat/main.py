@@ -452,19 +452,24 @@ def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
 )
 def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
     """Create the evaluation plots from a LLM model"""
+    summary_output_path = (
+        Path(config.paths.output)
+        / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
+    )
+
     if cm and all_missions:
         missions = config.missions
-        confusion_matrix_plot(missions=missions)
+        confusion_matrix_plot(summary_output_path=summary_output_path, missions=missions)
 
     elif cm and missions:
-        confusion_matrix_plot(missions=list(missions))
+        confusion_matrix_plot(summary_output_path=summary_output_path, missions=list(missions))
 
     if roc and all_missions:
         missions = config.missions
-        roc_plot(missions=missions)
+        roc_plot(summary_output_path=summary_output_path, missions=missions)
 
     elif roc and missions:
-        roc_plot(missions=list(missions))
+        roc_plot(summary_output_path=summary_output_path, missions=list(missions))
 
 
 @cli.command(help="Create a statisics table for classification")
@@ -512,6 +517,7 @@ def stats_llm(evaluation: bool, ops: bool, threshold: float):
             / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_stats_file}_t{config.llms.performance.threshold}.json"
         )
         save_evaluation_stats(input_filepath, output_filepath, threshold_acceptance, threshold_inspection)
+
     # override the config ops to True
     if ops:
         config.llms.ops = ops

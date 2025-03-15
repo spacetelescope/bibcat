@@ -22,10 +22,33 @@ def data() -> dict[str, dict[str, Any]]:
             "human": {"JWST": "SCIENCE", "ROMAN": "SCIENCE", "TESS": "SUPERMENTION"},
             "llm": [{"JWST": "SCIENCE"}, {"ROMAN": "SUPERMENTION"}, {"LAMOST": "SCIENCE"}],
             "threshold_acceptance": 0.7,
+            "df": [
+                {
+                    "llm_mission": "JWST",
+                    "llm_papertype": "MENTION",
+                    "mission_in_text": True,
+                },
+                {
+                    "llm_mission": "ROMAN",
+                    "llm_papertype": "MENTION",
+                    "mission_in_text": True,
+                },
+                {
+                    "llm_mission": "HST",
+                    "llm_papertype": "SCIENCE",
+                    "mission_in_text": False,
+                },
+                {
+                    "llm_mission": "LAMOST",
+                    "llm_papertype": "MENTION",
+                    "mission_in_text": True,
+                },
+            ],
             "mission_conf": [
                 {"llm_mission": "JWST", "prob_papertype": [0.8, 0.2]},
                 {"llm_mission": "ROMAN", "prob_papertype": [0.3, 0.7]},
-                {"llm_mission": "GALEX", "prob_papertype": [0.4, 0.6]},
+                {"llm_mission": "HST", "prob_papertype": [0.55, 0.45]},
+                {"llm_mission": "LAMOST", "prob_papertype": [0.4, 0.6]},
             ],
         }
     }
@@ -45,8 +68,9 @@ def sample_metrics_data() -> dict[str, Any]:
         "n_human_mission_callouts": 3,
         "n_llm_mission_callouts": 3,
         "n_non_mast_mission_callouts": 1,
-        "n_valid_mission_callouts": 2,
-        "valid_missions": ["JWST", "ROMAN"],
+        "n_human_llm_mission_callouts": 2,
+        "n_human_llm_hallucination": 0,
+        "human_llm_missions": ["JWST", "ROMAN"],
         "non_mast_missions": ["LAMOST"],
         "human_labels": ["NONSCIENCE", "SCIENCE", "SCIENCE"],
         "llm_labels": ["NONSCIENCE", "SCIENCE", "NONSCIENCE"],

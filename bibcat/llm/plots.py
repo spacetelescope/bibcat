@@ -13,25 +13,16 @@ logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
 
-def fetch_data() -> list:
-    """Read the evaluation summary output file"""
-    eval_output = (
-        pathlib.Path(config.paths.output)
-        / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
-    )
-    logger.info(f"reading {eval_output}")
-    return read_output(filename=eval_output)
-
-
 # create a confusion matrix plot
-def confusion_matrix_plot(missions: list[str]) -> None:
+def confusion_matrix_plot(summary_output_path: str | pathlib.Path, missions: list[str]) -> None:
     """Create a confusion matrix figure
 
     Create confusion matrix plots (counts and normalized) given a threshold value.
 
     Parameters
     ----------
-
+    summary_output_path: str | pathlib.Path
+        the filepath of the evaluation *summary_output.json
     missions: list[str]
         list of the mission names to extract the classification labels.
 
@@ -39,14 +30,17 @@ def confusion_matrix_plot(missions: list[str]) -> None:
     -------
 
     """
-    data = fetch_data()
 
+    data = read_output(filename=summary_output_path)
+
+    # capitalize all mission names just in case when is not
+    missions = [mission.upper() for mission in missions]
     metrics_data = extract_eval_data(missions=missions, data=data)
 
     human = metrics_data["human_labels"]
     llm = metrics_data["llm_labels"]
     threshold = metrics_data["threshold"]
-    valid_missions = metrics_data["valid_missions"]
+    human_llm_missions = metrics_data["human_llm_missions"]
 
     fig, ax = plt.subplots(1, 2, figsize=(10, 5), sharex=True, sharey=True)
     papertypes = config.llms.papertypes
@@ -68,7 +62,7 @@ def confusion_matrix_plot(missions: list[str]) -> None:
     # Suptitle
     fig.suptitle(f"Confusion Matrix at threshold = {threshold}", fontsize=14, fontweight="bold")
 
-    if len(valid_missions) > 13:
+    if len(human_llm_missions) > 13:
         fig.text(
             0.5,
             0.9,
@@ -82,7 +76,7 @@ def confusion_matrix_plot(missions: list[str]) -> None:
         fig.text(
             0.5,
             0.9,
-            f"Mission(s): {', '.join(valid_missions)}",
+            f"Mission(s): {', '.join(human_llm_missions)}",
             ha="center",
             fontsize=12,
             fontstyle="italic",
@@ -100,12 +94,13 @@ def confusion_matrix_plot(missions: list[str]) -> None:
 
 
 # create a ROC curve plot
-def roc_plot(missions: list[str]) -> None:
+def roc_plot(summary_output_path: str | pathlib.Path, missions: list[str]) -> None:
     """Create a Receiver Operating Characteristic (ROC) curve plot
 
     Parameters
     ----------
-
+    summary_output_path: str | pathlib.Path
+        the filepath of the evaluation *summary_output.json
     missions: list[str]
         list of the mission names to extract the classification labels.
 
@@ -115,8 +110,12 @@ def roc_plot(missions: list[str]) -> None:
     """
 
     # read the evaluation summary output file
-    data = fetch_data()
-    human_labels, llm_confidences, valid_missions = extract_roc_data(missions=missions, data=data)
+    data = read_output(filename=summary_output_path)
+
+    # capitalize all mission names just in case when is not
+    missions = [mission.upper() for mission in missions]
+
+    human_labels, llm_confidences, human_llm_missions = extract_roc_data(missions=missions, data=data)
 
     binarized_human_labels, llm_confidences, n_papertypes, n_verdicts = prepare_roc_inputs(
         human_labels, llm_confidences
@@ -200,7 +199,7 @@ def roc_plot(missions: list[str]) -> None:
     # Suptitle
     fig.suptitle("Reciever Operating Characteristic (ROC)", fontsize=14, fontweight="bold")
 
-    if len(valid_missions) > 13:
+    if len(human_llm_missions) > 13:
         fig.text(
             0.5,
             0.9,
@@ -214,7 +213,7 @@ def roc_plot(missions: list[str]) -> None:
         fig.text(
             0.5,
             0.9,
-            f"Mission(s): {', '.join(valid_missions)}",
+            f"Mission(s): {', '.join(human_llm_missions)}",
             ha="center",
             fontsize=10,
             fontstyle="italic",
