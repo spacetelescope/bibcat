@@ -514,7 +514,84 @@ To plot a confusion matrix for all missions, run:
 ```bash
 bibcat eval-plot -c -a
 ```
-These commands will also create a metrics summary file (e.g., `metrics_file_t0.7.json`).
+These commands will also create metrics summary files ( `*metrics_summary_t0.5.txt` and `*metrics_summary_t0.5.json`).
+The outuput would look like
+
+```txt
+The number of bibcodes (papers) for evaluation metrics: 89
+The number of mission callouts by human: 217
+The number of mission callouts by llm with the threshold value, 0.5: 222
+
+The number of mission callouts by both human and llm: 132
+Missions called out by both human and llm: FUSE, GALEX, HUT, IUE, K2, KEPLER, PANSTARRS, TESS, WUPPE
+
+The number of non-MAST mission callouts by llm: 2
+Non-MAST missions called out by llm: EDEN, NUSTAR
+
+2 papertypes: NONSCIENCE, SCIENCE are labeled
+True Negative = 1569, False Positive = 26, False Negative = 20, True Positive = 33
+
+classification report
+               precision    recall  f1-score   support
+
+  NONSCIENCE     0.9874    0.9837    0.9856      1595
+     SCIENCE     0.5593    0.6226    0.5893        53
+
+    accuracy                         0.9721      1648
+   macro avg     0.7734    0.8032    0.7874      1648
+weighted avg     0.9736    0.9721    0.9728      1648
+
+```
+
+```json
+{
+  "threshold": 0.5,
+  "n_bibcodes": 89,
+  "n_human_mission_callouts": 217,
+  "n_llm_mission_callouts": 222,
+  "n_non_mast_mission_callouts": 2,
+  "n_valid_mission_callouts": 149,
+  "valid_missions": [
+    "FUSE",
+    "GALEX",
+    "HUT",
+    "IUE",
+    "K2",
+    "KEPLER",
+    "TESS",
+    "WUPPE"
+  ],
+  "non_mast_missions": [
+    "EDEN",
+    "NUSTAR"
+  ],
+  "NONSCIENCE": {
+    "precision": 0.9901538461538462,
+    "recall": 0.9834963325183375,
+    "f1-score": 0.9868138607789022,
+    "support": 1636.0
+  },
+  "SCIENCE": {
+    "precision": 0.5909090909090909,
+    "recall": 0.7090909090909091,
+    "f1-score": 0.6446280991735537,
+    "support": 55.0
+  },
+  "accuracy": 0.9745712596096984,
+  "macro avg": {
+    "precision": 0.7905314685314686,
+    "recall": 0.8462936208046232,
+    "f1-score": 0.815720979976228,
+    "support": 1691.0
+  },
+  "weighted avg": {
+    "precision": 0.9771683573670563,
+    "recall": 0.9745712596096984,
+    "f1-score": 0.9756842233523534,
+    "support": 1691.0
+  }
+}
+```
 
 ### Receiver Operating Characteristic (ROC) Plot
 To plot a confusion matrix for specific missions, run:
