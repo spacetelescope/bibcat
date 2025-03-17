@@ -220,7 +220,7 @@ def run_gpt(
     logger.info(f"Elapsed time for run_gpt for {num_runs} papers: {elapsed_time} seconds.")
 
 
-@cli.command(help="Batch submit papers to an OpenAI LLM model. e.g., bibcat run-gpt -f /path/to/paper.pdf")
+@cli.command(help="Batch submit papers to an OpenAI LLM model.")
 @click.option(
     "-f",
     "--files",
@@ -262,6 +262,12 @@ def run_gpt(
     help="Set to toggle structured response",
 )
 def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, verbose, num_runs, ops, structured):
+    """Batch submit papers to an OpenAI LLM model.
+
+    Example Usage
+    =============
+        bibcat run-gpt -f /path/to/paper.pdf
+    """
     start_time = time.time()
     logger.info("CLI option: 'run_gpt_batch' selected")
     # override the config model
@@ -432,7 +438,7 @@ def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
     "--roc",
     is_flag=True,
     show_default=False,
-    help="Create ROC curves. This flag works with the '-m' flag with a mission name, for example,'bibcat eval-plot -r -m JWST' for JWST and 'bibcat eval-plot -r -a' for all missions.",
+    help="Create ROC curves. This flag works with the '-m' flag with a mission name, for example,'bibcat eval-plot -r -m JWST'",
 )
 @click.option(
     "-m",
