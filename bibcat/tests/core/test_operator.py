@@ -1,7 +1,7 @@
 """
-:title: test_keyword.py
+:title: test_operator.py
 
-Testing the Keyword class and its methods.
+Testing the Operator class and its methods.
 """
 
 import unittest
