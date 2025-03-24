@@ -1,4 +1,3 @@
-import os
 import pathlib
 
 import numpy as np
@@ -56,18 +55,6 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     paper = get_source(bibcode=bibcode, index=index)
     if not paper:
         logger.warning(f"No paper source found for {bibcode}")
-        # write the missing source bibcodes
-        missing_bibcode_file = (
-            pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/missing_source_bibcodes.txt"
-        )
-        if not os.path.exists(missing_bibcode_file):
-            # create a new file
-            with open(missing_bibcode_file, "w+") as f:
-                f.write(f"{bibcode}\n")
-        else:
-            # append to an existing file
-            with open(missing_bibcode_file, "a") as f:
-                f.write(f"{bibcode}\n")
         return None
 
     bibcode = paper["bibcode"]
