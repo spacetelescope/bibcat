@@ -1,8 +1,6 @@
 from pathlib import Path
-from typing import Any
 
 import numpy as np
-import pytest
 
 from bibcat import config
 from bibcat.llm.metrics import (
@@ -13,77 +11,68 @@ from bibcat.llm.metrics import (
     prepare_roc_inputs,
 )
 
-
-@pytest.fixture
-def data() -> dict[str, dict[str, Any]]:
-    """Fixture for sample evaluation data"""
-    return {
-        "Bibcode2024": {
-            "human": {"JWST": "SCIENCE", "ROMAN": "SCIENCE", "TESS": "SUPERMENTION"},
-            "llm": [{"JWST": "SCIENCE"}, {"ROMAN": "SUPERMENTION"}, {"LAMOST": "SCIENCE"}],
-            "threshold_acceptance": 0.7,
-            "df": [
-                {
-                    "llm_mission": "JWST",
-                    "llm_papertype": "MENTION",
-                    "mission_in_text": True,
-                },
-                {
-                    "llm_mission": "ROMAN",
-                    "llm_papertype": "MENTION",
-                    "mission_in_text": True,
-                },
-                {
-                    "llm_mission": "HST",
-                    "llm_papertype": "SCIENCE",
-                    "mission_in_text": False,
-                },
-                {
-                    "llm_mission": "LAMOST",
-                    "llm_papertype": "MENTION",
-                    "mission_in_text": True,
-                },
-            ],
-            "mission_conf": [
-                {"llm_mission": "JWST", "prob_papertype": [0.8, 0.2]},
-                {"llm_mission": "ROMAN", "prob_papertype": [0.3, 0.7]},
-                {"llm_mission": "HST", "prob_papertype": [0.55, 0.45]},
-                {"llm_mission": "LAMOST", "prob_papertype": [0.4, 0.6]},
-            ],
-        }
+data = {
+    "Bibcode2024": {
+        "human": {"JWST": "SCIENCE", "ROMAN": "SCIENCE", "TESS": "SUPERMENTION"},
+        "llm": [{"JWST": "SCIENCE"}, {"ROMAN": "SUPERMENTION"}, {"LAMOST": "SCIENCE"}],
+        "threshold_acceptance": 0.7,
+        "df": [
+            {
+                "llm_mission": "JWST",
+                "llm_papertype": "MENTION",
+                "mission_in_text": True,
+            },
+            {
+                "llm_mission": "ROMAN",
+                "llm_papertype": "MENTION",
+                "mission_in_text": True,
+            },
+            {
+                "llm_mission": "HST",
+                "llm_papertype": "SCIENCE",
+                "mission_in_text": False,
+            },
+            {
+                "llm_mission": "LAMOST",
+                "llm_papertype": "MENTION",
+                "mission_in_text": True,
+            },
+        ],
+        "mission_conf": [
+            {"llm_mission": "JWST", "prob_papertype": [0.8, 0.2]},
+            {"llm_mission": "ROMAN", "prob_papertype": [0.3, 0.7]},
+            {"llm_mission": "HST", "prob_papertype": [0.55, 0.45]},
+            {"llm_mission": "LAMOST", "prob_papertype": [0.4, 0.6]},
+        ],
     }
+}
 
 
-@pytest.fixture
-def missions() -> list[str]:
-    return ["HST", "JWST", "ROMAN"]
+missions = ["HST", "JWST", "ROMAN"]
 
 
-@pytest.fixture
-def sample_metrics_data() -> dict[str, Any]:
-    """Fixture providing sample input data for testing."""
-    return {
-        "threshold": 0.7,
-        "n_bibcodes": 1,
-        "n_human_mission_callouts": 3,
-        "n_llm_mission_callouts": 3,
-        "n_non_mast_mission_callouts": 1,
-        "n_human_llm_mission_callouts": 2,
-        "n_human_llm_hallucination": 0,
-        "human_llm_missions": ["JWST", "ROMAN"],
-        "non_mast_missions": ["LAMOST"],
-        "human_labels": ["NONSCIENCE", "SCIENCE", "SCIENCE"],
-        "llm_labels": ["NONSCIENCE", "SCIENCE", "NONSCIENCE"],
-    }
+sample_metrics_data = {
+    "threshold": 0.7,
+    "n_bibcodes": 1,
+    "n_human_mission_callouts": 3,
+    "n_llm_mission_callouts": 3,
+    "n_non_mast_mission_callouts": 1,
+    "n_human_llm_mission_callouts": 2,
+    "n_human_llm_hallucination": 0,
+    "human_llm_missions": ["JWST", "ROMAN"],
+    "non_mast_missions": ["LAMOST"],
+    "human_labels": ["NONSCIENCE", "SCIENCE", "SCIENCE"],
+    "llm_labels": ["NONSCIENCE", "SCIENCE", "NONSCIENCE"],
+}
 
 
-def test_map_papertype(mocker, data) -> None:
+def test_map_papertype() -> None:
     """Test map_papertype() function"""
     mapped_papertype = map_papertype(data["Bibcode2024"]["human"]["TESS"])
     assert mapped_papertype == "NONSCIENCE", "wrong papertype mapping"
 
 
-def test_extract_eval_data(mocker, data, missions, sample_metrics_data) -> None:
+def test_extract_eval_data(mocker) -> None:
     """Test extract_eval_data function"""
 
     # Mock dependencies
@@ -112,7 +101,7 @@ def test_extract_eval_data(mocker, data, missions, sample_metrics_data) -> None:
     mock_compute_and_save_metrics.assert_any_call(metrics_data, expected_ascii_path, expected_json_path)
 
 
-def test_compute_and_save_metrics(mocker, sample_metrics_data) -> None:
+def test_compute_and_save_metrics(mocker) -> None:
     """Test test_compute_and_save_metrics function"""
 
     # Mock dependencies
