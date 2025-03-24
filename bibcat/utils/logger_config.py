@@ -21,24 +21,26 @@ def setup_logger(name: str, level: int = logging.DEBUG) -> logging.Logger:
     """Set up logger"""
     # Create a custom logger
     logger = logging.getLogger(name)
-    if not logger.hasHandlers():
-        logger.setLevel(level)
+    if logger.hasHandlers():
+        return logger
 
-        log_file_path = os.path.join(LOG_DIR, f"bibcat_log_{start_time}.log")
+    logger.setLevel(level)
 
-        # Create handlers
-        c_handler = logging.StreamHandler()
-        f_handler = logging.FileHandler(log_file_path)
-        c_handler.setLevel(level)
-        f_handler.setLevel(level)
+    log_file_path = os.path.join(LOG_DIR, f"bibcat_log_{start_time}.log")
 
-        # Create formatters and add it to handlers
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        c_handler.setFormatter(formatter)
-        f_handler.setFormatter(formatter)
+    # Create handlers
+    c_handler = logging.StreamHandler()
+    f_handler = logging.FileHandler(log_file_path)
+    c_handler.setLevel(level)
+    f_handler.setLevel(level)
 
-        # Add handlers to the logger
-        logger.addHandler(c_handler)
-        logger.addHandler(f_handler)
+    # Create formatters and add it to handlers
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    c_handler.setFormatter(formatter)
+    f_handler.setFormatter(formatter)
+
+    # Add handlers to the logger
+    logger.addHandler(c_handler)
+    logger.addHandler(f_handler)
 
     return logger
