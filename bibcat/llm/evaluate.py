@@ -60,10 +60,9 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     bibcode = paper["bibcode"]
     response = read_output(bibcode=bibcode, filename=paper_output)
 
-    # exit if no bibcode found in output
-    if not response:
-        logger.warning(f"No output found for {bibcode}")
-        return None
+    # Prevent iteration error when bibcode doesn't exist in paper_output
+    if response is None:
+        response = []
 
     # filter out any cases where the llm returns an error, or there is no missions in output
     response = [i for i in response if "error" not in i.keys() and i["missions"]]
@@ -71,6 +70,11 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     # response is structured as:
     # - notes: str
     # - missions: [{mission: str, papertype: str, confidence: list[float], reason: str, quotes: list[str]}]
+
+    # exit if no bibcode found in output
+    if not response:
+        logger.warning(f"No output found for {bibcode}")
+        return None
 
     n_runs = len(response)
 
