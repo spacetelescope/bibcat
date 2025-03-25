@@ -20,6 +20,8 @@ from that mission. If the mission is not mentioned, then simply write "not menti
 ```
 Read the paper first and think carefully first about your answer before writing anything down. Because you are an autoregressive model, **you must write this down for reference** during step 2.
 
+Here are the MAST missions that have been found in the paper with a simple text match: {missions}.  Use this information to help you focus and make decisions.
+
 2. Next, write valid JSON that encapsulates the bibliographic classifications from the step above. If a "response_format" is provided, then follow its schema.  Otherwise follow the following schema:
 
  - notes: all your notes and thoughts you have written down during your process
