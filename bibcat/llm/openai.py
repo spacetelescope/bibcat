@@ -9,6 +9,7 @@ from openai.types.beta.assistant import Assistant
 from pydantic import BaseModel, Field
 
 from bibcat import config
+from bibcat.llm.evaluate import identify_missions_in_text
 from bibcat.llm.io import get_file, get_llm_prompt, get_source, write_output
 from bibcat.utils.logger_config import setup_logger
 
@@ -315,12 +316,24 @@ class OpenAIHelper:
 
         # check the user template fields match the paper dictionary keys
         fields = re.findall(r"{(.*?)}", user)
-        missing = set(fields) - set(paper.keys())
+        missing = set(fields) - (set(paper.keys()) | set(["missions"]))
         if missing:
-            raise ValueError(f"Missing user template fields in input paper data: {missing}")
+            logger.warning("Missing user template fields in input paper data: %s. Filling empty values.", missing)
+            paper.update(dict.fromkeys(missing, ""))
+
+        # get the text keyword match for missions
+        mm = self.get_mission_text(paper)
+        missions = ", ".join(mm.keys())
 
         # format the user prompt the paper content
-        return user.format(**paper)
+        return user.format(**paper, missions=missions)
+
+    def get_mission_text(self, paper) -> dict:
+        """Get flags for missions found in paper text"""
+        # fmt: off
+        missions = ["HST", "JWST", "Roman", "HLA", "HSC", "TESS", "KEPLER", "K2", "GALEX", "PanSTARRS",
+                    "FUSE", "IUE", "HUT", "UIT", "WUPPE", "BEFS", "TUES", "IMAPS", "EUVE"]
+        return {k: v for k, v in zip(missions, identify_missions_in_text(missions, text=paper['body'])) if v}
 
     def send_message(self, user_prompt: str = None) -> dict | str:
         """Send a straight chat message to the LLM
