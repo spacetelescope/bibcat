@@ -117,13 +117,12 @@ output:
   name_model: my_new_model
 ```
 
-### When testing with pytest or unittest
+### When testing with pytest
 
-For testing, you need to install the extra test dependencies.  You do this with `pip install -e ".[test]"`.  The test suite is located in `tests/`. We can recommend using `pytest` for running tests.  Navigate to `/tests/` and run `pytest`, or for extra verbosity run `pytest -vs`. `pytest` can find and run tests written with pytest or unittests.
+The test suite is located in `tests/`. We can recommend using `pytest` for running tests.  Navigate to `/tests/` and run `pytest`, or for extra verbosity run `pytest -vs`. `pytest` can find and run tests written with pytest or unittests.
 
 ### Building the documentation
 Sphinx will create the documentation automatically using the module docstrings.
-
 Use `sphinx-apidoc` to automatically generate API documentation from your docstrings.
 
 Run
@@ -147,6 +146,7 @@ Then navigate to `docs/_build/html` and open `index.html` on your browser to see
 However, you can build live API docs and htmls together with this one command,
 
 ```shell
+cd docs
 make live-docs
 ```
 

@@ -19,8 +19,8 @@ import os
 import time
 
 from bibcat import config
-from bibcat import parameters as params
 from bibcat.core import operator
+from bibcat.core import parameters as params
 from bibcat.core.classifiers import ml
 from bibcat.data.streamline_dataset import load_source_dataset, streamline_dataset
 from bibcat.utils.logger_config import setup_logger
@@ -82,7 +82,7 @@ def build_model() -> None:
         do_check_truematch=config.textprocessing.do_verify_truematch,
         seed_TVT=settings.seed_TVT,
         dict_texts=dict_texts,
-        mapper=params.map_papertypes,  # For masking of classes (e.g., masking 'supermention' as 'mention')
+        mapper=config.pretrained.map_papertypes,  # For masking of classes (e.g., masking 'supermention' as 'mention')
         buffer=config.textprocessing.buffer,
         fraction_TVT=settings.fraction_TVT,
         mode_TVT=settings.mode_TVT,

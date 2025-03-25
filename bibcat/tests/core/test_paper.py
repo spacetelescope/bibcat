@@ -6,8 +6,10 @@ Testing the Paper class and its methods.
 
 import unittest
 
-from bibcat import parameters as params
+from test_config import test_list_lookup_kobj
+
 from bibcat.core import paper
+from bibcat.core import parameters as params
 
 
 class TestPaper(unittest.TestCase):
@@ -111,9 +113,7 @@ class TestPaper(unittest.TestCase):
                 curr_name = curr_kobj.get_name()
 
                 # Prepare and run test for bibcat class instance
-                testbase = paper.Paper(
-                    text=curr_text, keyword_objs=params.test_list_lookup_kobj, do_check_truematch=True
-                )
+                testbase = paper.Paper(text=curr_text, keyword_objs=test_list_lookup_kobj, do_check_truematch=True)
                 _ = testbase.process_paragraphs(buffer=curr_buffer)
                 test_res = testbase.get_paragraphs()[curr_name]
 

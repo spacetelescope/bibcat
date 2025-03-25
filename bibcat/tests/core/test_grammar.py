@@ -7,7 +7,7 @@ Testing the Grammar class and its methods.
 import unittest
 
 from bibcat import config
-from bibcat import parameters as params
+from bibcat.core import parameters as params
 from bibcat.core.grammar import Grammar
 
 

@@ -56,6 +56,7 @@ docs = [
     "myst-parser",
     "sphinx",
     "sphinx-astropy",
+    "sphinx-autobuild",
     "sphinx-automodapi",
     "sphinx-rtd-theme",
     "sphinx-copybutton",
@@ -93,7 +94,6 @@ testpaths = [
   "bibcat/tests",
   "docs",
 ]
-import_mode = "importlib"
 doctest_plus = "enabled"
 text_file_format = "rst"
 addopts = "--doctest-rst"
