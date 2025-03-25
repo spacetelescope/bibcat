@@ -207,7 +207,7 @@ def get_human_classification(paper: dict | str):
     dict
         human's mission and paper type
     """
-    human_classes = paper["class_missions"]
+    human_classes = paper.get("class_missions", {})
     formatted_output = "\n".join([f"{mission}: {info['papertype']}" for mission, info in human_classes.items()])
     logger.info(f"Human Classifications:\n {formatted_output}")
     return human_classes
@@ -246,7 +246,7 @@ def compute_consistency(paper: dict | str, grouped_df: pd.DataFrame, human_class
     missing_by_llm = set(human_classes) - set(grouped_df["llm_mission"])
 
     # check if missions are in the paper text body
-    text = f"{paper['title']}; {paper['abstract']}; {paper['body']}"
+    text = f"{paper['title']}; {paper.get('abstract', '')}; {paper['body']}"
     in_text = identify_missions_in_text(grouped_df["llm_mission"], text)
     grouped_df["mission_in_text"] = in_text
 
