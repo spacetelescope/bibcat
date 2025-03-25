@@ -32,8 +32,8 @@ import os
 import numpy as np
 
 from bibcat import config
-from bibcat import parameters as params
 from bibcat.core import operator, performance
+from bibcat.core import parameters as params
 from bibcat.core.classifiers import ml
 from bibcat.core.classifiers.textdata import ClassifierBase
 from bibcat.pretrained.fetch_papers import fetch_papers
@@ -105,7 +105,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
     performer.evaluate_performance_basic(
         operators=[op],
         dicts_texts=[dict_texts],
-        mappers=[params.map_papertypes],
+        mappers=[config.pretrained.map_papertypes],
         thresholds=[config.performance.threshold],
         buffers=[config.textprocessing.buffer],
         is_text_processed=is_text_processed,
@@ -128,7 +128,7 @@ def evaluate_basic_performance(classifier_name: str = "ML") -> None:
     performer.evaluate_performance_uncertainty(
         operators=[op],
         dicts_texts=[dict_texts],
-        mappers=[params.map_papertypes],
+        mappers=[config.pretrained.map_papertypes],
         threshold_arrays=[np.linspace(*config.performance.threshold_array)],
         buffers=[config.textprocessing.buffer],
         is_text_processed=is_text_processed,

@@ -33,7 +33,60 @@ paths:
   TVTinfo: null
 
 # Ambiguous missions ["FIRST", "Copernicus"] need to be revisited
+# the library does not care "HLA", "HSC", we will need to fix this and find a way to include other keywords in parameters.py
 missions: ["HST", "JWST", "Roman", "HLA", "HSC", "TESS", "KEPLER", "K2", "GALEX", "PanSTARRS", "FUSE", "IUE", "HUT", "UIT", "WUPPE", "BEFS", "TUES", "IMAPS", "EUVE"]
+
+#### configs for LLMs
+llms:
+  user_prompt: null
+  agent_prompt: null
+  prompt_output_file: paper_output.json # llm classification primary output
+  eval_output_file: summary_output # llm classification summary output
+  eval_stats_file: evaluation_stats  # llm evaluation high-level statistics output
+  inconsistent_classifications_file: inconsistent_classifications # list of inconsistent classifications between llm and human
+  ops_stats_file: operation_stats  # llm operation high-level statistics output
+  metrics_file: metrics_summary # metrics summary file with the implemented threshold
+  cm_plot: confusion_matrix_llm.png # confusion matrix plot
+  roc_plot: roc_plot_llm.png # receiver operating charateristic curve
+  llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
+  llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
+  openai:
+    model: gpt-4o-mini
+    asst_id: null
+    use_assistant: false
+  papertypes: ["SCIENCE", "NONSCIENCE"]
+  map_papertypes: {
+    "science": "science",
+    "mention": "nonscience",
+    "supermention": "nonscience",
+    "data_influenced": "nonscience",
+    "ignore": "nonscience",
+    "unresolved_grey": "other",
+    "unresolved_gray": "other",
+    "engineering": "other",
+    "instrument": "other",
+  }
+  performance: # used for both evaluation and operation
+    threshold: 0.7
+    inspection: 0.5
+  ops: false # false if in evaluation, true if in operation
+
+#### configs for pretrained models
+
+# papertypes and map_papertypes below should be removed after test_dataset.py is revised.
+pretrained:
+  papertypes: ["SCIENCE", "DATA_INFLUENCED", "MENTION", "SUPERMENTION"]
+  map_papertypes: {
+    "science": "science",
+    "mention": "mention",
+    "supermention": "mention",
+    "data_influenced": "data_influenced",
+    "unresolved_grey": "other",
+    "unresolved_gray": "other",
+    "engineering": "other",
+    "instrument": "other",
+  }
+
 
 dataprep:
   do_reuse_run: true # whether or not to reuse saved data from previous model run
@@ -68,6 +121,7 @@ textprocessing:
   - [Kepler, Kepler Algol, 'FALSE']
   - [Kepler, Kepler binary, 'FALSE']
   - [Kepler, Kepler CBP, 'FALSE']
+  - [Kepler, Kepler census, 'FALSE']
   - [Kepler, Kepler code, 'FALSE']
   - [Kepler, Kepler dichotomy, 'FALSE']
   - [Kepler, Kepler dwarf, 'FALSE']
@@ -102,7 +156,6 @@ textprocessing:
   - [Kepler, Koester Kepler, 'FALSE']
   - [Kepler, Romero Kepler, 'FALSE']
   - [Kepler, Winget Kepler, 'FALSE']
-  - [Kepler, Kepler’s, 'FALSE']
   - [Kepler, NASA Kepler, 'TRUE']
   - [Kepler, two Kepler, 'TRUE']
   - [Kepler, 2.2 Kepler, 'TRUE']
@@ -163,7 +216,6 @@ textprocessing:
   - [K2, K2 year, 'TRUE']
   - [K2, K2 yield, 'TRUE']
   - [K2, Kepler / K2, 'TRUE']
-  - [K2, K2', 'TRUE']
   - [Hubble, Edwin Hubble, 'FALSE']
   - [Hubble, generalised Hubble, 'FALSE']
   - [Hubble, Hubble 000, 'FALSE']
@@ -487,25 +539,3 @@ grammar:
     list_category_names: ["science", "datainfluenced", "plot", "know"]
     list_category_synsets: [synsets_verbs_science, synsets_verbs_influenced, synsets_verbs_plot, synsets_verbs_know]
     list_category_threses: [thres_verbsimilaritymain, thres_verbsimilaritymain, thres_verbsimilaritymain, thres_verbsimilarityhigh]
-
-llms:
-  user_prompt: null
-  agent_prompt: null
-  prompt_output_file: paper_output.json # llm classification primary output
-  eval_output_file: summary_output # llm classification summary output
-  eval_stats_file: evaluation_stats  # llm evaluation high-level statistics output
-  inconsistent_classifications_file: inconsistent_classifications # list of inconsistent classifications between llm and human
-  ops_stats_file: operation_stats  # llm operation high-level statistics output
-  cm_plot: confusion_matrix_llm.png # confusion matrix plot
-  roc_plot: roc_plot_llm.png # receiver operating charateristic curve
-  llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
-  llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
-  openai:
-    model: gpt-4o-mini
-    asst_id: null
-    use_assistant: false
-  classifications: ["SCIENCE", "MENTION"]
-  performance: # used for both evaluation and operation
-    threshold: 0.7
-    inspection: 0.5
-  ops: false # false if in evaluation, true if in operation

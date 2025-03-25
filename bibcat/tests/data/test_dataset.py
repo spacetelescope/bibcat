@@ -5,11 +5,11 @@ import numpy as np
 import pytest
 
 from bibcat import config
-from bibcat import parameters as params
+from bibcat.core import parameters as params
 
-mapper = params.map_papertypes
+mapper = config.pretrained.map_papertypes
 
-# NEED TO REVISE OR UPDATE THIS SCRIPT.
+# This test currently relies on the existing the TVT directory data. NEED TO REVISE OR UPDATE THIS SCRIPT not to rely on it if we decide to use the TVT spliting method. But we'd better use other ways to prepare Training/Validation/Test datasets in the future.
 
 
 def file_exists(file_path):
@@ -115,7 +115,7 @@ def test_TVT_directory():
             key: dataset[ind_dataset]["class_missions"][key]
             for key in dataset[ind_dataset]["class_missions"]
             if any(item.identify_keyword(key)["bool"] for item in params.all_kobjs)
-            and dataset[ind_dataset]["class_missions"][key]["papertype"] in params.allowed_classifications
+            and dataset[ind_dataset]["class_missions"][key]["papertype"] in config.pretrained.papertypes
         }
 
         # Fetch results of test and combine with any errors for bibcode

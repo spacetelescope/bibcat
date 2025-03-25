@@ -180,10 +180,17 @@ def evaluate(name) -> None:
 )
 @click.option("-v", "--verbose", is_flag=True, show_default=True, help="Set to print verbose output")
 @click.option("-o", "--ops", is_flag=True, show_default=False, help="Set to operational classification mode")
-@click.option("-s/-u", "--structured/--unstructured", is_flag=True, default=True, show_default=True,
-              help="Set to toggle structured response")
-def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_file, agent_prompt_file, verbose, ops,
-            structured):
+@click.option(
+    "-s/-u",
+    "--structured/--unstructured",
+    is_flag=True,
+    default=True,
+    show_default=True,
+    help="Set to toggle structured response",
+)
+def run_gpt(
+    filename, bibcode, index, model, num_runs, assistant, user_prompt_file, agent_prompt_file, verbose, ops, structured
+):
     """Send a prompt to an OpenAI LLM model"""
     # override the config model
     start_time = time.time()
@@ -207,13 +214,13 @@ def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_fi
         n_runs=num_runs,
         use_assistant=assistant,
         verbose=verbose,
-        structured=structured
+        structured=structured,
     )
     elapsed_time = time.time() - start_time
     logger.info(f"Elapsed time for run_gpt for {num_runs} papers: {elapsed_time} seconds.")
 
 
-@cli.command(help="Batch submit papers to an OpenAI LLM model")
+@cli.command(help="Batch submit papers to an OpenAI LLM model.")
 @click.option(
     "-f",
     "--files",
@@ -246,9 +253,21 @@ def run_gpt(filename, bibcode, index, model, num_runs, assistant, user_prompt_fi
 @click.option("-v", "--verbose", is_flag=True, show_default=True, help="Set to print verbose output")
 @click.option("-o", "--ops", is_flag=True, show_default=False, help="Set to operational classification mode")
 @click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
-@click.option("-s/-u", "--structured/--unstructured", is_flag=True, default=True, show_default=True,
-              help="Set to toggle structured response")
+@click.option(
+    "-s/-u",
+    "--structured/--unstructured",
+    is_flag=True,
+    default=True,
+    show_default=True,
+    help="Set to toggle structured response",
+)
 def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, verbose, num_runs, ops, structured):
+    """Batch submit papers to an OpenAI LLM model.
+
+    Example Usage
+    =============
+        bibcat run-gpt -f /path/to/paper.pdf
+    """
     start_time = time.time()
     logger.info("CLI option: 'run_gpt_batch' selected")
     # override the config model
@@ -280,7 +299,7 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
             n_runs=num_runs,
             use_assistant=True if source == "file" else False,
             verbose=verbose,
-            structured=structured
+            structured=structured,
         )
     elapsed_time = time.time() - start_time
     logger.info(f"Elapsed time for run_gpt_batch for {len(files)} papers: {elapsed_time} seconds.")
@@ -419,7 +438,7 @@ def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
     "--roc",
     is_flag=True,
     show_default=False,
-    help="Create ROC curves. This flag works with the '-m' flag with a mission name, for example, 'bibcat eval-plot -r -m JWST'",
+    help="Create ROC curves. This flag works with the '-m' flag with a mission name, for example,'bibcat eval-plot -r -m JWST'",
 )
 @click.option(
     "-m",
@@ -439,19 +458,24 @@ def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
 )
 def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
     """Create the evaluation plots from a LLM model"""
+    summary_output_path = (
+        Path(config.paths.output)
+        / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
+    )
+
     if cm and all_missions:
         missions = config.missions
-        confusion_matrix_plot(missions=missions)
+        confusion_matrix_plot(summary_output_path=summary_output_path, missions=missions)
 
     elif cm and missions:
-        confusion_matrix_plot(missions=list(missions))
+        confusion_matrix_plot(summary_output_path=summary_output_path, missions=list(missions))
 
     if roc and all_missions:
         missions = config.missions
-        roc_plot(missions=missions)
+        roc_plot(summary_output_path=summary_output_path, missions=missions)
 
     elif roc and missions:
-        roc_plot(missions=list(missions))
+        roc_plot(summary_output_path=summary_output_path, missions=list(missions))
 
 
 @cli.command(help="Create a statisics table for classification")
@@ -499,6 +523,7 @@ def stats_llm(evaluation: bool, ops: bool, threshold: float):
             / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_stats_file}_t{config.llms.performance.threshold}.json"
         )
         save_evaluation_stats(input_filepath, output_filepath, threshold_acceptance, threshold_inspection)
+
     # override the config ops to True
     if ops:
         config.llms.ops = ops

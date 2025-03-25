@@ -16,16 +16,22 @@ from bibcat.utils.logger_config import setup_logger
 logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
+
 class MissionInfo(BaseModel):
-    """ Pydantic model for a mission entry """
+    """Pydantic model for a mission entry"""
+
     mission: str = Field(..., description="The name of the mission.")
     papertype: str = Field(..., description="The type of paper you think it is")
     confidence: list[float] = Field(..., description="A list of float values of your confidence")
-    reason: str = Field(..., description="A short sentence summarizing your reasoning for classifying this mission + papertype")
+    reason: str = Field(
+        ..., description="A short sentence summarizing your reasoning for classifying this mission + papertype"
+    )
     quotes: list[str] = Field(..., description="A list of exact quotes from the paper that support your reason")
 
+
 class InfoModel(BaseModel):
-    """ Pydantic model for the parsed response from the LLM """
+    """Pydantic model for the parsed response from the LLM"""
+
     notes: str = Field(..., description="all your notes and thoughts you have written down during your process")
     missions: list[MissionInfo] = Field(..., description="a list of your identified missions")
 
@@ -367,7 +373,7 @@ class OpenAIHelper:
         return self.response
 
     def send_structured_message(self, user_prompt: str = None) -> dict | str:
-        """ Send a chat message to the LLM using Structured Response
+        """Send a chat message to the LLM using Structured Response
 
         Sends your prompt to the LLM model with an expected response format
         of InfoModel.  The LLM will parse its response into the structure you
@@ -470,7 +476,7 @@ class OpenAIHelper:
             self.user_prompt = self.populate_user_template(self.paper)
 
             # send the prompt
-            if self.structured or config.llms.openai.model in ['gpt-4o-mini-2024-07-18', 'gpt-4o-2024-08-06']:
+            if self.structured or config.llms.openai.model in ["gpt-4o-mini-2024-07-18", "gpt-4o-2024-08-06"]:
                 # automatically use the structured response if we're using the right models
                 logger.info("Using structured response.")
                 response = self.send_structured_message(user_prompt=self.user_prompt)
@@ -572,9 +578,9 @@ def classify_paper(
     bibcode: str = None,
     index: int = None,
     n_runs: int = 1,
-    use_assistant: bool = None,
+    use_assistant: bool | None = None,
     verbose: bool = None,
-    structured: bool = True
+    structured: bool = True,
 ):
     """Send a prompt to an OpenAI LLM model to classify a paper
 

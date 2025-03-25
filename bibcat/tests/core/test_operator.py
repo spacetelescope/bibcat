@@ -1,12 +1,14 @@
 """
-:title: test_keyword.py
+:title: test_operator.py
 
-Testing the Keyword class and its methods.
+Testing the Operator class and its methods.
 """
 
 import unittest
 
-from bibcat import parameters as params
+from test_config import test_dict_lookup_kobj
+
+from bibcat.core import parameters as params
 from bibcat.core.operator import Operator
 
 
@@ -43,7 +45,7 @@ class TestOperator(unittest.TestCase):
                 # Otherwise, check generated modif
                 curr_lookup = key1
                 test_res = testbase._fetch_keyword_object(lookup=curr_lookup, do_raise_emptyerror=True)
-                curr_answer = params.test_dict_lookup_kobj[dict_acts[key1]]
+                curr_answer = test_dict_lookup_kobj[dict_acts[key1]]
 
                 # Check answer
                 try:

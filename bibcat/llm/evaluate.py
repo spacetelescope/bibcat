@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from bibcat import config
-from bibcat import parameters as params
+from bibcat.core import parameters as params
 from bibcat.core.operator import Operator
 from bibcat.core.paper import Paper
 from bibcat.llm.io import get_source, read_output, write_summary
@@ -60,6 +60,10 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     bibcode = paper["bibcode"]
     response = read_output(bibcode=bibcode, filename=paper_output)
 
+    # Prevent iteration error when bibcode doesn't exist in paper_output
+    if response is None:
+        response = []
+
     # filter out any cases where the llm returns an error, or there is no missions in output
     response = [i for i in response if "error" not in i.keys() and i["missions"]]
 
@@ -80,6 +84,9 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     # convert output to a dataframe
     df = pd.DataFrame([j | {"notes": i["notes"]} for i in response for j in i["missions"]])
     df = df.rename(columns={"confidence": "llm_confidences"})
+    # Convert 'mission' column values to uppercase
+    df["mission"] = df["mission"].str.upper()
+
     df = df.sort_values("mission").reset_index(drop=True)
 
     # group by mission and paper type,
@@ -246,7 +253,7 @@ def compute_consistency(paper: dict | str, grouped_df: pd.DataFrame, human_class
     missing_by_llm = set(human_classes) - set(grouped_df["llm_mission"])
 
     # check if missions are in the paper text body
-    text = f"{paper['title']}; {paper.get('abstract', '')}; {paper['body']}"
+    text = f"{paper['title'][0]}; {paper.get('abstract', '')}; {paper['body']}"
     in_text = identify_missions_in_text(grouped_df["llm_mission"], text)
     grouped_df["mission_in_text"] = in_text
 

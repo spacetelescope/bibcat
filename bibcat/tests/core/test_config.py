@@ -5,6 +5,18 @@ import pytest
 import yaml  # type: ignore
 
 from bibcat.core.config import get_config, get_default_config
+from bibcat.core.parameters import kobj_hla, kobj_hubble, kobj_k2, kobj_kepler
+
+# test Keyword-object lookups
+test_dict_lookup_kobj = {
+    "Hubble": kobj_hubble,
+    "Kepler": kobj_kepler,
+    "K2": kobj_k2,
+    "HLA": kobj_hla,
+}
+
+# test Keyword-object lookups
+test_list_lookup_kobj = [kobj_hubble, kobj_kepler, kobj_k2]
 
 
 def test_get_config_nouser() -> None:
