@@ -214,7 +214,7 @@ def get_human_classification(paper: dict | str):
     dict
         human's mission and paper type
     """
-    human_classes = paper.get("class_missions", {})
+    human_classes = {key.upper(): value for key, value in paper.get("class_missions", {}).items()}
     formatted_output = "\n".join([f"{mission}: {info['papertype']}" for mission, info in human_classes.items()])
     logger.info(f"Human Classifications:\n {formatted_output}")
     return human_classes
