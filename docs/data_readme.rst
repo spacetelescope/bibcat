@@ -49,7 +49,7 @@ The example of the combined dataset JSON format is as follows.
     "title": [
       "A discovery of a new peculiar Type Ia supernovae"
     ],
-    "body": "We report the discovery of SN 3023X, a Type Ia supernova exhibiting unusually slow decline rates and strong carbon absorption features pre-maximum—traits inconsistent with canonical models. Located in a passive elliptical galaxy at z = 0.034, its peak luminosity was 0.7 mag fainter than normal SNe Ia. Spectroscopic evolution suggests incomplete detonation or a hybrid progenitor. The anomaly challenges the standard candle assumption and may represent a new subclass. Continued photometric and spectroscopic monitoring is underway. SN 3023X offers a rare window into the diversity of thermonuclear explosions.",
+    "body": "We report the HST observation of SN 3023X, a Type Ia supernova exhibiting unusually slow decline rates and strong carbon absorption features pre-maximum—traits inconsistent with canonical models. Located in a passive elliptical galaxy at z = 0.034, its peak luminosity was 0.7 mag fainter than normal SNe Ia. Spectroscopic evolution suggests incomplete detonation or a hybrid progenitor. The anomaly challenges the standard candle assumption and may represent a new subclass. Continued photometric and spectroscopic monitoring is underway. SN 3023X offers a rare window into the diversity of thermonuclear explosions.",
     "class_missions": {     "HST": {
         "bibcode": "3023Natur.111..123y",
         "papertype": "SCIENCE"
