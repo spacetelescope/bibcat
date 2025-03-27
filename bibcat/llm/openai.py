@@ -322,24 +322,22 @@ class OpenAIHelper:
 
         # check the user template fields match the paper dictionary keys
         fields = re.findall(r"{(.*?)}", user)
-        missing = set(fields) - (set(paper.keys()) | set(["missions"]))
+        missing = set(fields) - (set(paper.keys()) | set(["missions", "kw_missions"]))
         if missing:
             logger.warning("Missing user template fields in input paper data: %s. Filling empty values.", missing)
             paper.update(dict.fromkeys(missing, ""))
 
         # get the text keyword match for missions
         mm = self.get_mission_text(paper)
-        missions = ", ".join(mm.keys())
+        kw_missions = ", ".join(mm.keys())
 
         # format the user prompt the paper content
-        return user.format(**paper, missions=missions)
+        return user.format(**paper, missions=", ".join(config.missions), kw_missions=kw_missions)
 
     def get_mission_text(self, paper) -> dict:
         """Get flags for missions found in paper text"""
-        # fmt: off
-        missions = ["HST", "JWST", "Roman", "HLA", "HSC", "TESS", "KEPLER", "K2", "GALEX", "PanSTARRS",
-                    "FUSE", "IUE", "HUT", "UIT", "WUPPE", "BEFS", "TUES", "IMAPS", "EUVE"]
-        return {k: v for k, v in zip(missions, identify_missions_in_text(missions, text=paper['body'])) if v}
+        text = f"{paper['title'][0]}; {paper.get('abstract', '')}; {paper['body']}"
+        return {k: v for k, v in zip(config.missions, identify_missions_in_text(config.missions, text=text)) if v}
 
     def send_message(self, user_prompt: str = None) -> dict | str:
         """Send a straight chat message to the LLM

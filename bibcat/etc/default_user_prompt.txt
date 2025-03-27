@@ -1,8 +1,7 @@
 Carefully follow these two instructions to classify papers for MAST bibliometric record-keeping:
 
 1. Read the paper contents and write down whether it uses any of the following MAST missions:
-["HST", "JWST", "Roman", "HLA", "HSC", "TESS", "KEPLER", "K2", "GALEX", "PanSTARRS", "FUSE",
-"IUE", "HUT", "UIT", "WUPPE", "BEFS", "TUES", "IMAPS", "EUVE"]. Note that  these abbreviations may be
+{missions}. Note that  these abbreviations may be
 expanded, e.g., "HST" might be "Hubble" or "Hubble Space  Telescope". "Roman" also was formerly
 known as "WFIRST", so those are synonymous. But do not mix up "KEPLER" with "K2" or other concepts like
 Keplerian motion.  Also do not mix up cases where these phrases appear in target names, e.g. "K2-18 b".
@@ -20,7 +19,7 @@ from that mission. If the mission is not mentioned, then simply write "not menti
 ```
 Read the paper first and think carefully first about your answer before writing anything down. Because you are an autoregressive model, **you must write this down for reference** during step 2.
 
-Here are the MAST missions that have been found in the paper with a simple text match: {missions}.  Use this information to help you focus and make decisions.
+Here are the MAST missions that have been found in the paper with a simple text match: {kw_missions}.  Use this information to help you focus and make decisions.
 
 2. Next, write valid JSON that encapsulates the bibliographic classifications from the step above. If a "response_format" is provided, then follow its schema.  Otherwise follow the following schema:
 
