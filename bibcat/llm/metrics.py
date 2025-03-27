@@ -214,6 +214,8 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
 
     logger.debug(f"human_labels = {human_labels}")
     logger.debug(f"llm_labels = {llm_labels}")
+    logger.info(f" Set of human_labels = {set(human_labels)} and set of llm_labels = {set(llm_labels)}")
+
     logger.info(
         f"""The total numbers of mission callouts by human and llm are {n_human_mission_callouts} and {n_llm_mission_callouts} respectively. \n
         Among these callouts, only {n_human_llm_mission_callouts} cases are called out by both llm and human and valid for further evaluations!\n
