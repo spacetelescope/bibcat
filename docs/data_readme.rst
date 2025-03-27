@@ -23,10 +23,14 @@ Here, *search_key* refers to the mission name used for searching (e.g., HST, Kep
 
 .. code-block:: python
 
-  ["bibcode", "abstract", "author", "keyword", "keyword_norm", "pubdate", "title", "body", "class_missions", "is_ignored_<mission>"]
+  ["bibcode", "abstract", "author", "keyword", "keyword_norm", "pubdate", "title", "body", "class_missions", "papertype", "is_ignored_<mission>"]
 
 Here, ``class_missions`` refers to the ``papertype`` classification for the search mission, and ``is_ignored_<mission>`` indicates that the paper is unrelated to the search mission—whether from **mast** missions or **library** flagship missions.
 ``
+However, the requried metadata needed for the BibCat are as follows.
+.. code-block:: python
+
+  ["bibcode", "abstract", "pubdate", "title", "body", "class_missions", "papertype" ]
 
 The example of the combined dataset JSON format is as follows.
 
