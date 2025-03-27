@@ -1,29 +1,60 @@
 Input text data
 ===============
 
-This ``bibcat/data/`` contains scripts to build the input data file, streamline the dataset, and partition the dataset into training, validation, and testing sets for the pretrained model method. The combined dataset is also used for the LLM model method.
+The ``bibcat/data/`` directory contains scripts for preparing the input dataset. This includes building the initial data file, streamlining the dataset, and partitioning it into training, validation, and test sets for `the pretrained model approach <pretrained.md>`_. The processed dataset is also used for `the LLM-based method <llm.md>`_.
 
-Due to copyright and licensing issues, we are unable to provide the original full-text data. We assume that you have your own full text data in JSON format.
+To construct the input dataset JSON file (*combined_data\*.json*), two sources are required: full-text data and the corresponding classified label data, both in JSON format. We refer to the full-text dataset as **papertext** and the label dataset as **papertrack** (MAST PaperTrack classifications).
 
-To construct the input dataset JSON file (``combined_data``), you need two sets of data: a set of full-text data and its corresponding classified label data. Both datasets should be in JSON format. We refer ``papertext`` to the ADS full text and ``papertrack`` to the MAST PaperTrack data.
+- Minimal content needed for **papertext**:
 
-- keys_papertext (from ADS provided full text file):
+.. code-block:: python
 
-  ["bibcode", "abstract", "author", "bibstem", "identifier", "keyword",
-  "keyword_norm", "page", "pub", "pub_raw", "pubdate", "title", "volume",
-  "aff_canonical", "institution", "body"]
+  ["bibcode", "abstract", "pubdate", "title", "body"]
 
-- keys for papertrack (from MAST Bibliography classification data):
+- The keys for **papertrack**:
+
+.. code-block:: python
 
   ["bibcode", "searches":["search_key","ignored"], "class_missions":["bibcode","papertype"]]
 
-   where ``search_key`` refers to search mission names such as `HST`, or `Kepler`,
-          ``ignored`` indicates that the paper is not related to the search mission, and
-          ``papertype`` refers to its paper classification such as `science`, `datafinfluenced`, or `mention`.
+Here, *search_key* refers to the mission name used for searching (e.g., HST, Kepler), *ignored* indicates that the paper is unrelated to the specified mission, and papertype specifies the paper’s classification, such as *SCIENCE*, *DATA-INFLUENCED*, or *MENTION*.
 
 - The keys of the combined input data are
-  ["bibcode", "abstract", "author", "keyword", "keyword_norm", "pubdate", "title", "body",
-  "class_missions", "is_ignored_mission"]
 
-   where ``class_mssions`` refers to ``papertype`` for the search mission, and
-         ``is_igored_mission`` indicates that the paper is not related to the search mission.
+.. code-block:: python
+
+  ["bibcode", "abstract", "author", "keyword", "keyword_norm", "pubdate", "title", "body", "class_missions", "is_ignored_<mission>"]
+
+Here, ``class_missions`` refers to the ``papertype`` classification for the search mission, and ``is_ignored_<mission>`` indicates that the paper is unrelated to the search mission—whether from **mast** missions or **library** flagship missions.
+``
+
+The example of the combined dataset JSON format is as follows.
+
+.. code-block:: JSON
+
+  {
+    "bibcode": "3023Natur.111..123y",
+    "abstract": "We report a newly discovered Type Ia supernova,SN 3023X.",
+    "author": [
+      "Lastname1, Firstname1",
+      "Lastname2, Firstname2",
+    ],
+    "keyword": [
+      "Astrophysics - High Energy Astrophysical Phenomena"
+    ],
+    "keyword_norm": [
+      "-"
+    ],
+    "pubdate": "3023-12-00",
+    "title": [
+      "A discovery of a new peculiar Type Ia supernovae"
+    ],
+    "body": "We report the discovery of SN 3023X, a Type Ia supernova exhibiting unusually slow decline rates and strong carbon absorption features pre-maximum—traits inconsistent with canonical models. Located in a passive elliptical galaxy at z = 0.034, its peak luminosity was 0.7 mag fainter than normal SNe Ia. Spectroscopic evolution suggests incomplete detonation or a hybrid progenitor. The anomaly challenges the standard candle assumption and may represent a new subclass. Continued photometric and spectroscopic monitoring is underway. SN 2025X offers a rare window into the diversity of thermonuclear explosions.",
+    "class_missions": {     "HST": {
+        "bibcode": "3023Natur.111..123y",
+        "papertype": "SCIENCE"
+      }
+    },
+    "is_ignored_library": false,
+    "is_ignored_mast": true
+  },
