@@ -62,7 +62,6 @@ llms:
     "data_influenced": "nonscience",
     "ignore": "nonscience",
     "unresolved_grey": "other",
-    "unresolved_gray": "other",
     "engineering": "other",
     "instrument": "other",
   }
@@ -82,7 +81,6 @@ pretrained:
     "supermention": "mention",
     "data_influenced": "data_influenced",
     "unresolved_grey": "other",
-    "unresolved_gray": "other",
     "engineering": "other",
     "instrument": "other",
   }
