@@ -1,9 +1,9 @@
 
 inputs:
   path_ops_data: $BIBCAT_OPSDATA_DIR/fakedata.json # fake operational data to classify
-  path_papertrack: $BIBCAT_DATA_DIR/papertrack_export_2023-11-06.json  # papertrack data
-  path_papertext: $BIBCAT_DATA_DIR/ST_Request2018-2023.json  # papertext corpus text
-  path_source_data: $BIBCAT_DATA_DIR/dataset_combined_all_2018-2023.json  # combined JSON file for training
+  path_papertrack: $BIBCAT_DATA_DIR/papertrack_in_papertext_2025-03-06.json  # papertrack data
+  path_papertext: $BIBCAT_DATA_DIR/ST_Request2023_cleaned_2025_03_10.json  # papertext corpus text
+  path_source_data: $BIBCAT_DATA_DIR/combined_dataset_2025_03_25.json # combined JSON file for training
   keys_papertext: [abstract, author, bibcode, body, keyword, keyword_norm, pubdate, title]  # metadata keys for ADS papertext required for building input
   llm_user_base: $BIBCAT_DATA_DIR  # llm user prompt base
   llm_agent_base: $BIBCAT_DATA_DIR  # llm agent prompt base
@@ -62,7 +62,6 @@ llms:
     "data_influenced": "nonscience",
     "ignore": "nonscience",
     "unresolved_grey": "other",
-    "unresolved_gray": "other",
     "engineering": "other",
     "instrument": "other",
   }
@@ -82,7 +81,6 @@ pretrained:
     "supermention": "mention",
     "data_influenced": "data_influenced",
     "unresolved_grey": "other",
-    "unresolved_gray": "other",
     "engineering": "other",
     "instrument": "other",
   }

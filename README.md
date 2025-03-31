@@ -88,9 +88,9 @@ For other configuration options and more detailed information, check out at the 
 Download several data files (the ADS full text file and the papertrack file) to create models for training or combined fulltext dataset files for the input text. These files can be accessed only by authorized users. Downloading the files requires a single sign-on.
 Save the files outside the `bibcat` folder on your local computer, and you will set up the paths to the files. See more details in **User Configuration and Data Filepaths** below.
 We refer
-- the combined papers+classification JSON file ([dataset_combined_all_2018-2023.json](https://stsci.box.com/s/q99xtyey1lgydt0jtonhot3b3rlv8rns)) to `source data`,
-- the papertrack export JSON file ([papertrack_export_2023-11-06.json](https://stsci.box.com/s/zadlr8dixw8706o9k9smlxdk99yohw4d)) to `papertrack data`, and
-- the ADS fulltext data file ([ST_Request2018-2023.json](https://stsci.box.com/s/ym9pbt2iz7cqc8m1gbbd2slo0lwbwlr8)) to `papertext data`.
+- the combined papers+classification JSON file ([combined_dataset_2025_03_25.json](https://stsci.box.com/s/l2pmbfass06m1q8ni29eoomcsjpn060u)) to `source data`,
+- the papertrack export JSON file ([papertrack_in_papertext_2025_03_06.json](https://stsci.box.com/s/judj08497ni6zitf2mdoql902luos47u)) to `papertrack data`, and
+- the ADS fulltext data file ([ST_Request2023_cleaned_2025_03_10.json](https://stsci.box.com/s/0a5uzmfsnokx1rth8m6wseybpz5bxne3)) to `papertext data`.
 
 ### User Configuration and Data Filepaths
 

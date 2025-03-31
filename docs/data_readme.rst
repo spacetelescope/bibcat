@@ -1,29 +1,66 @@
 Input text data
 ===============
 
-This ``bibcat/data/`` contains scripts to build the input text data file, streamline the dataset, and partition the dataset into training, validation, and testing sets.
+The ``bibcat/data/`` directory contains scripts for preparing the input dataset. This includes building the initial data file, streamlining the dataset, and partitioning it into training, validation, and test sets for `the pretrained model approach <pretrained.md>`_. The processed dataset is also used for `the LLM-based method <llm.md>`_.
 
-Due to copyright and licensing issues, we are unable to provide the original full-text data. We assume that you have your own text file in JSON format.
+To construct the input dataset JSON file (*combined_data\*.json*), two sources are required: full-text data and the corresponding classified label data, both in JSON format. We refer to the full-text dataset as **papertext** and the label dataset as **papertrack** (MAST PaperTrack classifications).
 
-To construct the input text JSON file, you need two sets of data: a full-text dataset and its corresponding classified label data. For the MAST bibliography, we used the MAST Papertrack DB data for paper classification (with a label, papertype, per bibcode) and the ADS full-text data (a full text per bibcode). Both datasets should be in JSON format.
+- Minimal content needed for **papertext**:
 
-The metadata keys for the MAST Papertrack data, the ADS full-text data, and the combined data are as follows. However, we only need the following keys from the ADS text metadata to construct the final input data: ["abstract", "author", "bibcode", "body", "keyword", "keyword_norm", "pubdate", "title"].
+.. code-block:: python
 
-- keys_papertext (from ADS):
+  ["bibcode", "abstract", "pubdate", "title", "body"]
 
-  ["bibcode", "abstract", "author", "bibstem", "identifier", "keyword",
-  "keyword_norm", "page", "pub", "pub_raw", "pubdate", "title", "volume",
-  "aff_canonical", "institution", "body"]
-- keys for papertrack (from MAST):
--
+- The keys for **papertrack**:
+
+.. code-block:: python
+
   ["bibcode", "searches":["search_key","ignored"], "class_missions":["bibcode","papertype"]]
 
-   where ``search_key`` refers to search mission names such as `HST`, or `Kepler`,
-          ``ignored`` indicates that the paper is not related to the search mission, and
-          ``papertype`` refers to its paper classification such as `science`, `datafinfluenced`, or `mention`.
-- The combined input data:
-  ["bibcode", "abstract", "author", "keyword", "keyword_norm", "pubdate", "title", "body",
-  "class_missions", "is_ignored_mission"]
+Here, *search_key* refers to the mission name used for searching (e.g., HST, Kepler), *ignored* indicates that the paper is unrelated to the specified mission, and papertype specifies the paper’s classification, such as *SCIENCE*, *DATA-INFLUENCED*, or *MENTION*.
 
-   where ``class_mssions`` refers to ``papertype`` for the search mission, and
-         ``is_igored_mission`` indicates that the paper is not related to the search mission.
+- The keys of the combined input data are
+
+.. code-block:: python
+
+  ["bibcode", "abstract", "author", "keyword", "keyword_norm", "pubdate", "title", "body", "class_missions", "papertype", "is_ignored_<mission>"]
+
+Here, ``class_missions`` refers to the ``papertype`` classification for the search mission, and ``is_ignored_<mission>`` indicates that the paper is unrelated to the search mission—whether from **mast** missions or **library** flagship missions.
+``
+
+However, the requried metadata needed for the BibCat are as follows.
+
+.. code-block:: python
+
+  ["bibcode", "abstract", "pubdate", "title", "body", "class_missions", "papertype" ]
+
+The example of the combined dataset JSON format is as follows.
+
+.. code-block:: JSON
+
+  {
+    "bibcode": "3023Natur.111..123y",
+    "abstract": "We report a newly discovered Type Ia supernova,SN 3023X.",
+    "author": [
+      "Lastname1, Firstname1",
+      "Lastname2, Firstname2",
+    ],
+    "keyword": [
+      "Astrophysics - High Energy Astrophysical Phenomena"
+    ],
+    "keyword_norm": [
+      "-"
+    ],
+    "pubdate": "3023-12-00",
+    "title": [
+      "A discovery of a new peculiar Type Ia supernovae"
+    ],
+    "body": "We report the HST observation of SN 3023X, a Type Ia supernova exhibiting unusually slow decline rates and strong carbon absorption features pre-maximum—traits inconsistent with canonical models. Located in a passive elliptical galaxy at z = 0.034, its peak luminosity was 0.7 mag fainter than normal SNe Ia. Spectroscopic evolution suggests incomplete detonation or a hybrid progenitor. The anomaly challenges the standard candle assumption and may represent a new subclass. Continued photometric and spectroscopic monitoring is underway. SN 3023X offers a rare window into the diversity of thermonuclear explosions.",
+    "class_missions": {     "HST": {
+        "bibcode": "3023Natur.111..123y",
+        "papertype": "SCIENCE"
+      }
+    },
+    "is_ignored_library": false,
+    "is_ignored_mast": true
+  },
