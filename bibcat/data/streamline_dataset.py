@@ -121,7 +121,7 @@ def streamline_dataset(source_dataset: Dict, operator_ML: Operator, do_verbose_t
             logger.debug(f"Mission: {dict_texts[curr_key]['mission']}")
             logger.debug(f"ID: {dict_texts[curr_key]['id']}")
             logger.debug(f"Bibcode: {dict_texts[curr_key]['bibcode']}")
-            logger.debug(f"Text snippet:{dict_texts[curr_key]["text"][0:500]} ---\n\n")
+            logger.debug(f"Text snippet:{dict_texts[curr_key]['text'][0:500]} ---\n\n")
 
     # Print number of texts that fell under given parameters
     logger.info("Target missions:")
