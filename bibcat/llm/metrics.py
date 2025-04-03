@@ -14,39 +14,6 @@ logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
 
-def map_papertype(papertype: str):
-    """Map human classified papertype to allowed papertypes, for instance, if `papertype` is "SUPERMENTION", it will returns "NONSCIENCE" or a custom papertype.
-
-    Parameters
-    ==========
-    papertype: str, uppercase
-        human classified papertype, e.g., "SCIENCE", "DATA_INFLUENCED"
-
-    Returns
-    =======
-    mapped_papertype: str, uppercase
-        the mapped papertype follwing `config.llms.map_papertypes`, e.g., "MENTION" if `papertype` is "SUPERMENTION"
-    """
-    logger.debug(f"map_papertype(): human classified papertype to map = '{papertype}'")
-    try:
-        if papertype.lower() in config.llms.map_papertypes:
-            mapped_value = config.llms.map_papertypes.get(papertype.lower())
-            if mapped_value.upper() in config.llms.papertypes:
-                mapped_papertype = mapped_value.upper()
-                logger.debug(f"map_papertype(): mapped papertype is '{mapped_papertype}'")
-                return mapped_papertype
-            else:
-                raise ValueError(
-                    f"The mapped papertype '{mapped_value}' for human papertype '{papertype}' is not a valid classification."
-                )
-        else:
-            raise KeyError(f"The human papertype '{papertype}' is an invalid papertype.")
-    except KeyError as ke:
-        logger.error(f"KeyError encountered: {ke}", exc_info=True)
-    except ValueError as ve:
-        logger.error(f"ValeError encountered: {ve}", exc_info=True)
-
-
 def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
     """Extract the evaluation data for confusion matrix and stats related to mission call-outs, and save to files.
 
@@ -82,7 +49,7 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
             when "mission_in_text" = false
         human_llm_missions: list[str]
             The missions called out by both human and llm
-        non_mast_missions; list[str]
+        non_mast_missions; list[str], sorted
             Non MAST missions called out by llm
         human_labels: list[str]
             True labels, human classified labels like ["SCIENCE", "MENTION"]
@@ -91,20 +58,26 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
 
     """
 
+    def get_mapped_llm_papertype(llm_data: list[dict], mission: str) -> str | None:
+        """get mapped papertype for llm"""
+        label = next((v for i in llm_data for k, v in i.items() if k == mission), None)
+        mapped_llm_papertype = map_papertype(label)
+        logger.debug(f"mapped papertype for llm = '{mapped_llm_papertype}'")
+        return mapped_llm_papertype
+
     n_bibcodes = len(data)
     logger.info(f"The number of evaluation summary data, e.g., the number of bibcodes = {n_bibcodes}")
     logger.info(f"{len(missions)} mission(s): {', '.join(missions)} is/are evaluated! ")
 
     # prepare lists
-    human_labels = []  # Store ground truth papertypes
-    llm_labels = []  # Store LLM papertypes
+    human_labels, llm_labels = [], []  # Store ground truth papertypes and LLM papertypes
     human_llm_mission_callouts = []  # missions that have both human and llm classified papertypes
-    non_mast_mission_callouts = []  # non-MAST missions outside the config.missions list
 
-    # counting numbers
-    n_human_mission_callouts = 0  # counting mission callouts by human
-    n_llm_mission_callouts = 0  # counting mission callouts by llm, and matched between human and llm
-    n_non_mast_mission_callouts = 0  # counting non-MAST missions
+    # counting mission callouts
+    n_human_mission_callouts = n_llm_mission_callouts = 0  # counting mission callouts by human and by llm
+
+    # non MAST missions
+    non_mast_mission_callouts = []  # non-MAST missions outside the config.missions list
 
     # counting mission_in_text = false in both llm and human callouts
     n_human_llm_hallucination = 0
@@ -114,17 +87,21 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
 
     for bibcode, item in data.items():
         logger.info(f"\nbibcode: {bibcode}")
-        human_data = item["human"]
+        # human mission data
+        human_data = item.get("human")
         n_human_mission_callouts += len(human_data)
 
-        llm_data = item["llm"]  # only llm classification accepted by the threshold value
-        llm_missions = [next(iter(i)) for i in llm_data]
+        # llm mission data that accepted by the threshold value
+        llm_data = item.get("llm")  # only llm classification accepted by the threshold value
+        llm_missions = [next(iter(i)) for i in llm_data]  # get llm missions
         logger.info(f"llm classification accepted ={llm_missions}")
         n_llm_mission_callouts += len(llm_missions)
 
-        llm_df_missions = [i["llm_mission"] for i in item["df"]]  # pure llm call-out/classification
+        # all llm mission call-out
+        llm_df_missions = [i["llm_mission"] for i in item.get("df")]
         logger.info(f"llm_df_missions = {llm_df_missions}")
 
+        # store the list of non MAST missions
         non_mast_mission = [
             next(iter(i)) for i in llm_data if next(iter(i)) not in [s.upper() for s in config.missions]
         ]
@@ -147,8 +124,7 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
                 human_labels.append(mapped_human_papertype)
 
                 # llm labels = final llm papertypes of missions in "llm: []"
-                labels = [v for i in llm_data for k, v in i.items() if k == mission]
-                mapped_llm_papertype = map_papertype(labels[0])
+                mapped_llm_papertype = get_mapped_llm_papertype(llm_data, mission)
                 logger.debug(f"mapped papertype for llm = '{mapped_llm_papertype}'")
                 llm_labels.append(mapped_llm_papertype)
                 if not llm_mission_in_text:
@@ -166,26 +142,29 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
                     logger.warning(
                         f"{mission}: Human_label is available but no llm_label is available! LLM is missing call-out! Check why LLM fails to call out mission!"
                     )
-
-                logger.debug(f"human classified papertype = '{human_data.get(mission)}'")
                 # map papertype to allowed papertype for human label
+                logger.debug(f"human classified papertype = '{human_data.get(mission)}'")
                 mapped_papertype = map_papertype(human_data.get(mission))
                 logger.debug(f"mapped papertype = '{mapped_papertype}'")
                 human_labels.append(mapped_papertype)
 
+                # set llm label to ignored papertype
                 llm_labels.extend(ignored_papertype)
 
             elif mission not in human_data and mission in llm_missions:
                 if llm_mission_in_text:
-                    logger.warning(f"{mission}: check if human misses call-out! or the keyword search is failing")
+                    logger.warning(
+                        f"{mission}: check if human misses {mission} call-out! or the keyword search is failing"
+                    )
                 else:
-                    logger.warning(f"{mission}: check if LLM is hallucinating or the keyword search is failing!")
+                    logger.warning(
+                        f"{mission}: check if LLM is hallucinating {mission} call-out or the keyword search is failing!"
+                    )
 
                 human_labels.extend(ignored_papertype)
+
                 # llm labels = final llm papertypes of missions in "llm: []"
-                labels = [v for i in llm_data for k, v in i.items() if k == mission]
-                mapped_llm_papertype = map_papertype(labels[0])
-                logger.debug(f"mapped papertype for llm = '{mapped_llm_papertype}'")
+                mapped_llm_papertype = get_mapped_llm_papertype(llm_data, mission)
                 llm_labels.append(mapped_llm_papertype)
 
             else:  # both llm and human labels not found
@@ -199,14 +178,8 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
                 human_labels.extend(ignored_papertype)
                 llm_labels.extend(ignored_papertype)
 
-    # valid mission callouts
-    n_human_llm_mission_callouts = len(human_llm_mission_callouts)
-    human_llm_missions = sorted(list(set(human_llm_mission_callouts)))
-
     # non-MAST mission callouts
-    n_non_mast_mission_callouts = len(non_mast_mission_callouts)
-    non_mast_missions = sorted(list(set(non_mast_mission_callouts)))
-    logger.info(f"Non MAST missions: {non_mast_missions} called out; \n")
+    logger.info(f"Non MAST missions: {sorted(list(set(non_mast_mission_callouts)))} called out; \n")
     logger.debug(f"Non MAST mission call outs: \n {non_mast_mission_callouts}")
 
     threshold = data[next(iter(data))]["threshold_acceptance"]
@@ -214,10 +187,12 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
 
     logger.debug(f"human_labels = {human_labels}")
     logger.debug(f"llm_labels = {llm_labels}")
+    logger.info(f" Set of human_labels = {set(human_labels)} and set of llm_labels = {set(llm_labels)}")
+
     logger.info(
         f"""The total numbers of mission callouts by human and llm are {n_human_mission_callouts} and {n_llm_mission_callouts} respectively. \n
-        Among these callouts, only {n_human_llm_mission_callouts} cases are called out by both llm and human and valid for further evaluations!\n
-        {n_non_mast_mission_callouts} non-MAST missions are called out!\n"""
+        Among these callouts, only {len(human_llm_mission_callouts)} cases are called out by both llm and human and valid for further evaluations!\n
+        {len(non_mast_mission_callouts)} non-MAST missions are called out!\n"""
     )
 
     metrics_data = {
@@ -225,11 +200,11 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
         "n_bibcodes": n_bibcodes,
         "n_human_mission_callouts": n_human_mission_callouts,
         "n_llm_mission_callouts": n_llm_mission_callouts,
-        "n_non_mast_mission_callouts": n_non_mast_mission_callouts,
-        "n_human_llm_mission_callouts": n_human_llm_mission_callouts,
+        "n_non_mast_mission_callouts": len(non_mast_mission_callouts),
+        "n_human_llm_mission_callouts": len(human_llm_mission_callouts),
         "n_human_llm_hallucination": n_human_llm_hallucination,
-        "human_llm_missions": human_llm_missions,
-        "non_mast_missions": non_mast_missions,
+        "human_llm_missions": sorted(list(set(human_llm_mission_callouts))),
+        "non_mast_missions": sorted(list(set(non_mast_mission_callouts))),
         "human_labels": human_labels,
         "llm_labels": llm_labels,
     }
@@ -245,6 +220,39 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
     compute_and_save_metrics(metrics_data, str(output_filename) + ".txt", str(output_filename) + ".json")
 
     return metrics_data
+
+
+def map_papertype(papertype: str) -> str | None:
+    """Map a classified papertype to an allowed papertypes, for instance, if `papertype` is "SUPERMENTION" or "IGNORE", it will returns "NONSCIENCE" or a custom papertype.
+
+    Parameters
+    ==========
+    papertype: str, uppercase
+        human or llm classified papertype, e.g., "SCIENCE", "DATA_INFLUENCED"
+
+    Returns
+    =======
+    mapped_papertype: str, uppercase
+        mapped papertype follwing `config.llms.map_papertypes`, e.g., "MENTION" if `papertype` is "SUPERMENTION"
+    """
+    logger.debug(f"map_papertype(): input classified papertype to map = '{papertype}'")
+    try:
+        if papertype.lower() in config.llms.map_papertypes:
+            mapped_value = config.llms.map_papertypes.get(papertype.lower())
+            if mapped_value.upper() in config.llms.papertypes:
+                mapped_papertype = mapped_value.upper()
+                logger.debug(f"map_papertype(): mapped papertype is '{mapped_papertype}'")
+                return mapped_papertype
+            else:
+                raise ValueError(
+                    f"The mapped papertype '{mapped_value}' for the input papertype '{papertype}' is not a valid classification."
+                )
+        else:
+            raise KeyError(f"The input papertype '{papertype}' is an invalid papertype.")
+    except KeyError as ke:
+        logger.error(f"KeyError encountered: {ke}", exc_info=True)
+    except ValueError as ve:
+        logger.error(f"ValeError encountered: {ve}", exc_info=True)
 
 
 def compute_and_save_metrics(
@@ -274,9 +282,9 @@ def compute_and_save_metrics(
         n_human_llm_hallucination: int
             The number of apparent hallucination by both human and llm
             when "mission_in_text" = false
-        human_llm_missions: list[str]
+        human_llm_missions: list[str], sorted
             The missions called out by both human and llm
-        non_mast_missions; list[str]
+        non_mast_missions; list[str], sorted
             Non MAST missions called out by llm
         human_labels: list[str]
             True labels, human classified labels like ["SCIENCE", "MENTION"]
@@ -411,10 +419,9 @@ def extract_roc_data(data: dict, missions: list[str]):
                 # To generate an ROC curve, we need the full range of confidence values. Use "prob_papertype" for each mission, as "mean_llm_confidences" only reflect the scores of the finally accepted papertypes in "llm:[]", which are always above the threshold. We require the varying values provided by "prob_papertype where human labels exist."
                 confs = [i["prob_papertype"] for i in llm_mission_conf if i["llm_mission"] == mission]
                 llm_confidences.extend(confs)
-    logger.info(f"The number of valid mission callouts is {len(human_llm_mission_callouts)}")
-    human_llm_missions = sorted(list(set(human_llm_mission_callouts)))
+    logger.info(f"The number of the mission callouts by both human and llm is {len(human_llm_mission_callouts)}")
 
-    return human_labels, llm_confidences, human_llm_missions
+    return human_labels, llm_confidences, sorted(list(set(human_llm_mission_callouts)))
 
 
 # def prepare_roc_inputs(data: dict, missions: list[str]):

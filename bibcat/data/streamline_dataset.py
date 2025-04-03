@@ -5,6 +5,11 @@ from typing import Dict
 from bibcat import config
 from bibcat.core import parameters as params
 from bibcat.core.operator import Operator
+from bibcat.utils.logger_config import setup_logger
+
+# set up logger
+logger = setup_logger(__name__)
+logger.setLevel(config.logging.level)
 
 # map model_settings back to settings
 settings = config.dataprep
@@ -16,10 +21,10 @@ def load_source_dataset(do_verbose: bool):
     Load the original source dataset that is a combined set of papertrack classification and ADS full text. Return a dictionary of the JSON content.
     """
     with open(config.inputs.path_source_data, "r") as openfile:
-        print(f"Loading source dataset: {config.inputs.path_source_data}")
+        logger.info(f"Loading source dataset: {config.inputs.path_source_data}")
         source_dataset = json.load(openfile)
         if do_verbose:
-            print(f"{len(source_dataset)} papers have been loaded")
+            logger.debug(f"{len(source_dataset)} papers have been loaded")
 
     return source_dataset
 
@@ -28,7 +33,7 @@ def streamline_dataset(source_dataset: Dict, operator_ML: Operator, do_verbose_t
     """
     Organize a new version of the data with: key:text,class,id,mission structure
     """
-    print("Start streamlining dataset:")
+    logger.info("Start streamlining dataset:")
     # keep track of used bibcodes avoiding duplicate dataset entries
     list_bibcodes = []
 
@@ -51,12 +56,12 @@ def streamline_dataset(source_dataset: Dict, operator_ML: Operator, do_verbose_t
         # Otherwise, extract the bibcodes and missions
         curr_bibcode = curr_data["bibcode"]
         curr_missions = curr_data["class_missions"]
-        print(curr_bibcode)
-        print(curr_missions)
+        logger.info(curr_bibcode)
+        logger.info(curr_missions)
 
         # Skip if bibcode already encountered (and so duplicate entry)
         if curr_bibcode in list_bibcodes:
-            print(f"Duplicate bibcode encountered: {curr_bibcode}. Skipping.")
+            logger.warning(f"Duplicate bibcode encountered: {curr_bibcode}. Skipping.")
             continue
 
         # Iterate through missions for this text
@@ -107,25 +112,21 @@ def streamline_dataset(source_dataset: Dict, operator_ML: Operator, do_verbose_t
             )
         )
 
-    # print a snippet of each of the entries in the dataset.
-    print(f"Number of processed texts: {i_track}={len(dict_texts)}\n")
+    # logger.info a snippet of each of the entries in the dataset.
+    logger.info(f"Number of processed texts: {i_track}={len(dict_texts)}\n")
     if do_verbose_text_summary:
         for curr_key in dict_texts:
-            print(f"Text #{curr_key}:")
-            print(f"Classification: {dict_texts[curr_key]['class']}")
-            print(f"Mission: {dict_texts[curr_key]['mission']}")
-            print(f"ID: {dict_texts[curr_key]['id']}")
-            print(f"Bibcode: {dict_texts[curr_key]['bibcode']}")
-            print("Text snippet:")
-            print(dict_texts[curr_key]["text"][0:500])
-            print("---\n\n")
+            logger.debug(f"Text #{curr_key}:")
+            logger.debug(f"Classification: {dict_texts[curr_key]['class']}")
+            logger.debug(f"Mission: {dict_texts[curr_key]['mission']}")
+            logger.debug(f"ID: {dict_texts[curr_key]['id']}")
+            logger.debug(f"Bibcode: {dict_texts[curr_key]['bibcode']}")
+            logger.debug(f"Text snippet:{dict_texts[curr_key]['text'][0:500]} ---\n\n")
 
     # Print number of texts that fell under given parameters
-    print("Target missions:")
+    logger.info("Target missions:")
     for curr_kobj in params.all_kobjs:
-        print(curr_kobj)
-        print("")
-    print("")
-    print(f"{len(dict_texts)} of valid text entries have been streamlined.")
+        logger.info(curr_kobj + "\n")
+    logger.info(f"\n{len(dict_texts)} of valid text entries have been streamlined.")
 
     return dict_texts
