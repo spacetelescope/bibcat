@@ -24,11 +24,14 @@ conda activate <env_name>
 ```
 
 ### Bibcat installation
-The `bibcat` directory contains the python package itself, installable via pip. Move to the main bibcat root directory where `pyproject.toml` is located and run this command. This will install all dependencies for `[dev,test,doc]`
+The `bibcat` directory contains the python package itself, installable via pip. Move to the main bibcat root directory where `pyproject.toml` is located and run this command. This will only install the dependencies needed to run the LLM component of bibcat.  **Note:** you still need to manually run the `spacy download` command specified below.
 
 ```shell
 pip install -e .
 ```
+To install the optional Tensorflow dependencies for use of the ML component of bibcat, run `pip install ".[ml]` or follow the tensorflow instructions below.
+
+To install all dependencies for development and testing, run `pip install ".[all]"`.
 
 ### Spacy model downloads
 This model is used for the [Pretrained model method](https://github.com/spacetelescope/bibcat/blob/dev/docs/pretrained.md)
