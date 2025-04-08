@@ -71,6 +71,7 @@ def save_evaluation_stats(
                     item["consistency"],
                 )
                 for bibcode, eval_item in data.items()
+                if "df" in eval_item
                 for index, item in enumerate(eval_item["df"])
             ],
             columns=[
