@@ -2,11 +2,12 @@ import json
 import os
 import pathlib
 import re
+from enum import Enum
 
 import openai
 from openai import OpenAI
 from openai.types.beta.assistant import Assistant
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 
 from bibcat import config
 from bibcat.llm.evaluate import identify_missions_in_text
@@ -16,18 +17,32 @@ from bibcat.utils.logger_config import setup_logger
 logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
+# create an enum for the missions, using the config list
+MissionEnum = Enum("MissionEnum", dict(zip(map(str.lower, config.missions), config.missions)))
+
+
+class PapertypeEnum(str, Enum):
+    """Enumeration of paper types for classification"""
+
+    science = "SCIENCE"
+    mention = "MENTION"
+
 
 class MissionInfo(BaseModel):
     """Pydantic model for a mission entry"""
 
-    mission: str = Field(..., description="The name of the mission.")
-    papertype: str = Field(..., description="The type of paper you think it is")
+    mission: MissionEnum = Field(..., description="The name of the mission.")
+    papertype: PapertypeEnum = Field(..., description="The type of paper you think it is")
     confidence: list[float] = Field(..., description="A list of float values of your confidence")
     reason: str = Field(
         ..., description="A short sentence summarizing your reasoning for classifying this mission + papertype"
     )
     quotes: list[str] = Field(..., description="A list of exact quotes from the paper that support your reason")
 
+    @field_serializer("mission", "papertype")
+    def serialize_enums(self, item: Enum):
+        """Serialize the enums to their value"""
+        return item.value
 
 class InfoModel(BaseModel):
     """Pydantic model for the parsed response from the LLM"""

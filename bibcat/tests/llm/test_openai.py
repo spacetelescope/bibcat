@@ -1,6 +1,8 @@
+from enum import Enum
+
 import pytest
 
-from bibcat.llm.openai import convert_to_classification, extract_response
+from bibcat.llm.openai import InfoModel, convert_to_classification, extract_response
 
 
 def test_convert_to_classes():
@@ -41,3 +43,33 @@ def test_extract_json(data, exp):
 
     output = extract_response(data)
     assert output == exp
+
+
+# expected model response
+exp_response = {
+    "notes": "I have read the paper and identified that it includes references to the KEPLER mission, specifically mentioning the code KEPLER in the context of comparing different stellar evolution programs and their output. However, the paper does not present any new observations or data utilizing KEPLER; it simply mentions it as part of the discussion on model comparisons. Therefore, I classify the reference as a mention, not as a use of data in analysis or the presentation of new results.",
+    "missions": [
+        {
+            "mission": "KEPLER",
+            "papertype": "MENTION",
+            "confidence": [0.1, 0.9],
+            "reason": "KEPLER is referenced in the context of comparing stellar evolution models but does not contribute new data or observations.",
+            "quotes": [
+                "The programs mentioned above are some of the most commonly cited in the literature, but this is by no means an exhaustive list of all current software in use."
+            ],
+        }
+    ],
+}
+
+
+def test_info_model():
+    """test the info model parses and dumps correctly"""
+    ii = InfoModel(**exp_response)
+    assert isinstance(ii.missions[0].mission, Enum)
+    assert isinstance(ii.missions[0].papertype, Enum)
+    assert ii.missions[0].papertype == "MENTION"
+
+    out = ii.model_dump()
+    assert isinstance(out["missions"][0]["papertype"], str)
+    assert out["missions"][0]["papertype"] == "MENTION"
+    assert out["missions"][0]["mission"] == "KEPLER"
