@@ -69,7 +69,9 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
     human_llm_mission_callouts = []  # missions that have both human and llm classified papertypes
     non_mast_mission_callouts = []  # non-MAST missions outside the config.missions list
 
-    n_human_mission_callouts = n_llm_mission_callouts = 0  # counting mission callouts by human and by llm
+    n_human_mission_callouts = n_llm_callouts = (
+        0  # counting human mission callouts and llm callouts including non-MAST missions
+    )
     n_human_llm_hallucination = 0  # counting mission_in_text = false in both llm and human callouts
     n_missing_output_bibcodes = 0  # counting papers that ignored by both human and llm
 
@@ -88,7 +90,7 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
             n_human_mission_callouts += len(human_data)
 
             llm_data = item.get("llm")  # only llm classification accepted by the threshold value
-            n_llm_mission_callouts += len(llm_data)
+            n_llm_callouts += len(llm_data)
             llm_missions = [next(iter(i)) for i in llm_data]  # get llm missions
             logger.info(f"llm classification accepted ={llm_missions}")
 
@@ -175,7 +177,7 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
     logger.info(f" Set of human_labels = {set(human_labels)} and set of llm_labels = {set(llm_labels)}")
 
     logger.info(
-        f"""The total numbers of mission callouts by human and llm are {n_human_mission_callouts} and {n_llm_mission_callouts} respectively. \n
+        f"""The total numbers of mission callouts by human and llm are {n_human_mission_callouts} and {n_llm_callouts - len(non_mast_mission_callouts)} respectively. \n
         Among these callouts, only {len(human_llm_mission_callouts)} cases are called out by both llm and human and valid for further evaluations!\n
         {len(non_mast_mission_callouts)} non-MAST missions are called out!\n"""
     )
@@ -184,7 +186,7 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
         "threshold": threshold,
         "n_bibcodes": n_bibcodes,
         "n_human_mission_callouts": n_human_mission_callouts,
-        "n_llm_mission_callouts": n_llm_mission_callouts,
+        "n_llm_mission_callouts": n_llm_callouts - len(non_mast_mission_callouts),
         "n_non_mast_mission_callouts": len(non_mast_mission_callouts),
         "n_human_llm_mission_callouts": len(human_llm_mission_callouts),
         "n_human_llm_hallucination": n_human_llm_hallucination,
@@ -430,20 +432,13 @@ def extract_roc_data(data: dict, missions: list[str]):
     llm_confidences = []  # for ROC
     human_llm_mission_callouts = []  # missions that have both human and llm classified papertypes
 
-    # counting mission callouts by human
-    n_human_mission_callouts = 0
-    # counting mission callouts by llm, and matched between human and llm
-    n_llm_mission_callouts = 0
-
     for bibcode, item in data.items():
         logger.debug(f"bibcode: {bibcode}")
         human_data = item["human"]
-        n_human_mission_callouts += len(human_data)
 
         # llm missions for ROC; need to extract from `mission_conf` data frame
         llm_mission_conf = item["mission_conf"]
         llm_mission = [item["llm_mission"] for item in llm_mission_conf]
-        n_llm_mission_callouts += len(llm_mission)
 
         # extracting human labels and llm confidences
         for mission in missions:

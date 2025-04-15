@@ -56,7 +56,7 @@ sample_metrics_data = {
     "threshold": 0.7,
     "n_bibcodes": 2,
     "n_human_mission_callouts": 3,
-    "n_llm_mission_callouts": 3,
+    "n_llm_mission_callouts": 2,
     "n_non_mast_mission_callouts": 1,
     "n_human_llm_mission_callouts": 2,
     "n_human_llm_hallucination": 0,
