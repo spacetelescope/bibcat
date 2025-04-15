@@ -47,6 +47,8 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
         n_human_llm_hallucination: int
             The number of apparent hallucination by both human and llm
             when "mission_in_text" = false
+        n_missing_ouptput_bibcodes: int
+            The number of bibcodes missing output
         human_llm_missions: list[str]
             The missions called out by both human and llm
         non_mast_missions; list[str], sorted
@@ -58,132 +60,115 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
 
     """
 
-    def get_mapped_llm_papertype(llm_data: list[dict], mission: str) -> str | None:
-        """get mapped papertype for llm"""
-        label = next((v for i in llm_data for k, v in i.items() if k == mission), None)
-        mapped_llm_papertype = map_papertype(label)
-        logger.debug(f"mapped papertype for llm = '{mapped_llm_papertype}'")
-        return mapped_llm_papertype
-
     n_bibcodes = len(data)
-    logger.info(f"The number of evaluation summary data, e.g., the number of bibcodes = {n_bibcodes}")
-    logger.info(f"{len(missions)} mission(s): {', '.join(missions)} is/are evaluated! ")
+    threshold = data[next(iter(data))]["threshold_acceptance"]
+    logger.info(f"The {n_bibcodes} bibcodes are evaluated in the summary_ouput_t{threshold}.json")
+    logger.info(f"{len(missions)} mission(s): {', '.join(missions)} is/are evaluated!\nLooping through papers! ")
 
-    # prepare lists
     human_labels, llm_labels = [], []  # Store ground truth papertypes and LLM papertypes
     human_llm_mission_callouts = []  # missions that have both human and llm classified papertypes
-
-    # counting mission callouts
-    n_human_mission_callouts = n_llm_mission_callouts = 0  # counting mission callouts by human and by llm
-
-    # non MAST missions
     non_mast_mission_callouts = []  # non-MAST missions outside the config.missions list
 
-    # counting mission_in_text = false in both llm and human callouts
-    n_human_llm_hallucination = 0
+    n_human_mission_callouts = n_llm_mission_callouts = 0  # counting mission callouts by human and by llm
+    n_human_llm_hallucination = 0  # counting mission_in_text = false in both llm and human callouts
+    n_missing_output_bibcodes = 0  # counting papers that ignored by both human and llm
 
     # set the papertype for llm or human ignored the paper
-    ignored_papertype = [config.llms.map_papertypes.ignore.upper()]
+    ignored_papertype = config.llms.map_papertypes.ignore.upper()
 
     for bibcode, item in data.items():
         logger.info(f"\nbibcode: {bibcode}")
-        # human mission data
-        human_data = item.get("human")
-        n_human_mission_callouts += len(human_data)
 
-        # llm mission data that accepted by the threshold value
-        llm_data = item.get("llm")  # only llm classification accepted by the threshold value
-        llm_missions = [next(iter(i)) for i in llm_data]  # get llm missions
-        logger.info(f"llm classification accepted ={llm_missions}")
-        n_llm_mission_callouts += len(llm_missions)
+        if "error" in item:
+            n_missing_output_bibcodes += 1
+            human_labels.extend([ignored_papertype] * len(missions))
+            llm_labels.extend([ignored_papertype] * len(missions))
+        else:
+            human_data = item.get("human")
+            n_human_mission_callouts += len(human_data)
 
-        # all llm mission call-out
-        llm_df_missions = [i["llm_mission"] for i in item.get("df")]
-        logger.info(f"llm_df_missions = {llm_df_missions}")
+            llm_data = item.get("llm")  # only llm classification accepted by the threshold value
+            n_llm_mission_callouts += len(llm_data)
+            llm_missions = [next(iter(i)) for i in llm_data]  # get llm missions
+            logger.info(f"llm classification accepted ={llm_missions}")
 
-        # store the list of non MAST missions
-        non_mast_mission = [
-            next(iter(i)) for i in llm_data if next(iter(i)) not in [s.upper() for s in config.missions]
-        ]
-        non_mast_mission_callouts.extend(non_mast_mission)
+            # all llm mission call-out
+            llm_df_missions = [i["llm_mission"] for i in item.get("df")]
+            logger.info(f"llm_df_missions = {llm_df_missions}")
 
-        # extracting human labels and llm labels
-        for mission in missions:
-            logger.info(f"Checking {mission} summary output")
-            llm_mission_in_text = next((i["mission_in_text"] for i in item["df"] if i["llm_mission"] == mission), False)
+            # store the list of non MAST missions
+            non_mast_mission = [
+                next(iter(i)) for i in llm_data if next(iter(i)) not in [s.upper() for s in config.missions]
+            ]
+            non_mast_mission_callouts.extend(non_mast_mission)
 
-            if mission in human_data and mission in llm_missions:
-                logger.info(f"{mission}:both human_label and llm_label are available!")
-                human_llm_mission_callouts.append(mission)
+            # extracting human labels and llm labels
+            for mission in missions:
+                logger.info(f"Checking {mission} summary output")
+                llm_mission_in_text = next(
+                    (i["mission_in_text"] for i in item.get("df") if i["llm_mission"] == mission), False
+                )
 
-                # human labels needed for confusion matrix
-                logger.debug(f"human classified papertype = '{human_data.get(mission)}'")
-                # map papertype to allowed papertype
-                mapped_human_papertype = map_papertype(human_data.get(mission))
-                logger.debug(f"mapped papertype for human = '{mapped_human_papertype}'")
-                human_labels.append(mapped_human_papertype)
+                if mission in human_data and mission in llm_missions:
+                    logger.info(f"{mission}:both human_label and llm_label are available!")
+                    human_llm_mission_callouts.append(mission)
 
-                # llm labels = final llm papertypes of missions in "llm: []"
-                mapped_llm_papertype = get_mapped_llm_papertype(llm_data, mission)
-                logger.debug(f"mapped papertype for llm = '{mapped_llm_papertype}'")
-                llm_labels.append(mapped_llm_papertype)
-                if not llm_mission_in_text:
-                    logger.warning(
-                        f"It appears that both human and LLM are hallucinating {mission}! Check out if the keyword search is failing"
-                    )
-                    n_human_llm_hallucination += 1
+                    # set human labels after mapping papertype
+                    append_human_labels_with_mapped_papertype(human_data, mission, human_labels)
 
-            elif mission in human_data and mission not in llm_missions:  # llm missing call-out
-                if mission in llm_df_missions:
-                    logger.info(
-                        f"{mission}: Human_label is available and LLM called out {mission} but the confidence value is below the threshold."
-                    )
-                else:
-                    logger.warning(
-                        f"{mission}: Human_label is available but no llm_label is available! LLM is missing call-out! Check why LLM fails to call out mission!"
-                    )
-                # map papertype to allowed papertype for human label
-                logger.debug(f"human classified papertype = '{human_data.get(mission)}'")
-                mapped_papertype = map_papertype(human_data.get(mission))
-                logger.debug(f"mapped papertype = '{mapped_papertype}'")
-                human_labels.append(mapped_papertype)
+                    # set llm labels = final llm papertypes of missions in "llm: []" after mapping
+                    append_llm_labels_with_mapped_papertype(llm_data, mission, llm_labels)
 
-                # set llm label to ignored papertype
-                llm_labels.extend(ignored_papertype)
+                    if not llm_mission_in_text:
+                        logger.warning(
+                            f"It appears that both human and LLM are hallucinating {mission}! Check out if the keyword search is failing"
+                        )
+                        n_human_llm_hallucination += 1
 
-            elif mission not in human_data and mission in llm_missions:
-                if llm_mission_in_text:
-                    logger.warning(
-                        f"{mission}: check if human misses {mission} call-out! or the keyword search is failing"
-                    )
-                else:
-                    logger.warning(
-                        f"{mission}: check if LLM is hallucinating {mission} call-out or the keyword search is failing!"
-                    )
+                elif mission in human_data and mission not in llm_missions:  # llm missing call-out
+                    if mission in llm_df_missions:
+                        logger.info(
+                            f"{mission}: Human_label is available and LLM called out {mission} but the confidence value is below the threshold."
+                        )
+                    else:
+                        logger.warning(
+                            f"{mission}: Human_label is available but no llm_label is available! LLM is missing call-out! Check why LLM fails to call out mission!"
+                        )
+                    # set human labels after mapping papertype
+                    append_human_labels_with_mapped_papertype(human_data, mission, human_labels)
 
-                human_labels.extend(ignored_papertype)
+                    # set llm label to ignored papertype
+                    llm_labels.extend([ignored_papertype])
 
-                # llm labels = final llm papertypes of missions in "llm: []"
-                mapped_llm_papertype = get_mapped_llm_papertype(llm_data, mission)
-                llm_labels.append(mapped_llm_papertype)
+                elif mission not in human_data and mission in llm_missions:
+                    if llm_mission_in_text:
+                        logger.warning(
+                            f"{mission}: check if human misses {mission} call-out! or the keyword search is failing"
+                        )
+                    else:
+                        logger.warning(
+                            f"{mission}: check if LLM is hallucinating {mission} call-out or the keyword search is failing!"
+                        )
 
-            else:  # both llm and human labels not found
-                if mission in llm_df_missions:
-                    logger.warning(
-                        f"Human misses calling out and LLM called out {mission} but the confidence value is below the threshold. Also, check out if the keyword search is failing!"
-                    )
-                else:
-                    logger.info(f"Both human and LLM ignored {mission}!")
+                    human_labels.extend([ignored_papertype])
 
-                human_labels.extend(ignored_papertype)
-                llm_labels.extend(ignored_papertype)
+                    # llm labels = final llm papertypes of missions in "llm: []" after mapping
+                    append_llm_labels_with_mapped_papertype(llm_data, mission, llm_labels)
+
+                else:  # both llm and human labels not found
+                    if mission in llm_df_missions:
+                        logger.warning(
+                            f"Human misses calling out and LLM called out {mission} but the confidence value is below the threshold. Also, check out if the keyword search is failing!"
+                        )
+                    else:
+                        logger.info(f"Both human and LLM ignored {mission}!")
+
+                    human_labels.extend([ignored_papertype])
+                    llm_labels.extend([ignored_papertype])
 
     # non-MAST mission callouts
     logger.info(f"Non MAST missions: {sorted(list(set(non_mast_mission_callouts)))} called out; \n")
     logger.debug(f"Non MAST mission call outs: \n {non_mast_mission_callouts}")
-
-    threshold = data[next(iter(data))]["threshold_acceptance"]
-    logger.debug(f"threshold = {threshold}")
 
     logger.debug(f"human_labels = {human_labels}")
     logger.debug(f"llm_labels = {llm_labels}")
@@ -203,6 +188,7 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
         "n_non_mast_mission_callouts": len(non_mast_mission_callouts),
         "n_human_llm_mission_callouts": len(human_llm_mission_callouts),
         "n_human_llm_hallucination": n_human_llm_hallucination,
+        "n_missing_output_bibcodes": n_missing_output_bibcodes,
         "human_llm_missions": sorted(list(set(human_llm_mission_callouts))),
         "non_mast_missions": sorted(list(set(non_mast_mission_callouts))),
         "human_labels": human_labels,
@@ -255,6 +241,57 @@ def map_papertype(papertype: str) -> str | None:
         logger.error(f"ValeError encountered: {ve}", exc_info=True)
 
 
+def append_human_labels_with_mapped_papertype(
+    human_data: dict[str, str], mission: str, human_labels: list[str]
+) -> None:
+    """Append human papertype to the `human_labels` list after mapping it to the allowed papertype
+
+    Parameters
+    ==========
+    human_data: dict[str]
+        human classification data per bibcode in summary_output.
+        e.g., "human": {"GALEX": "SCIENCE", "HST": "DATA-INFLUENCED"}
+    mission: str
+        mission name, e.g., ROMAN
+    human_labels: list[str]
+        list of human papertype labels for confusion matrix, e.g., ["SCIENCE","NONSCIENCE","SCIENCE"]
+
+    Returns
+    ======
+    None
+    """
+
+    logger.debug(f"initial human papertype = '{human_data.get(mission)}'")
+    mapped_human_papertype = map_papertype(human_data.get(mission))
+    logger.debug(f"mapped papertype = '{mapped_human_papertype}'")
+    human_labels.append(mapped_human_papertype)
+
+
+def append_llm_labels_with_mapped_papertype(llm_data: list[dict], mission: str, llm_labels: list[str]) -> None:
+    """Append llm papertype to the `llm_labels` list after mapping it to the allowed papertype
+
+    Parameters
+    ==========
+    llm_data: list[dict]
+        llm classification data per bibcode in summary_output.
+        e.g., "llm": [{"JWST": "SCIENCE"}, {"ROMAN": "SUPERMENTION"}, {"HST": "SCIENCE"}]
+    mission: str
+        mission name, e.g., ROMAN
+    llm_labels: list[str]
+        list of llm papertype labels for confusion matrix, e.g., ["SCIENCE","NONSCIENCE","SCIENCE"]
+
+    Returns
+    ======
+    None
+    """
+
+    label = next((v for i in llm_data for k, v in i.items() if k == mission), None)
+    logger.debug(f"initial llm papertype = {label}")
+    mapped_llm_papertype = map_papertype(label)
+    logger.debug(f"mapped papertype for llm = '{mapped_llm_papertype}'")
+    llm_labels.append(mapped_llm_papertype)
+
+
 def compute_and_save_metrics(
     metrics_data: dict[str],
     output_ascii_path: str | Path = "metrics_summary.txt",
@@ -282,6 +319,8 @@ def compute_and_save_metrics(
         n_human_llm_hallucination: int
             The number of apparent hallucination by both human and llm
             when "mission_in_text" = false
+        n_missing_output_bibcodes: int
+            The number of bibcodes missing output
         human_llm_missions: list[str], sorted
             The missions called out by both human and llm
         non_mast_missions; list[str], sorted
@@ -322,6 +361,9 @@ def compute_and_save_metrics(
     # Write results to an ASCII file
     with open(output_ascii_path, "w") as f:
         f.write(f"The number of bibcodes (papers) for evaluation metrics: {metrics_data['n_bibcodes']}\n")
+        f.write(
+            f"The number of bibcodes missing output, i.e., ignored papers by flagship and mast: {metrics_data['n_missing_output_bibcodes']}"
+        )
         f.write(f"The number of mission callouts by human: {metrics_data['n_human_mission_callouts']}\n")
         f.write(
             f"The number of mission callouts by llm with the threshold value, {metrics_data['threshold']}: {metrics_data['n_llm_mission_callouts']}\n\n"
