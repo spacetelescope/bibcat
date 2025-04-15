@@ -11,56 +11,102 @@ paper = {
 }
 
 output = {
-  "2022Sci...377.1211L": [
-    {
-      "notes": "",
-      "missions": [
-        {"mission": "TESS", "papertype": "SCIENCE", "confidence": [0.9, 0.1],
-         "reason": "They use TESS data", "quotes": ["We use TESS data."]},
-        {"mission": "JWST", "papertype": "MENTION", "confidence": [0.3, 0.7],
-         "reason": "They mention JWST", "quotes": ["We mention JWST."]}
-      ]
-    },
-    {
-      "notes": "",
-      "missions": [
-        {"mission": "TESS", "papertype": "MENTION", "confidence": [0.3, 0.7],
-         "reason": "They mention TESS", "quotes": ["We mention TESS."]}
-      ]
-    },
-    {
-      "notes": "",
-      "missions": [
-        {"mission": "TESS", "papertype": "SCIENCE", "confidence": [0.9, 0.1],
-         "reason": "They use TESS data", "quotes": ["We use TESS data."]},
-        {"mission": "JWST", "papertype": "SCIENCE", "confidence": [0.9, 0.1],
-         "reason": "They use JWST data", "quotes": ["We use JWST data."]}
-      ]
-    },
-    {
-      "notes": "",
-      "missions": [
-        {"mission": "TESS", "papertype": "SCIENCE", "confidence": [0.9, 0.1],
-         "reason": "They use TESS data", "quotes": ["We use TESS data."]}
-      ]
-    },
-    {
-      "notes": "",
-      "missions": [
-        {"mission": "TESS", "papertype": "SCIENCE", "confidence": [0.9, 0.1],
-         "reason": "They use TESS data", "quotes": ["We use TESS data."]}
-      ]
-    },
-    {
-      "notes": "",
-      "missions": [
-        {"mission": "TESS", "papertype": "SCIENCE", "confidence": [0.9, 0.1],
-         "reason": "They use TESS data", "quotes": ["We use TESS data."]},
-        {"mission": "JWST", "papertype": "MENTION", "confidence": [0.3, 0.7],
-         "reason": "They mention JWST", "quotes": ["We mention JWST."]}
-      ]
-    },
-  ]
+    "2022Sci...377.1211L": [
+        {
+            "notes": "",
+            "missions": [
+                {
+                    "mission": "TESS",
+                    "papertype": "SCIENCE",
+                    "confidence": [0.9, 0.1],
+                    "reason": "They use TESS data",
+                    "quotes": ["We use TESS data."],
+                },
+                {
+                    "mission": "JWST",
+                    "papertype": "MENTION",
+                    "confidence": [0.3, 0.7],
+                    "reason": "They mention JWST",
+                    "quotes": ["We mention JWST."],
+                },
+            ],
+        },
+        {
+            "notes": "",
+            "missions": [
+                {
+                    "mission": "TESS",
+                    "papertype": "MENTION",
+                    "confidence": [0.3, 0.7],
+                    "reason": "They mention TESS",
+                    "quotes": ["We mention TESS."],
+                }
+            ],
+        },
+        {
+            "notes": "",
+            "missions": [
+                {
+                    "mission": "TESS",
+                    "papertype": "SCIENCE",
+                    "confidence": [0.9, 0.1],
+                    "reason": "They use TESS data",
+                    "quotes": ["We use TESS data."],
+                },
+                {
+                    "mission": "JWST",
+                    "papertype": "SCIENCE",
+                    "confidence": [0.9, 0.1],
+                    "reason": "They use JWST data",
+                    "quotes": ["We use JWST data."],
+                },
+            ],
+        },
+        {
+            "notes": "",
+            "missions": [
+                {
+                    "mission": "TESS",
+                    "papertype": "SCIENCE",
+                    "confidence": [0.9, 0.1],
+                    "reason": "They use TESS data",
+                    "quotes": ["We use TESS data."],
+                }
+            ],
+        },
+        {
+            "notes": "",
+            "missions": [
+                {
+                    "mission": "TESS",
+                    "papertype": "SCIENCE",
+                    "confidence": [0.9, 0.1],
+                    "reason": "They use TESS data",
+                    "quotes": ["We use TESS data."],
+                }
+            ],
+        },
+        {
+            "notes": "",
+            "missions": [
+                {
+                    "mission": "TESS",
+                    "papertype": "SCIENCE",
+                    "confidence": [0.9, 0.1],
+                    "reason": "They use TESS data",
+                    "quotes": ["We use TESS data."],
+                },
+                {
+                    "mission": "JWST",
+                    "papertype": "MENTION",
+                    "confidence": [0.3, 0.7],
+                    "reason": "They mention JWST",
+                    "quotes": ["We mention JWST."],
+                },
+            ],
+        },
+    ],
+    "2024Sci...377.1211L": [{"notes": "this paper has no missions.", "missions": []}],
 }
 
 

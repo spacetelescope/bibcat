@@ -44,7 +44,8 @@ data = {
             {"llm_mission": "HST", "prob_papertype": [0.55, 0.45]},
             {"llm_mission": "LAMOST", "prob_papertype": [0.4, 0.6]},
         ],
-    }
+    },
+    "2024Sci...377.1211L": {"error": "No mission output found for 2024Sci...377.1211L."},
 }
 
 
