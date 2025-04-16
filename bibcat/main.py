@@ -165,9 +165,6 @@ def evaluate(name) -> None:
 @click.option("-m", "--model", default=None, type=str, show_default=True, help="The model type to use")
 @click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
 @click.option(
-    "--assistant", is_flag=True, show_default=True, default=False, help="Set to use the file-search assistant"
-)
-@click.option(
     "-u", "--user-prompt-file", default=None, type=str, show_default=True, help="The name of a custom user prompt file"
 )
 @click.option(
@@ -180,17 +177,7 @@ def evaluate(name) -> None:
 )
 @click.option("-v", "--verbose", is_flag=True, show_default=True, help="Set to print verbose output")
 @click.option("-o", "--ops", is_flag=True, show_default=False, help="Set to operational classification mode")
-@click.option(
-    "-s/-u",
-    "--structured/--unstructured",
-    is_flag=True,
-    default=True,
-    show_default=True,
-    help="Set to toggle structured response",
-)
-def run_gpt(
-    filename, bibcode, index, model, num_runs, assistant, user_prompt_file, agent_prompt_file, verbose, ops, structured
-):
+def run_gpt(filename, bibcode, index, model, num_runs, user_prompt_file, agent_prompt_file, verbose, ops):
     """Send a prompt to an OpenAI LLM model"""
     # override the config model
     start_time = time.time()
@@ -207,15 +194,7 @@ def run_gpt(
     if ops:
         config.llms.ops = ops
 
-    classify_paper(
-        file_path=filename,
-        bibcode=bibcode,
-        index=index,
-        n_runs=num_runs,
-        use_assistant=assistant,
-        verbose=verbose,
-        structured=structured,
-    )
+    classify_paper(file_path=filename, bibcode=bibcode, index=index, n_runs=num_runs, verbose=verbose)
     elapsed_time = time.time() - start_time
     logger.info(f"Elapsed time for run_gpt for {num_runs} papers: {elapsed_time} seconds.")
 
@@ -253,15 +232,7 @@ def run_gpt(
 @click.option("-v", "--verbose", is_flag=True, show_default=True, help="Set to print verbose output")
 @click.option("-o", "--ops", is_flag=True, show_default=False, help="Set to operational classification mode")
 @click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
-@click.option(
-    "-s/-u",
-    "--structured/--unstructured",
-    is_flag=True,
-    default=True,
-    show_default=True,
-    help="Set to toggle structured response",
-)
-def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, verbose, num_runs, ops, structured):
+def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, verbose, num_runs, ops):
     """Batch submit papers to an OpenAI LLM model.
 
     Example Usage
@@ -297,9 +268,7 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
             bibcode=file if source == "bibcode" else None,
             index=file if source == "index" else None,
             n_runs=num_runs,
-            use_assistant=True if source == "file" else False,
             verbose=verbose,
-            structured=structured,
         )
     elapsed_time = time.time() - start_time
     logger.info(f"Elapsed time for run_gpt_batch for {len(files)} papers: {elapsed_time} seconds.")
