@@ -112,6 +112,13 @@ class OpenAIHelper:
         """
         self.file = self.client.files.create(file=open(file_path, "rb"), purpose="assistants")
 
+    def retrieve_file(self, filename: str):
+        files = [i for i in self.client.files.list() if i.filename in filename]
+        if files:
+            self.file = files[0]
+        else:
+            self.upload_file(filename)
+
     def create_vector_store(self, name: str = "Papers", files: list = None):
         """Create a new vector store
 
@@ -354,46 +361,90 @@ class OpenAIHelper:
         text = f"{paper['title'][0]}; {paper.get('abstract', '')}; {paper['body']}"
         return {k: v for k, v in zip(config.missions, identify_missions_in_text(config.missions, text=text)) if v}
 
-    def send_message(self, user_prompt: str = None) -> dict | str:
-        """Send a straight chat message to the LLM
+    # def send_message(self, user_prompt: str = None) -> dict | str:
+    #     """Send a straight chat message to the LLM
 
-        Can pass a custom user prompt into method, otherwise it uses the prompt
-        pulled from ``get_llm_prompt``.  The response is stored in the instance
-        ``response`` attribute.  The original message content can be found in the
-        ``original_response`` attribute.
+    #     Can pass a custom user prompt into method, otherwise it uses the prompt
+    #     pulled from ``get_llm_prompt``.  The response is stored in the instance
+    #     ``response`` attribute.  The original message content can be found in the
+    #     ``original_response`` attribute.
 
-        Parameters
-        ----------
-        user_prompt : str, optional
-            A customized user prompt, by default None
+    #     Parameters
+    #     ----------
+    #     user_prompt : str, optional
+    #         A customized user prompt, by default None
 
-        Returns
-        -------
-        dict | str
-            the output respsonse from the model
-        """
-        result = self.client.chat.completions.create(
-            model=config.llms.openai.model,
-            messages=[
-                {"role": "system", "content": get_llm_prompt("agent")},
-                {"role": "user", "content": user_prompt or get_llm_prompt("user")},
-            ],
-        )
+    #     Returns
+    #     -------
+    #     dict | str
+    #         the output respsonse from the model
+    #     """
+    #     result = self.client.chat.completions.create(
+    #         model=config.llms.openai.model,
+    #         messages=[
+    #             {"role": "system", "content": get_llm_prompt("agent")},
+    #             {"role": "user", "content": user_prompt or get_llm_prompt("user")},
+    #         ],
+    #     )
 
-        self.original_response = result.choices[0].message.content
-        self.response = extract_response(self.original_response)
+    #     self.original_response = result.choices[0].message.content
+    #     self.response = extract_response(self.original_response)
 
-        return self.response
+    #     return self.response
 
-    def send_structured_message(self, user_prompt: str = None) -> dict | str:
-        """Send a chat message to the LLM using Structured Response
+    # def send_structured_message(self, user_prompt: str = None) -> dict | str:
+    #     """Send a chat message to the LLM using Structured Response
 
-        Sends your prompt to the LLM model with an expected response format
+    #     Sends your prompt to the LLM model with an expected response format
+    #     of InfoModel.  The LLM will parse its response into the structure you
+    #     provide. See https://openai.com/index/introducing-structured-outputs-in-the-api/
+    #     Works with minimum gpt-4o-mini-2024-07-18 and gpt-4o-2024-08-06 models, but
+    #     structured outputs with response formats is available on gpt-4o-mini and gpt-4o-2024-08-06 and
+    #     any fine tunes based on these models.
+
+    #     Parameters
+    #     ----------
+    #     user_prompt : str, optional
+    #         A customized user prompt, by default None
+
+    #     Returns
+    #     -------
+    #     dict | str
+    #         the output response from the model
+
+    #     Raises
+    #     ------
+    #     ValueError
+    #         when the model is not one of the supported models
+    #     """
+
+    #     result = self.client.beta.chat.completions.parse(
+    #         model=config.llms.openai.model,
+    #         messages=[
+    #             {"role": "system", "content": get_llm_prompt("agent")},
+    #             {"role": "user", "content": user_prompt or get_llm_prompt("user")},
+    #         ],
+    #         response_format=InfoModel,
+    #     )
+
+    #     self.original_response = result.choices[0].message.content
+
+    #     message = result.choices[0].message
+    #     if message.parsed:
+    #         self.response = message.parsed.model_dump()
+    #     else:
+    #         self.response = message.refusal
+
+    #     return self.response
+
+    def send_message(self, user_prompt: str = None, with_file: bool = None):
+        """Send a chat message to the LLM
+
+        Sends your prompt to the LLM model with an expected structured response format
         of InfoModel.  The LLM will parse its response into the structure you
         provide. See https://openai.com/index/introducing-structured-outputs-in-the-api/
-        Works with minimum gpt-4o-mini-2024-07-18 and gpt-4o-2024-08-06 models, but
-        structured outputs with response formats is available on gpt-4o-mini and gpt-4o-2024-08-06 and
-        any fine tunes based on these models.
+        Works with minimum gpt-4o-mini-2024-07-18 but all newer models of gpt-4o and all
+        o-models support structured output.
 
         Parameters
         ----------
@@ -410,24 +461,37 @@ class OpenAIHelper:
         ValueError
             when the model is not one of the supported models
         """
+        # set the proper llm input
+        llm_input = user_prompt or get_llm_prompt("user")
+        if with_file:
+            llm_input = [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_file",
+                            "file_id": self.file.id,
+                        },
+                        {
+                            "type": "input_text",
+                            "text": llm_input,
+                        },
+                    ],
+                }
+            ]
 
-        result = self.client.beta.chat.completions.parse(
+        # send the request
+        result = self.client.responses.parse(
             model=config.llms.openai.model,
-            messages=[
-                {"role": "system", "content": get_llm_prompt("agent")},
-                {"role": "user", "content": user_prompt or get_llm_prompt("user")},
-            ],
-            response_format=InfoModel,
+            instructions=get_llm_prompt("agent"),
+            input=llm_input,
+            text_format=InfoModel,
         )
 
-        self.original_response = result.choices[0].message.content
-
-        message = result.choices[0].message
-        if message.parsed:
-            self.response = message.parsed.model_dump()
+        if result.error:
+            self.response = result.error
         else:
-            self.response = message.refusal
-
+            self.response = result.output_parsed.model_dump()
         return self.response
 
     def submit_paper(self, filepath: str = None, bibcode: str = None, index: int = None) -> dict | str:
@@ -463,40 +527,76 @@ class OpenAIHelper:
         self.user_prompt = get_llm_prompt("user")
         self.agent_prompt = get_llm_prompt("agent")
 
-        if self.use_assistant:
+        # if self.use_assistant:
+        #     # get the file path
+        #     self.filename = get_file(filepath=filepath, bibcode=bibcode, index=index)
+        #     logger.info("Using file: %s", self.filename)
+
+        #     # upload the file to openai
+        #     self.upload_file(self.filename)
+        #     logger.info("Uploaded file id: %s", self.file.id)
+
+        #     # send the prompt request to the assistant
+        #     response = self.send_assistant_request(self.file.id)
+        # else:
+        #     # get the paper source
+        #     self.paper = get_source(bibcode=bibcode, index=index)
+        #     if not self.paper:
+        #         self.bibcode = bibcode
+        #         logger.warning("No paper source found for bibcode: %s", bibcode)
+        #         return {"error": f"Bibcode {bibcode} not found in source data."}
+
+        #     self.bibcode = bibcode or self.paper.get("bibcode")
+        #     logger.info("Using paper bibcode: %s", self.bibcode)
+
+        #     # populate the user template with paper data
+        #     self.user_prompt = self.populate_user_template(self.paper)
+
+        # # send the prompt
+        # if self.structured or config.llms.openai.model in ["gpt-4o-mini-2024-07-18", "gpt-4o-2024-08-06"]:
+        #     # automatically use the structured response if we're using the right models
+        #     logger.info("Using structured response.")
+        #     response = self.send_structured_message(user_prompt=self.user_prompt)
+        # else:
+        #     # otherwise, use the regular response
+        #     logger.info("Using unstructured response.")
+        #     response = self.send_message(user_prompt=self.user_prompt)
+        # send the prompt
+
+        with_file = filepath is not None
+
+        if with_file:
             # get the file path
             self.filename = get_file(filepath=filepath, bibcode=bibcode, index=index)
-            logger.info(f"Using file: {self.filename}")
+            logger.info("Using file: %s", self.filename)
 
             # upload the file to openai
             self.upload_file(self.filename)
-            logger.info(f"Uploaded file id: {self.file.id}")
+            logger.info("Uploaded file id: %s", self.file.id)
 
-            # send the prompt request to the assistant
-            response = self.send_assistant_request(self.file.id)
+            # generate empty set for the user prompt
+            self.paper = {"title": [""], "abstract": "", "body": ""}
         else:
             # get the paper source
             self.paper = get_source(bibcode=bibcode, index=index)
             if not self.paper:
                 self.bibcode = bibcode
-                logger.warning(f"No paper source found for bibcode: {bibcode}")
+                logger.warning("No paper source found for bibcode: %s", bibcode)
                 return {"error": f"Bibcode {bibcode} not found in source data."}
 
             self.bibcode = bibcode or self.paper.get("bibcode")
-            logger.info(f"Using paper bibcode: {self.bibcode}")
+            logger.info("Using paper bibcode: %s", self.bibcode)
 
-            # populate the user template with paper data
-            self.user_prompt = self.populate_user_template(self.paper)
+        # populate the user template with paper data
+        self.user_prompt = self.populate_user_template(self.paper)
 
-            # send the prompt
-            if self.structured or config.llms.openai.model in ["gpt-4o-mini-2024-07-18", "gpt-4o-2024-08-06"]:
-                # automatically use the structured response if we're using the right models
-                logger.info("Using structured response.")
-                response = self.send_structured_message(user_prompt=self.user_prompt)
-            else:
-                # otherwise, use the regular response
-                logger.info("Using unstructured response.")
-                response = self.send_message(user_prompt=self.user_prompt)
+        logger.info("Submitting prompt...")
+        response = self.send_message(user_prompt=self.user_prompt, with_file=False)
+
+        # delete the file afterwards
+        if with_file:
+            # delete the file
+            self.client.files.delete(self.file.id)
 
         return response
 
