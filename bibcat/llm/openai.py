@@ -405,12 +405,16 @@ class OpenAIHelper:
             ]
 
         # send the request
-        result = self.client.responses.parse(
-            model=config.llms.openai.model,
-            instructions=get_llm_prompt("agent"),
-            input=llm_input,
-            text_format=InfoModel,
-        )
+        try:
+            result = self.client.responses.parse(
+                model=config.llms.openai.model,
+                instructions=get_llm_prompt("agent"),
+                input=llm_input,
+                text_format=InfoModel,
+            )
+        except openai.BadRequestError as e:
+            logger.error("Error sending request: %s", e)
+            return {"error": f"Error sending request: {e}"}
 
         if result.error:
             self.response = result.error
@@ -459,9 +463,6 @@ class OpenAIHelper:
             # upload the file to openai
             self.upload_file(self.filename)
             logger.info("Uploaded file id: %s", self.file.id)
-
-            # generate empty set for the user prompt
-            self.paper = {"title": [""], "abstract": "", "body": ""}
         else:
             # get the paper source
             self.paper = get_source(bibcode=bibcode, index=index)
@@ -473,8 +474,8 @@ class OpenAIHelper:
             self.bibcode = bibcode or self.paper.get("bibcode")
             logger.info("Using paper bibcode: %s", self.bibcode)
 
-        # populate the user template with paper data
-        self.user_prompt = self.populate_user_template(self.paper)
+            # populate the user template with paper data
+            self.user_prompt = self.populate_user_template(self.paper)
 
         logger.info("Submitting prompt...")
         response = self.send_message(user_prompt=self.user_prompt, with_file=with_file)
