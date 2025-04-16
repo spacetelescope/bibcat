@@ -58,4 +58,5 @@ Thus, in the example above, the output would be:
 Make sure you now write the word "OUTPUT:" followed by a newline and then the valid JSON, using your above reasoning. If any missions are not
 mentioned at all, then please omit them. Again, don't forget to precede this JSON block with "OUTPUT:" and the newline.
 
+Paper data will either be included in this prompt or attached as input. Either search the attached file or use the included info.
 Here is the paper data.\n\n**Title**:{title}\n**Abstract**:{abstract}\n**Full text**:{body}
