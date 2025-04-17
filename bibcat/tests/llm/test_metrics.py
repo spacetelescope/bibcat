@@ -4,8 +4,11 @@ import numpy as np
 
 from bibcat import config
 from bibcat.llm.metrics import (
+    append_human_labels_with_mapped_papertype,
+    append_llm_labels_with_mapped_papertype,
     compute_and_save_metrics,
     extract_eval_data,
+    extract_roc_data,
     get_roc_metrics,
     map_papertype,
     prepare_roc_inputs,
@@ -54,16 +57,17 @@ missions = ["HST", "JWST", "ROMAN"]
 
 sample_metrics_data = {
     "threshold": 0.7,
-    "n_bibcodes": 1,
+    "n_bibcodes": 2,
     "n_human_mission_callouts": 3,
-    "n_llm_mission_callouts": 3,
+    "n_llm_mission_callouts": 2,
     "n_non_mast_mission_callouts": 1,
     "n_human_llm_mission_callouts": 2,
     "n_human_llm_hallucination": 0,
+    "n_missing_output_bibcodes": 1,
     "human_llm_missions": ["JWST", "ROMAN"],
     "non_mast_missions": ["LAMOST"],
-    "human_labels": ["NONSCIENCE", "SCIENCE", "SCIENCE"],
-    "llm_labels": ["NONSCIENCE", "SCIENCE", "NONSCIENCE"],
+    "human_labels": ["NONSCIENCE", "SCIENCE", "SCIENCE", "NONSCIENCE", "NONSCIENCE", "NONSCIENCE"],
+    "llm_labels": ["NONSCIENCE", "SCIENCE", "NONSCIENCE", "NONSCIENCE", "NONSCIENCE", "NONSCIENCE"],
 }
 
 
@@ -71,6 +75,25 @@ def test_map_papertype() -> None:
     """Test map_papertype() function"""
     mapped_papertype = map_papertype(data["Bibcode2024"]["human"]["TESS"])
     assert mapped_papertype == "NONSCIENCE", "wrong papertype mapping"
+
+
+def test_append_human_labels_with_mapped_papertype():
+    """Test append_human_labels_with_mapped_apertype"""
+
+    human_labels = append_human_labels_with_mapped_papertype(
+        human_data=data["Bibcode2024"]["human"], mission="TESS", human_labels=["SCIENCE"]
+    )
+    expected_labels = ["SCIENCE", "NONSCIENCE"]
+    assert human_labels == expected_labels
+
+
+def test_append_llm_labels_with_mapped_papertype():
+    """Test append_llm_labels_with_mapped_apertype"""
+    llm_labels = append_llm_labels_with_mapped_papertype(
+        llm_data=data["Bibcode2024"]["llm"], mission="ROMAN", llm_labels=["SCIENCE"]
+    )
+    expected_labels = ["SCIENCE", "NONSCIENCE"]
+    assert llm_labels == expected_labels
 
 
 def test_extract_eval_data(mocker) -> None:
@@ -123,8 +146,14 @@ def test_compute_and_save_metrics(mocker) -> None:
     mock_save_json_file.assert_called_once()
     json_data = mock_save_json_file.call_args[0][1]
 
-    assert json_data["n_bibcodes"] == 1
+    assert json_data["n_bibcodes"] == 2
     assert json_data["SCIENCE"]["precision"] == 1.0
+
+
+def test_extract_roc_data():
+    human_labels, llm_confidences, human_llm_missions = extract_roc_data(data, missions)
+    assert human_labels == sample_metrics_data["human_labels"]
+    assert llm_confidences == [[0.55, 0.45], [0.8, 0.2], [0.3, 0.7], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0]]
 
 
 def test_prepare_roc_inputs() -> None:
