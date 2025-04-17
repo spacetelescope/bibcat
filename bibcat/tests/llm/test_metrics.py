@@ -4,8 +4,11 @@ import numpy as np
 
 from bibcat import config
 from bibcat.llm.metrics import (
+    append_human_labels_with_mapped_papertype,
+    append_llm_labels_with_mapped_papertype,
     compute_and_save_metrics,
     extract_eval_data,
+    extract_roc_data,
     get_roc_metrics,
     map_papertype,
     prepare_roc_inputs,
@@ -74,6 +77,25 @@ def test_map_papertype() -> None:
     assert mapped_papertype == "NONSCIENCE", "wrong papertype mapping"
 
 
+def test_append_human_labels_with_mapped_papertype():
+    """Test append_human_labels_with_mapped_apertype"""
+
+    human_labels = append_human_labels_with_mapped_papertype(
+        human_data=data["Bibcode2024"]["human"], mission="TESS", human_labels=["SCIENCE"]
+    )
+    expected_labels = ["SCIENCE", "NONSCIENCE"]
+    assert human_labels == expected_labels
+
+
+def test_append_llm_labels_with_mapped_papertype():
+    """Test append_llm_labels_with_mapped_apertype"""
+    llm_labels = append_llm_labels_with_mapped_papertype(
+        llm_data=data["Bibcode2024"]["llm"], mission="ROMAN", llm_labels=["SCIENCE"]
+    )
+    expected_labels = ["SCIENCE", "NONSCIENCE"]
+    assert llm_labels == expected_labels
+
+
 def test_extract_eval_data(mocker) -> None:
     """Test extract_eval_data function"""
 
@@ -126,6 +148,12 @@ def test_compute_and_save_metrics(mocker) -> None:
 
     assert json_data["n_bibcodes"] == 2
     assert json_data["SCIENCE"]["precision"] == 1.0
+
+
+def test_extract_roc_data():
+    human_labels, llm_confidences, human_llm_missions = extract_roc_data(data, missions)
+    assert human_labels == sample_metrics_data["human_labels"]
+    assert llm_confidences == [[0.55, 0.45], [0.8, 0.2], [0.3, 0.7], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0]]
 
 
 def test_prepare_roc_inputs() -> None:
