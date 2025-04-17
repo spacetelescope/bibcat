@@ -34,7 +34,8 @@ eval_data: Dict[str, Any] = {
                 "mission_in_text": False,
             },
         ],
-    }
+    },
+    "2024Sci...377.1211L": {"error": "No mission output found for 2024Sci...377.1211L."},
 }
 
 # OPS paper_output.json data
