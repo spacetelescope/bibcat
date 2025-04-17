@@ -496,7 +496,6 @@ def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
 @click.option(
     "-t",
     "--threshold",
-    default=0.7,
     type=float,
     show_default=True,
     help="The threshold value to accept the llm papertype",
