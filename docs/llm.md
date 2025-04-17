@@ -85,8 +85,6 @@ llms:
   llm_agent_prompt: llm_agent_prompt.txt
   openai:
     model: gpt-4o-mini
-    asst_id: null
-    use_assistant: false
 ```
 
 ## User and Agent (System) Prompts
@@ -190,17 +188,15 @@ WARNING - Error converting output to classification format: too many values to u
 INFO - Output: {'whale': 'White', 'response': "Captain Ahab had a 'whale' of a problem with Moby Dick, the infamous white whale!", 'source': 'https://en.wikipedia.org/wiki/Moby-Dick'}
 ```
 
-## Assistants
+## File Uploads
 
-By default, ``bibcat`` submits a straight [chat completion](https://platform.openai.com/docs/guides/chat-completions/overview) to the LLM, using the given user and agent prompts.  Alternatively, you can set up and use an OpenAI [Assistant](https://platform.openai.com/docs/assistants/overview) with [file-search](https://platform.openai.com/docs/assistants/tools/file-search) capability, and submit your paper to your new Assistant.
+`bibcat` supports uploading PDF files directly with the `-f` keyword, e.g.:
+```
+bibcat run-gpt -f /Users/bcherinka/Downloads/Guidry_2021_ApJ_912_125.pdf
+```
+This will first upload the file to OpenAI and return a reference file id.  The file id is attached to the prompt, and the LLM is directed to search the attached file if no paper text is included within the prompt itself. Afterwards, the uploaded file is deleted from OpenAI.
 
-List your available assistants with ``bibcat openai list_assistants``.  Create a new assistant with ``bibcat openi create_assistant``.  When creating an assistant, it is set up using your custom agent prompt.  You can see your new assistant at https://platform.openai.com/assistants, modify it, play with it, etc.  After you create an assistant, it will have an `assistant_id` or `asst_id`, e.g. ``asst_85Ay7apSmArPOMKF4iRY893b``.  Set this value to the `config.llms.openai.asst_id` field to instruct `bibcat` to use this agent.
-
-To tell bibcat to use the assistant, set `config.llms.openai.use_assistant=true`.
-
-When submitting a paper to an assistant, the file or text is first uploaded to the Assistant.  The Assistant creates a temporary vector store database, reads the file content, and embeds it into the database.  The Assistant will search the file via the vector store when responding to your user prompt.
-
-The Assistant supports uploading PDF or JSON files.  `bibcat` will accept either a local PDF file, as well as a bibcode entry from our source dataset.  When specifying a paper from the source dataset, using a bibcode or array index, `bibcat` will write the JSON data out to a temporary JSON file for upload.  The temporary filename syntax is of the form `temp_xxxx_(bibcode).json`, prefixed by `temp_` and suffixed by the bibcode of the paper.
+**Note:** [OpenAI](https://platform.openai.com/docs/overview) recently consolidated its APIs into a new [Responses API](https://platform.openai.com/docs/api-reference/responses), which handles both text and [File Input](https://platform.openai.com/docs/guides/pdf-files?api-mode=responses). It replaces the original [Chat Completions API](https://platform.openai.com/docs/api-reference/chat) and the [Assistants API](https://platform.openai.com/docs/assistants/overview), which is being deprecated.  However, the Chat Completions API will be maintained in the long term. See [Responses vs Chat Completions](https://platform.openai.com/docs/guides/responses-vs-chat-completions) for a comparison between the two.  All Assistant API functionality will eventually be moved into the Responses API.
 
 
 ## Response Output
