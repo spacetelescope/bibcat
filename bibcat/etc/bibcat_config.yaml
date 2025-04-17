@@ -66,8 +66,8 @@ llms:
     "instrument": "other",
   }
   performance: # used for both evaluation and operation
-    threshold: 0.7
-    inspection: 0.5
+    threshold: 0.5
+    inspection: 0.45
   ops: false # false if in evaluation, true if in operation
 
 #### configs for pretrained models
