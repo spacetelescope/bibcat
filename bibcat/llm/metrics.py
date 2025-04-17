@@ -396,16 +396,17 @@ def compute_and_save_metrics(
     save_json_file(output_json_path, {**filtered_metrics_data, **classification_performance_report})
 
 
-def extract_roc_data(data: dict, missions: list[str]):
+def extract_roc_data(data: dict[str, dict[str, Any]], missions: list[str]):
     """Extract the human and llm classification labels and confidences
 
     Extract the human classes and confidence values from the evaluation json file,
-    `config.llms.eval_output_file (summary_output.json)`. You can extract data from only a single
-    mission or a list of missions. The labels and confidence values will be used to create a ROC curve.
+    `config.llms.eval_output_file (summary_output.json)`.
+    You can extract data from only a single mission or a list of missions.
+    The human labels (ground truth) and llm confidence values will be used to create a ROC curve.
 
     Parameters
     ----------
-    data : dict
+    data : dict[str, dict[str, Any]]
         the dict of the evaluation data of `config.llms.eval_output_file (summary_output.json)`
     missions: list[str]
         list of the mission names to extract the classification labels.
@@ -415,10 +416,13 @@ def extract_roc_data(data: dict, missions: list[str]):
     tuple
         A tuple of the list of human labels, llm labels, and the hreshold value for verdict acceptance.
     human_labels: list[str]
-        True labels by human, a list of papertypes, .e.g, "SCIENCE" or "MENTION", see the allowed classifications in `config.llms.papertypes`
+        True labels by human, a list of papertypes, .e.g, "SCIENCE" or "MENTION"(or "NONSCIENCE"),
+        see the allowed classifications in `config.llms.papertypes`
+        For example, ["SCIENCE", "MENTION"]
     llm_confidences: list[list[float]]
-        A list of confidence score sets for all verdicts.
-        For example: [[0.9, 0.1], [0.4, 0.6]], where the first set corresponds to 'SCIENCE' and the second to 'MENTION'.
+        A list of confidence score sets for all verdicts ([[p_science, p_mention],])
+        where p_science and p_mention represent confidence values of "SCIENCE" and "MENTION"(or "NONSCIENCE") respectively.
+        For example: [[0.9, 0.1], [0.4, 0.6]]
     human_llm_missions: list[str], sorted
         A set of missions, each containing both human- and LLM-classified paper types, used for evaluation plots.
 
@@ -431,37 +435,73 @@ def extract_roc_data(data: dict, missions: list[str]):
     human_labels = []
     llm_confidences = []  # for ROC
     human_llm_mission_callouts = []  # missions that have both human and llm classified papertypes
+    n_missing_output_bibcodes = 0
+
+    # set the papertype for llm or human ignored the paper
+    ignored_papertype = config.llms.map_papertypes.ignore.upper()
 
     for bibcode, item in data.items():
         logger.debug(f"bibcode: {bibcode}")
-        human_data = item["human"]
 
-        # llm missions for ROC; need to extract from `mission_conf` data frame
-        llm_mission_conf = item["mission_conf"]
-        llm_mission = [item["llm_mission"] for item in llm_mission_conf]
+        # assign the roc input values to NONSCIENCE and [0.0, 1.0] when there is no llm output
+        if "error" in item:
+            n_missing_output_bibcodes += 1
+            # setting ignore papertype to "NONSCIENCE"
+            human_labels.extend([ignored_papertype] * len(missions))
+            llm_confidences.extend([[0.0, 1.0]] * len(missions))
 
-        # extracting human labels and llm confidences
-        for mission in missions:
-            if mission in human_data and mission in llm_mission:
-                logger.info(f"Checking {mission} summary output")
-                human_llm_mission_callouts.append(mission)
+        # when llm output summary exists
+        else:
+            human_data = item["human"]
 
-                # human labels needed for ROC
-                logger.debug(f"human classified papertype = '{human_data.get(mission)}'")
-                # map papertype to allowed papertype
-                mapped_papertype = map_papertype(human_data.get(mission))
-                logger.debug(f"mapped papertype = '{mapped_papertype}'")
-                human_labels.append(mapped_papertype)
+            # llm missions for ROC; need to extract from `mission_conf` data frame
+            llm_mission_conf = item["mission_conf"]
+            llm_missions = [item["llm_mission"] for item in llm_mission_conf]
 
-                # To generate an ROC curve, we need the full range of confidence values. Use "prob_papertype" for each mission, as "mean_llm_confidences" only reflect the scores of the finally accepted papertypes in "llm:[]", which are always above the threshold. We require the varying values provided by "prob_papertype where human labels exist."
-                confs = [i["prob_papertype"] for i in llm_mission_conf if i["llm_mission"] == mission]
-                llm_confidences.extend(confs)
+            # extracting/assigning human labels and llm confidences
+            for mission in missions:
+                # When both human and llm callout the mission with its papertype,
+                # this clause will extract and map the human papertype to its designated papertype in the config file
+                # and extend the values of item["mission_conf"]["llm_mission"]["prob_papertype"] to `llm_confidences`
+                if mission in human_data and mission in llm_missions:
+                    logger.info(f"Checking {mission} summary output")
+                    human_llm_mission_callouts.append(mission)
+
+                    # set human labels after mapping papertype
+                    append_human_labels_with_mapped_papertype(human_data, mission, human_labels)
+
+                    # To generate an ROC curve, we need the full range of confidence values.
+                    # Use "prob_papertype" for each mission, as "mean_llm_confidences"
+                    # only reflect the scores of the finally accepted papertypes in "llm:[]",
+                    # which are always above the threshold. We require the varying values
+                    # provided by "prob_papertype where human labels exist."
+                    confs = [i["prob_papertype"] for i in llm_mission_conf if i["llm_mission"] == mission]
+                    llm_confidences.extend(confs)
+
+                # When human classification is available but llm doesn't call out,
+                # this block will extract and map human papertype to designated papertype in the config file
+                # but extend [0.0,1.0] ("NONSCIENCE") to `llm_confidences'
+                elif mission in human_data and mission not in llm_missions:  # llm missing call-out
+                    append_human_labels_with_mapped_papertype(human_data, mission, human_labels)
+                    llm_confidences.append([0.0, 1.0])
+
+                # When there is not human callout but llm callouts mission with papertype
+                # we assgin "NONSCIENCE" to human papertype and extract llm confidences from "prob_papertype"
+                elif mission not in human_data and mission in llm_missions:
+                    human_labels.append(ignored_papertype)
+                    confs = [i["prob_papertype"] for i in llm_mission_conf if i["llm_mission"] == mission]
+                    llm_confidences.extend(confs)
+
+                # both llm and human labels not found in the main level, but item["mission_conf"] could have mission callouts
+                else:
+                    human_labels.append(ignored_papertype)
+                    llm_confidences.append([0.0, 1.0])
+
     logger.info(f"The number of the mission callouts by both human and llm is {len(human_llm_mission_callouts)}")
 
     return human_labels, llm_confidences, sorted(list(set(human_llm_mission_callouts)))
 
 
-# def prepare_roc_inputs(data: dict, missions: list[str]):
 def prepare_roc_inputs(human_labels: list[str], llm_confidences: list[list[float]]):
     """Prepare input data for ROC and AUC (area under curve)
 
