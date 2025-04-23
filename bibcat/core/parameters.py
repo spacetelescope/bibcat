@@ -59,7 +59,7 @@ kobj_roman = keyword.Keyword(
         "Roman",
     ],
     acronyms_casesensitive=[],
-    acronyms_caseinsensitive=["RST", "WFIRST"],
+    acronyms_caseinsensitive=["RST", "WFIRST", "NGRST"],
     do_not_classify=False,
     banned_overlap=[],
     ambig_words=["Roman"],
