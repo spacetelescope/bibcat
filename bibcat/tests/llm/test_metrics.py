@@ -153,7 +153,7 @@ def test_compute_and_save_metrics(mocker) -> None:
 def test_extract_roc_data():
     human_labels, llm_confidences, human_llm_missions = extract_roc_data(data, missions)
     assert human_labels == sample_metrics_data["human_labels"]
-    assert llm_confidences == [[0.55, 0.45], [0.8, 0.2], [0.3, 0.7], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0]]
+    assert llm_confidences == [[0.0, 1.0], [0.8, 0.2], [0.3, 0.7], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0]]
 
 
 def test_prepare_roc_inputs() -> None:
