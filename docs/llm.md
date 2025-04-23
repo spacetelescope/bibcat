@@ -360,7 +360,7 @@ Definitions of the output columns from the evaluation.
 - **llm_mission**: The mission from the LLM output
 - **total_mission_conf**: The total confidence value for the given mission.  Sum of all weighted [science, mention] conf values.
 - **total_weighted_conf**: The total frequency-weighted confidence values for the given mission, by [science, mention]
-- **prob_mission**: Measures the relative probability (importance) of mission (`total_mission_conf`) to all missions
+- **prob_mission**: Measures the relative probability of mission (`total_mission_conf`) to all missions
 - **prop_papertype**: Within each mission, the probability the mission is a science vs mention papertype
 
 ### Example Output
