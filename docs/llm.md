@@ -332,16 +332,17 @@ Definitions of the output columns from the evaluation.
 - **human**: Human classifications
 - **threshold_acceptance**: The threshold value to accept the llm's classifications
 - **threshold_inspection**: The threshold value to require human inspection
-- **llm**: llm's classification whose confidence value is higher than or equal to the threshold value. Each entry is organized as:
+- **llm**: llm's classification whose confidence value (`total_weighted_conf`) is higher than or equal to the threshold value. Each entry is organized as:
   - "mission": "papertype" (the mission and papertype classification)
-  - **confidence**: the list of final LLM confidences values for [science, mention] papertype classification
-  - **probability**: the probability that the specified mission is relevant to the paper
-- **inspection**: The list of missions/papertypes for human inspection due to the edge-case confidence values (e.g, 0.5)
+  - **confidence**: the list of final LLM confidences values for [science, mention] papertype classification, same as `total_weighted_conf` in "mission_conf"
+  - **mission_probability**: the probability that the specified mission is relevant to the paper, same as `prob_mission` in "mission_conf"
+- **inspection**: The list of missions/papertypes for human inspection due to the edge-case confidence values
 - **missing_by_human**: The set of missing missions by human classification
 - **missing_by_llm**: The set of missing missions by llm classification
 - **hallucinated_missions**: The list of missions hallucinated by llm
 
 #### Each mission/papertype DataFrame output, as "df"
+  This data frame represents stats based on each mission + papertype callout
 - **llm_mission**: The mission from the LLM output
 - **mean_llm_confidence**: The list of the mean confidence values of SCIENCE and MENTION across all trial runs, for each mission + papertype combination. Conditional probabilities. Sum to 1.
 - **std_llm_confidence**: The standard deviation of the confidence values of SCIENCE and MENTION  across all trial runs
@@ -352,13 +353,14 @@ Definitions of the output columns from the evaluation.
 - **consistency**: The percentage of how often the LLM mission + papertype matched the human classification
 - **in_human_class**: Flag whether or not the mission + papertype was included in the set of human classifications
 - **mission_in_text**: Flag whether or not the mission keyword is in the source paper text
-- **hallucination_by_llm**: Flag whether or not the mission keyword is hallucinated by LLM
+- **hallucination_by_llm**: Flag whether or not the mission keyword is hallucinated by LLM, i.e., mission is not found in text
 
 #### Output Statistics by each mission, as "mission_conf"
+  This data frame represents stats based on each mission callout
 - **llm_mission**: The mission from the LLM output
 - **total_mission_conf**: The total confidence value for the given mission.  Sum of all weighted [science, mention] conf values.
-- **total_weighted_conf**: The total weighted confidence values for the given mission, by [science, mention]
-- **prob_mission**: The probability the input mission is relevant to the paper, i.e. "overall mission confidence"
+- **total_weighted_conf**: The total frequency-weighted confidence values for the given mission, by [science, mention]
+- **prob_mission**: Measures the relative probability (importance) of mission (`total_mission_conf`) to all missions
 - **prop_papertype**: Within each mission, the probability the mission is a science vs mention papertype
 
 ### Example Output
