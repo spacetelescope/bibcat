@@ -538,9 +538,12 @@ def extract_roc_data(data: dict[str, dict[str, Any]], missions: list[str]):
         else:
             human_data = item["human"]
 
-            # llm missions for ROC; need to extract from `mission_conf` data frame
+            # llm missions for ROC; need to extract confidence values from `mission_conf` data frame
+            # where missions are accepted base on missions from item["llm"].
+            llm_data = item.get("llm")
             llm_mission_conf = item["mission_conf"]
-            llm_missions = [item["llm_mission"] for item in llm_mission_conf]
+            llm_missions = [next(iter(i)) for i in llm_data]  # get llm missions
+            logger.info(f"llm classification accepted ={llm_missions}")
 
             # extracting/assigning human labels and llm confidences
             for mission in missions:

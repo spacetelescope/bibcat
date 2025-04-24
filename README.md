@@ -95,6 +95,8 @@ We refer
 - the papertrack export JSON file ([papertrack_in_papertext_2025_03_06.json](https://stsci.box.com/s/judj08497ni6zitf2mdoql902luos47u)) to `papertrack data`, and
 - the ADS fulltext data file ([ST_Request2023_cleaned_2025_03_10.json](https://stsci.box.com/s/0a5uzmfsnokx1rth8m6wseybpz5bxne3)) to `papertext data`.
 
+Check out [the readme about the input data](https://github.com/spacetelescope/bibcat/blob/dev/docs/data_readme.rst) for more details.
+
 ### User Configuration and Data Filepaths
 
 There are three user environment variables to set:
