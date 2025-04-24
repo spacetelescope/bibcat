@@ -393,8 +393,8 @@ class Performance(Base):
                 modifs=curr_modifs,
                 buffer=buffers[ii],
                 do_check_truematch=do_check_truematch,
-                print_freq=print_freq
-                )
+                print_freq=print_freq,
+            )
 
             # Print some notes
             if do_verbose:

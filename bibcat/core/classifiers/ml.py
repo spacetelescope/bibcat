@@ -1,20 +1,19 @@
 import abc
 import os
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
 
 from bibcat import config
-from bibcat.core.base import Base
+from bibcat.core.paper import Paper
 from bibcat.utils.logger_config import setup_logger
 
 xxx = None
 
 try:
-    import tensorflow as tf
-    import tensorflow_hub as tfhub
-    import tensorflow_text  # type: ignore  # noqa: F401
-    from tensorboard.plugins.hparams import api as hp
+    import tensorflow as tf  # type: ignore
+    import tensorflow_hub as tfhub  # type: ignore
+    from tensorboard.plugins.hparams import api as hp  # type: ignore
 except ImportError:
     tf = None
 
@@ -579,10 +578,8 @@ class MachineLearningClassifier:
             logger.info(f"Class names from model:\n{self.model.class_names}\n")
 
         # Clean the text
-        # temporarily manually call Base until we can refactor
-        # TODO - move out this code to keyword or grammar class
-        base = Base()
-        cleaned_text = base._streamline_phrase(text, do_streamline_etal=False)
+        paper = Paper()
+        cleaned_text = paper._streamline_phrase(text, do_streamline_etal=False)
 
         # Run model prediction on the text and map probabilities to classes
         probs = self.model.predict([cleaned_text])[0]

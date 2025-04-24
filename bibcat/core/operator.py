@@ -25,7 +25,9 @@ from bibcat import config
 from bibcat.core.base import Base
 from bibcat.core.grammar import Grammar
 from bibcat.core.keyword import Keyword
+from bibcat.core.paper import Paper
 from bibcat.data.partition_dataset import generate_directory_TVT
+from bibcat.llm import evaluate
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
@@ -98,7 +100,7 @@ class Operator(Base):
         # Load and process ambiguous (ambig.) data, if so requested
         if load_check_truematch:
             # Run method to load and process external ambig. database
-            self.dict_ambigs = self._process_database_ambig(keyword_objs=keyword_objs)
+            self.dict_ambigs = Paper._process_database_ambig(keyword_objs=keyword_objs)
             self.lookup_ambigs = self.dict_ambigs["lookup_ambigs"]
 
             # Print some notes
@@ -111,57 +113,6 @@ class Operator(Base):
             logger.info("Keyword objects:")
             for kobj in self.keyword_objs:
                 logger.info(f"{kobj}")
-
-    # Fetch a keyword object that matches the given lookup
-    def _fetch_keyword_object(self, lookup: str, do_raise_emptyerror: bool = True) -> Any | None:
-        """Fetch a keyword object
-
-        Given an input lookup string, tries to match it to a stored Keyword instance.
-
-        Parameters
-        ----------
-        lookup : str
-            the input string
-        do_raise_emptyerror : bool, optional
-            Flag to raise an error, by default True
-
-        Returns
-        -------
-        Any | None
-            the matching Keyword instance
-
-        Raises
-        ------
-        ValueError
-            when no match is found
-        """
-
-        # Print some notes
-        if self.verbose:
-            logger.info(f"> Running _fetch_keyword_object() for lookup term {lookup}.")
-
-        # Find keyword object that matches to given lookup term
-        match = None
-        for kobj in self.keyword_objs:
-            # If current keyword object matches, record and stop loop
-            if kobj.identify_keyword(lookup)["bool"]:
-                match = kobj
-                break
-
-        # Throw error if no matching keyword object found
-        if match is None:
-            errstr = f"No matching keyword object for {lookup}.\n"
-            errstr += "Available keyword objects are:\n"
-            # just use the names of the keywords
-            names = ", ".join(a._get_info("name") for a in self.keyword_objs)
-            errstr += f"{names}\n"
-
-            # Raise error if so requested
-            if do_raise_emptyerror:
-                raise ValueError(errstr)
-
-        # Return the matching keyword object
-        return match
 
     # Inspect text and either reject as false target or give classifications
     def classify(
@@ -383,7 +334,7 @@ class Operator(Base):
 
         # Fetch keyword object matching to the given keyword
         if keyword_obj is None:
-            keyword_obj = self._fetch_keyword_object(lookup=lookup)
+            keyword_obj = evaluate._fetch_keyword_object(lookup=lookup)
             if self.verbose:
                 logger.info(f"Best matching Keyword object for keyword {lookup}:\n{keyword_obj}")
 
@@ -414,7 +365,7 @@ class Operator(Base):
 
     # Process text into modifs and then train ML model on the modifs
     # TODO - this is too complicated
-    def train_model_ML(
+    def train_model_ML(  # noqa: C901
         self,
         dir_model,
         dir_data,

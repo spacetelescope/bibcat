@@ -6,10 +6,16 @@ Testing the Paper class and its methods.
 
 import unittest
 
-from test_config import test_list_lookup_kobj
+import numpy as np
+import spacy  # type: ignore
+from nltk.corpus import wordnet  # type: ignore
+from test_config import test_dict_lookup_kobj, test_list_lookup_kobj
 
+from bibcat import config
 from bibcat.core import paper
 from bibcat.core import parameters as params
+
+nlp = spacy.load(config.grammar.spacy_language_model)
 
 
 class TestPaper(unittest.TestCase):
@@ -199,6 +205,139 @@ class TestPaper(unittest.TestCase):
 
                     self.assertEqual(test_res, curr_answer)
 
+    # For tests of _check_truematch:
+    if True:
+        # Test verification of ambig. phrases for variety of phrases
+        def test_check_truematch__variety1(self):
+            # Prepare text and answers for test
+            dict_tests = {
+                "small Hubble constant": {"lookup": "Kepler", "bool": False},
+                "small Hubble's constant": {"lookup": "Kepler", "bool": False},
+                "Edwin Hubble's papers": {"lookup": "Hubble", "bool": False},
+                # "Hubble 1970": {"lookup": "Hubble", "bool": False}, - not realistic since would be cleaned beforehand normally
+                # "Hubble (2000)": {"lookup": "Hubble", "bool": False}, - not realistic since would be cleaned beforehand normally
+                "high S/N Hubble image": {"lookup": "Hubble", "bool": True},
+                "HST observatory": {"lookup": "Hubble", "bool": True},
+                "H.S.T. observatory": {"lookup": "Hubble", "bool": True},
+                "Hubble calibrated images": {"lookup": "Hubble", "bool": True},
+                "Hubble's calibrated data": {"lookup": "Hubble", "bool": True},
+                "Hubble's pretty spectra": {"lookup": "Hubble", "bool": True},
+                "Edwin Hubble's analysis": {"lookup": "Hubble", "bool": False},
+                "A Hubble constant data": {"lookup": "Hubble", "bool": False},
+                "Hubble et al. 2000": {"lookup": "Hubble", "bool": False},
+                "Hubbleetal 2000": {"lookup": "Hubble", "bool": False},
+                "Hubble and more data.": {"lookup": "Hubble", "bool": True},
+                "Kepler fields.": {"lookup": "Kepler", "bool": True},
+                "Kepler velocities.": {"lookup": "Kepler", "bool": False},
+                "Kepler velocity fields.": {"lookup": "Kepler", "bool": False},
+                "Kepler rotation velocity fields.": {"lookup": "Kepler", "bool": False},
+                "that Kepler data velocity.": {"lookup": "Kepler", "bool": True},
+                "true Kepler planets": {"lookup": "Kepler", "bool": False},
+                "those Kepler radii": {"lookup": "Kepler", "bool": False},
+                "Keplerian orbits": {"lookup": "Kepler", "bool": False},
+                "Kepler's law": {"lookup": "Kepler", "bool": False},
+                "Kepler observations": {"lookup": "Kepler", "bool": True},
+                "K2 database": {"lookup": "K2", "bool": True},
+                "K2-123 star": {"lookup": "K2", "bool": False},
+                "K2 stars": {"lookup": "K2", "bool": False},
+            }
+
+            # Prepare and run tests for bibcat class instance
+            testpaper = paper.Paper()
+            dict_ambigs = testpaper._process_database_ambig(do_verbose=False, keyword_objs=test_list_lookup_kobj)
+
+            # Check answers
+            for key1 in dict_tests:
+                try:
+                    curr_phrase = key1
+                    curr_kobjs = [test_dict_lookup_kobj[dict_tests[key1]["lookup"]]]
+                    answer = dict_tests[key1]["bool"]
+                    test_res = testpaper._check_truematch(
+                        text=curr_phrase,
+                        keyword_objs=curr_kobjs,
+                        do_verbose=False,
+                        do_verbose_deep=False,
+                        dict_ambigs=dict_ambigs,
+                    )
+                    self.assertEqual(test_res["bool"], answer)
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print(
+                        "{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n".format(
+                            test_res["bool"], answer, key1, test_res
+                        )
+                    )
+                    print("---")
+                    print("")
+
+                    self.assertEqual(test_res["bool"], answer)
+
+    # For tests of _extract_core_from_phrase:
+    if True:
+        # Test core extraction for variety of phrases
+        def test_extract_core_from_phrase__variety(self):
+            # Prepare text and answers for test
+            dict_acts = {
+                "Hubble observatory": {"keywords": ["hubble"]},
+                "Kepler planet": {"keywords": ["kepler"]},
+                "Hubble and K2 observations": {"keywords": ["hubble", "k2"]},
+                "Kepler data and K2 error": {"keywords": ["kepler", "k2"]},
+                "Simultaneous Kepler phase curves": {"keywords": ["kepler"]},
+                "Beautiful Hubble images of stars": {"keywords": ["hubble"]},
+                "Both Hubble and Roman papers": {"keywords": ["hubble"]},
+                "Hubble UDF": {"keywords": ["hubble"]},
+            }
+
+            # Fill in rest of dictionary entries
+            for key1 in dict_acts:
+                curr_text = key1.split()
+                dict_acts[key1]["text"] = key1
+                dict_acts[key1]["synsets"] = []
+                dict_acts[key1]["roots"] = []
+                for curr_word in curr_text:
+                    curr_syns = wordnet.synsets(curr_word)
+                    curr_kobjs = [item for item in test_list_lookup_kobj if (item.identify_keyword(curr_word)["bool"])]
+                    curr_set = [item.name() for item in curr_syns if (".n." in item.name())]
+                    # Store as name if keyword
+                    if len(curr_kobjs) > 0:
+                        dict_acts[key1]["synsets"] += [[curr_kobjs[0].get_name().lower()]]
+                        dict_acts[key1]["roots"] += [[curr_kobjs[0].get_name().lower()]]
+                    # Otherwise, store synsets
+                    elif len(curr_set) > 0:
+                        curr_roots = np.unique([item.split(".")[0] for item in curr_set]).tolist()
+                        dict_acts[key1]["synsets"] += [curr_set]
+                        dict_acts[key1]["roots"] += [curr_roots]
+                    # Otherwise, store word itself
+                    else:
+                        dict_acts[key1]["synsets"] += [[curr_word.lower()]]
+                        dict_acts[key1]["roots"] += [[curr_word.lower()]]
+
+                # Process synsets into single string representation
+                dict_acts[key1]["str_meaning"] = " ".join([" ".join(item) for item in dict_acts[key1]["roots"]])
+
+            # Prepare and run test for bibcat class instance
+            testpaper = paper.Paper()
+            for key1 in dict_acts:
+                test_res = testpaper._extract_core_from_phrase(
+                    phrase_NLP=nlp(key1),
+                    do_skip_useless=False,
+                    do_verbose=False,
+                    keyword_objs=test_list_lookup_kobj,
+                )
+
+                # Check answer
+                try:
+                    self.assertEqual(test_res, dict_acts[key1])
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print("Text: {2}\nTest answer: {0}\nAct. answer: {1}".format(test_res, dict_acts[key1], key1))
+                    print("---")
+                    print("")
+
+                    self.assertEqual(test_res, dict_acts[key1])
+
     # For tests of _split_text:
     if True:
         # Test split of text into sentences based on naive sentence boundaries
@@ -246,3 +385,77 @@ class TestPaper(unittest.TestCase):
                 print("")
 
                 self.assertEqual(test_res, answer)
+
+    # For tests of _streamline_phrase:
+    if True:
+        # Test streamlining for text with abbreviated phrases
+        def test_streamline_phrase__abbreviations(self):
+            # Prepare text and answers for test
+            dict_tests = {
+                "We plot the data in Fig. 3b and list values in Tab. A.": "We plot the data in Figure 3b and list values in Table A.",
+                "Fig. 4 shows the red vs. blue stars differ in radii.": "Figure 4 shows the red vs blue stars differ in radii.",
+                "There is a fig on the tree. The tree is the Fig Tree.": "There is a fig on the tree. The tree is the Fig Tree.",
+                "Put the ginger beer on my tab.": "Put the ginger beer on my tab.",
+            }
+
+            # Prepare and run tests for bibcat class instance
+            testpaper = paper.Paper()
+
+            # Check answers
+            for key1 in dict_tests:
+                try:
+                    answer = dict_tests[key1]
+                    test_res = testpaper._streamline_phrase(text=key1, do_streamline_etal=True)
+                    self.assertEqual(test_res, answer)
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n".format(test_res, answer, key1))
+                    print("---")
+                    print("")
+
+                    self.assertEqual(test_res, answer)
+
+        # Test streamlining for text with citations
+        def test_streamline_phrase__citations(self):
+            # Prepare text and answers for test
+            dict_tests = {
+                "Somename (2013) published  in SJ.": "{0} published in SJ.".format(
+                    config.textprocessing.placeholder_author
+                ),
+                "Hubble (1953) was a landmark paper (for that subfield).": "{0} was a landmark paper (for that subfield).".format(
+                    config.textprocessing.placeholder_author
+                ),
+                # "See also: Kepler [2023], Hubble & Author (2020), Author, Somename, and Kepler et al. [1990];": "See also: {0}, {0}, {0};".format(
+                #    config.textprocessing.placeholder_author
+                # ), - unrealistic citation case
+                "See also: Kepler [2023], Hubble & Author (2020), Author and Kepler et al. [1990];": "See also: {0};".format(
+                    config.textprocessing.placeholder_author
+                ),
+                "Also Author papers (Author et al. 1997, 2023),": "Also Author papers,",
+                # "(Someone, Author, Somename et al. 1511; 1612)": "", - unrealistic citation case
+                # "(Someone, Author, and Somename et al. 1913,15)": "", - unrealistic citation case
+                "(Author et al. 80; Somename & Author 2012)": "",
+                # "McThatname, Kepler, & Othername [1993] (see our paper)": "{0} (see our paper)".format(
+                #    config.textprocessing.placeholder_author
+                # ), - unrealistic citation case
+                "{Othername et al. 1991} (see Hubble observations)": "(see Hubble observations)",
+            }
+
+            # Prepare and run tests for bibcat class instance
+            testpaper = paper.Paper()
+
+            # Check answers
+            for key1 in dict_tests:
+                try:
+                    answer = dict_tests[key1]
+                    test_res = testpaper._streamline_phrase(text=key1, do_streamline_etal=True)
+                    self.assertEqual(test_res, answer)
+                except AssertionError:
+                    print("")
+                    print(">")
+                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n".format(test_res, answer, key1))
+                    print("---")
+                    print("")
+
+                    self.assertEqual(test_res, answer)

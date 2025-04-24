@@ -155,9 +155,9 @@ def save_operation_stats(
     for bibcode, assessment in data.items():
         assert isinstance(assessment, list), f"Assessment for {bibcode} should be a list."
         for mission_item in assessment:
-            assert isinstance(
-                mission_item, dict
-            ), f"Each mission_item should be a dict, got {type(mission_item)} for bibcode {bibcode}."
+            assert isinstance(mission_item, dict), (
+                f"Each mission_item should be a dict, got {type(mission_item)} for bibcode {bibcode}."
+            )
 
     # Build Pandas DataFrame
     try:

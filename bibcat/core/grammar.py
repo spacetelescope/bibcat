@@ -16,7 +16,7 @@ There are different modes for modifying a given paragraph (thus producing differ
 """
 
 import numpy as np
-import spacy
+import spacy  # type: ignore
 
 from bibcat import config
 from bibcat.core.base import Base
@@ -73,7 +73,7 @@ class Grammar(Base):
             # Print some notes
             if do_verbose:
                 print("Processing database of ambiguous phrases...")
-            dict_ambigs = self._process_database_ambig()
+            dict_ambigs = Paper._process_database_ambig()
 
         # Otherwise, do nothing new
         else:
@@ -783,7 +783,7 @@ class Grammar(Base):
                 print("anon modifications complete.\nUpdated text:\n{0}\n".format(text_updated))
 
         # Cleanse the text to finalize it
-        text_updated = self._streamline_phrase(text=text_updated, do_streamline_etal=True)
+        text_updated = Paper._streamline_phrase(text=text_updated, do_streamline_etal=True)
 
         # Build grammar structures using only kept words
         struct_verbs_updated = {
@@ -811,7 +811,7 @@ class Grammar(Base):
         }
 
     # Recursively explore each word of NLP-sentence and categorize
-    def _recurse_NLP_categorization(
+    def _recurse_NLP_categorization(  # noqa: C901
         self,
         node,
         storage_verbs,
