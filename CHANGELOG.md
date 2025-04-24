@@ -17,6 +17,7 @@
     - Deleted all previous codes and files for a fresh start
 
 ### Changed
+- [PR #63](https://github.com/spacetelescope/bibcat/pull/63) Refactored to use newer OpenAI Responses API and remove deprecated Assistants API. 
 - [PR #47](https://github.com/spacetelescope/bibcat/pull/47) New calculations for evaluation confidence values for multiple GPT runs
 - [PR #46](https://github.com/spacetelescope/bibcat/pull/46)
     - Grouping the BERT model method into the pretrained folder
