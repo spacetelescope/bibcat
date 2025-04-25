@@ -5,7 +5,6 @@ import pandas as pd
 
 from bibcat import config
 from bibcat.core import parameters as params
-from bibcat.core.base import Base
 from bibcat.core.paper import Paper
 from bibcat.llm.io import get_source, read_output, write_summary
 from bibcat.utils.logger_config import setup_logger
@@ -430,9 +429,9 @@ def _fetch_keyword_object(lookup, keyword_objs=None, do_verbose=None, do_raise_e
     """
     # Load global variables
     if do_verbose is None:
-        do_verbose = Base._get_info("do_verbose")
+        do_verbose = _get_info("do_verbose")
     if keyword_objs is None:
-        keyword_objs = Base._get_info("keyword_objs")
+        keyword_objs = _get_info("keyword_objs")
     num_keyobjs = len(keyword_objs)
     # Print some notes
     if do_verbose:
@@ -462,3 +461,37 @@ def _fetch_keyword_object(lookup, keyword_objs=None, do_verbose=None, do_raise_e
 
     # Return the matching keyword object
     return match
+
+
+# Retrieve specified data via given key
+# TODO - do we really need this? no
+def _get_info(key: str, do_flag_hidden=False):
+    """
+    Method: _get_info
+    WARNING! This method is *not* meant to be used directly by users.
+    Purpose: Fetches values, etc., for this class instance from storage.
+    """
+    # Attempt to retrieve data stored under the given key
+    try:
+        return self._storage[key]
+    # Throw helpful error if retrieval attempt failed
+    except KeyError:
+        # Return a specialized testing error, if likely hidden method called
+        if do_flag_hidden:
+            errstr = (
+                "Whoa there. This error likely happened because"
+                + " you are testing or exploring a hidden ('_') method."
+                + " If so, you likely need to pass in this parameter -"
+                + " '{0}' - as an input to the method."
+            ).format(key)
+        # Otherwise, return generic error for available stored data
+        else:
+            errstr = (
+                "Whoa there. Looks like you requested data from a"
+                + " key ({1}) that does not exist. Available keys"
+                + " are:\n{0}"
+            ).format(sorted(self._storage.keys()), key)
+
+        # Raise the custom error
+        raise KeyError(errstr)
+    return
