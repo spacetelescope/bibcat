@@ -4,7 +4,7 @@ import pathlib
 import tempfile
 
 from bibcat import config
-from bibcat.data.streamline_dataset import load_source_dataset
+from bibcat.data.load_source_dataset import load_source_dataset
 from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import NumpyEncoder
 
