@@ -430,9 +430,9 @@ def _fetch_keyword_object(lookup, keyword_objs=None, do_verbose=None, do_raise_e
     """
     # Load global variables
     if do_verbose is None:
-        do_verbose = Base()._get_info("do_verbose")
+        do_verbose = False
     if keyword_objs is None:
-        keyword_objs = Base()._get_info("keyword_objs")
+        keyword_objs = []
     num_keyobjs = len(keyword_objs)
     # Print some notes
     if do_verbose:

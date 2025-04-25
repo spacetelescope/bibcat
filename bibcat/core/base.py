@@ -24,7 +24,7 @@ import re
 
 import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
-import spacy
+import spacy  # type: ignore
 from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore
 from nltk.corpus import wordnet  # type: ignore
 
@@ -103,7 +103,7 @@ class Base:
 
     # Assemble wordchunks containing keywords from given text
     # TODO - remove this entirely - this is for rules
-    def _assemble_keyword_wordchunks(
+    def _assemble_keyword_wordchunks(  # noqa: C901
         self, text, keyword_objs, do_include_verbs=False, do_include_brackets=False, do_verbose=False
     ):  # noqa: C901
         """
