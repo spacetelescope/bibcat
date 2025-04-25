@@ -5,13 +5,9 @@ import pandas as pd
 
 from bibcat import config
 from bibcat.core import parameters as params
-from bibcat.core.operator import Operator
 from bibcat.core.paper import Paper
 from bibcat.llm.io import get_source, read_output, write_summary
 from bibcat.utils.logger_config import setup_logger
-
-# set up global operator
-op = Operator(classifier="ML", mode=None, keyword_objs=params.all_kobjs)
 
 # set up logger
 logger = setup_logger(__name__)
