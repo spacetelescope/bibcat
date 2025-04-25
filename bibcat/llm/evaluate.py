@@ -5,6 +5,7 @@ import pandas as pd
 
 from bibcat import config
 from bibcat.core import parameters as params
+from bibcat.core.base import _get_info
 from bibcat.core.paper import Paper
 from bibcat.llm.io import get_source, read_output, write_summary
 from bibcat.utils.logger_config import setup_logger
@@ -421,7 +422,7 @@ def identify_missions_in_text(missions: list, text: str) -> list:
 
 
 # Fetch a keyword object that matches the given lookup
-def _fetch_keyword_object(self, lookup, keyword_objs=None, do_verbose=None, do_raise_emptyerror=True):
+def _fetch_keyword_object(lookup, keyword_objs=None, do_verbose=None, do_raise_emptyerror=True):
     """
     Method: _fetch_keyword_object
     WARNING! This method is *not* meant to be used directly by users.
@@ -429,9 +430,9 @@ def _fetch_keyword_object(self, lookup, keyword_objs=None, do_verbose=None, do_r
     """
     # Load global variables
     if do_verbose is None:
-        do_verbose = self._get_info("do_verbose")
+        do_verbose = _get_info("do_verbose")
     if keyword_objs is None:
-        keyword_objs = self._get_info("keyword_objs")
+        keyword_objs = _get_info("keyword_objs")
     num_keyobjs = len(keyword_objs)
     # Print some notes
     if do_verbose:
