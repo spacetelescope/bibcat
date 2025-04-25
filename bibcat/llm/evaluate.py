@@ -5,7 +5,7 @@ import pandas as pd
 
 from bibcat import config
 from bibcat.core import parameters as params
-from bibcat.core.base import _get_info
+from bibcat.core.base import Base
 from bibcat.core.paper import Paper
 from bibcat.llm.io import get_source, read_output, write_summary
 from bibcat.utils.logger_config import setup_logger
@@ -430,9 +430,9 @@ def _fetch_keyword_object(lookup, keyword_objs=None, do_verbose=None, do_raise_e
     """
     # Load global variables
     if do_verbose is None:
-        do_verbose = _get_info("do_verbose")
+        do_verbose = Base._get_info("do_verbose")
     if keyword_objs is None:
-        keyword_objs = _get_info("keyword_objs")
+        keyword_objs = Base._get_info("keyword_objs")
     num_keyobjs = len(keyword_objs)
     # Print some notes
     if do_verbose:
