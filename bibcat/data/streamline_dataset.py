@@ -1,5 +1,3 @@
-import json
-from functools import lru_cache
 from typing import Dict
 
 from bibcat import config
@@ -14,20 +12,6 @@ logger.setLevel(config.logging.level)
 
 # map model_settings back to settings
 settings = config.dataprep
-
-
-@lru_cache
-def load_source_dataset(do_verbose: bool):
-    """
-    Load the original source dataset that is a combined set of papertrack classification and ADS full text. Return a dictionary of the JSON content.
-    """
-    with open(config.inputs.path_source_data, "r") as openfile:
-        logger.info(f"Loading source dataset: {config.inputs.path_source_data}")
-        source_dataset = json.load(openfile)
-        if do_verbose:
-            logger.debug(f"{len(source_dataset)} papers have been loaded")
-
-    return source_dataset
 
 
 def streamline_dataset(source_dataset: Dict, operator_ML: Operator, do_verbose_text_summary=False):  # noqa: C901

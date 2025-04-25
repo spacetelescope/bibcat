@@ -22,7 +22,8 @@ from bibcat import config
 from bibcat.core import operator
 from bibcat.core import parameters as params
 from bibcat.core.classifiers import ml
-from bibcat.data.streamline_dataset import load_source_dataset, streamline_dataset
+from bibcat.data.load_source_dataset import load_source_dataset
+from bibcat.data.streamline_dataset import streamline_dataset
 from bibcat.utils.logger_config import setup_logger
 
 settings = config.dataprep
