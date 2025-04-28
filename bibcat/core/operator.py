@@ -99,7 +99,8 @@ class Operator(Base):
         # Load and process ambiguous (ambig.) data, if so requested
         if load_check_truematch:
             # Run method to load and process external ambig. database
-            self.dict_ambigs = Paper._process_database_ambig(keyword_objs=keyword_objs)
+            paper = Paper(text="", keyword_objs=keyword_objs, do_check_truematch=True)
+            self.dict_ambigs = paper._process_database_ambig(keyword_objs=keyword_objs)
             self.lookup_ambigs = self.dict_ambigs["lookup_ambigs"]
 
             # Print some notes
