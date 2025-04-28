@@ -6,6 +6,7 @@ Testing the Paper class and its methods.
 
 import unittest
 
+import numpy as np
 import spacy
 from nltk.corpus import wordnet  # type: ignore
 from test_config import test_dict_lookup_kobj, test_list_lookup_kobj
