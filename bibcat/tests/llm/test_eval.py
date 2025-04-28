@@ -173,7 +173,7 @@ def test_group_by_mission(mocker):
 
 def test__fetch_keyword_object__overlap(self):
     # Prepare text and answers for test
-    tmp_kobj_list = [params.kobj_hubble, params.kobj_hla]
+    # tmp_kobj_list = [params.kobj_hubble, params.kobj_hla]
     dict_acts = {
         "Hubble Legacy Archive": "HLA",
         "Hubble Legacy Archive results": "HLA",
