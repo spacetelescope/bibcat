@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from bibcat import config
-from bibcat.core.base import Base
+from bibcat.core.paper import Paper
 from bibcat.utils.logger_config import setup_logger
 
 xxx = None
@@ -581,8 +581,8 @@ class MachineLearningClassifier:
         # Clean the text
         # temporarily manually call Base until we can refactor
         # TODO - move out this code to keyword or grammar class
-        base = Base()
-        cleaned_text = base._streamline_phrase(text, do_streamline_etal=False)
+        paper = Paper()
+        cleaned_text = paper._streamline_phrase(text, do_streamline_etal=False)
 
         # Run model prediction on the text and map probabilities to classes
         probs = self.model.predict([cleaned_text])[0]

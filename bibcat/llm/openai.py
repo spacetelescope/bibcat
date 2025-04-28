@@ -43,6 +43,7 @@ class MissionInfo(BaseModel):
         """Serialize the enums to their value"""
         return item.value
 
+
 class InfoModel(BaseModel):
     """Pydantic model for the parsed response from the LLM"""
 
