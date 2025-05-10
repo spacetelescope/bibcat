@@ -428,7 +428,21 @@ def compute_and_save_metrics(
 
     # t: true, f: false, p: positive, n: negative
     tn, fp, fn, tp = confusion_matrix(metrics_data["human_labels"], metrics_data["llm_labels"]).ravel()
+    # normalize confusion matrix over the true (rows)
+    tnr, fpr, fnr, tpr = confusion_matrix(
+        metrics_data["human_labels"], metrics_data["llm_labels"], normalize="true"
+    ).ravel()
 
+    confusion_matrix_metrics = {
+        "tn": tn,
+        "fp": fp,
+        "fn": fn,
+        "tp": tp,
+        "tnr": tnr,
+        "fpr": fpr,
+        "fnr": fnr,
+        "tpr": tpr,
+    }
     # Encode string labels into numeric values using LabelEncoder
     label_encoder = LabelEncoder()
     human_labels_encoded = label_encoder.fit_transform(metrics_data["human_labels"])
@@ -469,6 +483,9 @@ def compute_and_save_metrics(
 
         f.write(f"{n_classes} papertypes: {', '.join(papertypes)} are labeled\n")
         f.write(f"True Negative = {tn}, False Positive = {fp}, False Negative = {fn}, True Positive = {tp}\n\n")
+        f.write(
+            f"True Negative Rate / Specificity = {tnr}, False Positive Rate = {fpr}, False Negative Rate = {fnr}, True Positive Rate / Recall = {tpr}\n\n"
+        )
 
         f.write(
             f"classification report\n {classification_report(human_labels_encoded, llm_labels_encoded, target_names=papertypes, digits=4)}\n"
@@ -477,7 +494,9 @@ def compute_and_save_metrics(
 
     # Save metrics_data and classlifcation report to a json file
     filtered_metrics_data = {k: v for k, v in metrics_data.items() if k not in {"human_labels", "llm_labels"}}
-    save_json_file(output_json_path, {**filtered_metrics_data, **classification_performance_report})
+    save_json_file(
+        output_json_path, {**filtered_metrics_data, **confusion_matrix_metrics, **classification_performance_report}
+    )
 
 
 def extract_roc_data(data: dict[str, dict[str, Any]], missions: list[str]):
@@ -702,4 +721,15 @@ def get_roc_metrics(llm_confidences: NDArray[np.float64], binarized_human_labels
     logger.info(f"fpr={fpr}")
     logger.info(f"tpr={tpr}")
     logger.info(f"thresholds ={thresholds}")
+    logger.info(f"auc ={roc_auc}")
+    logger.info(f"auc ={roc_auc}")
+    logger.info(f"auc ={roc_auc}")
+    logger.info(f"auc ={roc_auc}")
+    logger.info(f"auc ={roc_auc}")
+    logger.info(f"auc ={roc_auc}")
+    logger.info(f"auc ={roc_auc}")
+    logger.info(f"auc ={roc_auc}")
+    logger.info(f"auc ={roc_auc}")
+    logger.info(f"auc ={roc_auc}")
+    logger.info(f"auc ={roc_auc}")
     logger.info(f"auc ={roc_auc}")
