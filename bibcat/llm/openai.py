@@ -6,7 +6,7 @@ from enum import Enum
 
 import openai
 from openai import OpenAI
-from pydantic import BaseModel, Field, field_serializer, model_validator
+from pydantic import BaseModel, Field, ValidationError, field_serializer, model_validator
 
 from bibcat import config
 from bibcat.llm.evaluate import identify_missions_in_text
@@ -36,20 +36,22 @@ class MissionInfo(BaseModel):
     reason: str = Field(
         ..., description="A short sentence summarizing your reasoning for classifying this mission + papertype"
     )
-    confidence: list[float] = Field(..., description="Two confidence values that must sum to 1.0.")
+    confidence: list[float] = Field(
+        ..., description="Two float values representing confidence for SCIENCE and MENTION. Must sum to 1.0."
+    )
+
+    @model_validator(mode="after")
+    def validate_confidence(self) -> "MissionInfo":
+        if len(self.confidence) != 2:
+            raise ValueError("Confidence must contain exactly two float values.")
+        if abs(sum(self.confidence) - 1.0) > 1e-6:
+            raise ValueError(f"Confidence values must sum to 1.0, got {sum(self.confidence):.6f}.")
+        return self
 
     @field_serializer("mission", "papertype")
     def serialize_enums(self, item: Enum):
         """Serialize the enums to their value"""
         return item.value
-
-    @model_validator(mode="after")
-    def validate_confidence(self) -> "MissionInfo":
-        if len(self.confidence) != 2:
-            raise ValueError("Confidence must contain exactly 2 float values.")
-        if abs(sum(self.confidence) - 1.0) > 1e-6:
-            raise ValueError("Confidence values must sum to 1.0.")
-        return self
 
 
 class InfoModel(BaseModel):
@@ -271,6 +273,10 @@ class OpenAIHelper:
         except openai.BadRequestError as e:
             logger.error("Error sending request: %s", e)
             return {"error": f"Error sending request: {e}"}
+
+        except ValidationError as ve:
+            logger.error("Pydantic Validation error parsing response: %s", ve)
+            return {"error": f"Pydantic Validation error: {ve}"}
 
         if result.error:
             self.response = result.error

@@ -320,7 +320,7 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
 @click.option(
     "-t",
     "--threshold",
-    default=0.7,
+    default=0.5,
     type=float,
     show_default=True,
     help="The threshold value to accept the llm papertype",
@@ -547,4 +547,5 @@ def list_oa_assistants():
 
 
 if __name__ == "__main__":
+    cli()
     cli()

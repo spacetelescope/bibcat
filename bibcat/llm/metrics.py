@@ -484,7 +484,7 @@ def compute_and_save_metrics(
         f.write(f"{n_classes} papertypes: {', '.join(papertypes)} are labeled\n")
         f.write(f"True Negative = {tn}, False Positive = {fp}, False Negative = {fn}, True Positive = {tp}\n\n")
         f.write(
-            f"True Negative Rate / Specificity = {tnr}, False Positive Rate = {fpr}, False Negative Rate = {fnr}, True Positive Rate / Recall = {tpr}\n\n"
+            f"True Negative Rate / Specificity = {tnr.round(4)}, False Positive Rate = {fpr.round(4)}, False Negative Rate = {fnr.round(4)}, True Positive Rate / Recall = {tpr.round(4)}\n\n"
         )
 
         f.write(
@@ -721,15 +721,4 @@ def get_roc_metrics(llm_confidences: NDArray[np.float64], binarized_human_labels
     logger.info(f"fpr={fpr}")
     logger.info(f"tpr={tpr}")
     logger.info(f"thresholds ={thresholds}")
-    logger.info(f"auc ={roc_auc}")
-    logger.info(f"auc ={roc_auc}")
-    logger.info(f"auc ={roc_auc}")
-    logger.info(f"auc ={roc_auc}")
-    logger.info(f"auc ={roc_auc}")
-    logger.info(f"auc ={roc_auc}")
-    logger.info(f"auc ={roc_auc}")
-    logger.info(f"auc ={roc_auc}")
-    logger.info(f"auc ={roc_auc}")
-    logger.info(f"auc ={roc_auc}")
-    logger.info(f"auc ={roc_auc}")
     logger.info(f"auc ={roc_auc}")
