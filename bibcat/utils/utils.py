@@ -41,12 +41,12 @@ def save_json_file(path: Path, dataset: list[dict] | dict, indent: int = 2) -> N
     try:
         logger.info(f"Saving {path}!")
         with open(path, "w") as openfile:
-            json.dump(dataset, openfile, indent=indent)
+            json.dump(dataset, openfile, indent=indent, cls=NumpyEncoder)
     except IOError as e:
         logger.error(f"An error occurred while saving the file: {e}")
 
 
-# Create a class for numpy encoder to convert a numpy array into a list
+# Create a class for numpy encoder to convert numpy types into native data types
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray):
