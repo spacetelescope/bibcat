@@ -59,9 +59,10 @@ llms:
     "supermention": "nonscience",
     "data_influenced": "nonscience",
     "ignore": "nonscience",
-    "unresolved_grey": "other",
-    "engineering": "other",
-    "instrument": "other",
+    "unresolved_grey": "nonscience",
+    "unresolved_gray": "nonscience",
+    "engineering": "nonscience",
+    "instrument": "nonscience",
   }
   performance: # used for both evaluation and operation
     threshold: 0.5
