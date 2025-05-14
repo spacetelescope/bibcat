@@ -99,7 +99,7 @@ def operate_classifier(
     if verbose:
         logger.info(f"{classifier_name} results: \n")
         for index, dict_content in enumerate(results):
-            logger.info(f"\nText {index+1}: \n")
+            logger.info(f"\nText {index + 1}: \n")
             logger.info(f"Text id: {text_ids[index].get('id')}")
             logger.info(f"Text bibcode: {text_bibcodes[index].get('bibcode')}")
             for key in dict_content:

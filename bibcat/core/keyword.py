@@ -154,10 +154,10 @@ class Keyword(Base):
         print_str = (
             "Keyword Object:\n"
             + f"Name: {self.get_name()}\n"
-            + f'Keywords: {self._get_info("keywords")}\n'
-            + f'Acronyms (Case-Insensitive): {self._get_info("acronyms_caseinsensitive")}\n'
-            + f'Acronyms (Case-Sensitive): {self._get_info("acronyms_casesensitive")}\n'
-            + f'Banned Overlap: {self._get_info("banned_overlap")}\n'
+            + f"Keywords: {self._get_info('keywords')}\n"
+            + f"Acronyms (Case-Insensitive): {self._get_info('acronyms_caseinsensitive')}\n"
+            + f"Acronyms (Case-Sensitive): {self._get_info('acronyms_casesensitive')}\n"
+            + f"Banned Overlap: {self._get_info('banned_overlap')}\n"
         )
 
         # Return the completed string for printing
