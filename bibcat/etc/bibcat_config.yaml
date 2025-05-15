@@ -34,7 +34,7 @@ paths:
 
 # Ambiguous missions ["FIRST", "Copernicus"] need to be revisited
 # the library does not care "HLA", "HSC", we will need to fix this and find a way to include other keywords in parameters.py
-missions: ["HST", "JWST", "Roman", "HLA", "HSC", "TESS", "KEPLER", "K2", "GALEX", "PanSTARRS", "FUSE", "IUE", "HUT", "UIT", "WUPPE", "BEFS", "TUES", "IMAPS", "EUVE"]
+missions: ["HST", "JWST", "Roman", "TESS", "KEPLER", "K2", "GALEX", "PanSTARRS", "FUSE", "IUE", "HUT", "UIT", "WUPPE", "BEFS", "TUES", "IMAPS", "EUVE"]
 
 #### configs for LLMs
 llms:
