@@ -73,8 +73,7 @@ class Grammar(Base):
             # Print some notes
             if do_verbose:
                 print("Processing database of ambiguous phrases...")
-            paper = Paper()
-            dict_ambigs = paper._process_database_ambig()
+            dict_ambigs = Paper()._process_database_ambig()
 
         # Otherwise, do nothing new
         else:
@@ -784,7 +783,7 @@ class Grammar(Base):
                 print("anon modifications complete.\nUpdated text:\n{0}\n".format(text_updated))
 
         # Cleanse the text to finalize it
-        paper = Paper()
+        paper = self._get_info("paper")
         text_updated = paper._streamline_phrase(text=text_updated, do_streamline_etal=True)
 
         # Build grammar structures using only kept words

@@ -227,8 +227,37 @@ class Paper(Base):
         Method: _check_truematch
         WARNING! This method is *not* meant to be used directly by users.
         Purpose:
-         - Determine if given text contains a true vs. false match to keywords.
-           - E.g.: 'Edwin Hubble' as a false match to Hubble Space Telescope.
+          - Determine if given text contains a true vs. false match to keywords.
+            - E.g.: 'Edwin Hubble' as a false match to Hubble Space Telescope.
+        Arguments:
+        - text [str]:
+          - The text to search.
+        - keyword_objs [list of Keyword instances]:
+          - Target missions; terms will be used to search the text.
+        - dict_ambigs [None or dict (default=None)]:
+          - If None, will load and process external database of ambiguous mission phrases.
+            If given, will use what is given.
+        - do_verbose [bool (default=False)]:
+          - Whether or not to print surface-level log information and tests.
+        - do_verbose_deep [bool (default=False)]:
+          - Whether or not to print inner log information and tests.
+        Returns:
+          - A dictionary with the following parameters
+            - bool: boolean for whether or not text contains a true vs false match to the given keywords
+            - info (if no keywords found or non-ambiguous match): an array with one item
+               - bool: same value as bool above
+               - text_wordchunk: status of search
+               - text_database: None
+               - matcher: None
+               - set: None if non-ambiguous match, otherwise omitted
+            - info (if going through ambiguous phrases): an array with multiple items, one for each phrase
+               - bool: result of that particular phrase. If any phrase matches true, the "bool" above is true
+               - text_wordchunk: the chunk of text searched
+               - text_database: the phrase searched within the chunk of text
+               - matcher: the result of regex search
+               - ind: index number within the database
+               - exp: ambiguous phrases searched
+
         """
 
         # Load global variables
