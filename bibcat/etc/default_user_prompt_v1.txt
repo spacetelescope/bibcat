@@ -1,0 +1,60 @@
+Determine whether the astronomy research publication is a paper that presents scientific results with data from the Mikulski Archive for Space Telescopes (MAST).
+
+Carefully follow these two instructions to classify papers for MAST bibliometric record-keeping:
+
+1. Read the paper contents and write down whether it uses any of the following MAST missions: ["HST", "JWST", "TESS", "KEPLER", "K2", "GALEX", "PANSTARRS"]. Note that  these abbreviations may be expanded, e.g., "HST" might be "Hubble" or "Hubble Space  Telescope". Similarly, PS1, Pan-STARRS 1, or PANSTARRS are all synonymous. But do not mix up "KEPLER" with "K2" or other concepts like Keplerian motion.  Also do not mix up cases where these phrases appear in target names, e.g. "K2-18 b". Write a summary of which mission is mentioned, whether that mission"s data is accessed, and whether the paper presents newly taken observations from that mission. If the mission is not mentioned, then simply write "not mentioned". For example, you should write something like this:
+```
+- HST: New data are presented using STIS observations.
+- JWST: Mentioned at the end of paper to describe potential follow-up science.
+- KEPLER: not mentioned
+- PANSTARRS: Not mentioned
+- TESS: not mentioned
+- GALEX: not mentioned
+- K2: An exoplanet with K2 in the name is mentioned, but the mission itself is not mentioned.
+- etc.
+```
+Read the paper first and think carefully first about your answer before writing anything down. Because you are an autoregressive model, **you must write this down for reference** during step 2.
+
+2. Next, write valid JSON that encapsulates the bibliographic classifications from the step above. If a "response_format" is provided, then follow its schema.  Otherwise follow the following schema:
+
+- notes: all your notes and thoughts you have written down during your process
+- missions: a list of your identified missions, with each item in the list a dictionary with the following structure:
+- mission: the name of the mission
+- papertype: the type of paper you think it is
+- confidence: a list of float values of your confidence
+- reason: a short sentence summarizing your reasoning for classifying this mission and papertype
+- quotes: a list of exact quotes from the paper that support your reason
+
+*ONLY* include a mission in the list if it is discussed more than just in passing. The papertype value will be either "MENTION" if this mission has been discussed, or "SCIENCE" if mission data are being presented or used for scientific analysis. Additionally, always provide confidence values for both "SCIENCE" and "MENTION", in that order ["SCIENCE", "MENTION"], regardless of which class applies. Thus, even if a mission is only "MENTION", it should have confidence values for both, such as confidence: [0.3, 0.7].
+Thus, in the example above, the output would be:
+
+```json
+{{
+    "notes": "I have read the paper and found mentions of the HST and JWST missions. For HST, new data are presented using STIS observations. JWST is mentioned at the end of paper to describe potential follow-up science. The K2 mission is not actually discussed in the paper.",
+    "missions": [{{
+        "mission": "HST",
+        "papertype": "SCIENCE",
+        "confidence": [0.95, 0.05],
+        "reason": "The primary data in this paper comes from Hubble observations.",
+        "quotes": ["We present new data using HST observed with the STIS instrument."],
+    }}, {{
+        "mission": "JWST",
+        "papertype": "MENTION",
+        "confidence": [0.2, 0.8],
+        "reason": "JWST is mentioned briefly in the conclusion"
+        "quotes": ["Our work presented here will help inform new JWST follow-up observations."]
+    }}]
+}}
+```
+
+Make sure you now write the word "OUTPUT:" followed by a newline and then the valid JSON, using your above reasoning. If any missions are not mentioned at all, then please omit them. Again, don't forget to precede this JSON block with "OUTPUT:" and the newline.
+
+Here is the paper data.
+
+**Title**: {title}
+
+**Abstract**: {abstract}
+
+**MAST missions found**: {missions}
+
+**Full text**: {body}
