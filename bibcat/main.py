@@ -508,7 +508,7 @@ def stats_llm(evaluation: bool, ops: bool, threshold: float):
 
 
 @cli.command(help="Create a JSON file to audit LLM classification")
-def audit_llm():
+def audit_llms():
     """Create a JSON file of misclassified papers by LLM for auditing"""
 
     input_filepath = (
