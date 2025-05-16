@@ -1,4 +1,5 @@
 import pathlib
+from typing import Any
 
 import pandas as pd
 
@@ -12,7 +13,7 @@ logger.setLevel(config.logging.level)
 
 
 def inconsistent_classifications(input_path: str | pathlib.Path, output_path: str | pathlib.Path):
-    """Save falsely classified bibcodes to a json file
+    """Save falsely classified bibcodes to a json file for investigation
 
     This code will check if llm classification is different from human classification
     or incorrectly ignore the mission and save the results to a json file.
@@ -33,52 +34,73 @@ def inconsistent_classifications(input_path: str | pathlib.Path, output_path: st
     logger.debug(f"Loaded data: {data}")
 
     results = {}
-    matched_missions = 0
+    n_matched_classifications = 0
+
     for bibcode, item in data.items():
-        if "error" not in item:
-            human = item.get("human", {})
-            llm_entries = item.get("llm", [])
+        if "error" in item:
+            continue
 
-            errors = {}
-            for mission, human_label in human.items():
-                # Check if mission exists at all in any LLM item
-                mission_in_llm = any(mission in llm for llm in llm_entries)
-                # Check if mission has the same label in any LLM item
-                match_found = any(llm.get(mission) == human_label for llm in llm_entries if mission in llm)
+        human_item = item.get("human", {})
+        llm_item = item.get("llm", [])
 
-                # Check if any LLM item assigns SCIENCE
-                llm_science_assigned = any(llm.get(mission) == "SCIENCE" for llm in llm_entries if mission in llm)
+        failures, n_matched = analyze_missions(human_item, llm_item)
+        n_matched_classifications += n_matched
 
-                if not mission_in_llm:
-                    if human_label == "SCIENCE":
-                        errors[mission] = "false_negative_because_ignored"
-                    else:
-                        errors[mission] = "ignored"
-                elif match_found:
-                    matched_missions += 1
-                elif not match_found:
-                    if human_label == "SCIENCE":
-                        errors[mission] = "false_negative"
-                    elif llm_science_assigned:  # only count as false positive if LLM predicted SCIENCE
-                        errors[mission] = "false_positive"
-                # If matched, do not include
+        if failures:
+            results[bibcode] = {
+                "failures": failures,
+                "human": human_item,
+                "llm": llm_item,
+                "missions_not_in_text": item.get("hallucinated_missions", []),
+            }
 
-            if errors:
-                results[bibcode] = {
-                    "errors": errors,
-                    "human": human,
-                    "llm": llm_entries,
-                    "missions_not_in_text": item.get("hallucinated_missions", []),
-                }
+    # summarized counts of inconsistent classifications
     summary_counts = audit_summary(results)
-    summary_counts = {"n_total_bibcodes": len(data), **summary_counts}
-    # Add the summary to the top of the dictionary
+    summary_counts = {
+        "n_total_bibcodes": len(data),
+        "n_matched_classifications": n_matched_classifications,
+        **summary_counts,
+    }
+
+    # Add the summary to the top of the bibcode+mission breakdown results
     results_with_summary = {
         "summary_counts": summary_counts,
         "bibcodes": results,
     }
 
     save_json_file(output_path, results_with_summary, indent=2)
+
+
+def analyze_missions(human_item: dict[str, str], llm_item: list[dict[str, Any]]) -> tuple[dict[str, str], int]:
+    """Analyze and compare LLM classifications against human classifications.
+
+    Parameters
+    ==========
+    human_item: dict[str, str]
+        human classification of mission and papertype, e.g.,
+    """
+    failures = {}
+    n_matched_classifications = 0
+
+    for mission, human_label in human_item.items():
+        mission_in_llm = any(mission in llm for llm in llm_item)
+        match_found = any(llm.get(mission) == human_label for llm in llm_item if mission in llm)
+        llm_science_assigned = any(llm.get(mission) == "SCIENCE" for llm in llm_item if mission in llm)
+
+        if not mission_in_llm:
+            if human_label == "SCIENCE":
+                failures[mission] = "false_negative_because_ignored"
+            else:
+                failures[mission] = "ignored"
+        elif match_found:
+            n_matched_classifications += 1
+        else:
+            if human_label == "SCIENCE":
+                failures[mission] = "false_negative"
+            elif llm_science_assigned:
+                failures[mission] = "false_positive"
+
+    return failures, n_matched_classifications
 
 
 def audit_summary(audit_results: dict) -> dict[str, int]:
@@ -88,6 +110,9 @@ def audit_summary(audit_results: dict) -> dict[str, int]:
     ==========
     audit_results: dict
         the breakdown bibcode list of inconsistent llm classifications
+        e.g.,
+        "bibcodes": {"2018A&A...610A..11I": {"failures": "GALEX": "false_positive"},}
+
 
     Returns
     =======
@@ -95,10 +120,9 @@ def audit_summary(audit_results: dict) -> dict[str, int]:
         various count summary
     """
 
-    # TODO - add stats grouped by mission
     summary_counts = {
-        "mismatched_bibcodes": 0,
-        "mismatched_missions": 0,
+        "n_mismatched_bibcodes": 0,
+        "n_mismatched_classifications": 0,
         "false_positive": 0,
         "false_negative": 0,
         "false_negative_because_ignored": 0,
@@ -106,12 +130,12 @@ def audit_summary(audit_results: dict) -> dict[str, int]:
     }
 
     for bibcode, entry in audit_results.items():
-        error_dict = entry.get("errors", {})
+        error_dict = entry.get("failures", {})
         error_count = len(error_dict)
 
         if error_count > 0:
-            summary_counts["mismatched_bibcodes"] += 1
-            summary_counts["mismatched_missions"] += error_count
+            summary_counts["n_mismatched_bibcodes"] += 1
+            summary_counts["n_mismatched_classifications"] += error_count
 
             for error_type in error_dict.values():
                 if error_type in summary_counts:
