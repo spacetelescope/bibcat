@@ -123,8 +123,8 @@ def test_evaluate_df(mocker):
     assert df.iloc[0]["hallucination_by_llm"]
 
     # assert the second row (JWST-SCIENCE) has a low weight
-    assert df.iloc[1]["llm_mission"] == 'JWST'
-    assert df.iloc[1]["llm_papertype"] == 'SCIENCE'
+    assert df.iloc[1]["llm_mission"] == "JWST"
+    assert df.iloc[1]["llm_papertype"] == "SCIENCE"
     assert df.iloc[1]["mean_llm_confidences"].tolist() == [0.9, 0.1]
     assert df.iloc[1]["count"] == 1
     assert df.iloc[1]["n_runs"] == 6
@@ -154,15 +154,15 @@ def test_group_by_mission(mocker):
     mm = group_by_mission(df)
 
     # JWST
-    assert mm.iloc[0]['llm_mission'] == 'JWST'
-    assert mm.iloc[0]['total_mission_conf'] == 0.5
-    assert mm.iloc[0]['total_weighted_conf'].tolist() == [0.25, 0.25]
-    assert mm.iloc[0]['prob_mission'] == 0.333
-    assert mm.iloc[0]['prob_papertype'].tolist() == [0.5, 0.5]
+    assert mm.iloc[0]["llm_mission"] == "JWST"
+    assert mm.iloc[0]["total_mission_conf"] == 0.5
+    assert mm.iloc[0]["total_weighted_conf"].tolist() == [0.25, 0.25]
+    assert mm.iloc[0]["prob_mission"] == 0.333
+    assert mm.iloc[0]["prob_papertype"].tolist() == [0.5, 0.5]
 
     # TESS
-    assert mm.iloc[1]['llm_mission'] == 'TESS'
-    assert mm.iloc[1]['total_mission_conf'] == 1.0
-    assert mm.iloc[1]['total_weighted_conf'].tolist() == [0.8, 0.2]
-    assert mm.iloc[1]['prob_mission'] == 0.667
-    assert mm.iloc[1]['prob_papertype'].tolist() == [0.8, 0.2]
+    assert mm.iloc[1]["llm_mission"] == "TESS"
+    assert mm.iloc[1]["total_mission_conf"] == 1.0
+    assert mm.iloc[1]["total_weighted_conf"].tolist() == [0.8, 0.2]
+    assert mm.iloc[1]["prob_mission"] == 0.667
+    assert mm.iloc[1]["prob_papertype"].tolist() == [0.8, 0.2]
