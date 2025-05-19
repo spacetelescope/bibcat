@@ -14,13 +14,13 @@ There are two main branches for bibcat work:
 - A few tensorflow packages required for Apple silicon chip computers should be installed manually; see below.
 
 ### Conda environment installation
-Change `<env_name>` below with whatever you want to name the environment.
+Change `env_name` below with whatever you want to name the environment.
 - In the terminal, run these commands.
 
 
 ```shell
-conda env create -n <env_name> python=3.10
-conda activate <env_name>
+conda create -n env_name python=3.10
+conda activate env_name
 ```
 
 ### Bibcat installation
