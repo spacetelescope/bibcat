@@ -26,24 +26,167 @@ keywords : {empty list, list of strings}
 from bibcat.core import keyword
 
 # Mission parameters
-kobj_hubble = keyword.Keyword(
-    keywords=["Hubble", "Hubble Telescope", "Hubble Space Telescope"],
-    acronyms_casesensitive=[],
-    acronyms_caseinsensitive=["HST"],
+kobj_befs = keyword.Keyword(
+    keywords=[
+        "Berkeley Extreme and Far UV Spectrometer",
+        "Berkeley Spectrometer",
+    ],
+    acronyms_casesensitive=["BEFS"],
+    acronyms_caseinsensitive=[],
     do_not_classify=False,
-    banned_overlap=["Hubble Legacy Archive"],
+    banned_overlap=[],
+    ambig_words=[],
+)
+kobj_copernicus = keyword.Keyword(
+    keywords=["Orbiting Astronomical Observatory", "Copernicus Mission", "Copernicus Satellite", "Copernicus"],
+    acronyms_casesensitive=["OAO3", "OAO 3"],
+    acronyms_caseinsensitive=[],
+    do_not_classify=True,
+    banned_overlap=[],
+    ambig_words=["Copernicus"],
+)
+kobj_euve = keyword.Keyword(
+    keywords=["Extreme Ultraviolet Explorer"],
+    acronyms_casesensitive=[],
+    acronyms_caseinsensitive=["EUVE"],
+    do_not_classify=False,
+    banned_overlap=[],
+    ambig_words=[],
+)
+kobj_first = keyword.Keyword(
+    keywords=[
+        "Very Large Array Faint Images of the Radio Sky at Twenty Centimeters Survey",
+        "Very Large Array Faint Images of the Radio Sky at Twenty cm",
+        "Very Large Array First",
+        "Faint Images of the Radio Sky at Twenty cm",
+        "Faint Images of the Radio Sky at Twenty Centimeters",
+    ],
+    acronyms_casesensitive=["FIRST", "VLA FIRST"],
+    acronyms_caseinsensitive=[],
+    do_not_classify=True,
+    banned_overlap=[],
+    ambig_words=[],
+)
+kobj_fuse = keyword.Keyword(
+    keywords=["Far Ultraviolet Spectroscopic Explorer"],
+    acronyms_casesensitive=["FUSE"],
+    acronyms_caseinsensitive=[],
+    do_not_classify=False,
+    banned_overlap=[],
+    ambig_words=[],
+)
+kobj_galex = keyword.Keyword(
+    keywords=["Galaxy Evolution Explorer"],
+    acronyms_casesensitive=[],
+    acronyms_caseinsensitive=["GALEX"],
+    do_not_classify=False,
+    banned_overlap=[],
+    ambig_words=[],
+)
+kobj_hubble = keyword.Keyword(
+    keywords=[
+        "Advanced Camera for Surveys",
+        "Cosmic Origin Spectrograph",
+        "Goddard High Resolution",
+        "Hubble",
+        "Hubble Frontier Field",
+        "Hubble Frontier Fields",
+        "Hubble Telescope",
+        "Hubble Space Telescope",
+        "Hubble Legacy Archive",
+        "Hubble Source Catalog",
+    ],
+    acronyms_casesensitive=[],
+    acronyms_caseinsensitive=[
+        "COS",
+        "FGS",
+        "GOODS",
+        "GHRS",
+        "HFF",
+        "HST",
+        "HLA",
+        "HUDF",
+        "NICMOS",
+        "STIS",
+        "WFPC",
+        "WFPC1",
+        "WFPC2",
+        "WFPC 1",
+    ],
+    do_not_classify=False,
+    banned_overlap=[],
     ambig_words=["Hubble"],
+)
+kobj_hut = keyword.Keyword(
+    keywords=["Hopkins Ultraviolet Telescope"],
+    acronyms_casesensitive=["HUT"],
+    acronyms_caseinsensitive=[],
+    do_not_classify=False,
+    banned_overlap=[],
+    ambig_words=[],
 )
 kobj_jwst = keyword.Keyword(
     keywords=[
         "James Webb Space Telescope",
         "James Webb Telescope",
+        "Next Generation Space Telescope",
         "Webb Space Telescope",
         "Webb Telescope",
-        "Next Generation Space Telescope",
     ],
     acronyms_casesensitive=[],
-    acronyms_caseinsensitive=["JWST", "NGST"],
+    acronyms_caseinsensitive=["FGS", "JWST", "NIRCam", "NIRSpec", "NIRISS", "MIRI", "NGST"],
+    do_not_classify=False,
+    banned_overlap=[],
+    ambig_words=[],
+)
+kobj_imaps = keyword.Keyword(
+    keywords=["Interstellar Medium Absorption Profile Spectrograph"],
+    acronyms_casesensitive=[],
+    acronyms_caseinsensitive=["IMAPS"],
+    do_not_classify=False,
+    banned_overlap=[],
+    ambig_words=[],
+)
+kobj_iue = keyword.Keyword(
+    keywords=["International Ultraviolet Explorer"],
+    acronyms_casesensitive=[],
+    acronyms_caseinsensitive=["IUE"],
+    do_not_classify=False,
+    banned_overlap=[],
+    ambig_words=[],
+)
+# need to revisit
+kobj_k2 = keyword.Keyword(
+    keywords=["K2", "K2 Mission"],
+    acronyms_casesensitive=[],
+    acronyms_caseinsensitive=["KTWOCANDELS"],
+    do_not_classify=False,
+    banned_overlap=["Kepler K2"],
+    ambig_words=["K2"],
+)
+kobj_kepler = keyword.Keyword(
+    keywords=["Kepler", "Kepler Mission"],
+    acronyms_casesensitive=[],
+    acronyms_caseinsensitive=[],
+    do_not_classify=False,
+    banned_overlap=["Kepler K2"],
+    ambig_words=["Kepler"],
+)
+kobj_panstarrs = keyword.Keyword(
+    keywords=[
+        "Panoramic Survey Telescope and Rapid Response System",
+    ],
+    acronyms_casesensitive=[],
+    acronyms_caseinsensitive=[
+        "PS1",
+        "PanSTARS",
+        "PanSTARRS",
+        "Pan STARRS",
+        "PanSTARRS1",
+        "PanSTARRS 1",
+        "Pan STARRS1",
+        "Pan STARRS 1",
+    ],
     do_not_classify=False,
     banned_overlap=[],
     ambig_words=[],
@@ -64,23 +207,6 @@ kobj_roman = keyword.Keyword(
     banned_overlap=[],
     ambig_words=["Roman"],
 )
-kobj_hla = keyword.Keyword(
-    keywords=["Hubble Legacy Archive"],
-    acronyms_casesensitive=[],
-    acronyms_caseinsensitive=["HLA"],
-    do_not_classify=False,
-    banned_overlap=[],
-    ambig_words=[],
-)
-# need to revisit
-kobj_hsc = keyword.Keyword(
-    keywords=["Hubble Source Catalog"],
-    acronyms_casesensitive=[],
-    acronyms_caseinsensitive=["HSC"],
-    do_not_classify=False,
-    banned_overlap=[],
-    ambig_words=[],
-)
 kobj_tess = keyword.Keyword(
     keywords=["Transiting Exoplanet Survey Satellite"],
     acronyms_casesensitive=["TESS"],
@@ -89,150 +215,48 @@ kobj_tess = keyword.Keyword(
     banned_overlap=[],
     ambig_words=[],
 )
-kobj_kepler = keyword.Keyword(
-    keywords=["Kepler", "Kepler Mission"],
-    acronyms_casesensitive=[],
-    acronyms_caseinsensitive=[],
-    do_not_classify=False,
-    banned_overlap=["Kepler K2"],
-    ambig_words=["Kepler"],
-)
-# need to revisit
-kobj_k2 = keyword.Keyword(
-    keywords=["K2", "K2 Mission"],
-    acronyms_casesensitive=[],
-    acronyms_caseinsensitive=[],
-    do_not_classify=False,
-    banned_overlap=["Kepler K2"],
-    ambig_words=["K2"],
-)
-kobj_galex = keyword.Keyword(
-    keywords=["Galaxy Evolution Explorer"],
-    acronyms_casesensitive=[],
-    acronyms_caseinsensitive=["GALEX"],
-    do_not_classify=False,
-    banned_overlap=[],
-    ambig_words=[],
-)
-kobj_panstarrs = keyword.Keyword(
-    keywords=[
-        "Panoramic Survey Telescope and Rapid Response System",
-    ],
-    acronyms_casesensitive=[],
-    acronyms_caseinsensitive=["PanSTARRS", "PanSTARRS1", "PS1", "Pan-STARRS", "Pan-STARRS1", "Pan STARRS"],
-    do_not_classify=False,
-    banned_overlap=[],
-    ambig_words=[],
-)
-# all missions below needs revisiting
-kobj_fuse = keyword.Keyword(
-    keywords=["Far Ultraviolet Spectroscopic Explorer"],
-    acronyms_casesensitive=["FUSE"],
+kobj_tues = keyword.Keyword(
+    keywords=["Tubingen Echelle Spectrograph"],
+    acronyms_casesensitive=["TUES"],
     acronyms_caseinsensitive=[],
     do_not_classify=False,
     banned_overlap=[],
     ambig_words=[],
-)
-kobj_iue = keyword.Keyword(
-    keywords=["International Ultraviolet Explorer"],
-    acronyms_casesensitive=[],
-    acronyms_caseinsensitive=["IUE"],
-    do_not_classify=False,
-    banned_overlap=[],
-    ambig_words=[],
-)
-kobj_hut = keyword.Keyword(
-    keywords=["Hopkins Ultraviolet Telescope"],
-    acronyms_casesensitive=[],
-    acronyms_caseinsensitive=["HUT"],
-    do_not_classify=False,
-    banned_overlap=[],
-    ambig_words=["HUT"],
 )
 kobj_uit = keyword.Keyword(
     keywords=["Ultraviolet Imaging Telescope"],
-    acronyms_casesensitive=[],
-    acronyms_caseinsensitive=["UIT"],
+    acronyms_casesensitive=["UIT"],
+    acronyms_caseinsensitive=[],
     do_not_classify=False,
     banned_overlap=[],
-    ambig_words=["UIT"],
+    ambig_words=[],
 )
 kobj_wuppe = keyword.Keyword(
-    keywords=["Wisconsin Ultraviolet Photo-Polarimetry Experiment"],
+    keywords=["Wisconsin Ultraviolet Photo Polarimetry Experiment"],
     acronyms_casesensitive=[],
     acronyms_caseinsensitive=["WUPPE"],
     do_not_classify=False,
     banned_overlap=[],
     ambig_words=[],
 )
-kobj_befs = keyword.Keyword(
-    keywords=["Berkeley Extreme and Far-UV Spectrometer", "Berkeley Extreme and Far UV Spectrometer"],
-    acronyms_casesensitive=["BEFS"],
-    acronyms_caseinsensitive=[],
-    do_not_classify=False,
-    banned_overlap=[],
-    ambig_words=[],
-)
-kobj_tues = keyword.Keyword(
-    keywords=["Tubingen Echelle Spectrograph"],
-    acronyms_casesensitive=[],
-    acronyms_caseinsensitive=[],
-    do_not_classify=False,
-    banned_overlap=[],
-    ambig_words=[],
-)
-kobj_imaps = keyword.Keyword(
-    keywords=["Interstellar Medium Absorption Profile Spectrograph"],
-    acronyms_casesensitive=[],
-    acronyms_caseinsensitive=["IMAPS"],
-    do_not_classify=False,
-    banned_overlap=[],
-    ambig_words=[],
-)
-kobj_euve = keyword.Keyword(
-    keywords=["Extreme Ultraviolet Explorer"],
-    acronyms_casesensitive=[],
-    acronyms_caseinsensitive=["EUVE"],
-    do_not_classify=False,
-    banned_overlap=[],
-    ambig_words=[],
-)
-kobj_first = keyword.Keyword(
-    keywords=["Very Large Array First", "VLA FIRST"],
-    acronyms_casesensitive=["FIRST"],
-    acronyms_caseinsensitive=[],
-    do_not_classify=True,
-    banned_overlap=[],
-    ambig_words=[],
-)
-kobj_copernicus = keyword.Keyword(
-    keywords=["Orbiting Astronomical Observatory", "Copernicus Mission", "Copernicus Satellite", "Copernicus"],
-    acronyms_casesensitive=[],
-    acronyms_caseinsensitive=[],
-    do_not_classify=True,
-    banned_overlap=[],
-    ambig_words=["Copernicus"],
-)
 all_kobjs = [
-    kobj_hubble,
-    kobj_jwst,
-    kobj_roman,
-    kobj_hla,
-    kobj_hsc,
-    kobj_tess,
-    kobj_kepler,
-    kobj_k2,
-    kobj_galex,
-    kobj_panstarrs,
-    kobj_fuse,
-    kobj_iue,
-    kobj_hut,
-    kobj_uit,
-    kobj_wuppe,
     kobj_befs,
-    kobj_tues,
-    kobj_imaps,
+    kobj_copernicus,
     kobj_euve,
     kobj_first,
-    kobj_copernicus,
+    kobj_fuse,
+    kobj_galex,
+    kobj_hubble,
+    kobj_hut,
+    kobj_imaps,
+    kobj_iue,
+    kobj_jwst,
+    kobj_k2,
+    kobj_kepler,
+    kobj_panstarrs,
+    kobj_roman,
+    kobj_tess,
+    kobj_tues,
+    kobj_uit,
+    kobj_wuppe,
 ]
