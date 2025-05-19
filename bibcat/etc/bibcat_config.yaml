@@ -33,7 +33,7 @@ paths:
   TVTinfo: null
 
 # Ambiguous missions ["FIRST", "Copernicus"] need to be revisited
-missions: ["HST", "JWST", "Roman", "TESS", "KEPLER", "K2", "GALEX", "PanSTARRS", "FUSE", "IUE", "HUT", "UIT", "WUPPE", "BEFS", "TUES", "IMAPS", "EUVE"]
+missions: ["BEFS","Copernicus", "EUVE", "FIRST",  "FUSE",  "GALEX","HST", "HUT", "IMAPS", "IUE", "JWST", "K2",  "KEPLER", "PanSTARRS", "Roman", "TESS", "TUES","UIT", "WUPPE"]
 
 #### configs for LLMs
 llms:
