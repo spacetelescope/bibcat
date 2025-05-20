@@ -17,7 +17,10 @@
     - Deleted all previous codes and files for a fresh start
 
 ### Changed
-- [PR #63](https://github.com/spacetelescope/bibcat/pull/63) Refactored to use newer OpenAI Responses API and remove deprecated Assistants API. 
+- [PR #66](https://github.com/spacetelescope/bibcat/pull/66)
+    - Moved _process_database_ambig, _extract_core_from_phrase, _streamline_phrase, and _check_truematch from base.py to paper.py
+    - Updated tests to read from Paper() object instead of Base() object
+- [PR #63](https://github.com/spacetelescope/bibcat/pull/63) Refactored to use newer OpenAI Responses API and remove deprecated Assistants API.
 - [PR #47](https://github.com/spacetelescope/bibcat/pull/47) New calculations for evaluation confidence values for multiple GPT runs
 - [PR #46](https://github.com/spacetelescope/bibcat/pull/46)
     - Grouping the BERT model method into the pretrained folder

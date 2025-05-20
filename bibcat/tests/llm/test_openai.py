@@ -29,15 +29,46 @@ def test_convert_failure(caplog):
     assert "Error converting output to classification format" in caplog.record_tuples[0][2]
 
 
+INPUT_JSON1 = '\nOUTPUT:\n```json\n{\n    "HST": [\n        "MENTION",\n        0.8\n    ],\n    "JWST": [\n        "SCIENCE",\n        0.95\n    ]\n}\n```'
+OUTPUT_JSON1 = {"HST": ["MENTION", 0.8], "JWST": ["SCIENCE", 0.95]}
 
-@pytest.mark.parametrize('data, exp',
-                    [('\nOUTPUT:\n```json\n{\n    "HST": [\n        "MENTION",\n        0.8\n    ],\n    "JWST": [\n        "SCIENCE",\n        0.95\n    ]\n}\n```',
-                      {'HST': ['MENTION', 0.8], 'JWST': ['SCIENCE', 0.95]}),
-                     ('```json\n{\n  "title": "DampingwingsintheLyman-αforest",\n  "primary_mission_or_survey": ["X-Shooter"],\n  "other_missions_or_surveys_mentioned": ["Planck"],\n  "notes": ""\n}\n```',
-                      {'title': 'DampingwingsintheLyman-αforest', 'primary_mission_or_survey': ['X-Shooter'], 'other_missions_or_surveys_mentioned': ['Planck'], 'notes': ''}),
-                     ('There is no json here.', {'error': 'No JSON content found in response'}),
-                     ('```json\n{"field": ["A", "B", "C",]}\n```', {'error': 'Error decoding JSON content: "Expecting value: line 1 column 26 (char 25)"'})
-                     ], ids=['json1', 'json2', 'nojson', 'badjson'])
+INPUT_JSON2 = '```json\n{\n  "title": "DampingwingsintheLyman-αforest",\n  "primary_mission_or_survey": ["X-Shooter"],\n  "other_missions_or_surveys_mentioned": ["Planck"],\n  "notes": ""\n}\n```'
+OUTPUT_JSON2 = {
+    "title": "DampingwingsintheLyman-αforest",
+    "primary_mission_or_survey": ["X-Shooter"],
+    "other_missions_or_surveys_mentioned": ["Planck"],
+    "notes": "",
+}
+
+INPUT_NOJSON = "There is no json here."
+OUTPUT_NOJSON = {"error": "No JSON content found in response"}
+
+INPUT_BADJSON = '```json\n{"field": ["A", "B", "C",]}\n```'
+OUTPUT_BADJSON = {"error": 'Error decoding JSON content: "Expecting value: line 1 column 26 (char 25)"'}
+
+
+@pytest.mark.parametrize(
+    "data, exp",
+    [
+        (
+            INPUT_JSON1,
+            OUTPUT_JSON1,
+        ),
+        (
+            INPUT_JSON2,
+            OUTPUT_JSON2,
+        ),
+        (
+            INPUT_NOJSON,
+            OUTPUT_NOJSON,
+        ),
+        (
+            INPUT_BADJSON,
+            OUTPUT_BADJSON,
+        ),
+    ],
+    ids=["json1", "json2", "nojson", "badjson"],
+)
 def test_extract_json(data, exp):
     """test we can extract some json content"""
 

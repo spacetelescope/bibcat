@@ -25,6 +25,7 @@ from bibcat import config
 from bibcat.core.base import Base
 from bibcat.core.grammar import Grammar
 from bibcat.core.keyword import Keyword
+from bibcat.core.paper import Paper
 from bibcat.data.partition_dataset import generate_directory_TVT
 from bibcat.utils.logger_config import setup_logger
 
@@ -98,7 +99,8 @@ class Operator(Base):
         # Load and process ambiguous (ambig.) data, if so requested
         if load_check_truematch:
             # Run method to load and process external ambig. database
-            self.dict_ambigs = self._process_database_ambig(keyword_objs=keyword_objs)
+            paper = Paper(text="", keyword_objs=keyword_objs, do_check_truematch=True)
+            self.dict_ambigs = paper._process_database_ambig(keyword_objs=keyword_objs)
             self.lookup_ambigs = self.dict_ambigs["lookup_ambigs"]
 
             # Print some notes
