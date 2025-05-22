@@ -31,8 +31,8 @@ kobj_befs = keyword.Keyword(
         "Berkeley Extreme and Far UV Spectrometer",
         "Berkeley Spectrometer",
     ],
-    acronyms_casesensitive=["BEFS"],
-    acronyms_caseinsensitive=[],
+    acronyms_casesensitive=[],
+    acronyms_caseinsensitive=["BEFS"],
     do_not_classify=False,
     banned_overlap=[],
     ambig_words=[],
@@ -96,11 +96,12 @@ kobj_hubble = keyword.Keyword(
         "Hubble Legacy Archive",
         "Hubble Source Catalog",
     ],
-    acronyms_casesensitive=[],
-    acronyms_caseinsensitive=[
+    acronyms_casesensitive=[
         "COS",
-        "FGS",
         "GOODS",
+    ],
+    acronyms_caseinsensitive=[
+        "FGS",
         "GHRS",
         "HFF",
         "HST",
@@ -169,7 +170,7 @@ kobj_kepler = keyword.Keyword(
     acronyms_casesensitive=[],
     acronyms_caseinsensitive=[],
     do_not_classify=False,
-    banned_overlap=["Kepler K2"],
+    banned_overlap=[],
     ambig_words=["Kepler"],
 )
 kobj_panstarrs = keyword.Keyword(
