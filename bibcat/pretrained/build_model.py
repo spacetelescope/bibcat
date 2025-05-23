@@ -89,7 +89,7 @@ def build_model() -> None:
         do_shuffle=config.textprocessing.do_shuffle,  # do_shuffle: Whether or not to shuffle contents of training vs. validation vs. testing datasets
     )
 
-    logger.info(f"Time to train the model with run = {time.time()-start} seconds.")
+    logger.info(f"Time to train the model with run = {time.time() - start} seconds.")
 
     # Save the output error string to a file
     with open(filesave_error, "w") as openfile:

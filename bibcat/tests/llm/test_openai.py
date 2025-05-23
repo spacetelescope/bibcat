@@ -29,26 +29,42 @@ def test_convert_failure(caplog):
     assert "Error converting output to classification format" in caplog.record_tuples[0][2]
 
 
+
+INPUT_JSON1 = '\nOUTPUT:\n```json\n{\n    "HST": [\n        "MENTION",\n        0.8\n    ],\n    "JWST": [\n        "SCIENCE",\n        0.95\n    ]\n}\n```'
+OUTPUT_JSON1 = {"HST": ["MENTION", 0.8], "JWST": ["SCIENCE", 0.95]}
+
+INPUT_JSON2 = '```json\n{\n  "title": "DampingwingsintheLyman-αforest",\n  "primary_mission_or_survey": ["X-Shooter"],\n  "other_missions_or_surveys_mentioned": ["Planck"],\n  "notes": ""\n}\n```'
+OUTPUT_JSON2 = {
+    "title": "DampingwingsintheLyman-αforest",
+    "primary_mission_or_survey": ["X-Shooter"],
+    "other_missions_or_surveys_mentioned": ["Planck"],
+    "notes": "",
+}
+
+INPUT_NOJSON = "There is no json here."
+OUTPUT_NOJSON = {"error": "No JSON content found in response"}
+
+INPUT_BADJSON = '```json\n{"field": ["A", "B", "C",]}\n```'
+OUTPUT_BADJSON = {"error": 'Error decoding JSON content: "Expecting value: line 1 column 26 (char 25)"'}
+
 @pytest.mark.parametrize(
     "data, exp",
     [
         (
-            '\nOUTPUT:\n```json\n{\n    "HST": [\n        "MENTION",\n        0.8\n    ],\n    "JWST": [\n        "SCIENCE",\n        0.95\n    ]\n}\n```',
-            {"HST": ["MENTION", 0.8], "JWST": ["SCIENCE", 0.95]},
+            INPUT_JSON1,
+            OUTPUT_JSON1,
         ),
         (
-            '```json\n{\n  "title": "DampingwingsintheLyman-αforest",\n  "primary_mission_or_survey": ["X-Shooter"],\n  "other_missions_or_surveys_mentioned": ["Planck"],\n  "notes": ""\n}\n```',
-            {
-                "title": "DampingwingsintheLyman-αforest",
-                "primary_mission_or_survey": ["X-Shooter"],
-                "other_missions_or_surveys_mentioned": ["Planck"],
-                "notes": "",
-            },
+            INPUT_JSON2,
+            OUTPUT_JSON2,
         ),
-        ("There is no json here.", {"error": "No JSON content found in response"}),
         (
-            '```json\n{"field": ["A", "B", "C",]}\n```',
-            {"error": 'Error decoding JSON content: "Expecting value: line 1 column 26 (char 25)"'},
+            INPUT_NOJSON,
+            OUTPUT_NOJSON,
+        ),
+        (
+            INPUT_BADJSON,
+            OUTPUT_BADJSON,
         ),
     ],
     ids=["json1", "json2", "nojson", "badjson"],

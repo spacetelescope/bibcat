@@ -19,6 +19,9 @@
 - [PR #68](https://github.com/spacetelescope/bibcat/pull/68)
     -`Inconsistent_classifications.json` was revised and separated from `bibcat stats-llms`
     - Updated `metrics_summary.json` to include confusion matrix metrics
+- [PR #66](https://github.com/spacetelescope/bibcat/pull/66)
+    - Moved _process_database_ambig, _extract_core_from_phrase, _streamline_phrase, and _check_truematch from base.py to paper.py
+    - Updated tests to read from Paper() object instead of Base() object
 - [PR #64](https://github.com/spacetelescope/bibcat/pull/64) Update ROC input and docs
 - [PR #63](https://github.com/spacetelescope/bibcat/pull/63) Refactored to use newer OpenAI Responses API and remove deprecated Assistants API.
 - [PR #62](https://github.com/spacetelescope/bibcat/pull/62) Update `metrics.py` and its pytest
