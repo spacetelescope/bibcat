@@ -6,7 +6,7 @@ from enum import Enum
 
 import openai
 from openai import OpenAI
-from pydantic import BaseModel, Field, ValidationError, field_serializer, model_validator
+from pydantic import BaseModel, Field, ValidationError, field_serializer, field_validator
 
 from bibcat import config
 from bibcat.llm.evaluate import identify_missions_in_text
@@ -40,18 +40,19 @@ class MissionInfo(BaseModel):
         ..., description="Two float values representing confidence for SCIENCE and MENTION. Must sum to 1.0."
     )
 
-    @model_validator(mode="after")
-    def validate_confidence(self) -> "MissionInfo":
-        if len(self.confidence) != 2:
-            raise ValueError("Confidence must contain exactly two float values.")
-        if abs(sum(self.confidence) - 1.0) > 1e-6:
-            raise ValueError(f"Confidence values must sum to 1.0, got {sum(self.confidence):.6f}.")
-        return self
-
     @field_serializer("mission", "papertype")
     def serialize_enums(self, item: Enum):
         """Serialize the enums to their value"""
         return item.value
+
+    @field_validator("confidence", mode="after")
+    @classmethod
+    def validate_confidence(cls, value: list[float]) -> list[float]:
+        if len(value) != 2:
+            raise ValueError("Confidence must contain exactly two float values.")
+        if abs(sum(value) - 1.0) > 1e-6:
+            raise ValueError(f"Confidence values must sum to 1.0, got {sum(value):.6f}.")
+        return value
 
 
 class InfoModel(BaseModel):
