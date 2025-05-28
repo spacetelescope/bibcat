@@ -13,9 +13,13 @@ the rest of the text.
 import re
 
 import numpy as np
+import spacy
+from nltk.corpus import wordnet  # type: ignore
 
 from bibcat import config
 from bibcat.core.base import Base
+
+nlp = spacy.load(config.grammar.spacy_language_model)
 
 
 class Paper(Base):
@@ -217,6 +221,494 @@ class Paper(Base):
         # Return the buffered index spans
         return spans_buffered_merged
 
+    # Return boolean for whether or not text contains a true vs false match to the given keywords
+    def _check_truematch(self, text, keyword_objs, dict_ambigs, do_verbose=None, do_verbose_deep=False):  # noqa: C901
+        """
+        Method: _check_truematch
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose:
+          - Determine if given text contains a true vs. false match to keywords.
+            - E.g.: 'Edwin Hubble' as a false match to Hubble Space Telescope.
+        Arguments:
+        - text [str]:
+          - The text to search.
+        - keyword_objs [list of Keyword instances]:
+          - Target missions; terms will be used to search the text.
+        - dict_ambigs [None or dict (default=None)]:
+          - If None, will load and process external database of ambiguous mission phrases.
+            If given, will use what is given.
+        - do_verbose [bool (default=False)]:
+          - Whether or not to print surface-level log information and tests.
+        - do_verbose_deep [bool (default=False)]:
+          - Whether or not to print inner log information and tests.
+        Returns:
+          - A dictionary with the following parameters
+            - bool: boolean for whether or not text contains a true vs false match to the given keywords
+            - info (if no keywords found or non-ambiguous match): an array with one item
+               - bool: same value as bool above
+               - text_wordchunk: status of search
+               - text_database: None
+               - matcher: None
+               - set: None if non-ambiguous match, otherwise omitted
+            - info (if going through ambiguous phrases): an array with multiple items, one for each phrase
+               - bool: result of that particular phrase. If any phrase matches true, the "bool" above is true
+               - text_wordchunk: the chunk of text searched
+               - text_database: the phrase searched within the chunk of text
+               - matcher: the result of regex search
+               - ind: index number within the database
+               - exp: ambiguous phrases searched
+
+        """
+
+        # Load global variables
+        if do_verbose is None:
+            do_verbose = self._get_info("do_verbose", do_flag_hidden=True)
+
+        # Process ambig. phrase data, if not given
+        if dict_ambigs is None:
+            dict_ambigs = self._process_database_ambig(do_verbose=do_verbose_deep, keyword_objs=keyword_objs)
+
+        # Extract info from ambig. database
+        list_kw_ambigs = dict_ambigs["all_kw_ambigs"]
+        list_exp_exact_ambigs = dict_ambigs["all_exp_exact_ambigs"]
+        list_exp_meaning_ambigs = dict_ambigs["all_exp_meaning_ambigs"]
+        list_bool_ambigs = dict_ambigs["all_bool_ambigs"]
+        list_text_ambigs = dict_ambigs["all_text_ambigs"]
+        lookup_ambigs = dict_ambigs["lookup_ambigs"]
+        lookup_ambigs_lower = [item.lower() for item in dict_ambigs["lookup_ambigs"]]
+        num_ambigs = len(list_kw_ambigs)
+
+        # Replace hyphenated numerics with placeholders
+        text_orig = text
+        placeholder_number = config.textprocessing.placeholder_number
+        # text = re.sub(r"\(?\b[0-9]+\b\)?", placeholder_number, text_orig)
+        text = re.sub(r"-\b[0-9]+\b", ("-" + placeholder_number), text_orig)
+
+        # Print some notes
+        if do_verbose:
+            print(
+                ("\n> Running _check_truematch for text: '{0}'" + "\nOriginal text: {1}\nLookups: {2}").format(
+                    text, text_orig, lookup_ambigs
+                )
+            )
+
+        # Extract keyword objects that are potentially ambiguous
+        keyword_objs_ambigs = [
+            item1 for item1 in keyword_objs if any([item1.identify_keyword(item2)["bool"] for item2 in lookup_ambigs])
+        ]
+
+        # Extract keyword identification information for each kobj
+        dict_kobjinfo = {item._get_info("name"): item.identify_keyword(text) for item in keyword_objs}
+
+        # Return status as true match if non-ambig keywords match to text
+        if any(
+            [
+                dict_kobjinfo[item1._get_info("name")]["bool"]
+                for item1 in keyword_objs
+                if (item1 not in keyword_objs_ambigs)
+            ]
+        ):
+            # Print some notes
+            if do_verbose:
+                print("Text matches unambiguous keyword. Returning true state.")
+
+            # Return status as true match
+            return {
+                "bool": True,
+                "info": [
+                    {
+                        "matcher": None,
+                        "set": None,
+                        "bool": True,
+                        "text_wordchunk": "<Not ambig.>",
+                        "text_database": None,
+                    }
+                ],
+            }
+
+        # Return status as false match if no keywords match at all
+        elif not any([dict_kobjinfo[item._get_info("name")]["bool"] for item in keyword_objs_ambigs]):
+            # Print some notes
+            if do_verbose:
+                print("Text matches no keywords at all. Returning false state.")
+
+            # Return status as true match
+            return {
+                "bool": False,
+                "info": [
+                    {
+                        "matcher": None,
+                        "text_database": None,
+                        "bool": False,
+                        "text_wordchunk": "<No matching keywords at all.>",
+                    }
+                ],
+            }
+
+        # Return status as true match if any acronyms match
+        elif any([dict_kobjinfo[item._get_info("name")]["bool_acronym_only"] for item in keyword_objs_ambigs]):
+            # Print some notes
+            if do_verbose:
+                print("Text matches acronym. Returning true state.")
+
+            # Return status as true match
+            return {
+                "bool": True,
+                "info": [
+                    {
+                        "matcher": None,
+                        "set": None,
+                        "bool": True,
+                        "text_wordchunk": "<Not ambig.>",
+                        "text_database": None,
+                    }
+                ],
+            }
+
+        # Return status as true match if any non-ambig. phrases match to text
+        elif any(
+            [
+                bool(re.search((r"\b" + item2 + r"\b"), text, flags=re.IGNORECASE))
+                for item1 in keyword_objs_ambigs
+                for item2 in item1._get_info("keywords")
+                if (item2 not in item1._get_info("ambig_words"))
+            ]
+        ):
+            # Print some notes
+            if do_verbose:
+                print("Text matches unambiguous keyword. Returning true state.")
+
+            # Return status as true match
+            return {
+                "bool": True,
+                "info": [
+                    {
+                        "matcher": None,
+                        "set": None,
+                        "bool": True,
+                        "text_wordchunk": "<Not ambig.>",
+                        "text_database": None,
+                    }
+                ],
+            }
+
+        # Assemble makeshift wordchunks (not using NLP ones here)
+        # Not sure why happened, but NLP sometimes failed to identify nouns/num.
+        # Print some notes
+        if do_verbose:
+            print("Building noun chunks around keywords...")
+
+        # Generate the keyword-based wordchunks
+        list_wordchunks = self._assemble_keyword_wordchunks(
+            text=text, keyword_objs=keyword_objs, do_verbose=do_verbose, do_include_verbs=False
+        )
+        # Throw error if no wordchunks identified
+        if len(list_wordchunks) == 0:
+            errstr = (
+                "No final wordchunks!: {0}\nText: '{1}'".format(list_wordchunks, text) + "\nAll words and p.o.s.:\n"
+            )
+            tmp_sents = list(nlp(str(text)).sents)
+            for aa in range(0, len(tmp_sents)):
+                for bb in range(0, len(tmp_sents[aa])):
+                    tmp_word = tmp_sents[aa][bb]
+                    errstr += "{0}: {1}, {2}, {3}\n".format(tmp_word, tmp_word.dep_, tmp_word.pos_, tmp_word.tag_)
+
+            raise ValueError(errstr)
+
+        # Print some notes
+        if do_verbose:
+            print("\n- Wordchunks determined for text: {0}".format(list_wordchunks))
+
+        # Exit method early if any wordchunk is an exact keyword match
+        if any([(item.text.lower() in lookup_ambigs) for item in list_wordchunks]):
+            # Print some notes
+            if do_verbose:
+                print("Exact keyword match found. Returning true status...")
+
+            return {
+                "bool": True,
+                "info": [
+                    {
+                        "matcher": None,
+                        "text_database": None,
+                        "bool": True,
+                        "text_wordchunk": "<Wordchunk has exact term match.>",
+                    }
+                ],
+            }
+
+        # Iterate through wordchunks to determine true vs false match status
+        num_wordchunks = len(list_wordchunks)
+        list_status = [None] * num_wordchunks
+        list_results = [None] * num_wordchunks
+        for ii in range(0, num_wordchunks):
+            curr_chunk = list_wordchunks[ii]  # Current wordchunk
+            curr_chunk_text = curr_chunk.text
+            # Print some notes
+            if do_verbose:
+                print("Considering wordchunk: {0}".format(curr_chunk_text))
+
+            # Store as non-ambig. phrase and skip ahead if non-ambig. term
+            is_exact = any(
+                [
+                    (curr_chunk_text.lower().replace(".", "") == item2.lower())
+                    for item1 in keyword_objs
+                    for item2 in (
+                        item1._get_info("keywords")
+                        + item1._get_info("acronyms_casesensitive")
+                        + item1._get_info("acronyms_caseinsensitive")
+                    )
+                    if (item2.lower() not in lookup_ambigs_lower)
+                ]
+            )  # Check if wordchunk matches to any non-ambig terms
+            if is_exact:
+                # Print some notes
+                if do_verbose:
+                    print("Exact match to non-ambig. phrase. Marking true...")
+
+                # Store info for this true match
+                list_results[ii] = {
+                    "bool": True,
+                    "info": {"matcher": None, "bool": True, "text_wordchunk": curr_chunk_text, "text_database": None},
+                }
+                # Skip ahead
+                continue
+
+            # Extract representation of core meaning of current wordchunk
+            tmp_res = self._extract_core_from_phrase(
+                phrase_NLP=curr_chunk, keyword_objs=keyword_objs_ambigs, do_skip_useless=False, do_verbose=do_verbose
+            )
+            curr_meaning = tmp_res["str_meaning"]  # Str representation of meaning
+            curr_inner_kw = tmp_res["keywords"]  # Matched keywords
+
+            # Extract all ambig. phrases+substrings that match to this meaning
+            set_matches_raw = [
+                {
+                    "ind": jj,
+                    "text_database": list_text_ambigs[jj],
+                    "text_wordchunk": curr_chunk_text,
+                    "exp": list_exp_exact_ambigs[jj],
+                    "matcher": re.search(list_exp_exact_ambigs[jj], curr_meaning, flags=re.IGNORECASE),
+                    "bool": list_bool_ambigs[jj],
+                }
+                for jj in range(0, num_ambigs)
+                if (list_kw_ambigs[jj] in curr_inner_kw)
+            ]
+            set_matches = [item for item in set_matches_raw if (item["matcher"] is not None)]
+
+            # Print some notes
+            if do_verbose_deep:
+                print("Set of matches assembled from ambig. database:")
+                for item1 in set_matches_raw:
+                    print(item1)
+
+            # Extract all ambig. phrases+substrings that match to this *meaning*
+            if len(set_matches) == 0:  # If no direct matches
+                set_matches_raw = [
+                    {
+                        "ind": jj,
+                        "text_database": list_text_ambigs[jj],
+                        "text_wordchunk": curr_chunk_text,
+                        "exp": list_exp_meaning_ambigs[jj],
+                        "matcher": re.search(list_exp_meaning_ambigs[jj], curr_meaning, flags=re.IGNORECASE),
+                        "bool": list_bool_ambigs[jj],
+                    }
+                    for jj in range(0, num_ambigs)
+                    if (list_kw_ambigs[jj] in curr_inner_kw)
+                ]
+                set_matches = [item for item in set_matches_raw if (item["matcher"] is not None)]
+
+                # Print some notes
+                if do_verbose_deep:
+                    print("Set of meanings assembled from ambig. database:")
+                    for item1 in set_matches_raw:
+                        print(item1)
+
+            # Throw error if no match found
+            if len(set_matches) == 0:
+                # Raise a unique for-user error (using NotImplementedError)
+                # Allows this exception to be uniquely caught elsewhere in code
+                # Use-case isn't exactly what NotImplemented means, but that's ok
+                # RuntimeError could also work but seems more for general use
+                raise NotImplementedError(
+                    ("Err: Unrecognized ambig. phrase:\n{0}" + "\nTaken from this text snippet:\n{1}").format(
+                        curr_chunk, text
+                    )
+                )
+
+            # Determine and extract best match (=match with shortest substring)
+            best_set = sorted(set_matches, key=(lambda w: len(w["matcher"][0])))[0]
+
+            # Print some notes
+            if do_verbose:
+                print("Current wordchunk: {0}\nMeaning: {2}\nBest set: {1}-".format(curr_chunk, best_set, curr_meaning))
+
+            # Store the verdict for this best match
+            list_status[ii] = best_set["bool"]
+
+            # Exit method early since match found
+            if do_verbose:
+                print("Match found. Returning status...")
+
+            list_results[ii] = {
+                "bool": best_set["bool"],
+                "info": {
+                    "matcher": best_set["matcher"],
+                    "bool": best_set["bool"],
+                    "text_wordchunk": best_set["text_wordchunk"],
+                    "text_database": best_set["text_database"],
+                },
+            }
+
+        # Combine the results and return overall boolean match
+        fin_result = {
+            "bool": any([(item["bool"]) for item in list_results]),
+            "info": [item["info"] for item in list_results],
+        }
+        return fin_result
+
+    # Extract core meaning (e.g., synsets) from given phrase
+    def _extract_core_from_phrase(self, phrase_NLP, do_skip_useless, do_verbose=None, keyword_objs=None):  # noqa: C901
+        """
+        Method: _extract_core_from_phrase
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose:
+         - Extract representative "meaning" (i.e., synsets) of given phrase.
+        """
+
+        # Set global variables
+        num_words = len(phrase_NLP)
+        if do_verbose is None:
+            do_verbose = self._get_info("do_verbose")
+        if keyword_objs is None:
+            try:
+                keyword_objs = [self._get_info("keyword_obj", do_flag_hidden=True)]
+            except KeyError:
+                keyword_objs = self._get_info("keyword_objs", do_flag_hidden=True)
+
+        # Print some notes
+        if do_verbose:
+            print("\n> Running _extract_core_from_phrase for phrase: {0}".format(phrase_NLP))
+
+        # Initialize containers of core information
+        core_keywords = []
+        core_synsets = []
+
+        # Iterate through words within phrase
+        for ii in range(0, num_words):
+            curr_word = phrase_NLP[ii]
+            # Print some notes
+            if do_verbose:
+                print("-\nLatest keywords: {0}".format(core_keywords))
+                print("Latest synsets: {0}".format(core_synsets))
+                print("-Now considering word: {0}".format(curr_word))
+
+            # Skip if this word is punctuation or possessive marker
+            if self._is_pos_word(word=curr_word, pos="PUNCTUATION") or self._is_pos_word(
+                word=curr_word, pos="POSSESSIVE"
+            ):
+                # Print some notes
+                if do_verbose:
+                    print("Word is punctuation or possessive. Skipping.")
+
+                continue
+
+            # Store the keyword itself and skip ahead if this word is a keyword
+            matched_kobjs = [item for item in keyword_objs if (item.identify_keyword(curr_word.text)["bool"])]
+            if len(matched_kobjs) > 0:  # If word is a keyword
+                # If word contains hyphen-esque|punct., keep whole word as synset
+                if bool(re.search(r"(?:[^\w\s]|_)", curr_word.text)):
+                    name_kobj = matched_kobjs[0].get_name()  # Fetch name for kobj
+                    core_keywords.append(name_kobj.lower())
+                    core_synsets.append([curr_word.text.lower()])
+
+                    # Print some notes
+                    if do_verbose:
+                        print("Word itself is keyword. Stored synset: {0}".format(core_synsets))
+
+                    continue
+                # Otherwise, store keyword itself
+                else:
+                    name_kobj = matched_kobjs[0].get_name()  # Fetch name for kobj
+                    core_keywords.append(name_kobj.lower())
+                    core_synsets.append([name_kobj.lower()])
+
+                    # Print some notes
+                    if do_verbose:
+                        print("Word itself is keyword. Stored synset: {0}".format(core_synsets))
+
+                    continue
+
+            # Store a representative synset and skip ahead if word is a numeral
+            if bool(re.search(("^(ID)?[0-9]+"), curr_word.text, flags=re.IGNORECASE)):
+                tmp_rep = config.grammar.string_numeral_ambig
+                core_synsets.append([tmp_rep])
+                # Print some notes
+                if do_verbose:
+                    print("Word itself is a numeral. Stored synset: {0}".format(core_synsets))
+
+                continue
+
+            # Ignore this word if not a relevant p.o.s.
+            check_useless = self._is_pos_word(word=curr_word, pos="USELESS", keyword_objs=keyword_objs)
+            check_adj = self._is_pos_word(word=curr_word, pos="ADJECTIVE")
+            if do_skip_useless and (check_useless and (not check_adj)):
+                # Print some notes
+                if do_verbose:
+                    print("Word itself is useless. Skipping.")
+
+                continue
+
+            # Gather and store the noun synsets
+            curr_synsets_raw = [
+                item.name() for item in wordnet.synsets(curr_word.text) if (".n." in item.name())
+            ]  # Noun synsets only
+
+            # If no synsets known, store word itself
+            if len(curr_synsets_raw) == 0:
+                core_synsets.append([curr_word.text.lower()])
+            # Otherwise, store synsets
+            else:
+                core_synsets += [curr_synsets_raw]
+
+            # Print some notes
+            if do_verbose:
+                print("-Done considering word: {0}".format(curr_word))
+                print("Updated synsets: {0}".format(core_synsets))
+                print("Updated keywords: {0}".format(core_keywords))
+
+        # Throw an error if any empty strings passed as synsets
+        if any([("" in item) for item in core_synsets]):
+            raise ValueError("Err: Empty synset?\n{0}".format(core_synsets))
+
+        # Extract unique roots of sets of synsets
+        exp_synset = config.grammar.regex.exp_synset
+        core_roots = [
+            np.unique(
+                [item2.split(".")[0] if bool(re.search(exp_synset, item2)) else item2 for item2 in item1]
+            ).tolist()
+            for item1 in core_synsets
+        ]
+
+        # Convert core meaning into string representation
+        str_meaning = " ".join([" ".join(item) for item in core_roots])  # Long spaced string
+
+        # Return the core components
+        if do_verbose:
+            print(
+                (
+                    "\n-\nPhrase '{0}':\nKeyword: {1}\nSynsets: {2}" + "\nRoots: {3}\nString representation: {4}\n-\n"
+                ).format(phrase_NLP, core_keywords, core_synsets, core_roots, str_meaning)
+            )
+
+        return {
+            "keywords": core_keywords,
+            "synsets": core_synsets,
+            "roots": core_roots,
+            "text": phrase_NLP.text,
+            "str_meaning": str_meaning,
+        }
+
     # Search for paragraphs that contain target mission terms
     def _extract_paragraph(self, keyword_obj, buffer):
         """
@@ -332,6 +824,103 @@ class Paper(Base):
             "paragraph": sentences_buffered,
         }
 
+    # Process database of ambig. phrases into lookups and dictionary
+    def _process_database_ambig(self, keyword_objs=None, do_verbose=False):
+        """
+        Method: _process_database_ambig
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose:
+         - Process database of ambiguous keyword phrases into dictionary of keywords, regular expressions, boolean verdicts, etc.
+        """
+
+        # Load the keywords
+        if keyword_objs is None:
+            try:
+                keyword_objs = [self._get_info("keyword_obj", do_flag_hidden=True)]
+            except KeyError:
+                keyword_objs = self._get_info("keyword_objs", do_flag_hidden=True)
+
+        # Load the ambig. lookup phrases
+        lookup_ambigs = [
+            item._get_info("name").lower() for item in keyword_objs if (len(item._get_info("ambig_words")) > 0)
+        ]
+
+        # Load the ambig. phrase data
+        data_ambigs = np.array(config.textprocessing.phrases_ambig)
+        if len(data_ambigs.shape) == 1:  # If single row, reshape to 2D
+            data_ambigs = data_ambigs.reshape(1, data_ambigs.shape[0])
+        num_ambigs = data_ambigs.shape[0]
+
+        str_anymatch_ambig = config.grammar.string_anymatch_ambig.lower()
+
+        ind_keyword = 0
+        ind_phrase = 1
+        ind_bool = 2
+
+        # Initialize containers for processed ambig. data
+        list_kw_ambigs = []
+        list_exp_exact_ambigs = []
+        list_exp_meaning_ambigs = []
+        list_bool_ambigs = []
+        list_text_ambigs = []
+
+        # Convert known ambig. phrase database into dict. of components
+        for ii in range(0, num_ambigs):
+            # Convert to NLP notation
+            curr_text = data_ambigs[ii, ind_phrase]
+            curr_NLP = nlp(str(curr_text))
+
+            # Extract current boolean value
+            if data_ambigs[ii, ind_bool].lower().strip() in ["true", "yes", "t", "y"]:
+                curr_bool = True
+            elif data_ambigs[ii, ind_bool].lower().strip() in ["false", "no", "f", "n"]:
+                curr_bool = False
+            else:
+                raise ValueError("Err: {0}:{1} in ambig. database not bool!".format(ii, data_ambigs[ii, ind_bool]))
+
+            # Formulate current regular expression
+            curr_extraction = self._extract_core_from_phrase(
+                phrase_NLP=curr_NLP, do_verbose=do_verbose, do_skip_useless=False, keyword_objs=keyword_objs
+            )
+            curr_roots = curr_extraction["roots"]
+            curr_exp_exact = r"\b(" + re.escape(curr_text) + r")\b"
+            curr_exp_meaning = (
+                r"(" + r") (\w+ )*(".join([(r"\b(" + r"|".join(item) + r")\b") for item in curr_roots]) + r")"
+            )  # Convert to reg. exp. for substring search later
+
+            # Extract current keywords
+            curr_kw_raw = data_ambigs[ii, ind_keyword].lower()
+            if str_anymatch_ambig == curr_kw_raw:  # Match any keyword
+                curr_kw = [item.lower() for item in lookup_ambigs]
+            else:  # Otherwise, store given keyword
+                curr_kw = [curr_kw_raw]
+
+            # Store the extracted data for each keyword
+            tmp_num = len(curr_kw)
+            list_kw_ambigs += curr_kw
+            list_exp_exact_ambigs += [
+                re.sub(str_anymatch_ambig, curr_kw[jj], curr_exp_exact, flags=re.IGNORECASE) for jj in range(0, tmp_num)
+            ]
+            list_exp_meaning_ambigs += [
+                re.sub(str_anymatch_ambig, curr_kw[jj], curr_exp_meaning, flags=re.IGNORECASE)
+                for jj in range(0, tmp_num)
+            ]
+            list_bool_ambigs += [curr_bool] * tmp_num
+            list_text_ambigs += [curr_text] * tmp_num
+
+        # Gather all of the results into a dictionary
+        dict_ambigs = {
+            "lookup_ambigs": lookup_ambigs,
+            "all_kw_ambigs": list_kw_ambigs,
+            "all_exp_exact_ambigs": list_exp_exact_ambigs,
+            "all_exp_meaning_ambigs": list_exp_meaning_ambigs,
+            "all_bool_ambigs": list_bool_ambigs,
+            "all_text_ambigs": list_text_ambigs,
+        }
+
+        # Return the processed results
+        return dict_ambigs
+
     # Split text into sentences at assumed sentence breaks
     def _split_text(self, text):
         """
@@ -353,5 +942,36 @@ class Paper(Base):
         text_flat = [item for phrase in text_flat for item in re.split(config.grammar.regex.exp_splittext, phrase)]
         # Return the split text
         return text_flat
+
+    # Cleanse given (short) string of extra whitespace, dashes, etc,
+    # with uniform placeholders.
+    def _streamline_phrase(self, text, do_streamline_etal):
+        """
+        Method: _streamline_phrase
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose:
+         - Run _cleanse_text with citation streamlining.
+         - Replace websites with uniform placeholder.
+         - Replace some common science abbreviations that confuse external NLP package sentence parsing.
+        """
+
+        # Extract global variables
+        dict_exp_abbrev = config.grammar.regex.dict_exp_abbrev
+
+        # Remove any initial excessive whitespace
+        text = self._cleanse_text(text=text, do_streamline_etal=do_streamline_etal)
+
+        # Replace annoying <> inserts (e.g. html)
+        text = re.sub(r"<[A-Z|a-z|/]+>", "", text)
+
+        # Replace annoying abbreviations that confuse NLP sentence parser
+        for key1 in dict_exp_abbrev:
+            text = re.sub(key1, dict_exp_abbrev[key1], text)
+
+        # Remove any new excessive whitespace and punctuation spaces
+        text = self._cleanse_text(text=text, do_streamline_etal=do_streamline_etal)
+
+        # Return streamlined text
+        return text
 
     #
