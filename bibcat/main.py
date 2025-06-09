@@ -16,7 +16,7 @@ from bibcat.data.build_dataset import build_dataset
 from bibcat.llm.evaluate import evaluate_output
 from bibcat.llm.openai import OpenAIHelper, classify_paper
 from bibcat.llm.plots import confusion_matrix_plot, roc_plot
-from bibcat.llm.stats import save_evaluation_stats, save_operation_stats
+from bibcat.llm.stats import inconsistent_classifications, save_evaluation_stats, save_operation_stats
 from bibcat.pretrained.build_model import build_model
 from bibcat.pretrained.classify_papers import classify_papers
 from bibcat.pretrained.evaluate_basic_performance import evaluate_basic_performance
@@ -320,7 +320,7 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
 @click.option(
     "-t",
     "--threshold",
-    default=0.7,
+    default=0.5,
     type=float,
     show_default=True,
     help="The threshold value to accept the llm papertype",
@@ -505,6 +505,22 @@ def stats_llm(evaluation: bool, ops: bool, threshold: float):
             / f"llms/openai_{config.llms.openai.model}/{config.llms.ops_stats_file}_t{config.llms.performance.threshold}.json"
         )
         save_operation_stats(input_filepath, output_filepath, threshold_acceptance, threshold_inspection)
+
+
+@cli.command(help="Create a JSON file to audit LLM classification")
+def audit_llms():
+    """Create a JSON file of misclassified papers by LLM for auditing"""
+
+    input_filepath = (
+        Path(config.paths.output)
+        / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
+    )
+
+    output_filepath = (
+        Path(config.paths.output)
+        / f"llms/openai_{config.llms.openai.model}/{config.llms.inconsistent_classifications_file}_t{config.llms.performance.threshold}.json"
+    )
+    inconsistent_classifications(input_filepath, output_filepath)
 
 
 @cli.group("openai", short_help="OpenAI LLM commands")

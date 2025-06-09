@@ -88,7 +88,7 @@ def test_get_file(mocker, make_paper, filepath, bibcode, index, expfile):
 @pytest.mark.parametrize(
     "prompt, exp",
     [
-        ("user", "Carefully follow these two instructions to classify papers for MAST bibliometric record-keeping"),
+        ("user", "Carefully follow these instructions to classify papers for MAST bibliometric record-keeping"),
         ("agent", "You are an assistant with expertise in astronomical bibliographic and library systems"),
     ],
 )

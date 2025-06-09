@@ -1,4 +1,5 @@
 import pathlib
+from typing import Any
 
 import pandas as pd
 
@@ -9,6 +10,138 @@ from bibcat.utils.utils import save_json_file
 
 logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
+
+
+def inconsistent_classifications(input_path: str | pathlib.Path, output_path: str | pathlib.Path):
+    """Save falsely classified bibcodes to a json file for investigation
+
+    This code will check if llm classification is different from human classification
+    or incorrectly ignore the mission and save the results to a json file.
+
+    Parameters
+    ----------
+    input_path: str | pathlib.Path
+        Input paper_output file name/path for statistics
+    output_path: str | pathlib.Path
+        File name/path to save the JSON file
+
+    Returns
+    =======
+    None
+    """
+
+    data = read_output(bibcode=None, filename=input_path)
+    logger.debug(f"Loaded data: {data}")
+
+    results = {}
+    n_matched_classifications = 0
+
+    for bibcode, item in data.items():
+        if "error" in item:
+            continue
+
+        human_item = item.get("human", {})
+        llm_item = item.get("llm", [])
+
+        failures, n_matched = analyze_missions(human_item, llm_item)
+        n_matched_classifications += n_matched
+
+        if failures:
+            results[bibcode] = {
+                "failures": failures,
+                "human": human_item,
+                "llm": llm_item,
+                "missions_not_in_text": item.get("hallucinated_missions", []),
+            }
+
+    # summarized counts of inconsistent classifications
+    summary_counts = audit_summary(results)
+    summary_counts = {
+        "n_total_bibcodes": len(data),
+        "n_matched_classifications": n_matched_classifications,
+        **summary_counts,
+    }
+
+    # Add the summary to the top of the bibcode+mission breakdown results
+    results_with_summary = {
+        "summary_counts": summary_counts,
+        "bibcodes": results,
+    }
+
+    save_json_file(output_path, results_with_summary, indent=2)
+
+
+def analyze_missions(human_item: dict[str, str], llm_item: list[dict[str, Any]]) -> tuple[dict[str, str], int]:
+    """Analyze and compare LLM classifications against human classifications.
+
+    Parameters
+    ==========
+    human_item: dict[str, str]
+        human classification of mission and papertype, e.g.,
+    """
+    failures = {}
+    n_matched_classifications = 0
+
+    for mission, human_label in human_item.items():
+        mission_in_llm = any(mission in llm for llm in llm_item)
+        match_found = any(llm.get(mission) == human_label for llm in llm_item if mission in llm)
+        llm_science_assigned = any(llm.get(mission) == "SCIENCE" for llm in llm_item if mission in llm)
+
+        if not mission_in_llm:
+            if human_label == "SCIENCE":
+                failures[mission] = "false_negative_because_ignored"
+            else:
+                failures[mission] = "ignored"
+        elif match_found:
+            n_matched_classifications += 1
+        else:
+            if human_label == "SCIENCE":
+                failures[mission] = "false_negative"
+            elif llm_science_assigned:
+                failures[mission] = "false_positive"
+
+    return failures, n_matched_classifications
+
+
+def audit_summary(audit_results: dict) -> dict[str, int]:
+    """Create the summary of the inconsistent classifications
+
+    Parameters
+    ==========
+    audit_results: dict
+        the breakdown bibcode list of inconsistent llm classifications
+        e.g.,
+        "bibcodes": {"2018A&A...610A..11I": {"failures": "GALEX": "false_positive"},}
+
+
+    Returns
+    =======
+    summary_counts: dict[str, int]
+        various count summary
+    """
+
+    summary_counts = {
+        "n_mismatched_bibcodes": 0,
+        "n_mismatched_classifications": 0,
+        "false_positive": 0,
+        "false_negative": 0,
+        "false_negative_because_ignored": 0,
+        "ignored": 0,
+    }
+
+    for bibcode, entry in audit_results.items():
+        error_dict = entry.get("failures", {})
+        error_count = len(error_dict)
+
+        if error_count > 0:
+            summary_counts["n_mismatched_bibcodes"] += 1
+            summary_counts["n_mismatched_classifications"] += error_count
+
+            for error_type in error_dict.values():
+                if error_type in summary_counts:
+                    summary_counts[error_type] += 1
+
+    return summary_counts
 
 
 def save_evaluation_stats(
@@ -25,11 +158,6 @@ def save_evaluation_stats(
             - **Human Inspection Requirements**: Number of papers requiring human inspection
             - **Accepted Bibcodes**: Bibcodes corresponding to the accepted classifications.
             - **Inspection-Required Bibcodes**: Bibcodes that need human inspection due to ambiguous confidence values.
-
-        - **Creates a separate file** listing data with inconsistencies between human and LLM classifications, which may result from:
-            - Missing missions assigned by humans
-            - Hallucinations generated by the LLM
-            - Inherently inconsistent classifications
 
     Parameters
     ----------
@@ -94,16 +222,6 @@ def save_evaluation_stats(
 
     # Write the statistics summary
     write_stats(output_path, threshold_acceptance, threshold_inspection, grouped_df)
-
-    # Filter data where human and llm classifications are inconsistent due to either hallucination or human classification is missing or classifications between human and llm differ
-    inconsistent_classification_df = df[(df["consistency"] != 100.0) | (~df["mission_in_text"])]
-
-    inconsistency_filename: pathlib.Path = (
-        pathlib.Path(config.paths.output)
-        / f"llms/openai_{config.llms.openai.model}/{config.llms.inconsistent_classifications_file}_t{config.llms.performance.threshold}.json"
-    )
-
-    inconsistent_classification_df.to_json(inconsistency_filename, orient="records", indent=2)
 
 
 def save_operation_stats(

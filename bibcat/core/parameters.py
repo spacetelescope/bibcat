@@ -119,7 +119,7 @@ kobj_panstarrs = keyword.Keyword(
         "Panoramic Survey Telescope and Rapid Response System",
     ],
     acronyms_casesensitive=[],
-    acronyms_caseinsensitive=["PanSTARRS", "PanSTARRS1", "PS1", "Pan-STARRS", "Pan-STARRS1"],
+    acronyms_caseinsensitive=["PanSTARRS", "PanSTARRS1", "PS1", "Pan-STARRS", "Pan-STARRS1", "Pan STARRS"],
     do_not_classify=False,
     banned_overlap=[],
     ambig_words=[],

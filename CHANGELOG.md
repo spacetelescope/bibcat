@@ -2,7 +2,6 @@
 
 ### [Unreleased]
 - Bibcat to do list
-    - Refactor performance.py
     - Adding tutorial notebooks back
 
 
@@ -17,10 +16,19 @@
     - Deleted all previous codes and files for a fresh start
 
 ### Changed
+- [PR #68](https://github.com/spacetelescope/bibcat/pull/68)
+    -`Inconsistent_classifications.json` was revised and separated from `bibcat stats-llms`
+    - Updated `metrics_summary.json` to include confusion matrix metrics
 - [PR #66](https://github.com/spacetelescope/bibcat/pull/66)
     - Moved _process_database_ambig, _extract_core_from_phrase, _streamline_phrase, and _check_truematch from base.py to paper.py
     - Updated tests to read from Paper() object instead of Base() object
+- [PR #64](https://github.com/spacetelescope/bibcat/pull/64) Update ROC input and docs
 - [PR #63](https://github.com/spacetelescope/bibcat/pull/63) Refactored to use newer OpenAI Responses API and remove deprecated Assistants API.
+- [PR #62](https://github.com/spacetelescope/bibcat/pull/62) Update `metrics.py` and its pytest
+- [PR #61](https://github.com/spacetelescope/bibcat/pull/61) Update InfoModel response with enum
+- [PR #56](https://github.com/spacetelescope/bibcat/pull/56)adds the MAST mission simple keyword text match to the user prompt
+- [PR #54](https://github.com/spacetelescope/bibcat/pull/53) Sanitizing keywords
+- [PR #53](https://github.com/spacetelescope/bibcat/pull/53) ROC curve bug fixes, add more evaluation metrics, etc
 - [PR #47](https://github.com/spacetelescope/bibcat/pull/47) New calculations for evaluation confidence values for multiple GPT runs
 - [PR #46](https://github.com/spacetelescope/bibcat/pull/46)
     - Grouping the BERT model method into the pretrained folder
@@ -97,6 +105,7 @@
     - updated formatting and styling
 
 ### Added
+- [PR #68](https://github.com/spacetelescope/bibcat/pull/68) Add a new CLI, `audit-llms` to create a json file to store failure modes stats and the breakdown information for failed bibcodes.
 - [PR #48](https://github.com/spacetelescope/bibcat/pull/48)
     - Set up Sphinx autodoc build
 

@@ -1,62 +1,118 @@
-Carefully follow these two instructions to classify papers for MAST bibliometric record-keeping:
+Carefully follow these instructions to classify papers for MAST bibliometric record-keeping.
 
-1. Read the paper contents and write down whether it uses any of the following MAST missions:
-{missions}. Note that  these abbreviations may be expanded, e.g., "HST" might be "Hubble" or "Hubble Space  Telescope". "Roman" also was formerly
-known as "WFIRST", so those are synonymous. But do not mix up "KEPLER" with "K2" or other concepts like
-Keplerian motion.  Also do not mix up cases where these phrases appear in target names, e.g. "K2-18 b".
-Write a summary of which mission is mentioned, whether that mission"s data is accessed, and whether the paper presents newly taken observations
-from that mission. If the mission is not mentioned, then simply write "not mentioned". For example, you should write something like this:
-```
-- HST: Mentioned because it motivates this work.
-- JWST: New data are presented using NIRCam and MIRI observations.
-- KEPLER: Not mentioned.
-- PanSTARRS: Not mentioned.
-- TESS: Not mentioned.
-- GALEX: Not mentioned.
-- Roman: Mentioned briefly in the conclusions to reference future work, but not actually a part of this paper.
-- K2: Not mentioned.
-```
-Read the paper first and think carefully first about your answer before writing anything down. Because you are an autoregressive model, **you must write this down for reference** during step 2.
+---
+## Step 0: Mission Relevance Check
 
-Here are the MAST missions that have been found in the paper with a simple text match: {kw_missions}.  Use this information to help you focus and make decisions.
+Before assigning any classification, determine whether the paper is relevant to one or more MAST missions.
 
-2. Next, write valid JSON that encapsulates the bibliographic classifications from the step above. If a "response_format" is provided, then follow its schema.  Otherwise follow the following schema:
+A paper is **mission-relevant** if:
+- It mentions a MAST mission by name (including variants), in any scientific or contextual capacity — even briefly
+- It uses, cites, or references data, catalogs, observations, or instrumentation associated with a MAST mission
 
- - notes: all your notes and thoughts you have written down during your process
- - missions: a list of your identified missions, with each item in the list a dictionary with the following structure:
-   - mission: the name of the mission
-   - papertype: the type of paper you think it is
-   - confidence: a list of float values of your confidence
-   - reason: a short sentence summarizing your reasoning for classifying this mission + papertype
-   - quotes: a list of exact quotes from the paper that support your reason
+A paper is **not mission-relevant** if:
+- It contains only target names that resemble mission names (e.g., "K2-18b" is not the K2 mission)
+- It uses mission-related words in a generic or unrelated way (e.g., "Keplerian motion" ≠ Kepler)
+- It mentions survey names that include MAST missions but refer to separate facilities (e.g., "TESS-HERMES")
 
-*ONLY* include a mission in the list if it is discussed more than just in passing. The papertype value will be either "MENTION" if this mission has been discussed, or "SCIENCE" if this mission data are
-being presented or used for analysis. Additionally, always provide confidence values for both "SCIENCE"
-and "MENTION", in that order [“SCIENCE”, “MENTION”], regardless of which class applies. Thus, even if a
-mission is only 'MENTION', it should have confidence values for both, such as confidence: [0.3, 0.7].
-Thus, in the example above, the output would be:
-
+If no MAST mission is relevant, output:
 ```json
 {{
-    "notes": "I have read the paper and found no mention of Kepler, but I did see JWST and HST.  Then I reread to better understand what kind of paper this is.",
-    "missions": [{{
-        "mission": "HST",
-        "papertype": "SCIENCE",
-        "confidence": [0.9, 0.1],
-        "reason": "The primary data in this paper comes from Hubble observations.",
-        "quotes": ["We present new data using HST observed with the STIS instrument."],
-    }}, {{
-        "mission": "JWST",
-        "papertype": "MENTION",
-        "confidence": [0.3, 0.7],
-        "reason": "JWST is mentioned briefly in the conclusion"
-        "quotes": ["Our work presented here will help inform new JWST follow-up observations."]
-    }}]
+  "notes": "No mission-relevant content found.",
+  "missions": []
 }}
 ```
 
-Make sure you now write the word "OUTPUT:" followed by a newline and then the valid JSON, using your above reasoning. If any missions are not
-mentioned at all, then please omit them. Again, don't forget to precede this JSON block with "OUTPUT:" and the newline.
+If any MAST mission is relevant, proceed to Step 1.
 
-Paper data will either be included in this prompt or attached as input. Either search the attached file or use the included info.
-Here is the paper data.\n\n**Title**:{title}\n**Abstract**:{abstract}\n**Full text**:{body}
+---
+## Step 1: Analyze the Paper
+
+- Read the paper title, abstract, and body carefully.
+- Focus on identifying mentions of the following MAST missions: `{missions}`
+
+### Mission Name Matching Rules
+
+- Classify only MAST missions from `{kw_missions}`.
+- **Mentions may appear under alternate names**—use reasoning to recognize variants based on context
+  Examples:
+    - "HST" = "Hubble", "Hubble Space Telescope"
+    - "Roman" = "WFIRST", "Nancy Grace Roman Space Telescope"
+    - "PanSTARRS" = "PS1", "Pan-STARRS1"
+- This applies to **all missions**
+
+Do **NOT** classify based on:
+- **Target names** (e.g., "K2-18b" ≠ K2)
+- **Physical terms** (e.g., "Keplerian motion" ≠ Kepler mission)
+- **Survey names** with embedded mission terms (e.g., "TESS-HERMES" ≠ TESS)
+
+Detected keywords from `{kw_missions}` are hints only. **Always verify** by reading.
+
+---
+## Step 2: Mission Usage Classification
+
+For each mission found, write short notes explaining:
+- Whether the mission is **mentioned**.
+- Whether the mission's **data** is **directly used**.
+
+### What Counts as Mission Data
+
+Mission data includes:
+- Images, spectra, light curves, data cubes
+- Catalogs, photometric fluxes, or magnitudes
+- Raw or processed formats used directly by the authors
+
+**Does NOT count as data use**:
+- Properties derived from other studies using mission data (e.g., a star’s mass or temperature from a catalog)
+- General references or citations to results that used mission data
+
+### Papertype Definitions
+
+- **SCIENCE** = Direct use of mission data in analysis, figures, tables, calibration, or conclusions—even if peripheral
+- **MENTION** = The mission is referenced but its data is not used
+
+### Confidence Scoring Guidelines
+
+Each classification must include a `confidence` field:
+
+"confidence": [confidence_for_SCIENCE, confidence_for_MENTION]
+
+- Both values must be floats between 0.0 and 1.0.
+- They must sum to exactly 1.0.
+- You only need to decide the **SCIENCE confidence** — confidence_for_MENTION is calculated as `1.0 - confidence_for_SCIENCE`.
+
+Use this table to guide your SCIENCE confidence value:
+
+| SCIENCE Confidence | When to Use It                                                |
+|--------------------|--------------------------------------------------------------|
+| 1.0                | Mission data is clearly used (figures, tables, analysis, or explicitly stated) |
+| 0.8                | Mission data is used but only mentioned briefly or in support (methods, calibration, selection) |
+| 0.6                | Some indication of data use, but wording is vague or indirect |
+| 0.4                | Very ambiguous; unclear whether data was actually used        |
+| 0.2                | Likely only mentioned, but you are not fully certain          |
+| 0.0                | Clearly only a background mention, no data used               |
+
+**Note:**
+You must still assign a `papertype` (`SCIENCE` or `MENTION`).
+Use quotes and reasoning to support both the classification and the confidence value.
+
+### Quote Requirements
+
+- Quotes must be **verbatim** from the paper (title, abstract, or full text).
+- Do **not paraphrase**.
+- If no suitable quote exists, leave the `quotes` list **empty**.
+
+---
+## Step 3: Create the JSON Output
+
+Output a structured JSON object that matches the expected schema. Do not include any explanation—only the JSON.
+
+---
+## Input Paper
+
+Paper data will either be included directly in this prompt or attached separately.
+
+Use the provided content below or search the attached file if applicable.
+
+**Title**: {title}
+**Abstract**: {abstract}
+**Full text**: {body}

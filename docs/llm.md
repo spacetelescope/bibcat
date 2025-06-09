@@ -667,6 +667,74 @@ The statistics `.txt`output file shows the table view of mission, papertype, tot
       JWST   MENTION            8               8                 0
       JWST   SCIENCE           17              17                 0
 ```
+
+### Audit inconsistent classifications
+The command line command, `bibcat audit-llm`, will create a json file (`config.llms.inconsistent_classifications_file`) of failure bibcode + mission classifications and its summary counts. To create an audit summary and inconsistent classification breakdown, run this command:
+
+```bash
+bibcat audit-llm
+```
+
 #### File output for the inconsistent classifications
-The output columns are `mission`, `papertype`, `mean_llm_confidences`,`bibcode`, `in_human_class`, `mission_in_text`, and `consistency`.
-The column definitions can be found in the [Output Columns](#output-columns).
+
+The command line command, `bibcat audit-llm`, will create a json file (`config.llms.inconsistent_classifications_file`) of failure bibcode + mission classifications and its summary counts.
+
+The definitions of the JSON output columns are following.
+- **summary_counts** : stats summary of inconsistent classifications
+- **n_total_bibcodes**: the number of total bibcodes
+- **n_matched_classifications**: the number of matched classifications
+- **n_mismatched_bibcodes**: the number of mismatched (failure) bibcode
+- **n_mismatched_classifications**: the number of mismatched (failure) classifications
+- **false_positive**: false positive classification (e.g., human: MENTION and llm: SCIENCE)
+- **false_negative**: false negative classification (e.g., human: SCIENCE and llm: MENTION)
+- **false_negative_because_ignored**: false negative classification due to LLM ignored the paper(e.g., human: SCIENCE and llm: [])
+- **ignored**: LLM ignored the paper but human papertype is other than SCIENCE
+- The rest shows the breakdown of each failure bibcode
+
+The output example is as follows:
+
+```json
+{
+  "summary_counts": {
+    "n_total_bibcodes": 89,
+    "n_matched_classifications": 81,
+    "n_mismatched_bibcodes": 65,
+    "n_mismatched_classifications": 134,
+    "false_positive": 32,
+    "false_negative": 6,
+    "false_negative_because_ignored": 20,
+    "ignored": 76
+  },
+  "bibcodes": {
+    "2018A&A...610A..11I": {
+      "failures": {
+        "GALEX": "false_positive"
+      },
+      "human": {
+        "GALEX": "MENTION",
+        "PANSTARRS": "SCIENCE"
+      },
+      "llm": [
+        {
+          "GALEX": "SCIENCE",
+          "confidence": [
+            1.0,
+            0.0
+          ],
+          "mission_probability": 0.5
+        },
+        {
+          "PANSTARRS": "SCIENCE",
+          "confidence": [
+            1.0,
+            0.0
+          ],
+          "mission_probability": 0.5
+        }
+      ],
+      "missions_not_in_text": []
+    }
+  }
+}
+
+```

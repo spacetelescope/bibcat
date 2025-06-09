@@ -22,7 +22,7 @@ authors = [
 
 dependencies = [
   "click >= 8.1.0",
-  "spacy >= 3.7.2 ",
+  "spacy == 3.7.2 ",
   "nltk >= 3.8.1 ",
   "deepmerge >=1.1.1",
   "pandas >= 2.1.4",
@@ -39,8 +39,8 @@ bibcat = "bibcat.main:cli"
 
 [project.optional-dependencies]
 dev = [
-    "pre-commit >=4.0.1",
-    "ruff >= 0.8.2",
+    "pre-commit ==4.2.0",
+    "ruff == 0.11.10",
 ]
 test = [
     "pytest==8.2.1",

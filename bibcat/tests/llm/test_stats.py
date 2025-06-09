@@ -4,7 +4,13 @@ from typing import Any, Callable, Dict, List
 import pytest
 
 from bibcat import config
-from bibcat.llm.stats import save_evaluation_stats, save_operation_stats
+from bibcat.llm.stats import (
+    analyze_missions,
+    audit_summary,
+    inconsistent_classifications,
+    save_evaluation_stats,
+    save_operation_stats,
+)
 from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import load_json_file, save_json_file
 
@@ -14,7 +20,7 @@ logger.setLevel(config.logging.level)
 
 eval_data: Dict[str, Any] = {
     "2020A&A...642A.105K": {
-        "human": {"KEPLER": "SCIENCE"},
+        "human": {"KEPLER": "SCIENCE", "TESS": "DATA-INFLUENCED"},
         "llm": [{"KEPLER": "SCIENCE"}, {"K2": "MENTION"}],
         "df": [
             {
@@ -131,3 +137,48 @@ def test_save_stats(tmp_path: str | pathlib.Path, input_data: Dict[str, Any], sa
     # Key assertions: loop over the values
     for index, (expected, actual) in enumerate(zip(expected_stats_data, stats_table)):
         assert expected == actual, f"Mismatch in {test_name} stats at index {index}: expected {expected} got {actual}"
+
+
+def test_inconsistent_classifications(tmp_path: str | pathlib.Path):
+    """test inconsistent_classifications"""
+    temp_input_filepath = tmp_path / "input.json"
+    temp_output_filepath = tmp_path / "output.json"
+
+    save_json_file(temp_input_filepath, eval_data)
+    inconsistent_classifications(temp_input_filepath, temp_output_filepath)
+
+    assert temp_output_filepath.exists(), f"{temp_output_filepath} was not created."
+    assert temp_output_filepath.is_file(), f"{temp_output_filepath} is not a file."
+
+
+def test_audit_summary():
+    """test audit_summary"""
+    audit_results = {
+        "bibcode1": {"failures": {"classification1": "false_positive", "classification2": "ignored"}},
+        "bibcode2": {
+            "failures": {"classification3": "false_negative", "classification4": "false_negative_because_ignored"}
+        },
+        "bibcode3": {"failures": {}},
+    }
+
+    expected_counts = {
+        "n_mismatched_bibcodes": 2,
+        "n_mismatched_classifications": 4,
+        "false_positive": 1,
+        "false_negative": 1,
+        "false_negative_because_ignored": 1,
+        "ignored": 1,
+    }
+    summary_counts = audit_summary(audit_results)
+
+    assert summary_counts == expected_counts
+
+
+def test_analyze_missions():
+    """test analyze missions"""
+    failures, n_matched = analyze_missions(
+        eval_data["2020A&A...642A.105K"]["human"], eval_data["2020A&A...642A.105K"]["llm"]
+    )
+    assert failures == {"TESS": "ignored"}
+    assert n_matched == 1
+    pass
