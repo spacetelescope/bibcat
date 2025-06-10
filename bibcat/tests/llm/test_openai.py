@@ -46,7 +46,6 @@ OUTPUT_NOJSON = {"error": "No JSON content found in response"}
 INPUT_BADJSON = '```json\n{"field": ["A", "B", "C",]}\n```'
 OUTPUT_BADJSON = {"error": 'Error decoding JSON content: "Expecting value: line 1 column 26 (char 25)"'}
 
-
 @pytest.mark.parametrize(
     "data, exp",
     [
