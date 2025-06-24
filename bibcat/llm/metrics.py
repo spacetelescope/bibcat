@@ -445,7 +445,9 @@ def compute_and_save_metrics(
     }
     # Encode string labels into numeric values using LabelEncoder
     label_encoder = LabelEncoder()
-    human_labels_encoded = label_encoder.fit_transform(metrics_data["human_labels"])
+    label_encoder.fit(config.llms.papertypes)
+
+    human_labels_encoded = label_encoder.transform(metrics_data["human_labels"])
     llm_labels_encoded = label_encoder.transform(metrics_data["llm_labels"])
     papertypes = label_encoder.classes_
     # Determine number of classes
