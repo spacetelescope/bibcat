@@ -8,8 +8,8 @@ from bibcat.core import parameters as params
 from bibcat.core.operator import Operator
 from bibcat.core.paper import Paper
 from bibcat.llm.io import get_source, read_output, write_summary
-from bibcat.utils import fetch_keyword_object
 from bibcat.utils.logger_config import setup_logger
+from bibcat.utils.utils import fetch_keyword_object
 
 # set up global operator
 op = Operator(classifier="ML", mode=None, keyword_objs=params.all_kobjs)
