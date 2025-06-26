@@ -27,8 +27,8 @@ from bibcat.core.grammar import Grammar
 from bibcat.core.keyword import Keyword
 from bibcat.core.paper import Paper
 from bibcat.data.partition_dataset import generate_directory_TVT
-from bibcat.utils import fetch_keyword_object
 from bibcat.utils.logger_config import setup_logger
+from bibcat.utils.utils import fetch_keyword_object
 
 logger = setup_logger(__name__)
 

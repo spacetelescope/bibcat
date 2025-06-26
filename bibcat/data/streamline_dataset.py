@@ -5,8 +5,8 @@ from typing import Dict
 from bibcat import config
 from bibcat.core import parameters as params
 from bibcat.core.operator import Operator
-from bibcat.utils import fetch_keyword_object
 from bibcat.utils.logger_config import setup_logger
+from bibcat.utils.utils import fetch_keyword_object
 
 # set up logger
 logger = setup_logger(__name__)
