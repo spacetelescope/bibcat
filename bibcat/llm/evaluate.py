@@ -412,7 +412,7 @@ def identify_missions_in_text(missions: list, text: str) -> list:
 
         # get the relevant mission keyword
         try:
-            keyword = fetch_keyword_object(op.keyword_objs, mission, verbose=op.verbose)
+            keyword = fetch_keyword_object.fetch_keyword_object(op.keyword_objs, mission, verbose=op.verbose)
         except ValueError:
             # if the keyword doesn't exist, just use the provided mission name
             keywd = mission

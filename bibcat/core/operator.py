@@ -335,7 +335,9 @@ class Operator(Base):
 
         # Fetch keyword object matching to the given keyword
         if keyword_obj is None:
-            keyword_obj = fetch_keyword_object(self.keyword_objs, lookup=lookup, verbose=self.verbose)
+            keyword_obj = fetch_keyword_object.fetch_keyword_object(
+                self.keyword_objs, lookup=lookup, verbose=self.verbose
+            )
             if self.verbose:
                 logger.info(f"Best matching Keyword object for keyword {lookup}:\n{keyword_obj}")
 
