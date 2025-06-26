@@ -3,9 +3,9 @@ from functools import lru_cache
 from typing import Dict
 
 from bibcat import config
-from bibcat.core import fetch_keyword_object
 from bibcat.core import parameters as params
 from bibcat.core.operator import Operator
+from bibcat.utils import fetch_keyword_object
 from bibcat.utils.logger_config import setup_logger
 
 # set up logger
@@ -73,7 +73,7 @@ def streamline_dataset(source_dataset: Dict, operator_ML: Operator, do_verbose_t
                 continue
 
             # Otherwise, check if this mission is a target mission
-            fetched_kobj = fetch_keyword_object.fetch_keyword_object(
+            fetched_kobj = fetch_keyword_object(
                 operator_ML.keyword_objs, lookup=curr_key, do_raise_emptyerror=False, verbose=do_verbose_text_summary
             )
             # Skip if not a target
