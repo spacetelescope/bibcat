@@ -544,50 +544,6 @@ class Base:
         # Return cleansed text
         return text
 
-    # Fetch a keyword object that matches the given lookup
-    # TODO - move this to operator class
-    def _fetch_keyword_object(self, lookup, keyword_objs=None, do_verbose=None, do_raise_emptyerror=True):
-        """
-        Method: _fetch_keyword_object
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Finds stored Keyword instance that matches to given lookup term.
-        """
-        # Load global variables
-        if do_verbose is None:
-            do_verbose = self._get_info("do_verbose")
-        if keyword_objs is None:
-            keyword_objs = self._get_info("keyword_objs")
-        num_keyobjs = len(keyword_objs)
-        # Print some notes
-        if do_verbose:
-            print("> Running _fetch_keyword_object() for lookup term {0}.".format(lookup))
-        #
-
-        # Find keyword object that matches to given lookup term
-        match = None
-        for ii in range(0, num_keyobjs):
-            # If current keyword object matches, record and stop loop
-            if keyword_objs[ii].identify_keyword(lookup)["bool"]:
-                match = keyword_objs[ii]
-                break
-
-        # Throw error if no matching keyword object found
-        if match is None:
-            errstr = "No matching keyword object for {0}.\n".format(lookup)
-            errstr += "Available keyword objects are:\n"
-            for ii in range(0, num_keyobjs):
-                errstr += "{0}\n".format(keyword_objs[ii])
-
-            # Raise error if so requested
-            if do_raise_emptyerror:
-                raise ValueError(errstr)
-            # Otherwise, return None
-            else:
-                return None
-
-        # Return the matching keyword object
-        return match
-
     # Return boolean for if given word (NLP type word) is of conjoined given part of speech
     # TODO - move this to grammar class
     def _is_pos_conjoined(self, word, pos):
