@@ -22,12 +22,12 @@ from typing import Any
 import numpy as np
 
 from bibcat import config
-from bibcat.core import fetch_keyword_object
 from bibcat.core.base import Base
 from bibcat.core.grammar import Grammar
 from bibcat.core.keyword import Keyword
 from bibcat.core.paper import Paper
 from bibcat.data.partition_dataset import generate_directory_TVT
+from bibcat.utils import fetch_keyword_object
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
@@ -335,9 +335,7 @@ class Operator(Base):
 
         # Fetch keyword object matching to the given keyword
         if keyword_obj is None:
-            keyword_obj = fetch_keyword_object.fetch_keyword_object(
-                self.keyword_objs, lookup=lookup, verbose=self.verbose
-            )
+            keyword_obj = fetch_keyword_object(self.keyword_objs, lookup=lookup, verbose=self.verbose)
             if self.verbose:
                 logger.info(f"Best matching Keyword object for keyword {lookup}:\n{keyword_obj}")
 
