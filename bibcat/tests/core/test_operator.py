@@ -9,7 +9,7 @@ import unittest
 from test_config import test_dict_lookup_kobj
 
 from bibcat.core import parameters as params
-from bibcat.utils import fetch_keyword_object
+from bibcat.utils.utils import fetch_keyword_object
 
 
 # Purpose: Testing the Operator class
