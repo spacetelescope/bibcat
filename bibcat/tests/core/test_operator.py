@@ -8,6 +8,7 @@ import unittest
 
 from test_config import test_dict_lookup_kobj
 
+from bibcat.core import fetch_keyword_object
 from bibcat.core import parameters as params
 from bibcat.core.operator import Operator
 
@@ -31,20 +32,13 @@ class TestOperator(unittest.TestCase):
             }
 
             # Prepare and run test for bibcat class instance
-            testbase = Operator(
-                classifier=None,
-                mode=None,
-                keyword_objs=tmp_kobj_list,
-                verbose=False,
-                name="operator",
-                load_check_truematch=False,
-                deep_verbose=False,
-            )
             # Determine and check answers
             for key1 in dict_acts:
                 # Otherwise, check generated modif
                 curr_lookup = key1
-                test_res = testbase._fetch_keyword_object(lookup=curr_lookup, do_raise_emptyerror=True)
+                test_res = fetch_keyword_object(
+                    tmp_kobj_list, lookup=curr_lookup, do_raise_emptyerror=True, verbose=False
+                )
                 curr_answer = test_dict_lookup_kobj[dict_acts[key1]]
 
                 # Check answer
