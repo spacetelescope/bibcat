@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from bibcat import config
+from bibcat.core import fetch_keyword_object
 from bibcat.core import parameters as params
 from bibcat.core.operator import Operator
 from bibcat.core.paper import Paper
@@ -411,7 +412,7 @@ def identify_missions_in_text(missions: list, text: str) -> list:
 
         # get the relevant mission keyword
         try:
-            keyword = op._fetch_keyword_object(mission)
+            keyword = fetch_keyword_object(op.keyword_objs, mission, verbose=op.verbose)
         except ValueError:
             # if the keyword doesn't exist, just use the provided mission name
             keywd = mission
