@@ -99,7 +99,7 @@ testpaths = [
 ]
 doctest_plus = "enabled"
 text_file_format = "rst"
-addopts = ""
+addopts = "--doctest-rst"
 
 [tool.coverage.run]
 omit = [
