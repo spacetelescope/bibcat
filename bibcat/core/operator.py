@@ -28,7 +28,6 @@ from bibcat.core.keyword import Keyword
 from bibcat.core.paper import Paper
 from bibcat.data.partition_dataset import generate_directory_TVT
 from bibcat.utils.logger_config import setup_logger
-from bibcat.utils.utils import fetch_keyword_object
 
 logger = setup_logger(__name__)
 
@@ -335,7 +334,7 @@ class Operator(Base):
 
         # Fetch keyword object matching to the given keyword
         if keyword_obj is None:
-            keyword_obj = fetch_keyword_object(self.keyword_objs, lookup=lookup, verbose=self.verbose)
+            keyword_obj = Keyword._fetch_keyword_object(self.keyword_objs, lookup=lookup, verbose=self.verbose)
             if self.verbose:
                 logger.info(f"Best matching Keyword object for keyword {lookup}:\n{keyword_obj}")
 
