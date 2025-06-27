@@ -9,7 +9,7 @@ import unittest
 from test_config import test_dict_lookup_kobj
 
 from bibcat.core import parameters as params
-from bibcat.utils.utils import fetch_keyword_object
+from bibcat.core.keyword import Keyword
 
 
 # Purpose: Testing the Operator class
@@ -35,7 +35,7 @@ class TestOperator(unittest.TestCase):
             for key1 in dict_acts:
                 # Otherwise, check generated modif
                 curr_lookup = key1
-                test_res = fetch_keyword_object(
+                test_res = Keyword._fetch_keyword_object(
                     tmp_kobj_list, lookup=curr_lookup, do_raise_emptyerror=True, verbose=False
                 )
                 curr_answer = test_dict_lookup_kobj[dict_acts[key1]]
