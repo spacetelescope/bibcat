@@ -6,10 +6,9 @@ Testing the Operator class and its methods.
 
 import unittest
 
-from test_config import test_dict_lookup_kobj
-
 from bibcat.core import parameters as params
 from bibcat.core.keyword import Keyword
+from bibcat.tests.core.test_config import test_dict_lookup_kobj
 
 
 # Purpose: Testing the Operator class
