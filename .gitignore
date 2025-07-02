@@ -1,6 +1,7 @@
 # bibcat files
 bibcat/data/operational_data
 output
+logs
 *.log
 
 # Compiled files
