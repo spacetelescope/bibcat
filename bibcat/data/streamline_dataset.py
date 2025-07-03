@@ -129,7 +129,7 @@ def streamline_dataset(source_dataset: Dict, operator_ML: Operator, do_verbose_t
     # Print number of texts that fell under given parameters
     logger.info("Target missions:")
     for curr_kobj in params.all_kobjs:
-        logger.info(curr_kobj + "\n")
+        logger.info(curr_kobj)
     logger.info(f"\n{len(dict_texts)} of valid text entries have been streamlined.")
 
     return dict_texts
