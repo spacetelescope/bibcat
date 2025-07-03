@@ -5,6 +5,7 @@ import pandas as pd
 
 from bibcat import config
 from bibcat.core import parameters as params
+from bibcat.core.keyword import Keyword
 from bibcat.core.operator import Operator
 from bibcat.core.paper import Paper
 from bibcat.llm.io import get_source, read_output, write_summary
@@ -411,7 +412,7 @@ def identify_missions_in_text(missions: list, text: str) -> list:
 
         # get the relevant mission keyword
         try:
-            keyword = op._fetch_keyword_object(mission)
+            keyword = Keyword._fetch_keyword_object(params.all_kobjs, mission, verbose=config.logging.verbose)
         except ValueError:
             # if the keyword doesn't exist, just use the provided mission name
             keywd = mission

@@ -29,7 +29,6 @@ def test_convert_failure(caplog):
     assert "Error converting output to classification format" in caplog.record_tuples[0][2]
 
 
-
 INPUT_JSON1 = '\nOUTPUT:\n```json\n{\n    "HST": [\n        "MENTION",\n        0.8\n    ],\n    "JWST": [\n        "SCIENCE",\n        0.95\n    ]\n}\n```'
 OUTPUT_JSON1 = {"HST": ["MENTION", 0.8], "JWST": ["SCIENCE", 0.95]}
 
@@ -46,6 +45,7 @@ OUTPUT_NOJSON = {"error": "No JSON content found in response"}
 
 INPUT_BADJSON = '```json\n{"field": ["A", "B", "C",]}\n```'
 OUTPUT_BADJSON = {"error": 'Error decoding JSON content: "Expecting value: line 1 column 26 (char 25)"'}
+
 
 @pytest.mark.parametrize(
     "data, exp",
