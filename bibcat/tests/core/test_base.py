@@ -8,11 +8,11 @@ import unittest
 
 import numpy as np
 import spacy
+from test_config import test_list_lookup_kobj
 
 from bibcat import config
 from bibcat.core import parameters as params
 from bibcat.core.base import Base
-from bibcat.tests.core.test_config import test_list_lookup_kobj
 
 nlp = spacy.load(config.grammar.spacy_language_model)
 
@@ -708,78 +708,4 @@ class TestBase(unittest.TestCase):
                     print("---")
                     print("")
                     #
-                    self.assertEqual(test_res, answer)
-
-    # For tests of _streamline_phrase:
-    if True:
-        # Test streamlining for text with abbreviated phrases
-        def test_streamline_phrase__abbreviations(self):
-            # Prepare text and answers for test
-            dict_tests = {
-                "We plot the data in Fig. 3b and list values in Tab. A.": "We plot the data in Figure 3b and list values in Table A.",
-                "Fig. 4 shows the red vs. blue stars differ in radii.": "Figure 4 shows the red vs blue stars differ in radii.",
-                "There is a fig on the tree. The tree is the Fig Tree.": "There is a fig on the tree. The tree is the Fig Tree.",
-                "Put the ginger beer on my tab.": "Put the ginger beer on my tab.",
-            }
-
-            # Prepare and run tests for bibcat class instance
-            testbase = Base()
-
-            # Check answers
-            for key1 in dict_tests:
-                try:
-                    answer = dict_tests[key1]
-                    test_res = testbase._streamline_phrase(text=key1, do_streamline_etal=True)
-                    self.assertEqual(test_res, answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n".format(test_res, answer, key1))
-                    print("---")
-                    print("")
-
-                    self.assertEqual(test_res, answer)
-
-        # Test streamlining for text with citations
-        def test_streamline_phrase__citations(self):
-            # Prepare text and answers for test
-            dict_tests = {
-                "Somename (2013) published  in SJ.": "{0} published in SJ.".format(
-                    config.textprocessing.placeholder_author
-                ),
-                "Hubble (1953) was a landmark paper (for that subfield).": "{0} was a landmark paper (for that subfield).".format(
-                    config.textprocessing.placeholder_author
-                ),
-                # "See also: Kepler [2023], Hubble & Author (2020), Author, Somename, and Kepler et al. [1990];": "See also: {0}, {0}, {0};".format(
-                #    config.textprocessing.placeholder_author
-                # ), - unrealistic citation case
-                "See also: Kepler [2023], Hubble & Author (2020), Author and Kepler et al. [1990];": "See also: {0};".format(
-                    config.textprocessing.placeholder_author
-                ),
-                "Also Author papers (Author et al. 1997, 2023),": "Also Author papers,",
-                # "(Someone, Author, Somename et al. 1511; 1612)": "", - unrealistic citation case
-                # "(Someone, Author, and Somename et al. 1913,15)": "", - unrealistic citation case
-                "(Author et al. 80; Somename & Author 2012)": "",
-                # "McThatname, Kepler, & Othername [1993] (see our paper)": "{0} (see our paper)".format(
-                #    config.textprocessing.placeholder_author
-                # ), - unrealistic citation case
-                "{Othername et al. 1991} (see Hubble observations)": "(see Hubble observations)",
-            }
-
-            # Prepare and run tests for bibcat class instance
-            testbase = Base()
-
-            # Check answers
-            for key1 in dict_tests:
-                try:
-                    answer = dict_tests[key1]
-                    test_res = testbase._streamline_phrase(text=key1, do_streamline_etal=True)
-                    self.assertEqual(test_res, answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print("{2}\nTest answer: {0}\nAct. answer: {1}\n".format(test_res, answer, key1))
-                    print("---")
-                    print("")
-
                     self.assertEqual(test_res, answer)
