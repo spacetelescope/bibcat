@@ -130,7 +130,7 @@ def test_compute_and_save_metrics(mocker) -> None:
 
     # Mock dependencies
     mock_open = mocker.patch("builtins.open", mocker.mock_open())
-    mocker.patch("bibcat.llm.metrics.config")
+    mocker.patch("bibcat.llm.metrics.config.llms.papertypes", ["SCIENCE", "NONSCIENCE"])
     mock_save_json_file = mocker.patch("bibcat.llm.metrics.save_json_file")
     mocker.patch("bibcat.llm.metrics.logger")
 
