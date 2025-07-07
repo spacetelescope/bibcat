@@ -57,7 +57,7 @@ python -m spacy download en_core_web_sm
 
 #### Install `tensorflow-text`
 
-- If you are working on non-apple silicon chip computer (e.g., intel chip),
+- If you are working on a non-apple silicon chip computer (e.g., intel chip),
 ```
 pip install tensorflow-text==2.15.0
 ```
