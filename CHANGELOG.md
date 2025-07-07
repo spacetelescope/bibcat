@@ -16,6 +16,7 @@
     - Deleted all previous codes and files for a fresh start
 
 ### Changed
+
 - [PR #68](https://github.com/spacetelescope/bibcat/pull/68)
     -`Inconsistent_classifications.json` was revised and separated from `bibcat stats-llms`
     - Updated `metrics_summary.json` to include confusion matrix metrics
