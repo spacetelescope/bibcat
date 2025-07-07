@@ -6,10 +6,11 @@ Testing the Paper class and its methods.
 
 import unittest
 
+from test_config import test_dict_lookup_kobj
+
 from bibcat import config
 from bibcat.core import keyword
 from bibcat.core import parameters as params
-from bibcat.tests.core.test_config import test_dict_lookup_kobj
 
 
 class TestKeyword(unittest.TestCase):
