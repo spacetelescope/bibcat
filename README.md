@@ -1,5 +1,5 @@
 # BibCat
-Bibcat classifies astronomical journal papers into multiple paper categories. The primary categories are "science", "mention", "data-influenced", and "ignore".
+Bibcat classifies astronomical journal papers into multiple paper categories. The primary categories are "science", "mention", and "data-influenced". Currently, this is work in progress and we are focusing on "science" and "nonscience" ("mention", "data-influenced", and non-relevant papers).
 
 ## Development Workflow
 There are two main branches for bibcat work:
