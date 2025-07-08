@@ -8,11 +8,11 @@ import unittest
 
 import numpy as np
 import spacy
-from test_config import test_list_lookup_kobj
 
 from bibcat import config
 from bibcat.core import parameters as params
 from bibcat.core.base import Base
+from bibcat.tests.core.test_config import test_list_lookup_kobj
 
 nlp = spacy.load(config.grammar.spacy_language_model)
 
