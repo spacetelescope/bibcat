@@ -181,13 +181,13 @@ class OpenAIHelper:
             self.stores.append(vs.to_dict())
         return self.stores
 
-    def populate_user_template(self, paper: dict) -> str:
+    def populate_user_template(self, paper: dict | str) -> str:
         """Format a user prompt template with paper data
 
         Parameters
         ----------
-        paper : dict
-            the input JSON paper content
+        paper : dict | str
+            the input JSON paper content or the input text in ASCII format
 
         Returns
         -------
@@ -203,10 +203,12 @@ class OpenAIHelper:
 
         # check the user template fields match the paper dictionary keys
         fields = re.findall(r"{(.*?)}", user)
-        missing = set(fields) - (set(paper.keys()) | set(["missions", "kw_missions"]))
-        if missing:
-            logger.warning("Missing user template fields in input paper data: %s. Filling empty values.", missing)
-            paper.update(dict.fromkeys(missing, ""))
+
+        if isinstance(paper, dict):
+            missing = set(fields) - (set(paper.keys()) | set(["missions", "kw_missions"]))
+            if missing:
+                logger.warning("Missing user template fields in input paper data: %s. Filling empty values.", missing)
+                paper.update(dict.fromkeys(missing, ""))
 
         # get the text keyword match for missions
         mm = self.get_mission_text(paper)
@@ -215,9 +217,12 @@ class OpenAIHelper:
         # format the user prompt the paper content
         return user.format(**paper, missions=", ".join(config.missions), kw_missions=kw_missions)
 
-    def get_mission_text(self, paper) -> dict:
+    def get_mission_text(self, paper: dict | str) -> dict:
         """Get flags for missions found in paper text"""
-        text = f"{paper['title'][0]}; {paper.get('abstract', '')}; {paper['body']}"
+        if isinstance(paper, dict):
+            text = f"{paper['title'][0]}; {paper.get('abstract', '')}; {paper['body']}"
+        else:
+            text = paper
         return {k: v for k, v in zip(config.missions, identify_missions_in_text(config.missions, text=text)) if v}
 
     def send_message(self, user_prompt: str = None, with_file: bool = None):
@@ -285,7 +290,9 @@ class OpenAIHelper:
             self.response = result.output_parsed.model_dump()
         return self.response
 
-    def submit_paper(self, filepath: str = None, bibcode: str = None, index: int = None) -> dict | str:
+    def submit_paper(
+        self, filepath: str = None, bibcode: str = None, index: int = None, text: str = None, text_bibcode: str = None
+    ) -> dict | str:
         """Submit a paper to the OpenAI LLM model
 
         Submit a paper to the OpenAI LLM model for processing, either using an AI Assistant
@@ -299,6 +306,10 @@ class OpenAIHelper:
             the bibcode of an entry in the source papetrack combined dataset, by default None
         index : int, optional
             a list item array index in the source papetrack combined dataset, by default None
+        text : str, optional
+            a paper text in ASCII format. Must be provided together with `text_bibcode` if used.
+        text_bibcode : str, optional
+            the bibcode associated with the provided `text` in ascii format. Must be provided together with `text` if used.
 
         Returns
         -------
@@ -326,6 +337,21 @@ class OpenAIHelper:
             # upload the file to openai
             self.upload_file(self.filename)
             logger.info("Uploaded file id: %s", self.file.id)
+        elif text is not None or text_bibcode is not None:
+            if (text is None) != (text_bibcode is None):
+                logger.warning(
+                    "No text found to submit! Both 'text' and 'text_bibcode' must be provided together or not at all."
+                )
+                return {
+                    "error": f"text = {text[:80]} (truncated if text is not None) or text_bibcode = {text_bibcode} not found."
+                }
+            # get the text directly
+            self.bibcode = text_bibcode
+            self.paper = text
+            logger.info("Using text directly: %s", self.bibcode)
+
+            # populate the user template with text
+            self.user_prompt = self.populate_user_template(self.paper)
         else:
             # get the paper source
             self.paper = get_source(bibcode=bibcode, index=index)
@@ -437,7 +463,13 @@ def convert_to_classification(output: dict, bibcode: str, threshold: float = 0.5
 
 
 def classify_paper(
-    file_path: str = None, bibcode: str = None, index: int = None, n_runs: int = 1, verbose: bool = None
+    file_path: str = None,
+    bibcode: str = None,
+    index: int = None,
+    text: str = None,
+    text_bibcode: str = None,
+    n_runs: int = 1,
+    verbose: bool = None,
 ):
     """Send a prompt to an OpenAI LLM model to classify a paper
 
@@ -449,6 +481,10 @@ def classify_paper(
         the bibcode of an entry in the source papetrack combined dataset, by default None
     index : int, optional
         a list item array index in the source papetrack combined dataset, by default None
+    text : str, optional
+        a paper text in ASCII format. Must be provided together with `text_bibcode` if used.
+    text_bibcode : str, optional
+        the bibcode associated with the provided `text` in ascii format. Must be provided together with `text` if used.
     n_runs : int, optional
         the number of runs to do, by default 1
     verbose : bool, optional
@@ -459,7 +495,9 @@ def classify_paper(
     # iterate for number of runs
     for i in range(n_runs):
         # submit the paper to the LLM
-        response = oa.submit_paper(filepath=file_path, bibcode=bibcode, index=index)
+        response = oa.submit_paper(
+            filepath=file_path, bibcode=bibcode, index=index, text=text, text_bibcode=text_bibcode
+        )
 
         # log the prompts if verbosity set
         if oa.verbose:
