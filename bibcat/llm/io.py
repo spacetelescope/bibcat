@@ -47,6 +47,7 @@ def get_source(bibcode: str | None = None, index: int | None = None, body_only: 
         text = source_dataset[index] if index < n_sources else None
         if index > n_sources:
             logger.warning("Requested index is out of range of the number of source datasets.")
+
     return text["body"] if text and body_only else text
 
 
