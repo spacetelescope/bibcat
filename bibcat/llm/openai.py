@@ -458,7 +458,6 @@ def classify_paper(
     file_path: str = None,
     bibcode: str = None,
     index: int = None,
-    paper_dict: dict = None,
     n_runs: int = 1,
     verbose: bool = None,
 ):
@@ -472,9 +471,6 @@ def classify_paper(
         the bibcode of an entry in the source papetrack combined dataset, by default None
     index : int, optional
         a list item array index in the source papetrack combined dataset, by default None
-    paper_dict : dict, optional
-        paper dictionary, for example,
-        paper_dict = {"bibcode": "bibcode", "title": ["title",], "abstract": "abstract", "body": "body"}
     n_runs : int, optional
         the number of runs to do, by default 1
     verbose : bool, optional
@@ -485,7 +481,7 @@ def classify_paper(
     # iterate for number of runs
     for i in range(n_runs):
         # submit the paper to the LLM
-        response = oa.submit_paper(filepath=file_path, bibcode=bibcode, index=index, paper_dict=paper_dict)
+        response = oa.submit_paper(filepath=file_path, bibcode=bibcode, index=index)
 
         # log the prompts if verbosity set
         if oa.verbose:
