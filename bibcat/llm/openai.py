@@ -201,14 +201,16 @@ class OpenAIHelper:
         """
         user = get_llm_prompt("user")
 
+        if isinstance(paper, str):
+            paper = {"title": [""], "abstract": "", "body": paper.strip()}
+
         # check the user template fields match the paper dictionary keys
         fields = re.findall(r"{(.*?)}", user)
 
-        if isinstance(paper, dict):
-            missing = set(fields) - (set(paper.keys()) | set(["missions", "kw_missions"]))
-            if missing:
-                logger.warning("Missing user template fields in input paper data: %s. Filling empty values.", missing)
-                paper.update(dict.fromkeys(missing, ""))
+        missing = set(fields) - (set(paper.keys()) | set(["missions", "kw_missions"]))
+        if missing:
+            logger.warning("Missing user template fields in input paper data: %s. Filling empty values.", missing)
+            paper.update(dict.fromkeys(missing, ""))
 
         # get the text keyword match for missions
         mm = self.get_mission_text(paper)
@@ -217,12 +219,11 @@ class OpenAIHelper:
         # format the user prompt the paper content
         return user.format(**paper, missions=", ".join(config.missions), kw_missions=kw_missions)
 
-    def get_mission_text(self, paper: dict | str) -> dict:
+    def get_mission_text(self, paper: dict) -> dict:
         """Get flags for missions found in paper text"""
-        if isinstance(paper, dict):
-            text = f"{paper['title'][0]}; {paper.get('abstract', '')}; {paper['body']}"
-        else:
-            text = paper
+
+        text = f"{paper['title'][0]}; {paper.get('abstract', '')}; {paper['body']}"
+
         return {k: v for k, v in zip(config.missions, identify_missions_in_text(config.missions, text=text)) if v}
 
     def send_message(self, user_prompt: str = None, with_file: bool = None):
