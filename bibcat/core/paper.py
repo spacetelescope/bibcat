@@ -973,5 +973,3 @@ class Paper(Base):
 
         # Return streamlined text
         return text
-
-    #

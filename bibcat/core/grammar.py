@@ -68,12 +68,21 @@ class Grammar(Base):
         if do_verbose:
             print("Initializing instance of Grammar class.")
 
+        paper = Paper(
+            text,
+            keyword_objs=[keyword_obj],
+            dict_ambigs=dict_ambigs,
+            do_check_truematch=do_check_truematch,
+            do_verbose=do_verbose,
+            do_verbose_deep=do_verbose_deep,
+        )
+
         # Process ambig. phrase data, if not given
         if (do_check_truematch) and (dict_ambigs is None):
             # Print some notes
             if do_verbose:
                 print("Processing database of ambiguous phrases...")
-            dict_ambigs = Paper()._process_database_ambig()
+            dict_ambigs = paper._process_database_ambig()
 
         # Otherwise, do nothing new
         else:
@@ -85,14 +94,6 @@ class Grammar(Base):
         if do_verbose:
             print("Processing text using the Paper class...")
 
-        paper = Paper(
-            text,
-            keyword_objs=[keyword_obj],
-            dict_ambigs=dict_ambigs,
-            do_check_truematch=do_check_truematch,
-            do_verbose=do_verbose,
-            do_verbose_deep=do_verbose_deep,
-        )
         paper.process_paragraphs(buffer=buffer)
         self._store_info(paper, "paper")
 
