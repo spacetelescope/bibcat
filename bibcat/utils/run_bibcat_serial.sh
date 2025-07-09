@@ -6,7 +6,7 @@
 TOTAL_COMPUTE_SECONDS=0
 
 # List of input files
-START_INDEX=6
+START_INDEX=0
 END_INDEX=43
 
 
