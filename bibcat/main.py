@@ -254,7 +254,9 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
     if ops:
         config.llms.ops = ops
         logger.info("Run in the OPS MODE!")
-
+    # batch run from a file of bibcodes or indices in the source dataset or pdfs
+    if filename:
+        logger.info(f"Batch run from a file of files: {filename}")
     # get the list of files
     files = files or filename.read().splitlines()
 
