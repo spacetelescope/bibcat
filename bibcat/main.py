@@ -14,7 +14,7 @@ import click
 from bibcat import config
 from bibcat.data.build_dataset import build_dataset
 from bibcat.llm.evaluate import evaluate_output
-from bibcat.llm.openai import OpenAIHelper, classify_paper
+from bibcat.llm.openai import classify_paper
 from bibcat.llm.plots import confusion_matrix_plot, roc_plot
 from bibcat.llm.stats import inconsistent_classifications, save_evaluation_stats, save_operation_stats
 from bibcat.pretrained.build_model import build_model
@@ -29,8 +29,11 @@ logger = setup_logger(__name__)
 def cli() -> None:
     """Command-line tool for running the bibcat package
     To see more options for each command, you can use `--help` after each command.
-    For instance, `bibcat run-gpt --help`
+    For instance, `bibcat llm run --help`
     """
+
+
+# Classical ML commands
 
 
 @cli.command(help="Build a combined dataset")
@@ -144,7 +147,16 @@ def evaluate(name) -> None:
     evaluate_basic_performance(classifier_name=name)
 
 
-@cli.command(help="Send a prompt to an OpenAI LLM model")
+# LLM command group
+
+
+@cli.group("llm", short_help="LLM-based paper classification")
+def llmcli():
+    """CLI for classifying papers using LLMs, specifically OpenAI models."""
+    pass
+
+
+@llmcli.command("run", help="Send a prompt to an OpenAI LLM model")
 @click.option("-f", "--filename", default=None, type=str, show_default=True, help="The path to a file to upload")
 @click.option(
     "-b",
@@ -199,82 +211,7 @@ def run_gpt(filename, bibcode, index, model, num_runs, user_prompt_file, agent_p
     logger.info(f"Elapsed time for run_gpt for {num_runs} papers: {elapsed_time} seconds.")
 
 
-@cli.command(help="Batch submit papers to an OpenAI LLM model.")
-@click.option(
-    "-f",
-    "--files",
-    default=None,
-    type=str,
-    show_default=True,
-    multiple=True,
-    help="A list of files or bibcodes to upload",
-)
-@click.option(
-    "-p",
-    "--filename",
-    default=None,
-    type=click.File("r"),
-    show_default=True,
-    help="The path to a file of bibcodes or papers to read in",
-)
-@click.option("-m", "--model", default=None, type=str, show_default=True, help="The model type to use")
-@click.option(
-    "-u", "--user-prompt-file", default=None, type=str, show_default=True, help="The name of a custom user prompt file"
-)
-@click.option(
-    "-a",
-    "--agent-prompt-file",
-    default=None,
-    type=str,
-    show_default=True,
-    help="The name of a custom agent prompt file",
-)
-@click.option("-v", "--verbose", is_flag=True, show_default=True, help="Set to print verbose output")
-@click.option("-o", "--ops", is_flag=True, show_default=False, help="Set to operational classification mode")
-@click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
-def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, verbose, num_runs, ops):
-    """Batch submit papers to an OpenAI LLM model.
-
-    Example Usage
-    =============
-        bibcat run-gpt -f /path/to/paper.pdf
-    """
-    start_time = time.time()
-    logger.info("CLI option: 'run_gpt_batch' selected")
-    # override the config model
-    if model:
-        config.llms.openai.model = model
-    # override the config user prompt file
-    if user_prompt_file:
-        config.llms.llm_user_prompt = user_prompt_file
-    # override the config agent prompt file
-    if agent_prompt_file:
-        config.llms.llm_agent_prompt = agent_prompt_file
-    # override the config ops flag
-    if ops:
-        config.llms.ops = ops
-        logger.info("Run in the OPS MODE!")
-
-    # get the list of files
-    files = files or filename.read().splitlines()
-
-    # iterate over the files
-    for file in files:
-        # check if file, bibcode, or index
-        source = "file" if os.path.isfile(file) else "index" if file.isnumeric() else "bibcode"
-
-        classify_paper(
-            file_path=file if source == "file" else None,
-            bibcode=file if source == "bibcode" else None,
-            index=file if source == "index" else None,
-            n_runs=num_runs,
-            verbose=verbose,
-        )
-    elapsed_time = time.time() - start_time
-    logger.info(f"Elapsed time for run_gpt_batch for {len(files)} papers: {elapsed_time} seconds.")
-
-
-@cli.command(help="Evaluate the LLM output")
+@llmcli.command("evaluate", help="Evaluate the LLM output")
 @click.option(
     "-b",
     "--bibcode",
@@ -346,55 +283,7 @@ def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, thre
     evaluate_output(bibcode=bibcode, index=index, write_file=write)
 
 
-@cli.command(help="Batch evaluate the LLM output")
-@click.option(
-    "-f",
-    "--files",
-    default=None,
-    type=str,
-    show_default=True,
-    multiple=True,
-    help="A list of files or bibcodes to upload",
-)
-@click.option(
-    "-p",
-    "--filename",
-    default=None,
-    type=click.File("r"),
-    show_default=True,
-    help="The path to a file of bibcodes or papers to read in",
-)
-@click.option("-m", "--model", default=None, type=str, show_default=True, help="The model type to use")
-@click.option("-s", "--submit", is_flag=True, show_default=True, help="Flag to submit the paper for classification")
-@click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
-@click.pass_context
-def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
-    """Batch evaluate a list of papers"""
-    start_time = time.time()
-
-    # override the config model
-    if model:
-        config.llms.openai.model = model
-
-    # get the list of files
-    files = files or filename.read().splitlines()
-
-    # submit the paper for classification, if requested
-    if submit:
-        ctx.invoke(run_gpt_batch, files=files, filename=filename, num_runs=num_runs)
-
-    for file in files:
-        # check if file, bibcode, or index
-        source = "file" if os.path.isfile(file) else "index" if file.isnumeric() else "bibcode"
-
-        evaluate_output(
-            bibcode=file if source == "bibcode" else None, index=file if source == "index" else None, write_file=True
-        )
-    elapsed_time = time.time() - start_time
-    logger.info(f"Elapsed time for evaluate_llm_batch for {len(files)} papers: {elapsed_time} seconds.")
-
-
-@cli.command(help="Create evaulation plots for llm performance")
+@llmcli.command("plot", help="Create evaluation plots for llm performance")
 @click.option(
     "-c",
     "--cm",
@@ -447,7 +336,7 @@ def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
         roc_plot(summary_output_path=summary_output_path, missions=list(missions))
 
 
-@cli.command(help="Create a statisics table for classification")
+@llmcli.command("stats", help="Create a statisics table for classification")
 @click.option(
     "-o",
     "--ops",
@@ -507,7 +396,7 @@ def stats_llm(evaluation: bool, ops: bool, threshold: float):
         save_operation_stats(input_filepath, output_filepath, threshold_acceptance, threshold_inspection)
 
 
-@cli.command(help="Create a JSON file to audit LLM classification")
+@llmcli.command("audit", help="Create a JSON file to audit LLM classification")
 def audit_llms():
     """Create a JSON file of misclassified papers by LLM for auditing"""
 
@@ -523,43 +412,137 @@ def audit_llms():
     inconsistent_classifications(input_filepath, output_filepath)
 
 
-@cli.group("openai", short_help="OpenAI LLM commands")
-def oacli():
-    """General OpenAI LLM commands"""
+# Batch LLM command group
+
+
+@llmcli.group("batch", short_help="Batch processing of papers with an LLM")
+def llmbatch():
+    """Batch run LLM commands"""
     pass
 
 
-@oacli.command(
-    "create_assistant",
-    short_help="Create a new OpenAI Assistant",
-    help="Create a new OpenAI Assistant.  See bibcat.llm.openai.create_assistant for more information.",
-)
-@click.option("-n", "--name", default=None, type=str, show_default=True, help="The name of the assistant")
+@llmbatch.command("run", help="Batch submit papers to an OpenAI LLM model.")
 @click.option(
-    "-i", "--vectorid", default=None, type=str, show_default=True, help="The id of the vector database to attach"
+    "-f",
+    "--files",
+    default=None,
+    type=str,
+    show_default=True,
+    multiple=True,
+    help="A list of files or bibcodes to upload",
 )
-def create_oa_assistant(name, vectorid):
-    """Create a new assistant
+@click.option(
+    "-p",
+    "--filename",
+    default=None,
+    type=click.File("r"),
+    show_default=True,
+    help="The path to a file of bibcodes or papers to read in",
+)
+@click.option("-m", "--model", default=None, type=str, show_default=True, help="The model type to use")
+@click.option(
+    "-u", "--user-prompt-file", default=None, type=str, show_default=True, help="The name of a custom user prompt file"
+)
+@click.option(
+    "-a",
+    "--agent-prompt-file",
+    default=None,
+    type=str,
+    show_default=True,
+    help="The name of a custom agent prompt file",
+)
+@click.option("-v", "--verbose", is_flag=True, show_default=True, help="Set to print verbose output")
+@click.option("-o", "--ops", is_flag=True, show_default=False, help="Set to operational classification mode")
+@click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
+def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, verbose, num_runs, ops):
+    """Batch submit papers to an OpenAI LLM model.
 
-    Creates a new OpenAI assistant with file search capabilities.  The llm model
-    to use for the assistant is set in the config file by ``config.llms.openai.model``.
-    Custom instructions and behavior for the assistant is set through a custom agent prompt file,
-    or a config value, otherwise the default agent instructions will be used.
-    See ``bibcat.llm.io.get_llm_prompt`` for more information.
-
+    Example Usage
+    =============
+        bibcat llm batch run -f /path/to/paper.pdf
     """
-    oa = OpenAIHelper()
-    asst = oa.create_assistant(name=name, vs_id=vectorid)
-    click.echo(f"Assistant created: {asst.name} - {asst.id}")
+    start_time = time.time()
+    logger.info("CLI option: 'run_gpt_batch' selected")
+    # override the config model
+    if model:
+        config.llms.openai.model = model
+    # override the config user prompt file
+    if user_prompt_file:
+        config.llms.llm_user_prompt = user_prompt_file
+    # override the config agent prompt file
+    if agent_prompt_file:
+        config.llms.llm_agent_prompt = agent_prompt_file
+    # override the config ops flag
+    if ops:
+        config.llms.ops = ops
+        logger.info("Run in the OPS MODE!")
+
+    # get the list of files
+    files = files or filename.read().splitlines()
+
+    # iterate over the files
+    for file in files:
+        # check if file, bibcode, or index
+        source = "file" if os.path.isfile(file) else "index" if file.isnumeric() else "bibcode"
+
+        classify_paper(
+            file_path=file if source == "file" else None,
+            bibcode=file if source == "bibcode" else None,
+            index=file if source == "index" else None,
+            n_runs=num_runs,
+            verbose=verbose,
+        )
+    elapsed_time = time.time() - start_time
+    logger.info(f"Elapsed time for run_gpt_batch for {len(files)} papers: {elapsed_time} seconds.")
 
 
-@oacli.command("list_assistants", help="List all OpenAI Assistants")
-def list_oa_assistants():
-    """List all assistants you have created"""
-    oa = OpenAIHelper()
-    assts = oa.list_assistants()
-    for i in assts:
-        click.echo(f"Assistant: {i['name']} - {i['id']}")
+@llmbatch.command("evaluate", help="Batch evaluate the LLM output")
+@click.option(
+    "-f",
+    "--files",
+    default=None,
+    type=str,
+    show_default=True,
+    multiple=True,
+    help="A list of files or bibcodes to upload",
+)
+@click.option(
+    "-p",
+    "--filename",
+    default=None,
+    type=click.File("r"),
+    show_default=True,
+    help="The path to a file of bibcodes or papers to read in",
+)
+@click.option("-m", "--model", default=None, type=str, show_default=True, help="The model type to use")
+@click.option("-s", "--submit", is_flag=True, show_default=True, help="Flag to submit the paper for classification")
+@click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
+@click.pass_context
+def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
+    """Batch evaluate a list of papers"""
+    start_time = time.time()
+
+    # override the config model
+    if model:
+        config.llms.openai.model = model
+
+    # get the list of files
+    files = files or filename.read().splitlines()
+
+    # submit the paper for classification, if requested
+    if submit:
+        ctx.invoke(run_gpt_batch, files=files, filename=filename, num_runs=num_runs)
+
+    for file in files:
+        # check if file, bibcode, or index
+        source = "file" if os.path.isfile(file) else "index" if file.isnumeric() else "bibcode"
+
+        evaluate_output(
+            bibcode=file if source == "bibcode" else None, index=file if source == "index" else None, write_file=True
+        )
+    elapsed_time = time.time() - start_time
+    logger.info(f"Elapsed time for evaluate_llm_batch for {len(files)} papers: {elapsed_time} seconds.")
+
 
 
 if __name__ == "__main__":
