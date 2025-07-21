@@ -3,7 +3,10 @@
 ### [Unreleased]
 - Bibcat to do list
     - Adding tutorial notebooks back
-
+- Reorganizing the bibcat CLI commands
+  - All llm-based grouped under `llm` sub-command
+  - Batch llm commands grouped under `llm batch` sub-command
+  - All `_` or `-` command names shortened, e.g. `run-gpt` to `llm run`, or `audit_llm` to `llm audit`
 
 ### Removed
 - [PP #48](https://github.com/spacetelescope/bibcat/pull/48)

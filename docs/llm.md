@@ -14,8 +14,8 @@ Here is a quick start guide.
 
 1. Follow the [Setup](https://github.com/spacetelescope/bibcat/blob/dev/README.md#setup) instructions from the main README file.
 2. Select a paper bibcode or index
-   1. run: `bibcat run-gpt -b "2023MNRAS.521..497M"`
-   2. or: `bibcat run-gpt -i 50`
+   1. run: `bibcat llm run -b "2023MNRAS.521..497M"`
+   2. or: `bibcat llm run -i 50`
 3. Check the response output `paper_output.json` file.
 
 You should see something like `INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], 'JWST': ['SCIENCE', [0.9, 0.1]]}`. See [Response Output](#response-output) for details about the response output.  [Submitting a paper](#submitting-a-paper) describes the command for sending papers to OpenAI. For customizing and trialing new gpt prompts, see [User Configuration](#user-configuration) and [User and Agent (System) Prompts](#user-and-agent-system-prompts).
@@ -23,29 +23,29 @@ You should see something like `INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], '
 
 ## Submitting a paper
 
-The cli `bibcat run-gpt` submits a prompt with paper content.  The paper content can either be a local filepath on disk, or a bibcode or array list index from source dataset ``dataset_combined_all_2018-2023.json``.  When specifying a bibcode or list array index, the paper data is pulled from the source JSON dataset.
+The cli `bibcat llm run` submits a prompt with paper content.  The paper content can either be a local filepath on disk, or a bibcode or array list index from source dataset ``dataset_combined_all_2018-2023.json``.  When specifying a bibcode or list array index, the paper data is pulled from the source JSON dataset.
 
-The `run-gpt` command submits a single paper. Note that when submitting any paper whose bibcode contains `&`, double quotes `" "` are needed for the bibcode in the command line.
+The `llm run` command submits a single paper. Note that when submitting any paper whose bibcode contains `&`, double quotes `" "` are needed for the bibcode in the command line.
 ```python
 # submit a paper
-bibcat run-gpt -f /Users/bcherinka/Downloads/2406.15083v1.pdf
+bibcat llm run -f /Users/bcherinka/Downloads/2406.15083v1.pdf
 
 # use a bibcode from the source dataset
-bibcat run-gpt -b 2023Natur.616..266L
-bibcat run-gpt -b "2022A&A...668A..63R"
+bibcat llm run -b 2023Natur.616..266L
+bibcat llm run -b "2022A&A...668A..63R"
 
 # submit with entry 101 from the papertrack source dataset
-bibcat run-gpt -i 101
+bibcat llm run -i 101
 ```
 
-The `run-gpt-batch` command submits a list of files.  The list can either be specified one of two ways:  1.) individually, with the `-f` option, as a filename, bibcode, or index, or 2.) a file that contains a list of filenames, bibcodes, or indices to use, with one line per entry.  By default, each paper in the list is submitted once.  You can instruct it to submit each paper multiple times with the `-n` option. Run `bibcat run-gpt-batch --help` to see the full list of cli options.
+The `llm batch run` command submits a list of files.  The list can either be specified one of two ways:  1.) individually, with the `-f` option, as a filename, bibcode, or index, or 2.) a file that contains a list of filenames, bibcodes, or indices to use, with one line per entry.  By default, each paper in the list is submitted once.  You can instruct it to submit each paper multiple times with the `-n` option. Run `bibcat llm batch run --help` to see the full list of cli options.
 
 ```python
 # batch submit a list of papers, using source index
-bibcat run-gpt-batch -f 101 -f 102 -f 103
+bibcat llm batch run -f 101 -f 102 -f 103
 
 # batch submit from a file of files
-bibcat run-gpt-batch -p papers_to_process.txt
+bibcat llm batch run -p papers_to_process.txt
 ```
 
 where `papers_to_process.txt` might look like
@@ -113,7 +113,7 @@ llms:
   llm_agent_prompt: null
 ```
 
-- Running `bibcat run-gpt -i 0 -v` in verbose mode produces:
+- Running `bibcat llm run -i 0 -v` in verbose mode produces:
 
 ```bash
 Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
@@ -162,7 +162,7 @@ llms:
   llm_agent_prompt: my_agent_prompt.txt
 ```
 
-- Running `bibcat run-gpt -i 0` without verbosity produces:
+- Running `bibcat llm run -i 0` without verbosity produces:
 
 ```bash
 Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
@@ -173,14 +173,14 @@ INFO - Output: {'whale': 'Humpback', 'response': "The Humpback whale is the star
 
 #### Option 3 - Toggle via CLI
 
-If you have multiple custom prompt files, you can quickly switch between them using the `-u` or `-a` flags on `run-gpt`, for `user`, and `agent` prompts, respectively, without modifying your config file.
+If you have multiple custom prompt files, you can quickly switch between them using the `-u` or `-a` flags on `llm run`, for `user`, and `agent` prompts, respectively, without modifying your config file.
 
 - Create a new text file, `my_user_prompt2.txt` with the following content:
 ```txt
 What color was the whale that Ahab hated?
 ```
 
-- Running `bibcat run-gpt -i 0 -u my_user_prompt2.txt`, produces:
+- Running `bibcat llm run -i 0 -u my_user_prompt2.txt`, produces:
 ```bash
 Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
 INFO - Using paper bibcode: 2023Natur.616..266L
@@ -192,7 +192,7 @@ INFO - Output: {'whale': 'White', 'response': "Captain Ahab had a 'whale' of a p
 
 `bibcat` supports uploading PDF files directly with the `-f` keyword, e.g.:
 ```
-bibcat run-gpt -f /Users/bcherinka/Downloads/Guidry_2021_ApJ_912_125.pdf
+bibcat llm run -f /Users/bcherinka/Downloads/Guidry_2021_ApJ_912_125.pdf
 ```
 This will first upload the file to OpenAI and return a reference file id.  The file id is attached to the prompt, and the LLM is directed to search the attached file if no paper text is included within the prompt itself. Afterwards, the uploaded file is deleted from OpenAI.
 
@@ -215,7 +215,7 @@ By default bibcat uses [Structured Response](https://openai.com/index/introducin
   - reason: the LLMs rationale for why it's assigning the mission-papertype
   - quotes: if able, a list of direct quotes from the paper that back up the LLM's reason.  (These quotes may be hallucinated!)
 
-For example, running `bibcat run-gpt -b "2023Natur.616..266L"` produces the following output:
+For example, running `bibcat llm run -b "2023Natur.616..266L"` produces the following output:
 ```json
   "2023Natur.616..266L": [
     {
@@ -253,22 +253,22 @@ For example, running `bibcat run-gpt -b "2023Natur.616..266L"` produces the foll
       ]
     },
 ```
-You can turn off structured response output with the `-u` flag, e.g. `bibcat run-gpt -b "2023Natur.616..266L" -u`.
+You can turn off structured response output with the `-u` flag, e.g. `bibcat llm run -b "2023Natur.616..266L" -u`.
 
 ## Evaluating Output
 
 To assess how well an LLM might be doing, we can try to evaulate it by running repeated trial runs, collecting the output, and comparing
 to the human classifications from the source dataset.
 
-First, run bibcat run-gpt with the `-n` flag to specify to run repeated submissions of the paper, and record all outputs in the output JSON file.
+First, run bibcat llm run with the `-n` flag to specify to run repeated submissions of the paper, and record all outputs in the output JSON file.
 
 To submit paper index 2000, 10 times, run:
 ```bash
-bibcat run-gpt -i 2000 -n 10
+bibcat llm run -i 2000 -n 10
 ```
 Once it's finished, you can evaluate the LLM output with:
 ```
-bibcat evaluate-llm -b "2020A&A...642A.105K"
+bibcat llm evaluate -b "2020A&A...642A.105K"
 ```
 
 You should see some output similar to
@@ -298,7 +298,7 @@ this will classify the paper `num_runs` time before evaluation.
 
 This example first classifies paper index 1000, 20 times, then evaluates the output.
 ```base
-bibcat evaluate-llm -i 1000 -s -n 20
+bibcat llm evaluate -i 1000 -s -n 20
 ```
 
 ```bash
@@ -492,10 +492,10 @@ This evaluation command will create a file of the bibcodes missing from the sour
 
 ### Batch Evaluation
 
-You can batch evaluate a list of papers/bibcodes with the `evaluate-llm-batch` command.  For example, to submit a list of bibcodes to `run-gpt-batch`,
+You can batch evaluate a list of papers/bibcodes with the `llm batch evaluate` command.  For example, to submit a list of bibcodes to `llm batch run`,
 with 20 runs each paper, then batch evaluate them, run:
 ```bash
-bibcat evaluate-llm-batch -p bibcode_list.txt -s -n 20
+bibcat llm batch evaluate -p bibcode_list.txt -s -n 20
 ```
 
 ## Plotting Evaluation Plots
@@ -505,12 +505,12 @@ You can assess model performance using confusion matrix plots or Receiver Operat
 ### Confusion Matrix Plot
 To plot a confusion matrix for specific missions (default threshold probability = 0.7), run:
 ```bash
-bibcat eval-plot -c -m HST -m JWST
+bibcat llm plot -c -m HST -m JWST
 ```
 
 To plot a confusion matrix for all missions, run:
 ```bash
-bibcat eval-plot -c -a
+bibcat llm plot -c -a
 ```
 These commands will also create metrics summary files ( `*metrics_summary_t0.5.txt` and `*metrics_summary_t0.5.json`).
 The outuput would look like
@@ -602,7 +602,7 @@ bibcat eval-plot -r -a
 ```
 
 ## Statistics output
-After running bibcat GPT classification using bibcat run-gpt, bibcat run-gpt-batch, or bibcat evaluate-llm to generate classifications for papers, you may want to review various statistics. These statistics can include the number of papers per mission and papertype, the count of accepted papertypes, and the number of papers that require human inspection due to low confidence scores.
+After running bibcat GPT classification using bibcat llm run, bibcat llm batch run, or bibcat llm evaluate to generate classifications for papers, you may want to review various statistics. These statistics can include the number of papers per mission and papertype, the count of accepted papertypes, and the number of papers that require human inspection due to low confidence scores.
 
 From the evaluation summary output file, you may want to see the list of the papers where human classifications are not consistent with llm classifications. The next command line will also create this file.
 
@@ -613,7 +613,7 @@ To create a statistics JSON file, use the command line options listed below.
 
 To create a statisitics output from the *e*valuation summary output, e.g., `summary_output_t0.7.json`, run:
 ```bash
-bibcat stats-llm -e
+bibcat llm stats -e
 ```
 The output file name will be something like `evaluation_stats_t0.7.json` where `t0.7` refers to the threshold value, `0.7` to accept the llm's papertype.
 
@@ -624,7 +624,7 @@ This output will provide various number counts including the number of papers wi
 
 To create statisitics output files,`operation_stats_t0.7.json` and `operation_stats_t0.7.txt` from the llm classification output for *o*peration, `paper_output.json`, run:
 ```bash
-bibcat stats-llm -o
+bibcat llm stats -o
 ```
 ```bash
 INFO - reading /Users/jyoon/GitHub/bibcat/output/output/llms/openai_gpt-4o-mini/paper_output.json
@@ -669,15 +669,15 @@ The statistics `.txt`output file shows the table view of mission, papertype, tot
 ```
 
 ### Audit inconsistent classifications
-The command line command, `bibcat audit-llm`, will create a json file (`config.llms.inconsistent_classifications_file`) of failure bibcode + mission classifications and its summary counts. To create an audit summary and inconsistent classification breakdown, run this command:
+The command line command, `bibcat llm audit`, will create a json file (`config.llms.inconsistent_classifications_file`) of failure bibcode + mission classifications and its summary counts. To create an audit summary and inconsistent classification breakdown, run this command:
 
 ```bash
-bibcat audit-llm
+bibcat llm audit
 ```
 
 #### File output for the inconsistent classifications
 
-The command line command, `bibcat audit-llm`, will create a json file (`config.llms.inconsistent_classifications_file`) of failure bibcode + mission classifications and its summary counts.
+The command line command, `bibcat llm audit`, will create a json file (`config.llms.inconsistent_classifications_file`) of failure bibcode + mission classifications and its summary counts.
 
 The definitions of the JSON output columns are following.
 - **summary_counts** : stats summary of inconsistent classifications
