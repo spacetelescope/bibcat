@@ -7,6 +7,7 @@
   - All llm-based grouped under `llm` sub-command
   - Batch llm commands grouped under `llm batch` sub-command
   - All `_` or `-` command names shortened, e.g. `run-gpt` to `llm run`, or `audit_llm` to `llm audit`
+  - Added a new `ml` sub-command group and moved the NLP cli commands underneath
 
 ### Removed
 - [PP #48](https://github.com/spacetelescope/bibcat/pull/48)
