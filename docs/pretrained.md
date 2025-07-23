@@ -12,13 +12,13 @@ Here is a quick start guide. If this is your first time running `bibcat`, you wi
   output:
     name_model: tf_bert_run
   ```
-2. run `bibcat train`. This process will build and train a new model using the default machine learning (ML) hyperparameter settings specified in the ml: section of the bibcat_config.yaml file, applying them to the training dataset.
+2. run `bibcat ml train`. This process will build and train a new model using the default machine learning (ML) hyperparameter settings specified in the ml: section of the bibcat_config.yaml file, applying them to the training dataset.
 
 ### Evaluate the trained models
-- To evaluate the classifiers, run `bibcat evaluate`. `fetch_papers.py` (with `do_evaluation=True`) fetches the test papers with papertrack classification (`paper_type`). It will produce some evaluation diagnostics such as a confusion matrix in the `output/ouptut/` directory.
+- To evaluate the classifiers, run `bibcat ml evaluate`. `fetch_papers.py` (with `do_evaluation=True`) fetches the test papers with papertrack classification (`paper_type`). It will produce some evaluation diagnostics such as a confusion matrix in the `output/ouptut/` directory.
 
 ### Paper classification for operation
-- To classify papers with the trained model, run `bibcat classify`. Copy `etc/fakedata.json` to your local OPSDATA folder to test `bibcat classify`. Check out `etc/fakedata.json` to see the necessary contents for operational papers in JSON. You use any texts with their bibcode in a JSON file by pointing `inputs.path_ops_data`in `bibcat_config.yaml` to your JSON file. fetch_papers.py (with with `do_evaluation=False` will fetch the JSON file for classification )
+- To classify papers with the trained model, run `bibcat ml classify`. Copy `etc/fakedata.json` to your local OPSDATA folder to test `bibcat ml classify`. Check out `etc/fakedata.json` to see the necessary contents for operational papers in JSON. You use any texts with their bibcode in a JSON file by pointing `inputs.path_ops_data`in `bibcat_config.yaml` to your JSON file. fetch_papers.py (with with `do_evaluation=False` will fetch the JSON file for classification )
 
 
 ### Changing Models
@@ -36,13 +36,13 @@ ml:
     dict_ml_model_encoders: {"roberta_encased": "https://www.kaggle.com/models/kaggle/roberta/TensorFlow2/en-cased-l-12-h-768-a-12/1"}
     dict_ml_model_preprocessors: {"roberta_encased": "https://kaggle.com/models/kaggle/roberta/TensorFlow2/en-cased-preprocess/1"}
 ```
-Then run `bibcat train` and `bibcat classify` as normal.
+Then run `bibcat ml train` and `bibcat ml classify` as normal.
 
-Alternatively, you can specify new models directly from the command line during `bibcat train`.  For example, to use the `roberta` model, run:
+Alternatively, you can specify new models directly from the command line during `bibcat ml train`.  For example, to use the `roberta` model, run:
 ```
-bibcat train -m roberta -n tf_roberta_trial -k roberta_encased
+bibcat ml train -m roberta -n tf_roberta_trial -k roberta_encased
 ```
 This assumes the preprocessors and encoders for that model are already included in the config file.  To use a different preprocessor or encoder not included in your configuration file, you can manually pass in the urls, e.g.
 ```
-bibcat train -m roberta -n tf_roberta_trial -k roberta_encased -e https://www.kaggle.com/models/kaggle/roberta/TensorFlow2/en-cased-l-12-h-768-a-12/1 -p https://kaggle.com/models/kaggle/roberta/TensorFlow2/en-cased-preprocess/1
+bibcat ml train -m roberta -n tf_roberta_trial -k roberta_encased -e https://www.kaggle.com/models/kaggle/roberta/TensorFlow2/en-cased-l-12-h-768-a-12/1 -p https://kaggle.com/models/kaggle/roberta/TensorFlow2/en-cased-preprocess/1
 ```
