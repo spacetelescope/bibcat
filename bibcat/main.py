@@ -35,6 +35,11 @@ def cli() -> None:
 
 # Classical ML commands
 
+@cli.group("ml", short_help="Classical ML-based paper classification")
+def mlcli():
+    """ML-based paper classification using classical NLP models, e.g. BERT"""
+    pass
+
 
 @cli.command(help="Build a combined dataset")
 def dataset() -> None:
@@ -66,7 +71,7 @@ def dataset() -> None:
         build_dataset()
 
 
-@cli.command(help="Build or train a classical NLP ML model")
+@mlcli.command(help="Build or train a classical NLP ML model")
 @click.option("-l", "--library", default="tensorflow", type=str, show_default=True, help="The model library to use")
 @click.option("-m", "--model", default="bert", type=str, show_default=True, help="The model type to use")
 @click.option(
@@ -107,7 +112,7 @@ def train(library, model, name, key, preprocessor, encoder) -> None:
     build_model()
 
 
-@cli.command(help="Classify a paper using a trained model")
+@mlcli.command(help="Classify a paper using a trained model")
 @click.option(
     "-n",
     "--name",
@@ -125,12 +130,7 @@ def classify(name) -> None:
     classify_papers(classifier_name=name)
 
 
-@cli.command(help="Update the training dataset JSON file")
-def update() -> None:
-    pass
-
-
-@cli.command(help="Evaluate a trained model on efficacy and performance")
+@mlcli.command(help="Evaluate a trained model on efficacy and performance")
 @click.option(
     "-n",
     "--name",
