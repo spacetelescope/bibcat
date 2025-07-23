@@ -1,5 +1,5 @@
 # BibCat
-Bibcat classifies astronomical journal papers into multiple paper categories. The primary categories are "science", "mention", "data-influenced", and "ignore".
+Bibcat classifies astronomical journal papers into multiple paper categories. The primary categories are "science", "mention", "data-influenced", and "ignore". This project is a work in progress.
 
 ## Development Workflow
 There are two main branches for bibcat work:
@@ -23,11 +23,24 @@ conda create -n env_name python=3.10
 conda activate env_name
 ```
 
+If you want to create a lightweight python environment, you can use `micromamba`, which is fast alternative to conda, written in C++, that implements the same CLI interface. Follow this [instructions](https://mamba.readthedocs.io/en/latest/installation/micromamba-installation.html) to install `micromamba`.
+
+```shell
+micromamba create -n env_name python=3.10
+micromamba activate env_name
+```
+
 ### Bibcat installation
 The `bibcat` directory contains the python package itself, installable via pip. Move to the main bibcat root directory where `pyproject.toml` is located and run this command. This will only install the dependencies needed to run the LLM component of bibcat.  **Note:** you still need to manually run the `spacy download` command specified below.
 
 ```shell
-pip install -e .
+pip install .
+```
+#### Installation for developers
+If you are interested in developing and contributing to **casper**, you should install this package with `-e`, it allows you to work on the package's source code and see changes reflected immediately without needing to reinstall.
+
+```shell
+pip install -e . # install editable mode
 ```
 To install the optional Tensorflow dependencies for use of the ML component of bibcat, run `pip install -e ".[ml]` or follow the tensorflow instructions below.
 
@@ -96,8 +109,8 @@ For other configuration options and more detailed information, check out at the 
 Download several data files (the ADS full text file and the papertrack file) to create models for training or combined fulltext dataset files for the input text. These files can be accessed only by authorized users. Downloading the files requires a single sign-on.
 Save the files outside the `bibcat` folder on your local computer, and you will set up the paths to the files. See more details in **User Configuration and Data Filepaths** below.
 We refer
-- the combined papers+classification JSON file ([combined_dataset_2025_03_25.json](https://stsci.box.com/s/l2pmbfass06m1q8ni29eoomcsjpn060u)) to `source data`,
-- the papertrack export JSON file ([papertrack_in_papertext_2025_03_06.json](https://stsci.box.com/s/judj08497ni6zitf2mdoql902luos47u)) to `papertrack data`, and
+- the combined papers+classification JSON file ([combined_dataset_2025_07_08.json](https://stsci.box.com/s/4xnzbgq9vw3lt34lyxumeo0nnil7x7lx)) to `source data`,
+- the papertrack export JSON file ([papertrack_export_papertext_2025-07-08.json](https://stsci.box.com/s/4jdvotw1hdz6d9i1l7uvj1o2u2a3ddow)) to `papertrack data` (extract the tar.gz file to use), and
 - the ADS fulltext data file ([ST_Request2023_cleaned_2025_03_10.json](https://stsci.box.com/s/0a5uzmfsnokx1rth8m6wseybpz5bxne3)) to `papertext data`.
 
 Check out [the readme about the input data](https://github.com/spacetelescope/bibcat/blob/dev/docs/data_readme.rst) for more details.
@@ -168,7 +181,7 @@ make clean
 
 ## Quick start
 
-There is a CLI interface to bibcat.  After installation with `pip install -e .`, a `bibcat` cli will be available from the terminal.  Run `bibcat --help` from the terminal to display the available commands.  All commands also have their own help.  For example to see the options
+There is a CLI interface to bibcat.  After installation with `pip install .`, a `bibcat` cli will be available from the terminal.  Run `bibcat --help` from the terminal to display the available commands.  All commands also have their own help.  For example to see the options
 for classifying papers, run `bibcat train --help`.
 
 - First, set the three user BIBCAT_XXX_DIR environment variables specified above, in particular `BIBCAT_DATA_DIR` points to the location of your input JSON files.
