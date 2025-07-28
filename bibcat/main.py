@@ -35,6 +35,7 @@ def cli() -> None:
 
 # Classical ML commands
 
+
 @cli.group("ml", short_help="Classical ML-based paper classification")
 def mlcli():
     """ML-based paper classification using classical NLP models, e.g. BERT"""
@@ -466,12 +467,15 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
     # override the config model
     if model:
         config.llms.openai.model = model
+        logger.info(f"openai model = {model}")
     # override the config user prompt file
     if user_prompt_file:
         config.llms.llm_user_prompt = user_prompt_file
+        logger.info(f"user_prompt_file: {user_prompt_file}")
     # override the config agent prompt file
     if agent_prompt_file:
         config.llms.llm_agent_prompt = agent_prompt_file
+        logger.info(f"agent_prompt_file: {agent_prompt_file}")
     # override the config ops flag
     if ops:
         config.llms.ops = ops
@@ -479,6 +483,8 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
 
     # get the list of files
     files = files or filename.read().splitlines()
+    if filename:
+        logger.info(f"batch filename: {filename}")
 
     # iterate over the files
     for file in files:
@@ -542,7 +548,6 @@ def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
         )
     elapsed_time = time.time() - start_time
     logger.info(f"Elapsed time for evaluate_llm_batch for {len(files)} papers: {elapsed_time} seconds.")
-
 
 
 if __name__ == "__main__":
