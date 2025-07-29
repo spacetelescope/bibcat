@@ -463,7 +463,7 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
         bibcat llm batch run -f /path/to/paper.pdf
     """
     start_time = time.time()
-    logger.info("CLI option: 'run_gpt_batch' selected")
+    logger.info("CLI option: 'llm batch run' selected")
     # override the config model
     if model:
         config.llms.openai.model = model
