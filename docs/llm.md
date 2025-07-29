@@ -58,7 +58,7 @@ where `papers_to_process.txt` might look like
 
 ### Asynchronous Batch Runs on Virtual Machines
 
-When you have a large set of papers to process with Bibcat, you can run multiple Bibcat jobs serially using the Bash script utils/run_bibcat_serial.sh. This script processes one batch input file (typically containing 1,000 papers) at a time and then sleeps for 2 hours before starting the next job, to avoid hitting the API rate limit. A single job of 1,000 API calls takes approximately 4,500 seconds to complete. Note that parallel batch processing runs in Bash Script into the API rate limits. We plan to implement [Openai Bath API] (https://platform.openai.com/docs/guides/batch/batch-api) for more time-efficient and cost-effective  asynchronous runs. But until then, you can use this Bash script below.
+When you have a large set of papers to process with Bibcat, you can run multiple Bibcat jobs serially using the Bash script utils/run_bibcat_serial.sh. This script processes one batch input file (typically containing 1,000 papers) at a time and then sleeps for 2 hours before starting the next job, to avoid hitting the API rate limit. A single job of 1,000 API calls takes approximately 4,500 seconds to complete. Note that parallel batch processing would run into the API rate limits. We plan to implement [Openai Bath API] (https://platform.openai.com/docs/guides/batch/batch-api) for more time-efficient and cost-effective  asynchronous runs. But until then, you can use this Bash script below.
 
 Before running the script, update the LOG_DIR and batch file path (e.g., i_file) to match your environment. Then, execute the script from the terminal using:
 
