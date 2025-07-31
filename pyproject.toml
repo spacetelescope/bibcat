@@ -22,7 +22,7 @@ authors = [
 
 dependencies = [
   "click >= 8.1.0",
-  "spacy == 3.7.2 ",
+  "spacy >= 3.7.2 ",
   "nltk >= 3.8.1 ",
   "deepmerge >=1.1.1",
   "pandas >= 2.1.4",
@@ -30,7 +30,7 @@ dependencies = [
   "matplotlib >=3.9.0",
   "scikit-learn >=1.4.2",
   "pydantic >= 2.5.0",
-  "PyYAML == 6.0.1",
+  "PyYAML >= 6.0.1",
 ]
 dynamic = ["version"]
 

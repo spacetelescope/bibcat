@@ -23,15 +23,28 @@ conda create -n env_name python=3.10
 conda activate env_name
 ```
 
+If you want to create a lightweight python environment, you can use `micromamba`, which is fast alternative to conda, written in C++, that implements the same CLI interface. Follow this [instructions](https://mamba.readthedocs.io/en/latest/installation/micromamba-installation.html) to install `micromamba`.
+
+```shell
+micromamba create -n env_name python=3.10
+micromamba activate env_name
+```
+
 ### Bibcat installation
 The `bibcat` directory contains the python package itself, installable via pip. Move to the main bibcat root directory where `pyproject.toml` is located and run this command. This will only install the dependencies needed to run the LLM component of bibcat.  **Note:** you still need to manually run the `spacy download` command specified below.
 
 ```shell
-pip install -e .
+pip install .
 ```
-To install the optional Tensorflow dependencies for use of the ML component of bibcat, run `pip install ".[ml]` or follow the tensorflow instructions below.
+#### Installation for developers
+If you are interested in developing and contributing to **casper**, you should install this package with `-e`, it allows you to work on the package's source code and see changes reflected immediately without needing to reinstall.
 
-To install all dependencies for development and testing, run `pip install ".[all]"`.
+```shell
+pip install -e . # install editable mode
+```
+To install the optional Tensorflow dependencies for use of the ML component of bibcat, run `pip install -e ".[ml]` or follow the tensorflow instructions below.
+
+To install all dependencies for development and testing, run `pip install -e ".[all]"`.
 
 ### Spacy model downloads
 This model is used for the [Pretrained model method](https://github.com/spacetelescope/bibcat/blob/dev/docs/pretrained.md)
@@ -57,7 +70,12 @@ python -m spacy download en_core_web_sm
 
 #### Install `tensorflow-text`
 
-- To install `tensorflow-text`, the command `pip install -U "tensorflow-text"` **does not work** due to some package version conflict (as of sometime 2024, need to revisit). You need to download the latest release library compatible with your system and the tensorflow version (2.15.0 in the example) from [the Tensorflow library link.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases); For instance, if you have MacOSX with python 3.10, download [this library.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl)
+- If you are working on a non-apple silicon chip computer (e.g., intel chip),
+```
+pip install tensorflow-text==2.15.0
+```
+
+- For Apple silicon M1/M2/M3 chip, to install `tensorflow-text`, the command `pip install -U "tensorflow-text"` **does not work** due to some package version conflict (as of sometime 2024, need to revisit). You need to download the latest release library compatible with your system and the tensorflow version (2.15.0 in the example) from [the Tensorflow library link.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases); For instance, if you have MacOSX with python 3.10, download [this library.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl)
 - Then `pip install /path-to-download/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl`
 
 
@@ -91,8 +109,8 @@ For other configuration options and more detailed information, check out at the 
 Download several data files (the ADS full text file and the papertrack file) to create models for training or combined fulltext dataset files for the input text. These files can be accessed only by authorized users. Downloading the files requires a single sign-on.
 Save the files outside the `bibcat` folder on your local computer, and you will set up the paths to the files. See more details in **User Configuration and Data Filepaths** below.
 We refer
-- the combined papers+classification JSON file ([combined_dataset_2025_03_25.json](https://stsci.box.com/s/l2pmbfass06m1q8ni29eoomcsjpn060u)) to `source data`,
-- the papertrack export JSON file ([papertrack_in_papertext_2025_03_06.json](https://stsci.box.com/s/judj08497ni6zitf2mdoql902luos47u)) to `papertrack data`, and
+- the combined papers+classification JSON file ([combined_dataset_2025_07_08.json](https://stsci.box.com/s/4xnzbgq9vw3lt34lyxumeo0nnil7x7lx)) to `source data`,
+- the papertrack export JSON file ([papertrack_export_papertext_2025-07-08.json](https://stsci.box.com/s/4jdvotw1hdz6d9i1l7uvj1o2u2a3ddow)) to `papertrack data` (extract the tar.gz file to use), and
 - the ADS fulltext data file ([ST_Request2023_cleaned_2025_03_10.json](https://stsci.box.com/s/0a5uzmfsnokx1rth8m6wseybpz5bxne3)) to `papertext data`.
 
 Check out [the readme about the input data](https://github.com/spacetelescope/bibcat/blob/dev/docs/data_readme.rst) for more details.
@@ -163,7 +181,7 @@ make clean
 
 ## Quick start
 
-There is a CLI interface to bibcat.  After installation with `pip install -e .`, a `bibcat` cli will be available from the terminal.  Run `bibcat --help` from the terminal to display the available commands.  All commands also have their own help.  For example to see the options
+There is a CLI interface to bibcat.  After installation with `pip install .`, a `bibcat` cli will be available from the terminal.  Run `bibcat --help` from the terminal to display the available commands.  All commands also have their own help.  For example to see the options
 for classifying papers, run `bibcat train --help`.
 
 - First, set the three user BIBCAT_XXX_DIR environment variables specified above, in particular `BIBCAT_DATA_DIR` points to the location of your input JSON files.

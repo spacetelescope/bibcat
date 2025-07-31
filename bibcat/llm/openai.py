@@ -200,9 +200,9 @@ class OpenAIHelper:
             when the prompt fields are missing from the paper data
         """
         user = get_llm_prompt("user")
-
         # check the user template fields match the paper dictionary keys
         fields = re.findall(r"{(.*?)}", user)
+
         missing = set(fields) - (set(paper.keys()) | set(["missions", "kw_missions"]))
         if missing:
             logger.warning("Missing user template fields in input paper data: %s. Filling empty values.", missing)
@@ -215,9 +215,11 @@ class OpenAIHelper:
         # format the user prompt the paper content
         return user.format(**paper, missions=", ".join(config.missions), kw_missions=kw_missions)
 
-    def get_mission_text(self, paper) -> dict:
+    def get_mission_text(self, paper: dict) -> dict:
         """Get flags for missions found in paper text"""
+
         text = f"{paper['title'][0]}; {paper.get('abstract', '')}; {paper['body']}"
+
         return {k: v for k, v in zip(config.missions, identify_missions_in_text(config.missions, text=text)) if v}
 
     def send_message(self, user_prompt: str = None, with_file: bool = None):
@@ -285,7 +287,9 @@ class OpenAIHelper:
             self.response = result.output_parsed.model_dump()
         return self.response
 
-    def submit_paper(self, filepath: str = None, bibcode: str = None, index: int = None) -> dict | str:
+    def submit_paper(
+        self, filepath: str = None, bibcode: str = None, index: int = None, paper_dict: dict = None
+    ) -> dict | str:
         """Submit a paper to the OpenAI LLM model
 
         Submit a paper to the OpenAI LLM model for processing, either using an AI Assistant
@@ -299,6 +303,9 @@ class OpenAIHelper:
             the bibcode of an entry in the source papetrack combined dataset, by default None
         index : int, optional
             a list item array index in the source papetrack combined dataset, by default None
+        paper_dict : dict, optional
+            paper dictionary, for example,
+            paper_dict = {"bibcode": "bibcode", "title": ["title",], "abstract": "abstract", "body": "body"}
 
         Returns
         -------
@@ -317,6 +324,8 @@ class OpenAIHelper:
 
         # check for a file path
         with_file = filepath is not None
+        # check for a paper text dictionary from the PaperTrack pipeline
+        with_paper_dict = paper_dict is not None
 
         if with_file:
             # get the file path
@@ -326,6 +335,15 @@ class OpenAIHelper:
             # upload the file to openai
             self.upload_file(self.filename)
             logger.info("Uploaded file id: %s", self.file.id)
+
+        elif with_paper_dict:
+            # get the paper text dictionary from the PaperTrack pipeline
+            self.bibcode = paper_dict["bibcode"]
+            self.paper = paper_dict
+            logger.info("Using paper_dict in PaperTrack: %s", self.bibcode)
+
+            # populate the user template with text
+            self.user_prompt = self.populate_user_template(self.paper)
         else:
             # get the paper source
             self.paper = get_source(bibcode=bibcode, index=index)
@@ -437,7 +455,11 @@ def convert_to_classification(output: dict, bibcode: str, threshold: float = 0.5
 
 
 def classify_paper(
-    file_path: str = None, bibcode: str = None, index: int = None, n_runs: int = 1, verbose: bool = None
+    file_path: str = None,
+    bibcode: str = None,
+    index: int = None,
+    n_runs: int = 1,
+    verbose: bool = None,
 ):
     """Send a prompt to an OpenAI LLM model to classify a paper
 
