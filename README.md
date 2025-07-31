@@ -1,12 +1,12 @@
 # BibCat
-Bibcat classifies astronomical journal papers into multiple paper categories. The primary categories are "science", "mention", and "data-influenced". Currently, this is work in progress and we are focusing on "science" and "nonscience" ("mention", "data-influenced", and non-relevant papers).
+Bibcat classifies astronomical journal papers into multiple categories. The primary categories are "science" and "mention." In our work, we focus on distinguishing between "science" and "nonscience" papers, where "nonscience" includes "mention" and other non-mission-relevant papers.
 
 ## Development Workflow
 There are two main branches for bibcat work:
 
-- The **dev** branch contains ongoing development work and all new work should be done in branches that are merged against **dev**.
+- The dev branch contains ongoing development work. All new features and changes should be developed in branches that are merged into `dev`.
 
-- The **main** branch contains the latest stable release of `bibcat`.
+- The main branch contains the latest stable release of `bibcat`.
 
 ## Installation
 ### Required packages and versions
