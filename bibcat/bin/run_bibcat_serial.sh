@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# Each bibcat job sleeps 2 hours after completion to be safe and not to run into RateLimitError because one job of 1000 API calls takes ~4500 seconds. To run this script on the terminal, run `./run_bibcat_serial.sh /path/to/batch_dir`.
+
+# Initialize total compute time
+TOTAL_COMPUTE_SECONDS=0
+SCRIPT_START=$(date +%s)
+JOB_END=$SCRIPT_START
+
+# Directory for logs
+LOG_DIR="../logs"
+mkdir -p "$LOG_DIR" # check if  log directory exists
+
+# Setting Log file and Logging start
+LOG="$LOG_DIR/$(date '+%F_%H-%M-%S')_serial_job_log.txt"
+> "$LOG"
+
+# Batch Directory from CLI arg and find files
+BATCH_DIR="$1"
+if [[ -z "$BATCH_DIR" || ! -d "$BATCH_DIR" ]]; then
+    echo "Usage: $0 /path/to/batch_dir" >&2
+    exit 1
+fi
+# Find batch files
+mapfile -t BATCH_FILES < <(find "$BATCH_DIR" -type f -name "*.txt" | sort)
+
+# Check if any .txt files are found
+if [[ ${#BATCH_FILES[@]} -eq 0 ]]; then
+    echo "No batch files found in $BATCH_DIR" | tee -a "$LOG"
+    exit 0
+fi
+
+# Run bibcat one at a time and wait 2 hrs before the next run for batch files.
+for i_file in "${BATCH_FILES[@]}"; do # for all batch files found in BATCH_DIR
+
+    echo "$(date '+%F %T') - Starting bibcat on $i_file" | tee -a "$LOG"
+
+    JOB_START=$(date +%s)
+
+    # run each file
+    if bibcat llm batch run -p "$i_file"; then
+        JOB_END=$(date +%s)
+        JOB_DURATION=$((JOB_END - JOB_START))
+        TOTAL_COMPUTE_SECONDS=$((TOTAL_COMPUTE_SECONDS + JOB_DURATION))
+
+        # recording the time for current job
+        MINUTES=$((JOB_DURATION / 60))
+        SECONDS_REMAIN=$((JOB_DURATION % 60))
+        echo "[$(date '+%F %T')] Success running: $i_file — Duration: ${MINUTES}m ${SECONDS_REMAIN}s" | tee -a "$LOG"
+
+    else
+        echo "[$(date '+%F %T')] ERROR: Failed: $i_file (exit code $?)" | tee -a "$LOG"
+    fi
+
+    echo "Sleeping for 2 hours before the next run" | tee -a "$LOG"
+    sleep 2h
+done
+
+# Logging time spent for all batch jobs
+T_MINUTES=$((TOTAL_COMPUTE_SECONDS / 60))
+T_SECONDS_REMAIN=$((TOTAL_COMPUTE_SECONDS % 60))
+
+# Logging time spent for the whole operation time
+TOTAL_OPERATION_SECONDS=$((JOB_END - SCRIPT_START))
+T_OPS_MINUTES=$((TOTAL_OPERATION_SECONDS / 60))
+T_OPS_SECONDS_REMAIN=$((TOTAL_OPERATION_SECONDS % 60))
+
+echo "[$(date '+%F %T')] All jobs complete." | tee -a "$LOG"
+echo "Total compute time (excluding sleeps): ${T_MINUTES} min ${T_SECONDS_REMAIN} sec" | tee -a "$LOG"
+echo "Total compute time (including sleeps): ${T_OPS_MINUTES} min ${T_OPS_SECONDS_REMAIN} sec" | tee -a "$LOG"
