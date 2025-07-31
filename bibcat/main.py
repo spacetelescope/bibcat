@@ -35,6 +35,7 @@ def cli() -> None:
 
 # Classical ML commands
 
+
 @cli.group("ml", short_help="Classical ML-based paper classification")
 def mlcli():
     """ML-based paper classification using classical NLP models, e.g. BERT"""
@@ -542,7 +543,6 @@ def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
         )
     elapsed_time = time.time() - start_time
     logger.info(f"Elapsed time for evaluate_llm_batch for {len(files)} papers: {elapsed_time} seconds.")
-
 
 
 if __name__ == "__main__":
