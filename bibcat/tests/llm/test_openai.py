@@ -120,6 +120,7 @@ def test_create_batch_file(fixconfig, mocker, monkeypatch, tmp_path):
     d = tmp_path / "llm"
     d.mkdir()
 
+    monkeypatch.setenv("OPENAI_API_KEY", "testkey")
     mocker.patch("bibcat.llm.openai.get_source", return_value=paper)
     config = fixconfig(str(d), "bibcat.llm.openai")
 
