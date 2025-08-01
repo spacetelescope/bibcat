@@ -107,6 +107,7 @@ textprocessing:
   placeholder_author: "Authorsetal" # For text that is anonymized against authors, this is the text that the authors are replaced with.
   which_modes: [none, skim, trim, anon, skim_trim_anon]
   phrases_ambig: # Database of known true vs false positives (e.g., phrases that are mission-related (like "Hubble telescope") vs phrases that are false positives (like "Hubble constant").  Nouns should be given in singular form, since plurality is avoided internally to the code via synsets / internal meanings.  Column 1 is the mission; column 2 is the ambiguous phrase; column 3 is the boolean for true vs false positive status.
+  - [Copernicus, Nicolaus Copernicus, 'FALSE']
   - [Kepler, Campos Kepler, 'FALSE']
   - [Kepler, Castanheira Kepler, 'FALSE']
   - [Kepler, Kepler 000, 'FALSE']
@@ -158,7 +159,7 @@ textprocessing:
   - [Kepler, e.g. Kepler, 'TRUE']
   - [Kepler, Kepler Input Catalog, 'TRUE']
   - [Kepler, Kepler K p, 'TRUE']
-  - [Kepler, Kepler K2, 'TRUE']
+  - [Kepler, Kepler K2, 'FALSE']
   - [Kepler, Kepler LC, 'TRUE']
   - [Kepler, Kepler light, 'TRUE']
   - [Kepler, Kepler measurement, 'TRUE']
@@ -269,6 +270,7 @@ textprocessing:
   - [AnyMission, AnyMission lightcurve, 'TRUE']
   - [AnyMission, AnyMission mission, 'TRUE']
   - [AnyMission, AnyMission mode, 'TRUE']
+  - [AnyMission, AnyMission model, 'FALSE']
   - [AnyMission, AnyMission monitoring, 'TRUE']
   - [AnyMission, AnyMission observation, 'TRUE']
   - [AnyMission, AnyMission observatory, 'TRUE']

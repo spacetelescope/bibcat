@@ -11,11 +11,22 @@ import spacy
 from nltk.corpus import wordnet  # type: ignore
 
 from bibcat import config
-from bibcat.core import grammar, paper
+from bibcat.core import paper
 from bibcat.core import parameters as params
-from bibcat.tests.core.test_config import test_dict_lookup_kobj, test_list_lookup_kobj
+from bibcat.core.parameters import kobj_copernicus, kobj_hubble, kobj_k2, kobj_kepler
 
 nlp = spacy.load(config.grammar.spacy_language_model)
+
+# test Keyword-object lookups
+test_dict_lookup_kobj = {
+    "Hubble": kobj_hubble,
+    "Kepler": kobj_kepler,
+    "K2": kobj_k2,
+    "Copernicus": kobj_copernicus,
+}
+
+# test Keyword-object lookups
+test_list_lookup_kobj = [kobj_hubble, kobj_kepler, kobj_k2, kobj_copernicus]
 
 
 class TestPaper(unittest.TestCase):
@@ -240,6 +251,8 @@ class TestPaper(unittest.TestCase):
                 "K2 database": {"lookup": "K2", "bool": True},
                 "K2-123 star": {"lookup": "K2", "bool": False},
                 "K2 stars": {"lookup": "K2", "bool": False},
+                "Copernicus satellite": {"lookup": "Copernicus", "bool": True},
+                "Copernicus model": {"lookup": "Copernicus", "bool": False},
             }
 
             # Prepare and run tests for bibcat class instance

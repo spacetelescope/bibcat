@@ -121,8 +121,8 @@ class Keyword(Base):
 
         # Store regular expression for case-insensitive acronyms
         if (acronyms_caseinsensitive is not None) and (len(acronyms_caseinsensitive) > 0):
-            # Update acronyms to allow optional spaces
-            acronyms_upd = [(r"(\.?)( ?)".join(item)) for item in self._get_info("acronyms_caseinsensitive")]
+            # Update acronyms to allow optional spaces and puncuations `.` and `-`
+            acronyms_upd = [(r"(\.?)( ?)(-?)".join(item)) for item in self._get_info("acronyms_caseinsensitive")]
             # Build regular expression to recognize acronyms
             exp_a_caseinsensitive = (
                 r"(^|[^\.])((\b" + r"\b)|(\b".join([phrase for phrase in acronyms_upd]) + r"\b)(\.?))($|[^A-Z|a-z])"
@@ -132,8 +132,8 @@ class Keyword(Base):
 
         # Store regular expression for case-sensitive acronyms
         if (acronyms_casesensitive is not None) and (len(acronyms_casesensitive) > 0):
-            # Update acronyms to allow optional spaces
-            acronyms_upd = [(r"(\.?)( ?)".join(item)) for item in self._get_info("acronyms_casesensitive")]
+            # Update acronyms to allow optional spaces and puncuations `.` and `-`
+            acronyms_upd = [(r"(\.?)( ?)(-?)".join(item)) for item in self._get_info("acronyms_casesensitive")]
             # Build regular expression to recognize acronyms
             exp_a_casesensitive = (
                 r"(^|[^\.])((\b" + r"\b)|(\b".join([phrase for phrase in acronyms_upd]) + r"\b)(\.?))($|[^A-Z|a-z])"

@@ -9,7 +9,14 @@ import unittest
 from bibcat import config
 from bibcat.core import keyword
 from bibcat.core import parameters as params
-from bibcat.tests.core.test_config import test_dict_lookup_kobj
+from bibcat.core.parameters import kobj_hubble, kobj_k2, kobj_kepler
+
+# test Keyword-object lookups
+test_dict_lookup_kobj = {
+    "Hubble": kobj_hubble,
+    "Kepler": kobj_kepler,
+    "K2": kobj_k2,
+}
 
 
 class TestKeyword(unittest.TestCase):
@@ -18,15 +25,11 @@ class TestKeyword(unittest.TestCase):
         # Test fetching keyword object for objects with overlapping terms
         def test__fetch_keyword_object__overlap(self):
             # Prepare text and answers for test
-            tmp_kobj_list = [params.kobj_hubble, params.kobj_hla]
+            tmp_kobj_list = [params.kobj_k2, params.kobj_kepler]
             dict_acts = {
-                "Hubble Legacy Archive": "HLA",
-                "Hubble Legacy Archive results": "HLA",
-                "Hubble": "Hubble",
-                "HST": "Hubble",
-                "HLA": "HLA",
-                "Hubble Archive": "Hubble",
-                "Hubble Legacy": "Hubble",
+                "K2 mission": "K2",
+                "Kepler": "Kepler",
+                "Kepler K2": "K2",
             }
 
             # Prepare and run test for bibcat class instance
@@ -82,7 +85,15 @@ class TestKeyword(unittest.TestCase):
 
             kobj3 = keyword.Keyword(
                 keywords=[],
-                acronyms_caseinsensitive=["AB....C", "A....... B...", "A.BC  D", "ABCD E", "AB C"],
+                acronyms_caseinsensitive=[
+                    "AB....C",
+                    "A....... B...",
+                    "A.BC  D",
+                    "ABCD E",
+                    "AB C",
+                    "AB-CDE",
+                    "A-B-CD- E",
+                ],
                 acronyms_casesensitive=[],
                 ambig_words=[],
                 banned_overlap=[],
@@ -121,7 +132,7 @@ class TestKeyword(unittest.TestCase):
                 "Keplerian velocity": {"kobj": params.kobj_kepler, "bool": False},
                 "that Hubble data": {"kobj": params.kobj_hubble, "bool": True},
                 "that Hubble Space Telescope data": {"kobj": params.kobj_hubble, "bool": True},
-                "that H S T data": {"kobj": params.kobj_hubble, "bool": True},
+                "that H S-T data": {"kobj": params.kobj_hubble, "bool": True},
                 "that H.S T data": {"kobj": params.kobj_hubble, "bool": True},
                 "that HST data": {"kobj": params.kobj_hubble, "bool": True},
                 "that HST PSF.": {"kobj": params.kobj_hubble, "bool": True},
@@ -139,14 +150,17 @@ class TestKeyword(unittest.TestCase):
                 "that AK2 data": {"kobj": params.kobj_k2, "bool": False},
                 "that K2 data": {"kobj": params.kobj_k2, "bool": True},
                 "that K 2 star": {"kobj": params.kobj_k2, "bool": False},
-                "archive observations": {"kobj": params.kobj_hla, "bool": False},
-                "hubble and archive observations": {"kobj": params.kobj_hla, "bool": False},
-                "Hubble and Archive observations": {"kobj": params.kobj_hla, "bool": False},
-                "they took Hubble images": {"kobj": params.kobj_hla, "bool": False},
-                "they took HST images": {"kobj": params.kobj_hla, "bool": False},
-                "the hubble legacy archive": {"kobj": params.kobj_hla, "bool": True},
-                "the hla uncapitalized": {"kobj": params.kobj_hla, "bool": True},
-                "the Hubble Archive is different": {"kobj": params.kobj_hla, "bool": False},
+                "that Kepler K2 mission": {"kobj": params.kobj_k2, "bool": True},
+                "that Kepler K2 data": {"kobj": params.kobj_kepler, "bool": False},
+                "that Kepler and K2 data": {"kobj": params.kobj_kepler, "bool": True},
+                "the Kepler and K2 missions": {"kobj": params.kobj_k2, "bool": True},
+                "that OAO 3 data": {"kobj": params.kobj_copernicus, "bool": True},
+                "the Copernicus satellite": {"kobj": params.kobj_copernicus, "bool": True},
+                "HST FGS": {"kobj": params.kobj_hubble, "bool": True},
+                "JWST FGS": {"kobj": params.kobj_jwst, "bool": True},
+                "VLA-FIRST": {"kobj": params.kobj_first, "bool": True},
+                "VLA FIRST": {"kobj": params.kobj_first, "bool": True},
+                "Pan-STARRS-1": {"kobj": params.kobj_panstarrs, "bool": True},
             }
 
             # Prepare and run test for bibcat class instance
@@ -199,6 +213,7 @@ class TestKeyword(unittest.TestCase):
                 "that AK2 data": {"kobj": params.kobj_k2, "result": "that AK2 data"},
                 "that K2 data": {"kobj": params.kobj_k2, "result": "that {0} data".format(placeholder)},
                 "that K 2 star": {"kobj": params.kobj_k2, "result": "that K 2 star"},
+                "that OAO-3 data": {"kobj": params.kobj_copernicus, "result": "that {0} data".format(placeholder)},
             }
 
             # Prepare and run test for bibcat class instance

@@ -8,9 +8,9 @@ This module contains keyword parameters for bibcat such as MAST mission names.  
 Parameters
 ----------
 acronyms_caseinsensitive : {empty list, list of strings}
-    List of acronyms that can describe the mission; capitalization is not preserved (e.g., "HST" and "hst" are treated in the same manner).  Punctuation should be omitted (as it is handled internally within the code).
+    List of acronyms that can describe the mission; capitalization is not preserved (e.g., "HST" and "hst" are treated in the same manner).  Punctuation (` `, `.`,`-`) should be omitted (as it is handled internally within the code). `Pan STARRS-1` and `panstarrs1` are treated in the same manner.
 acronyms_casesensitive : {empty list, list of strings}
-    List of acronyms that can describe the mission; capitalization is preserved (e.g., "STScI").  Punctuation should be omitted (as it is handled internally within the code).
+    List of acronyms that can describe the mission; capitalization is preserved (e.g., "STScI").  Punctuation (` `, `.`,`-`) should be omitted (as it is handled internally within the code).
 ambig_words : {empty list, list of strings}
     Phrases for which the user requests false positive checks to be done against the internal database of false positives.  E.g., "Hubble" can be found in the mission phrase "Hubble Telescope" and also in the false positive (i.e., non-mission) phrase "Hubble constant".  By specifying "Hubble" as a false positive phrase for the Hubble mission, the code knows to internally check phrases in the text with "Hubble" against the internal false positive database and procedure.
 banned_overlap : {empty list, list of strings}
@@ -39,10 +39,13 @@ kobj_befs = keyword.Keyword(
     ambig_words=[],
 )
 kobj_copernicus = keyword.Keyword(
-    keywords=["Orbiting Astronomical Observatory", "Copernicus Mission", "Copernicus Satellite", "Copernicus", "OAO-3"],
-    acronyms_casesensitive=["OAO3"],
+    keywords=[
+        "Copernicus",
+        "Orbiting Astronomical Observatory",
+    ],
+    acronyms_casesensitive=["OAO2", "OAO3"],
     acronyms_caseinsensitive=[],
-    do_not_classify=True,
+    do_not_classify=False,
     banned_overlap=[],
     ambig_words=["Copernicus"],
 )
@@ -65,11 +68,10 @@ kobj_first = keyword.Keyword(
         "Faint Images of the Radio Sky at Twenty-cm",
         "Faint Images of the Radio Sky at Twenty Centimeters",
         "Faint Images of the Radio Sky at Twenty-Centimeters",
-        "VLA-FIRST",
     ],
-    acronyms_casesensitive=["FIRST"],
+    acronyms_casesensitive=["FIRST", "VLAFIRST"],
     acronyms_caseinsensitive=[],
-    do_not_classify=True,
+    do_not_classify=False,
     banned_overlap=[],
     ambig_words=[],
 )
@@ -95,27 +97,23 @@ kobj_hubble = keyword.Keyword(
         "Cosmic Origin Spectrograph",
         "Goddard High Resolution",
         "Hubble",
-        # "Hubble Frontier Field",
-        # "Hubble Frontier Fields",
         "Hubble Telescope",
         "Hubble Space Telescope",
-        "Hubble Legacy Archive",
         "Hubble Source Catalog",
         "Near Infrared Camera and Multi-Object Spectrometer",
         "Near-Infrared Camera and Multi-Object Spectrometer",
         "Near-Infrared Camera and Multi Object Spectrometer",
         "Near Infrared Camera and Multi Object Spectrometer",
-        "WFPC-1",
-        "WFPC-2",
+        "Wide Field Planetary Camera",
+        "Wide Field Planetary Camera 1",
+        "Wide Field Planetary Camera 2",
     ],
     acronyms_casesensitive=[
-        "COS",
         "GOODS",
     ],
     acronyms_caseinsensitive=[
         "GHRS",
         "HST",
-        "HLA",
         "NICMOS",
         "STIS",
         "WFPC",
@@ -172,38 +170,34 @@ kobj_iue = keyword.Keyword(
 )
 # need to revisit
 kobj_k2 = keyword.Keyword(
-    keywords=["K2", "K2 Mission"],
+    keywords=["Kepler K2", "K2"],
     acronyms_casesensitive=[],
     acronyms_caseinsensitive=[],
     do_not_classify=False,
-    banned_overlap=["Kepler K2"],
-    ambig_words=[],
-    # ambig_words=["K2"],
+    banned_overlap=[],
+    # ambig_words=[],
+    ambig_words=["K2"],
 )
 kobj_kepler = keyword.Keyword(
     keywords=["Kepler", "Kepler Mission"],
     acronyms_casesensitive=[],
     acronyms_caseinsensitive=[],
     do_not_classify=False,
-    banned_overlap=[],
-    ambig_words=[],
-    # ambig_words=["Kepler"],
+    banned_overlap=["Kepler K2"],
+    # ambig_words=[],
+    ambig_words=["Kepler"],
 )
 kobj_panstarrs = keyword.Keyword(
     keywords=[
         "Panoramic Survey Telescope and Rapid Response System",
-        "Pan STARRS",
-        "Pan-STARRS",
-        "PanSTARRS-1",
-        "Pan-STARRS1",
-        "Pan-STARRS-1",
     ],
     acronyms_casesensitive=[],
     acronyms_caseinsensitive=[
         "PS1",
-        "PanSTARRS1",
         "PanSTARS",
+        "PanSTARR1",
         "PanSTARRS",
+        "PanSTARRS1",
     ],
     do_not_classify=False,
     banned_overlap=[],
@@ -211,8 +205,6 @@ kobj_panstarrs = keyword.Keyword(
 )
 kobj_roman = keyword.Keyword(
     keywords=[
-        "Nancy Grace Roman Space Telescope",
-        "Nancy Roman Telescope",
         "Roman Space Telescope",
         "Roman Telescope",
         "Wide-Field Infrared Survey Telescope",
