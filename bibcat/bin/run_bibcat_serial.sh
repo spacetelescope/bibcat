@@ -1,24 +1,17 @@
 #!/bin/bash
 
-# Each bibcat job sleeps 2 hours after completion to be safe and not to run into RateLimitError because one job of 1000 API calls takes ~4500 seconds. To run this script on the terminal, run `./run_bibcat_serial.sh /path/to/batch_dir`.
+# Each bibcat job sleeps 2 hours after completion to be safe and not to run into RateLimitError because one job of 1000 API calls takes ~4500 seconds. To run this script on the terminal, run `chmod +x run_bibcat_serial.sh` and `./run_bibcat_serial.sh /path/to/batch_dir /path/to/logs`. If you want to dry-run, `./run_bibcat_serial.sh /path/to/batch_dir /path/to/logs --dry-run`.
 
 # Initialize total compute time
 TOTAL_COMPUTE_SECONDS=0
 SCRIPT_START=$(date +%s)
 JOB_END=$SCRIPT_START
 
-# Directory for logs
-LOG_DIR="../logs"
-mkdir -p "$LOG_DIR" # check if  log directory exists
 
-# Setting Log file and Logging start
-LOG="$LOG_DIR/$(date '+%F_%H-%M-%S')_serial_job_log.txt"
-> "$LOG"
-
-# Batch Directory from CLI arg and find files
+# Validate Batch Directory
 BATCH_DIR="$1"
-if [[ -z "$BATCH_DIR" || ! -d "$BATCH_DIR" ]]; then
-    echo "Usage: $0 /path/to/batch_dir" >&2
+if [[ -z "$BATCH_DIR" || "$BATCH_DIR" == --* || ! -d "$BATCH_DIR" ]]; then
+    echo "Usage: $0 /path/to/batch_dir [/path/to/log_dir] [--dry-run]" >&2
     exit 1
 fi
 # Find batch files
@@ -30,6 +23,33 @@ if [[ ${#BATCH_FILES[@]} -eq 0 ]]; then
     exit 0
 fi
 
+
+# Directory for logs
+LOG_DIR="$2"
+
+# Validate Log Directory
+if [[ -z "$LOG_DIR" || ""$LOG_DIR == --* ]]; then
+    echo "Usage: $0 /path/to/batch_dir [/path/to/log_dir] [--dry-run]" >&2
+    exit 1
+fi
+
+# Create Log directory
+mkdir -p "$LOG_DIR" || {
+    echo "ERROR: Failed to create or access log directory: $LOG_DIR" >&2
+    exit 1
+}
+
+# Setting Log file and Logging start
+LOG="$LOG_DIR/$(date '+%F_%H-%M-%S')_serial_job_log.txt"
+> "$LOG"
+
+DRY_RUN=false
+for arg in "$@"; do
+    if [[ "$arg" == "--dry-run" ]]; then
+        DRY_RUN=true
+    fi
+done
+
 # Run bibcat one at a time and wait 2 hrs before the next run for batch files.
 for i_file in "${BATCH_FILES[@]}"; do # for all batch files found in BATCH_DIR
 
@@ -37,23 +57,33 @@ for i_file in "${BATCH_FILES[@]}"; do # for all batch files found in BATCH_DIR
 
     JOB_START=$(date +%s)
 
-    # run each file
-    if bibcat llm batch run -p "$i_file"; then
+    if $DRY_RUN; then
+        echo "[$(date '+%F %T')]" DRY-RUN: bibcat llm batch run -p $i_file | tee -a "$LOG"
         JOB_END=$(date +%s)
         JOB_DURATION=$((JOB_END - JOB_START))
         TOTAL_COMPUTE_SECONDS=$((TOTAL_COMPUTE_SECONDS + JOB_DURATION))
-
-        # recording the time for current job
-        MINUTES=$((JOB_DURATION / 60))
-        SECONDS_REMAIN=$((JOB_DURATION % 60))
-        echo "[$(date '+%F %T')] Success running: $i_file — Duration: ${MINUTES}m ${SECONDS_REMAIN}s" | tee -a "$LOG"
-
     else
-        echo "[$(date '+%F %T')] ERROR: Failed: $i_file (exit code $?)" | tee -a "$LOG"
-    fi
+        # run each file
+        if bibcat llm batch run -p "$i_file"; then
+            JOB_END=$(date +%s)
+            JOB_DURATION=$((JOB_END - JOB_START))
+            TOTAL_COMPUTE_SECONDS=$((TOTAL_COMPUTE_SECONDS + JOB_DURATION))
 
-    echo "Sleeping for 2 hours before the next run" | tee -a "$LOG"
-    sleep 2h
+            # recording the time for current job
+            MINUTES=$((JOB_DURATION / 60))
+            SECONDS_REMAIN=$((JOB_DURATION % 60))
+            echo "[$(date '+%F %T')] Success running: $i_file — Duration: ${MINUTES}m ${SECONDS_REMAIN}s" | tee -a "$LOG"
+
+        else
+            echo "[$(date '+%F %T')] ERROR: Failed: $i_file (exit code $?)" | tee -a "$LOG"
+        fi
+    fi
+    if $DRY_RUN; then
+        echo "DRY_RUN: would sleep for 2 hours" | tee -a $LOG
+    else
+        echo "Sleeping for 2 hours before the next run" | tee -a "$LOG"
+        sleep 2h
+    fi
 done
 
 # Logging time spent for all batch jobs
