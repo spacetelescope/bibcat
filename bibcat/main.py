@@ -14,7 +14,7 @@ import click
 from bibcat import config
 from bibcat.data.build_dataset import build_dataset
 from bibcat.llm.evaluate import evaluate_output
-from bibcat.llm.openai import classify_paper
+from bibcat.llm.openai import OpenAIHelper, classify_paper
 from bibcat.llm.plots import confusion_matrix_plot, roc_plot
 from bibcat.llm.stats import inconsistent_classifications, save_evaluation_stats, save_operation_stats
 from bibcat.pretrained.build_model import build_model
@@ -543,6 +543,45 @@ def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
     elapsed_time = time.time() - start_time
     logger.info(f"Elapsed time for evaluate_llm_batch for {len(files)} papers: {elapsed_time} seconds.")
 
+
+@llmbatch.command("submit", help="Submit a batch of papers using the OpenAI Batch API")
+@click.option(
+    "-f",
+    "--filename",
+    default=None,
+    type=click.File("r"),
+    show_default=True,
+    help="The path to a file of bibcodes to read in",
+)
+@click.option(
+    "-b",
+    "--batch-file",
+    default=None,
+    type=str,
+    help="The jsonl batch file for submission",
+)
+@click.option("-m", "--model", default=None, type=str, show_default=True, help="The model type to use")
+@click.option("-v", "--verbose", is_flag=True, show_default=True, help="Set to print verbose output")
+def submit(filename, batch_file, model, verbose):
+    """Submit a batch of papers using the OpenAI Batch API"""
+    # override the config model
+    if model:
+        config.llms.openai.model = model
+
+    # get the list of files
+    bibcodes = filename.read().splitlines() if filename else None
+
+    oa = OpenAIHelper(verbose=verbose)
+    oa.submit_batch(bibcodes=bibcodes, batch_file=batch_file)
+
+
+@llmbatch.command("retrieve", help="Retrieve a batch run from the OpenAI Batch API")
+@click.option("-b", "--batchid", default=None, help="The ID of the batch to retrieve")
+@click.option("-v", "--verbose", is_flag=True, show_default=True, help="Set to print verbose output")
+def retrieve(batchid, verbose):
+    """Retrieve a batch run from the OpenAI Batch API"""
+    oa = OpenAIHelper(verbose=verbose)
+    oa.retrieve_batch(batchid)
 
 
 if __name__ == "__main__":
