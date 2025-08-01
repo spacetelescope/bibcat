@@ -22,13 +22,6 @@ def make_paper(tmp_path):
     yield str(p)
 
 
-# TODO - clean up this config mocking stuff with what it's conftest
-@pytest.fixture()
-def ss(reconfig):
-    """fixture to set the config object"""
-    yield reconfig("bibcat.llm.io.config")
-
-
 @pytest.fixture()
 def make_tempfile(monkeypatch, tmp_path):
     """fixture factory to create a temporary custom prompt file"""
@@ -104,12 +97,10 @@ def test_default_get_llm_prompt(prompt, exp):
     [("user", "Tell me about this paper."), ("agent", "Read the paper given and extract some info.")],
     ids=["user", "agent"],
 )
-def test_custom_config_llm_prompt(mocker, ss, monkeypatch, prompt, exp):
+def test_custom_config_llm_prompt(fixconfig, monkeypatch, prompt, exp):
     """test we get the correct prompt from a custom config"""
     # mock the config data dir, so we can test the config prompts
-    monkeypatch.setenv("BIBCAT_DATA_DIR", "")
-    mocker.patch("bibcat.llm.io.config", new=ss)
-    from bibcat.llm.io import config
+    config = fixconfig("", "bibcat.llm.io")
 
     monkeypatch.setitem(config.llms, f"{prompt}_prompt", exp)
 
