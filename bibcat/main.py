@@ -467,15 +467,15 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
     # override the config model
     if model:
         config.llms.openai.model = model
-        logger.info(f"openai model = {model}")
+        logger.debug(f"openai model = {model}")
     # override the config user prompt file
     if user_prompt_file:
         config.llms.llm_user_prompt = user_prompt_file
-        logger.info(f"user_prompt_file: {user_prompt_file}")
+        logger.debug(f"user_prompt_file: {user_prompt_file}")
     # override the config agent prompt file
     if agent_prompt_file:
         config.llms.llm_agent_prompt = agent_prompt_file
-        logger.info(f"agent_prompt_file: {agent_prompt_file}")
+        logger.debug(f"agent_prompt_file: {agent_prompt_file}")
     # override the config ops flag
     if ops:
         config.llms.ops = ops
