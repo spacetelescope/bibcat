@@ -56,6 +56,22 @@ where `papers_to_process.txt` might look like
 2023ApJ...954...31C
 ```
 
+### Asynchronous Batch Runs on Virtual Machines
+
+When you have a large set of papers to process with Bibcat, you can run multiple Bibcat jobs serially using the Bash script `run_bibcat_serial.sh` in the `bins/ folder`. This script processes one batch input file (typically containing 1,000 papers) at a time and then sleeps for 2 hours before starting the next job, to avoid hitting the API rate limit. A single job of 1,000 API calls takes approximately 4,500 seconds to complete. Note that parallel batch processing would run into the API rate limits. We plan to implement [Openai Bath API] (https://platform.openai.com/docs/guides/batch/batch-api) for more time-efficient and cost-effective  asynchronous runs. But until then, you can use this Bash script below.
+
+To run this script, set the path to the batch files and the logs directory on your command line below. Then, execute the script from the terminal using:
+
+```bash
+./run_bibcat_serial.sh /path/to/batch_files /path/to/logs
+
+```
+You can use the `--dry-run` flag at the end of the command for a dry-run
+
+```bash
+ ./run_bibcat_serial.sh /path/to/batch_files /path/to/logs --dry-run
+```
+
 ### Running within Python
 
 To run within a Python environment, use the `classify_paper` function:

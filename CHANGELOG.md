@@ -3,11 +3,6 @@
 ### [Unreleased]
 - Bibcat to do list
     - Adding tutorial notebooks back
-- Reorganizing the bibcat CLI commands
-  - All llm-based grouped under `llm` sub-command
-  - Batch llm commands grouped under `llm batch` sub-command
-  - All `_` or `-` command names shortened, e.g. `run-gpt` to `llm run`, or `audit_llm` to `llm audit`
-  - Added a new `ml` sub-command group and moved the NLP cli commands underneath
 
 ### Removed
 - [PP #48](https://github.com/spacetelescope/bibcat/pull/48)
@@ -20,7 +15,14 @@
     - Deleted all previous codes and files for a fresh start
 
 ### Changed
-
+- [PR #78](https://github.com/spacetelescope/bibcat/pull/78)
+    - The combined dataset link is updated to use updated papertrack with flagship gold sample verdict
+- [PR #77](https://github.com/spacetelescope/bibcat/pull/77)
+    - Reorganizing the bibcat CLI commands
+        - All llm-based grouped under `llm` sub-command
+        - Batch llm commands grouped under `llm batch` sub-command
+        - All `_` or `-` command names shortened, e.g. `run-gpt` to `llm run`, or `audit_llm` to `llm audit`
+        - Added a new `ml` sub-command group and moved the NLP cli commands underneath
 - [PR #68](https://github.com/spacetelescope/bibcat/pull/68)
     -`Inconsistent_classifications.json` was revised and separated from `bibcat stats-llms`
     - Updated `metrics_summary.json` to include confusion matrix metrics
@@ -110,7 +112,10 @@
     - updated formatting and styling
 
 ### Added
+- [PR #74](https://github.com/spacetelescope/bibcat/pull/74) Add a bash script to run bibcat multiple batch input files serially
+
 - [PR #68](https://github.com/spacetelescope/bibcat/pull/68) Add a new CLI, `audit-llms` to create a json file to store failure modes stats and the breakdown information for failed bibcodes.
+
 - [PR #48](https://github.com/spacetelescope/bibcat/pull/48)
     - Set up Sphinx autodoc build
 

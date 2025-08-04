@@ -1,6 +1,7 @@
 # bibcat files
 bibcat/data/operational_data
 output
+logs
 *.log
 
 # Compiled files
@@ -22,7 +23,6 @@ build
 eggs
 .eggs
 parts
-bin
 var
 sdist
 develop-eggs
