@@ -175,16 +175,16 @@ kobj_k2 = keyword.Keyword(
     acronyms_caseinsensitive=[],
     do_not_classify=False,
     banned_overlap=[],
-    # ambig_words=[],
     ambig_words=["K2"],
 )
 kobj_kepler = keyword.Keyword(
-    keywords=["Kepler", "Kepler Mission"],
+    keywords=[
+        "Kepler",
+    ],
     acronyms_casesensitive=[],
     acronyms_caseinsensitive=[],
     do_not_classify=False,
     banned_overlap=["Kepler K2"],
-    # ambig_words=[],
     ambig_words=["Kepler"],
 )
 kobj_panstarrs = keyword.Keyword(
