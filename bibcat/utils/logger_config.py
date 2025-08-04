@@ -9,7 +9,7 @@ MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(MODULE_DIR, "../.."))
 
 # Define the logs directory at the project level
-LOG_DIR = os.path.join(PROJECT_ROOT, "logs")
+LOG_DIR = os.path.join(PROJECT_ROOT, "logs", time.strftime("%Y-%m-%d"))
 
 # Get the start time in a readable format
 start_time = time.strftime("%Y-%m-%d_%H-%M-%S")

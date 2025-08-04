@@ -16,10 +16,12 @@ from bibcat.data.build_dataset import build_dataset
 from bibcat.llm.evaluate import evaluate_output
 from bibcat.llm.openai import OpenAIHelper, classify_paper
 from bibcat.llm.plots import confusion_matrix_plot, roc_plot
-from bibcat.llm.stats import inconsistent_classifications, save_evaluation_stats, save_operation_stats
+from bibcat.llm.stats import (inconsistent_classifications,
+                              save_evaluation_stats, save_operation_stats)
 from bibcat.pretrained.build_model import build_model
 from bibcat.pretrained.classify_papers import classify_papers
-from bibcat.pretrained.evaluate_basic_performance import evaluate_basic_performance
+from bibcat.pretrained.evaluate_basic_performance import \
+    evaluate_basic_performance
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
@@ -34,6 +36,7 @@ def cli() -> None:
 
 
 # Classical ML commands
+
 
 @cli.group("ml", short_help="Classical ML-based paper classification")
 def mlcli():
@@ -462,16 +465,19 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
         bibcat llm batch run -f /path/to/paper.pdf
     """
     start_time = time.time()
-    logger.info("CLI option: 'run_gpt_batch' selected")
+    logger.info("CLI option: 'llm batch run' selected")
     # override the config model
     if model:
         config.llms.openai.model = model
+        logger.debug(f"openai model = {model}")
     # override the config user prompt file
     if user_prompt_file:
         config.llms.llm_user_prompt = user_prompt_file
+        logger.debug(f"user_prompt_file: {user_prompt_file}")
     # override the config agent prompt file
     if agent_prompt_file:
         config.llms.llm_agent_prompt = agent_prompt_file
+        logger.debug(f"agent_prompt_file: {agent_prompt_file}")
     # override the config ops flag
     if ops:
         config.llms.ops = ops
@@ -479,6 +485,8 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
 
     # get the list of files
     files = files or filename.read().splitlines()
+    if filename:
+        logger.info(f"batch filename: {filename}")
 
     # iterate over the files
     for file in files:
