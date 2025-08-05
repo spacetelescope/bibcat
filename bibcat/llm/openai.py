@@ -419,7 +419,6 @@ class OpenAIHelper:
                 logger.warning("No paper source found for bibcode: %s", bibcode)
                 continue
 
-            user = get_llm_prompt("user")
             user = self.populate_user_template(paper)
             data.append(
                 {

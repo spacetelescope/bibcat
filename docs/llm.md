@@ -105,6 +105,13 @@ bibcat.data.streamline_dataset - INFO - Loading source dataset: /Users/bcherinka
 ...
 bibcat.llm.openai - INFO - Submitting a batch run with batch ID batch_688cbdfcb5148190a4b7371fbcb3fdb0
 ```
+Copy your batch id from the log output of your job submission to use for job retrieval. You can also get the batch id by manually listing your batch jobs.
+
+```python
+import openai
+openai.client.batches.list()
+```
+
 The JSONL batch file will be located at `$BIBCAT_OUTPUT_DIR/output/llms/[config.llms.openai.model]/[config.llms.batch_file]`.
 
 Alternatively, if you already have a premade batch file for a given set of papers and OpenAI model, you can submit the file directly:
