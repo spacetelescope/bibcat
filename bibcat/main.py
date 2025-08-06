@@ -290,14 +290,14 @@ def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, thre
     "--cm",
     is_flag=True,
     show_default=False,
-    help="Create a confusion matrix plot. This flag works with the '-m' flag with a mission name, for example, 'bibcat eval-plot -c -m JWST'",
+    help="Create a confusion matrix plot. This flag works with the '-m' flag with a mission name, for example, 'bibcat llm plot -c -m JWST'",
 )
 @click.option(
     "-r",
     "--roc",
     is_flag=True,
     show_default=False,
-    help="Create ROC curves. This flag works with the '-m' flag with a mission name, for example,'bibcat eval-plot -r -m JWST'",
+    help="Create ROC curves. This flag works with the '-m' flag with a mission name, for example,'bibcat llm plot -r -m JWST'",
 )
 @click.option(
     "-m",
@@ -306,14 +306,14 @@ def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, thre
     multiple=True,
     default=None,
     show_default=True,
-    help="List mission names; this flag works with the '-c' flag, for instance, 'bibcat -c -m JWST -m HST -m TESS' ",
+    help="List mission names; this flag works with the '-c' flag, for instance, 'bibcat llm plot -c -m JWST -m HST -m TESS' ",
 )
 @click.option(
     "-a",
     "--all-missions",
     is_flag=True,
     show_default=False,
-    help="Create plots for all missions, command example for a confusion matrix plot for all missions: 'bibcat eval-plot -c -a'",
+    help="Create plots for all missions, command example for a confusion matrix plot for all missions: 'bibcat llm plot -c -a'",
 )
 def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
     """Create the evaluation plots from a LLM model"""
@@ -343,14 +343,14 @@ def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
     "--ops",
     is_flag=True,
     show_default=False,
-    help="Create a OPS statistics table for llm mission-papertype pairs. This flag works with the '-o' flag. e.g., 'bibcat stat_llm -o'",
+    help="Create a OPS statistics table for llm mission-papertype pairs. This flag works with the '-o' flag. e.g., 'bibcat llm stat -o'",
 )
 @click.option(
     "-e",
     "--evaluation",
     is_flag=True,
     show_default=False,
-    help="Create an Evaluation statistics table for llm and human mission-papertype pairs. This flag works with the '-e' flag. e.g., 'bibcat stat_llm -e'",
+    help="Create an Evaluation statistics table for llm and human mission-papertype pairs. This flag works with the '-e' flag. e.g., 'bibcat llm stat -e'",
 )
 @click.option(
     "-t",
