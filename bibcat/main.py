@@ -484,7 +484,7 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
     # get the list of files
     files = files or filename.read().splitlines()
     if filename:
-        logger.info(f"batch filename: {filename}")
+        logger.info(f"batch filename: {filename.name}")
 
     # iterate over the files
     for file in files:
