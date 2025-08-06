@@ -61,7 +61,7 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
     """
 
     n_bibcodes = len(data)
-    threshold = data[next(iter(data))]["threshold_acceptance"]
+    threshold = config.llms.performance.threshold
     logger.info(f"The {n_bibcodes} bibcodes are evaluated in the summary_ouput_t{threshold}.json")
     logger.info(f"{len(missions)} mission(s): {', '.join(missions)} is/are evaluated!\nLooping through papers! ")
 
