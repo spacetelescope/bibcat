@@ -129,7 +129,6 @@ def test_create_batch_file(fixconfig, mocker, monkeypatch, tmp_path):
 
     oa = OpenAIHelper()
     oa.create_batch_file(bibcodes=bibcodes)
-    # breakpoint()
     assert batch_file.exists()
     assert batch_file.suffix == ".jsonl"
 

@@ -14,6 +14,7 @@ import click
 from bibcat import config
 from bibcat.data.build_dataset import build_dataset
 from bibcat.llm.evaluate import evaluate_output
+from bibcat.llm.io import adjust_model
 from bibcat.llm.openai import OpenAIHelper, classify_paper
 from bibcat.llm.plots import confusion_matrix_plot, roc_plot
 from bibcat.llm.stats import (inconsistent_classifications,
@@ -565,7 +566,7 @@ def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
     "-b",
     "--batch-file",
     default=None,
-    type=str,
+    type=click.Path(exists=True, path_type=Path),
     help="The jsonl batch file for submission",
 )
 @click.option("-m", "--model", default=None, type=str, show_default=True, help="The model type to use")
@@ -574,13 +575,18 @@ def submit(filename, batch_file, model, verbose):
     """Submit a batch of papers using the OpenAI Batch API"""
     # override the config model
     if model:
+        orig = config.llms.openai.model
         config.llms.openai.model = model
+
+        # update the existing batch file with the new model
+        if batch_file:
+            batch_file = adjust_model(batch_file, orig, model)
 
     # get the list of files
     bibcodes = filename.read().splitlines() if filename else None
 
     oa = OpenAIHelper(verbose=verbose)
-    oa.submit_batch(bibcodes=bibcodes, batch_file=batch_file)
+    oa.submit_batch(bibcodes=bibcodes, batch_file=str(batch_file))
 
 
 @llmbatch.command("retrieve", help="Retrieve a batch run from the OpenAI Batch API")

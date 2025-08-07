@@ -3,7 +3,7 @@ import re
 import pytest
 
 from bibcat import config
-from bibcat.llm.io import get_file, get_llm_prompt, get_source
+from bibcat.llm.io import adjust_model, get_file, get_llm_prompt, get_source
 
 # expected data
 data = [
@@ -133,3 +133,22 @@ def test_get_llm_fail():
     """test we fail correctly"""
     with pytest.raises(ValueError, match='Prompt type must be either "user" or "agent"'):
         get_llm_prompt("bad_prompt")
+
+
+def test_adjust_model(tmp_path):
+    """test we can adjust the model in a batch file"""
+    # create a mock batch file
+    orig = "gpt-4.1-mini"
+    model = "gpt-4o-mini"
+    batch_file = tmp_path / "batch.jsonl"
+    batch_file.write_text(f'{{"model": "{orig}", "id": "1"}}\n{{"model": "{orig}", "id": "2"}}')
+
+    # call the function to adjust the model
+    new_batch_file = adjust_model(batch_file, orig, model)
+
+    # check the new file exists and has the correct content
+    assert new_batch_file.exists()
+    assert (
+        new_batch_file.read_text(encoding="utf-8")
+        == f'{{"model": "{model}", "id": "1"}}\n{{"model": "{model}", "id": "2"}}'
+    )

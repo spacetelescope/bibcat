@@ -261,3 +261,36 @@ def write_summary(output: dict):
         # write the updated file
         with open(filename, "w") as f:
             json.dump(data, f, indent=2, sort_keys=False, cls=NumpyEncoder)
+
+
+def adjust_model(batch_file: pathlib.Path, orig: str, model: str):
+    """Adjust the model in the jsonl batch file.
+
+    This function replaces the original model with the new model in the specified batch file.
+
+    Parameters
+    ----------
+    batch_file : Path
+        The path to the batch file to modify.
+    orig : str
+        The original model name to replace.
+    model : str
+        The new model name to use.
+
+    Returns
+    -------
+    Path
+        The path to the modified batch file.
+    """
+    new = pathlib.Path(str(batch_file).replace(orig, model))
+    new.parent.mkdir(parents=True, exist_ok=True)
+    # extract and replace the model in the batch file
+    with open(batch_file, "r", encoding="utf-8") as f:
+        content = f.read()
+        content = content.replace('"model": "gpt-4.1-mini"', f'"model": "{model}"')
+
+    # write out the new jsonl batch file
+    with open(new, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    return new
