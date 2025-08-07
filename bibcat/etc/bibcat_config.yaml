@@ -41,7 +41,7 @@ llms:
   agent_prompt: null
   prompt_output_file: paper_output.json # llm classification primary output
   eval_output_file: summary_output # llm classification summary output
-  batch_file: null # llm batch jsonl file
+  batch_file: batch_file.jsonl # llm batch jsonl file
   eval_stats_file: evaluation_stats  # llm evaluation high-level statistics output
   inconsistent_classifications_file: inconsistent_classifications # list of inconsistent classifications between llm and human
   ops_stats_file: operation_stats  # llm operation high-level statistics output
