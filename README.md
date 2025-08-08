@@ -42,9 +42,8 @@ If you are interested in developing and contributing to **casper**, you should i
 ```shell
 pip install -e . # install editable mode
 ```
-To install the optional Tensorflow dependencies for use of the ML component of bibcat, run `pip install -e ".[ml]` or follow the tensorflow instructions below.
 
-To install all dependencies for development and testing, run `pip install -e ".[all]"`.
+To install all dependencies for development except for the ML component, testing, and documentation, run `pip install -e ".[dev,test,docs]"` or `pip install -e .[all]`.
 
 ### Spacy model downloads
 This model is used for the [Pretrained model method](https://github.com/spacetelescope/bibcat/blob/dev/docs/pretrained.md)
@@ -53,6 +52,8 @@ python -m spacy download en_core_web_sm
 ```
 ### Tensorflow package installation
 `tensorflow` packages are used for the [Pretrained model method](https://github.com/spacetelescope/bibcat/blob/dev/docs/pretrained.md)
+
+To install the optional Tensorflow dependencies for use of the ML component of bibcat, run `pip install -e ".[ml]"` and follow the tensorflow instructions below.
 
 #### Extra required tensorflow pacakges for Apple silicon M1/M2/M3 chip
 - If you have an Apple Silicon chip computer and want to utilize your GPU, you should install `tensorflow-macos` and `tensorflow-metal`. If not, skip this part.
@@ -84,9 +85,9 @@ pip install tensorflow-text==2.15.0
 [pre-commit](https://pre-commit.com/) allows all collaborators push their commits compliant with the same set of lint and format rules in [pyproject.toml](https://github.com/spacetelescope/bibcat/blob/dev/pyproject.toml) by checking all files in the project at different stages of the git workflow. It runs commands specified in the [.pre-commit-config.yaml](https://github.com/spacetelescope/bibcat/blob/dev/.pre-commit-config.yaml) config file and runs checks before committing or pushing, to catch errors that would have caused a build failure before they reach CI.
 
 ### Install pre-commit
-You will need to install `pre-commit` manually.
+You will need to install `pre-commit` manually. `pre-commit` is included in `dev` dependencies in `pyproject.toml`.
 ```bash
-pip install pre-commit # if you haven't already installed the package
+pip install pre-commit # if you haven't already installed the package.
 ```
 
 ```bash

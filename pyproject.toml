@@ -67,7 +67,7 @@ ml = [
   "tensorflow ==2.15.0",
   # "tensorflow-text ==2.15.0", # this needs to be installed manually; see the README.md
 ]
-all = ["bibcat[dev, test, docs, ml]"]
+all = ["bibcat[dev, test, docs]"]
 
 [tool.ruff]
 lint.select = ["E4", "E7", "E9", "F", "I", "PL", "C901", "RUF010", "W291"]
