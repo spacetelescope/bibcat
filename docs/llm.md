@@ -89,6 +89,61 @@ Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined
 2024-08-22 15:49:56,781 - bibcat.llm.openai - INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], 'JWST': ['SCIENCE', [0.9, 0.1]]}
 ```
 
+### Batch Submission
+
+OpenAI supports asynchronous job submission via their [Batch API](https://platform.openai.com/docs/guides/batch). This API submits
+a batch job to run within a 24h period. You can submit a batch paper processing job in bibcat with `bibcat llm batch submit`. This command takes as input a text file of bibcodes, e.g. the above `papers_to_process.txt`, creates the required [JSONL](https://jsonlines.org/) file input for OpenAI, and submits the batch job.
+
+First, set the `batch_file` parameter in your local config file, in the `llms` section, to the output JSONL file, e.g.
+```yaml
+llms:
+  batch_file: my_batchfile.jsonl
+```
+Then run `bibcat llm batch submit -p papers_to_process.txt`.  This will process the bibcodes into a JSONL file, and submit the job and provide a batch ID.
+```
+bibcat.data.streamline_dataset - INFO - Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_gs.json
+...
+bibcat.llm.openai - INFO - Submitting a batch run with batch ID batch_688cbdfcb5148190a4b7371fbcb3fdb0
+```
+
+The JSONL batch file will be located at `$BIBCAT_OUTPUT_DIR/output/llms/[config.llms.openai.model]/[config.llms.batch_file]`.
+
+Alternatively, if you already have a premade batch file for a given set of papers and OpenAI model, you can submit the file directly:
+```
+bibcat llm batch submit -b /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/my_batchfile.jsonl
+```
+
+You can check your batch job in your OpenAI [Batch dashboard](https://platform.openai.com/batches) and the JSONL file in your [File Storage](https://platform.openai.com/storage/files/).
+
+To submit a batch run with a new model from the command-line, run with the `-m` option.
+```
+bibcat llm batch submit -f papers_to_process.txt -m gpt-4.1-mini
+```
+When specifying both a new model with `-m`, and an existing batch input JSONL file with the `-b` option, `bibcat` will first create a new batch file using the new model before job submission.
+
+#### Retrieving the Batch
+
+You can check the status and retrieve the results of your batch job with `bibcat llm batch retrieve`, given a batch ID.  To find the batch ID, copy your batch id from the log output of your job submission to use for job retrieval. You can also get the batch id by manually listing your batch jobs.
+```python
+import openai
+openai.client.batches.list()
+```
+
+Once you have the batch ID, then run:
+```
+bibcat llm batch retrieve -b batch_688cbdfcb5148190a4b7371fbcb3fdb0
+```
+If the job is still in progress, it will show:
+```
+bibcat.llm.openai - INFO - Batch run is still in progress. Please wait and try again later.
+```
+Once complete, bibcat will extract the output information, format it into bibcat's [Response Output](#response-output), and save it at that location, using your `prompt_output_file` config parameter.
+
+This way you can easily evaluate it with
+```
+bibcat llm batch evaulate -p papers_to_process.txt
+```
+
 ## User Configuration
 An example for the new ``llms`` section of the configuration.
 
@@ -610,11 +665,11 @@ weighted avg     0.9736    0.9721    0.9728      1648
 ### Receiver Operating Characteristic (ROC) Plot
 To plot a confusion matrix for specific missions, run:
 ```bash
-bibcat eval-plot -r -m HST -m JWST
+bibcat llm plot -r -m HST -m JWST
 ```
 To plot a confusion matrix for all missions, run:
 ```bash
-bibcat eval-plot -r -a
+bibcat llm plot -r -a
 ```
 
 ## Statistics output

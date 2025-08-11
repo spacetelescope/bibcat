@@ -1,8 +1,9 @@
+import json
 from enum import Enum
 
 import pytest
 
-from bibcat.llm.openai import InfoModel, convert_to_classification, extract_response
+from bibcat.llm.openai import InfoModel, OpenAIHelper, convert_to_classification, extract_response
 
 
 def test_convert_to_classes():
@@ -104,3 +105,36 @@ def test_info_model():
     assert isinstance(out["missions"][0]["papertype"], str)
     assert out["missions"][0]["papertype"] == "MENTION"
     assert out["missions"][0]["mission"] == "KEPLER"
+
+
+bibcodes = ["2018A&A...610A..11I", "2018A&A...610A..86S"]
+paper = {
+    "title": ["Density, not radius, separates rocky and water-rich small planets orbiting M dwarf stars"],
+    "abstract": "This is the abstract",
+    "body": "This is the paper text of the source dataset. I am a TESS paper.",
+}
+
+
+def test_create_batch_file(fixconfig, mocker, monkeypatch, tmp_path):
+    """test we can create a batch file"""
+    d = tmp_path / "llm"
+    d.mkdir()
+
+    monkeypatch.setenv("OPENAI_API_KEY", "testkey")
+    mocker.patch("bibcat.llm.openai.get_source", return_value=paper)
+    config = fixconfig(str(d), "bibcat.llm.openai")
+
+    monkeypatch.setitem(config.llms, "batch_file", "tmp_batch.jsonl")
+    batch_file = d / config.paths.output / f"llms/openai_{config.llms.openai.model}/{config.llms.batch_file}"
+
+    oa = OpenAIHelper()
+    oa.create_batch_file(bibcodes=bibcodes)
+    assert batch_file.exists()
+    assert batch_file.suffix == ".jsonl"
+
+    with open(batch_file, "r") as f:
+        lines = f.read().splitlines()
+        assert len(lines) == len(bibcodes)
+        line = json.loads(lines[0])
+        assert line["custom_id"] == bibcodes[0]
+        assert "This is the abstract" in line["body"]["input"]

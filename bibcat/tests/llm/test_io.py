@@ -3,7 +3,7 @@ import re
 import pytest
 
 from bibcat import config
-from bibcat.llm.io import get_file, get_llm_prompt, get_source
+from bibcat.llm.io import adjust_model, get_file, get_llm_prompt, get_source
 
 # expected data
 data = [
@@ -20,13 +20,6 @@ def make_paper(tmp_path):
     p = d / "new_paper.pdf"
     p.write_text("This is the body of the paper.")
     yield str(p)
-
-
-# TODO - clean up this config mocking stuff with what it's conftest
-@pytest.fixture()
-def ss(reconfig):
-    """fixture to set the config object"""
-    yield reconfig("bibcat.llm.io.config")
 
 
 @pytest.fixture()
@@ -104,12 +97,10 @@ def test_default_get_llm_prompt(prompt, exp):
     [("user", "Tell me about this paper."), ("agent", "Read the paper given and extract some info.")],
     ids=["user", "agent"],
 )
-def test_custom_config_llm_prompt(mocker, ss, monkeypatch, prompt, exp):
+def test_custom_config_llm_prompt(fixconfig, monkeypatch, prompt, exp):
     """test we get the correct prompt from a custom config"""
     # mock the config data dir, so we can test the config prompts
-    monkeypatch.setenv("BIBCAT_DATA_DIR", "")
-    mocker.patch("bibcat.llm.io.config", new=ss)
-    from bibcat.llm.io import config
+    config = fixconfig("", "bibcat.llm.io")
 
     monkeypatch.setitem(config.llms, f"{prompt}_prompt", exp)
 
@@ -142,3 +133,22 @@ def test_get_llm_fail():
     """test we fail correctly"""
     with pytest.raises(ValueError, match='Prompt type must be either "user" or "agent"'):
         get_llm_prompt("bad_prompt")
+
+
+def test_adjust_model(tmp_path):
+    """test we can adjust the model in a batch file"""
+    # create a mock batch file
+    orig = "gpt-4.1-mini"
+    model = "gpt-4o-mini"
+    batch_file = tmp_path / "batch.jsonl"
+    batch_file.write_text(f'{{"model": "{orig}", "id": "1"}}\n{{"model": "{orig}", "id": "2"}}')
+
+    # call the function to adjust the model
+    new_batch_file = adjust_model(batch_file, orig, model)
+
+    # check the new file exists and has the correct content
+    assert new_batch_file.exists()
+    assert (
+        new_batch_file.read_text(encoding="utf-8")
+        == f'{{"model": "{model}", "id": "1"}}\n{{"model": "{model}", "id": "2"}}'
+    )

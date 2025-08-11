@@ -111,3 +111,17 @@ def test_audit() -> None:
     runner = CliRunner()
     result = runner.invoke(cli, ["llm", "audit", "--help"])
     assert "Create a JSON file to audit LLM classification" in result.output
+
+
+def test_batch_submit() -> None:
+    """test the cli batch submit help command"""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["llm", "batch", "submit", "--help"])
+    assert "Submit a batch of papers using the OpenAI Batch API" in result.output
+
+
+def test_batch_retrieve() -> None:
+    """test the cli batch retrieve help command"""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["llm", "batch", "retrieve", "--help"])
+    assert "Retrieve a batch run from the OpenAI Batch API" in result.output
