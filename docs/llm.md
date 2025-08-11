@@ -99,17 +99,11 @@ First, set the `batch_file` parameter in your local config file, in the `llms` s
 llms:
   batch_file: my_batchfile.jsonl
 ```
-Then run `bibcat llm batch submit -p papers_to_process.txt`.  This will process the bibcodes into a JSONL file, and submit the job and provide a batch ID.
+Then run `bibcat llm batch submit -f papers_to_process.txt`.  This will process the bibcodes into a JSONL file, and submit the job and provide a batch ID.
 ```
 bibcat.data.streamline_dataset - INFO - Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_gs.json
 ...
 bibcat.llm.openai - INFO - Submitting a batch run with batch ID batch_688cbdfcb5148190a4b7371fbcb3fdb0
-```
-Copy your batch id from the log output of your job submission to use for job retrieval. You can also get the batch id by manually listing your batch jobs.
-
-```python
-import openai
-openai.client.batches.list()
 ```
 
 The JSONL batch file will be located at `$BIBCAT_OUTPUT_DIR/output/llms/[config.llms.openai.model]/[config.llms.batch_file]`.
@@ -121,9 +115,21 @@ bibcat llm batch submit -b /Users/bcherinka/Work/stsci/bibcat_data/output/output
 
 You can check your batch job in your OpenAI [Batch dashboard](https://platform.openai.com/batches) and the JSONL file in your [File Storage](https://platform.openai.com/storage/files/).
 
+To submit a batch run with a new model from the command-line, run with the `-m` option.
+```
+bibcat llm batch submit -f papers_to_process.txt -m gpt-4.1-mini
+```
+When specifying both a new model with `-m`, and an existing batch input JSONL file with the `-b` option, `bibcat` will first create a new batch file using the new model before job submission.
+
 #### Retrieving the Batch
 
-You can check the status and retrieve the results of your batch job with `bibcat llm batch retrieve`, given a batch ID.
+You can check the status and retrieve the results of your batch job with `bibcat llm batch retrieve`, given a batch ID.  To find the batch ID, copy your batch id from the log output of your job submission to use for job retrieval. You can also get the batch id by manually listing your batch jobs.
+```python
+import openai
+openai.client.batches.list()
+```
+
+Once you have the batch ID, then run:
 ```
 bibcat llm batch retrieve -b batch_688cbdfcb5148190a4b7371fbcb3fdb0
 ```
