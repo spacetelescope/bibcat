@@ -99,7 +99,7 @@ First, set the `batch_file` parameter in your local config file, in the `llms` s
 llms:
   batch_file: my_batchfile.jsonl
 ```
-Then run `bibcat llm batch submit -f papers_to_process.txt`.  This will process the bibcodes into a JSONL file, and submit the job and provide a batch ID.
+Then run `bibcat llm batch submit -p papers_to_process.txt`.  This will process the bibcodes into a JSONL file, and submit the job and provide a batch ID.
 ```
 bibcat.data.streamline_dataset - INFO - Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_gs.json
 ...
