@@ -78,13 +78,13 @@ def test_extract_json(data, exp):
 
 # expected model response
 exp_response = {
-    "notes": "I have read the paper and identified that it includes references to the KEPLER mission, specifically mentioning the code KEPLER in the context of comparing different stellar evolution programs and their output. However, the paper does not present any new observations or data utilizing KEPLER; it simply mentions it as part of the discussion on model comparisons. Therefore, I classify the reference as a mention, not as a use of data in analysis or the presentation of new results.",
+    "notes": "I have read the paper and identified that it includes references to the Kepler mission, specifically mentioning the code Kepler in the context of comparing different stellar evolution programs and their output. However, the paper does not present any new observations or data utilizing Kepler; it simply mentions it as part of the discussion on model comparisons. Therefore, I classify the reference as a mention, not as a use of data in analysis or the presentation of new results.",
     "missions": [
         {
-            "mission": "KEPLER",
+            "mission": "Kepler",
             "papertype": "MENTION",
             "confidence": [0.1, 0.9],
-            "reason": "KEPLER is referenced in the context of comparing stellar evolution models but does not contribute new data or observations.",
+            "reason": "Kepler is referenced in the context of comparing stellar evolution models but does not contribute new data or observations.",
             "quotes": [
                 "The programs mentioned above are some of the most commonly cited in the literature, but this is by no means an exhaustive list of all current software in use."
             ],
@@ -103,4 +103,4 @@ def test_info_model():
     out = ii.model_dump()
     assert isinstance(out["missions"][0]["papertype"], str)
     assert out["missions"][0]["papertype"] == "MENTION"
-    assert out["missions"][0]["mission"] == "KEPLER"
+    assert out["missions"][0]["mission"] == "Kepler"
