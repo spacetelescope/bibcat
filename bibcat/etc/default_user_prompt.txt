@@ -38,6 +38,9 @@ If any MAST mission is relevant, proceed to Step 1.
     - "HST" = "Hubble", "Hubble Space Telescope"
     - "Roman" = "WFIRST", "Nancy Grace Roman Space Telescope"
     - "PanSTARRS" = "PS1", "Pan-STARRS1"
+    - "IUE" = "International Ultraviolet Explorer"
+    - "GALEX" = "Galaxy Evolution Explorer"
+    - "FUSE" = "Far Ultraviolet Spectroscopic Explorer"
 - This applies to **all missions**
 
 Do **NOT** classify based on:
