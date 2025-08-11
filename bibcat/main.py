@@ -555,7 +555,7 @@ def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
 
 @llmbatch.command("submit", help="Submit a batch of papers using the OpenAI Batch API")
 @click.option(
-    "-f",
+    "-p",
     "--filename",
     default=None,
     type=click.File("r"),
