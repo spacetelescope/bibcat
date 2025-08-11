@@ -1,3 +1,4 @@
+import importlib
 import os
 import tempfile
 
@@ -54,3 +55,23 @@ def reconfig(mocker):
         return cfg
 
     yield _setconfig
+
+
+@pytest.fixture()
+def fixconfig(reconfig, mocker, monkeypatch):
+    """fixture factory to patch a config object in a particular module
+
+    this sets a temporary output directory, updates the config object for
+    the given module, e.g. bibcat.llm.io.config, and returns the new config object for use
+    in tests.
+    """
+
+    def _fixconfig(root, configmod):
+        cfg = f"{configmod}.config"
+        ss = reconfig(cfg)
+        monkeypatch.setenv("BIBCAT_DATA_DIR", root)
+        mocker.patch(cfg, new=ss)
+        mod = importlib.import_module(configmod)
+        return mod.config
+
+    yield _fixconfig

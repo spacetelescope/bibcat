@@ -3,6 +3,8 @@
 ### [Unreleased]
 - Bibcat to do list
     - Adding tutorial notebooks back
+- Adding new batch cli commands for submitting a batch job using OpenAI's Batch API
+  - Added new `bibcat llm batch submit` and `bibcat llm batch retreive` for submitting and retrieving batch jobs
 
 ### Removed
 - [PP #48](https://github.com/spacetelescope/bibcat/pull/48)

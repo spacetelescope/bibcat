@@ -6,6 +6,7 @@ from enum import Enum
 
 import openai
 from openai import OpenAI
+from openai.lib._parsing._responses import type_to_text_format_param
 from pydantic import BaseModel, Field, ValidationError, field_serializer, field_validator
 
 from bibcat import config
@@ -48,11 +49,17 @@ class MissionInfo(BaseModel):
     @field_validator("confidence", mode="after")
     @classmethod
     def validate_confidence(cls, value: list[float]) -> list[float]:
+        """Ensure the confidence is a list of two floats that sum to 1"""
         if len(value) != 2:
             raise ValueError("Confidence must contain exactly two float values.")
         if abs(sum(value) - 1.0) > 1e-6:
             raise ValueError(f"Confidence values must sum to 1.0, got {sum(value):.6f}.")
         return value
+
+    @field_serializer("quotes")
+    def strip_quotes(self, value: list[str]) -> list[str]:
+        """Strip lead/trail quotes from the quotes list"""
+        return [quote.strip('"') for quote in value]
 
 
 class InfoModel(BaseModel):
@@ -88,6 +95,7 @@ class OpenAIHelper:
         self.response_classes = None
         self.user_prompt = None
         self.agent_prompt = None
+        self.batch = None
 
         # paper attributes
         self.filename = None
@@ -98,7 +106,7 @@ class OpenAIHelper:
         return f'<OpenAIHelper vs_id="{self.vector_store.id if self.vector_store else None}">'
 
     # upload the file
-    def upload_file(self, file_path: str):
+    def upload_file(self, file_path: str, purpose: str = "assistants"):
         """Upload a file to the OpenAI API
 
         Parameters
@@ -111,7 +119,7 @@ class OpenAIHelper:
         str
             the file id
         """
-        self.file = self.client.files.create(file=open(file_path, "rb"), purpose="assistants")
+        self.file = self.client.files.create(file=open(file_path, "rb"), purpose=purpose)
 
     def retrieve_file(self, filename: str):
         """Retrieve a file from the OpenAI API
@@ -387,6 +395,135 @@ class OpenAIHelper:
 
             return name
 
+    def create_batch_file(self, bibcodes: list[str]):
+        """Create a batch file for the OpenAI Batch API
+
+        Creates a batch file for the OpenAI Batch API. The batch file is a JSONL
+        file with each line containing a json of the required inputs for submitting a
+        paper to the v1/responses API.
+
+        Parameters
+        ----------
+        bibcodes : list[str]
+            A list of bibcodes to create the batch file for.
+
+        Returns
+        -------
+        str
+            the path to the created batch file
+        """
+        data = []
+        for bibcode in bibcodes:
+            paper = get_source(bibcode)
+            if not paper:
+                logger.warning("No paper source found for bibcode: %s", bibcode)
+                continue
+
+            user = self.populate_user_template(paper)
+            data.append(
+                {
+                    "custom_id": bibcode,
+                    "method": "POST",
+                    "url": "/v1/responses",
+                    "body": {
+                        "model": config.llms.openai.model,
+                        "instructions": get_llm_prompt("agent"),
+                        "input": user,
+                        "text": {"format": type_to_text_format_param(InfoModel)},
+                    },
+                }
+            )
+        logger.info("Processed %s of %s bibcodes for the batch run", len(data), len(bibcodes))
+
+        # setup the output file
+        out = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.batch_file}"
+        out.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(out, "w", encoding="utf-8") as f:
+            for item in data:
+                f.write(json.dumps(item) + "\n")
+
+        return str(out)
+
+    def submit_batch(self, bibcodes: list[str] = None, batch_file: str = None):
+        """Submit a batch of papers for processing
+
+        This method submits a batch of papers for processing by the OpenAI API.
+        It can either take a list of bibcodes or a path to a pre-made batch jsonl file.
+
+        Parameters
+        ----------
+        bibcodes : list[str], optional
+            the bibcodes to process, by default None
+        batch_file : str, optional
+            the path of the jsonl batch file, by default None
+        """
+        # create a batch file if not provided
+        if not batch_file:
+            batch_file = self.create_batch_file(bibcodes)
+
+        # upload the batch file
+        self.upload_file(file_path=batch_file, purpose="batch")
+
+        # submit the batch job
+        self.batch = self.client.batches.create(
+            endpoint="/v1/responses", input_file_id=self.file.id, completion_window="24h"
+        )
+        logger.info("Submitting a batch run with batch ID %s", self.batch.id)
+
+    def retrieve_batch(self, batch_id: str = None):
+        """Retrieve a batch of papers for processing
+
+        This method retrieves the status and results of a batch job submitted
+        to the OpenAI API. Upon job completion, it extracts the output, formats it, and
+        writes it out to config.llms.prompt_output_file.
+
+        Parameters
+        ----------
+        batch_id : str, optional
+            the id of the submitted batch job, by default None
+
+        Raises
+        ------
+        openai.APIStatusError
+            when the batch run has failed
+        """
+        # get the batch id
+        batch_id = batch_id or self.batch.id if self.batch else None
+        if not batch_id and not self.batch:
+            self.batch = next(iter(self.client.batches.list()), None)
+            batch_id = batch_id or self.batch.id if self.batch else None
+
+        # retrieve the batch
+        self.batch = self.client.batches.retrieve(batch_id)
+
+        if self.batch.status in {"failed", "expired", "canceled", "cancelling"}:
+            raise openai.APIStatusError(f"Batch submission did not complete, with status: {self.batch.status}")
+
+        if self.batch.status == "in_progress":
+            logger.info("Batch run is still in progress. Please wait and try again later.")
+            return
+
+        if self.batch.status == "completed":
+            file_response = self.client.files.content(self.batch.output_file_id)
+
+            # parse the response and format to our standard output
+            data = {}
+            for line in file_response.response.iter_lines():
+                i = json.loads(line)
+                ii = InfoModel(**json.loads(i["response"]["body"]["output"][0]["content"][0]["text"]))
+                data[i["custom_id"]] = [ii.model_dump()]
+
+            # write the output to our standard llm output file
+            out = (
+                pathlib.Path(config.paths.output)
+                / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
+            )
+            out.parent.mkdir(parents=True, exist_ok=True)
+            logger.info("Writing batch output to %s", out)
+            with open(out, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+
 
 def extract_response(value: str) -> dict:
     """Extract the agent response
@@ -494,3 +631,4 @@ def classify_paper(
         # write the output response to a file
         key = oa.get_output_key()
         write_output(key, response)
+
