@@ -12,7 +12,7 @@ acronyms_caseinsensitive : {empty list, list of strings}
 acronyms_casesensitive : {empty list, list of strings}
     List of acronyms that can describe the mission; capitalization is preserved (e.g., "STScI").  Punctuation (` `, `.`,`-`) should be omitted (as it is handled internally within the code).
 ambig_words : {empty list, list of strings}
-    Phrases for which the user requests false positive checks to be done against the internal database of false positives.  E.g., "Hubble" can be found in the mission phrase "Hubble Telescope" and also in the false positive (i.e., non-mission) phrase "Hubble constant".  By specifying "Hubble" as a false positive phrase for the Hubble mission, the code knows to internally check phrases in the text with "Hubble" against the internal false positive database and procedure.
+    Phrases for which the user requests false positive checks to be done against the internal database of false positives.  E.g., "Hubble" can be found in the mission phrase "Hubble Telescope" and also in the false positive (i.e., non-mission) phrase "Hubble constant".  By specifying "Hubble" as a false positive phrase for the Hubble mission, the code knows to internally check phrases in the text with "Hubble" against the internal false positive database and procedure. Find and add the right mission name from config.textprocessing.phrase_ambig. Make sure mission name is found in mission keyword object.
 banned_overlap : {empty list, list of strings}
     Phrases that overlap with the target mission keywords but should not be treated as the same mission.  E.g., "Hubble Legacy Archive" can be a distinct mission from "Hubble"; therefore "Hubble Legacy Archive" is banned overlap for the Hubble mission, to avoid matching "Hubble Legacy Archive" to a Keyword instance for HST.
 do_not_classify : bool
@@ -59,15 +59,15 @@ kobj_euve = keyword.Keyword(
 )
 kobj_first = keyword.Keyword(
     keywords=[
+        "Faint Images of the Radio Sky at Twenty cm",
+        "Faint Images of the Radio Sky at Twenty-cm",
+        "Faint Images of the Radio Sky at Twenty Centimeters",
+        "Faint Images of the Radio Sky at Twenty-Centimeters",
         "Very Large Array Faint Images of the Radio Sky at Twenty Centimeters Survey",
         "Very Large Array Faint Images of the Radio Sky at Twenty-Centimeters Survey",
         "Very Large Array Faint Images of the Radio Sky at Twenty cm",
         "Very Large Array Faint Images of the Radio Sky at Twenty-cm",
         "Very Large Array First",
-        "Faint Images of the Radio Sky at Twenty cm",
-        "Faint Images of the Radio Sky at Twenty-cm",
-        "Faint Images of the Radio Sky at Twenty Centimeters",
-        "Faint Images of the Radio Sky at Twenty-Centimeters",
     ],
     acronyms_casesensitive=["FIRST", "VLAFIRST"],
     acronyms_caseinsensitive=[],
@@ -178,9 +178,7 @@ kobj_k2 = keyword.Keyword(
     ambig_words=["K2"],
 )
 kobj_kepler = keyword.Keyword(
-    keywords=[
-        "Kepler",
-    ],
+    keywords=["Kepler"],
     acronyms_casesensitive=[],
     acronyms_caseinsensitive=[],
     do_not_classify=False,
