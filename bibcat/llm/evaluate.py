@@ -332,7 +332,6 @@ def prepare_output(
 
     # reindex mission
     mm = mission_df.set_index("llm_mission")
-    print(f"\nmm= {mm}\n")
 
     # pass its llm's classification if the maximum weighted-confidence value is higher than the threshold
     # the maximum value is used because the papertype's confidence is aligned with the maximum value

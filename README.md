@@ -45,21 +45,26 @@ pip install -e . # install editable mode
 
 To install all dependencies for development except for the ML component, testing, and documentation, run `pip install -e ".[dev,test,docs]"` or `pip install -e .[all]`.
 
+
 ### Spacy model downloads
+*Note that some core tests using `spacy` could fail if the version number is not `3.7.2`. You could reinstall `pip install spacy==3.7.2` if that happens. This is a work-around solution until we have the capacity to update the tests.
+
 This model is used for the [Pretrained model method](https://github.com/spacetelescope/bibcat/blob/dev/docs/pretrained.md)
 ```
 python -m spacy download en_core_web_sm
 ```
+
 ### Tensorflow package installation
 `tensorflow` packages are used for the [Pretrained model method](https://github.com/spacetelescope/bibcat/blob/dev/docs/pretrained.md)
 
-To install the optional Tensorflow dependencies for use of the ML component of bibcat, run `pip install -e ".[ml]"` and follow the tensorflow instructions below.
+#### For CPU computers
+To install the optional Tensorflow dependencies for use of the ML component of bibcat, run `pip install -e ".[cpu_ml]"` and follow the tensorflow instructions below.
 
 #### Extra required tensorflow pacakges for Apple silicon M1/M2/M3 chip
 - If you have an Apple Silicon chip computer and want to utilize your GPU, you should install `tensorflow-macos` and `tensorflow-metal`. If not, skip this part.
 
   ```
-  pip install tensorflow-macos==2.15.0 tensorflow-metal==1.1.0
+  pip install tensorflow==2.15.0 tensorflow-macos==2.15.0 tensorflow-metal==1.1.0
   ```
   To verify if tensorflow is set up to utilize your GPU, do the following:
 
