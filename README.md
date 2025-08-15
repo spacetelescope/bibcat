@@ -54,19 +54,16 @@ This model is used for the [Pretrained model method](https://github.com/spacetel
 python -m spacy download en_core_web_sm
 ```
 
-### Tensorflow package installation
+### Tensorflow package installation for `Pretrained` method
 `tensorflow` packages are used for the [Pretrained model method](https://github.com/spacetelescope/bibcat/blob/dev/docs/pretrained.md)
 
-#### For CPU computers
-To install the optional Tensorflow dependencies for use of the ML component of bibcat, run `pip install -e ".[cpu_ml]"` and follow the tensorflow instructions below.
+#### For CPU computers (e.g., intel chips)
+To install the Tensorflow dependencies for use of the ML component of bibcat, run `pip install -e ".[cpu_ml]"`.
 
-#### Extra required tensorflow pacakges for Apple silicon M1/M2/M3 chip
-- If you have an Apple Silicon chip computer and want to utilize your GPU, you should install `tensorflow-macos` and `tensorflow-metal`. If not, skip this part.
+#### For Apple silicon M1/M2/M3 chip computers
+- If you have an Apple Silicon chip computer and want to utilize your GPU, you run `pip install -e ".[gpu_ml]"` and follow the tensorflow instructions below. If not, skip this part.
 
-  ```
-  pip install tensorflow==2.15.0 tensorflow-macos==2.15.0 tensorflow-metal==1.1.0
-  ```
-  To verify if tensorflow is set up to utilize your GPU, do the following:
+ To verify if tensorflow is set up to utilize your GPU, do the following:
 
   ```python
   import tensorflow as tf
@@ -74,12 +71,7 @@ To install the optional Tensorflow dependencies for use of the ML component of b
   ```
   You should see the following output: `[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]`.  If the output is an empty list, you are not setup for GPU use.
 
-#### Install `tensorflow-text`
-
-- If you are working on a non-apple silicon chip computer (e.g., intel chip),
-```
-pip install tensorflow-text==2.15.0
-```
+##### Install `tensorflow-text`
 
 - For Apple silicon M1/M2/M3 chip, to install `tensorflow-text`, the command `pip install -U "tensorflow-text"` **does not work** due to some package version conflict (as of sometime 2024, need to revisit). You need to download the latest release library compatible with your system and the tensorflow version (2.15.0 in the example) from [the Tensorflow library link.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases); For instance, if you have MacOSX with python 3.10, download [this library.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl)
 - Then `pip install /path-to-download/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl`
