@@ -68,8 +68,8 @@ cpu_ml = [
 gpu_ml = [
   "tensorflow-macos==2.15.0", # only for Apple M1-M3 apple chip
   "tensorflow-metal==1.1.1",  # only for Apple M1-M3 apple chip
-  "tensorflow ==2.15.0",
-  # "tensorflow-text ==2.15.0", # this needs to be installed manually; see the README.md
+  "tensorflow==2.15.0",
+  # "tensorflow-text==2.15.0", # this needs to be installed manually; see the README.md
 ] # only for Apple M1-M3 apple chip
 
 
