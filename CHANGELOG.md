@@ -3,11 +3,9 @@
 ### [Unreleased]
 - Bibcat to do list
     - Adding tutorial notebooks back
-- Adding new batch cli commands for submitting a batch job using OpenAI's Batch API
-  - Added new `bibcat llm batch submit` and `bibcat llm batch retreive` for submitting and retrieving batch jobs
-
+-
 ### Removed
-- [PP #48](https://github.com/spacetelescope/bibcat/pull/48)
+- [PR #48](https://github.com/spacetelescope/bibcat/pull/48)
     - Removed conda env file.
 - [PR #9](https://github.com/spacetelescope/bibcat/pull/9)
     - Deleted test_bibcat.py
@@ -25,6 +23,11 @@
         - Batch llm commands grouped under `llm batch` sub-command
         - All `_` or `-` command names shortened, e.g. `run-gpt` to `llm run`, or `audit_llm` to `llm audit`
         - Added a new `ml` sub-command group and moved the NLP cli commands underneath
+- [PR #69](https://github.com/spacetelescope/bibcat/pull/69)
+    - Expanding the list of keyword objects in `parameters.py`
+    - Fix a bug that falsely identify mission names used in `kw_mission` in user_prompt, `in_text`, and `hallucinated_by_llm` in summary_output due to uppercasing mission names and the relevant tests. Missions that we pass into `identify_missions_in text()` need to be original case so that paper processing correctly handles ambiguous keyword phrases.
+    - A minor update on `user_prompt` to spell out IUE
+    - Pip installation updates in `README.md`
 - [PR #68](https://github.com/spacetelescope/bibcat/pull/68)
     -`Inconsistent_classifications.json` was revised and separated from `bibcat stats-llms`
     - Updated `metrics_summary.json` to include confusion matrix metrics
@@ -114,6 +117,9 @@
     - updated formatting and styling
 
 ### Added
+- [PR #79](https://github.com/spacetelescope/bibcat/pull/79)
+    - Adding new batch cli commands for submitting a batch job using OpenAI's Batch API
+    - Added new `bibcat llm batch submit` and `bibcat llm batch retreive` for submitting and retrieving batch jobs
 - [PR #74](https://github.com/spacetelescope/bibcat/pull/74) Add a bash script to run bibcat multiple batch input files serially
 
 - [PR #68](https://github.com/spacetelescope/bibcat/pull/68) Add a new CLI, `audit-llms` to create a json file to store failure modes stats and the breakdown information for failed bibcodes.

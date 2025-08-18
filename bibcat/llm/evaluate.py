@@ -87,8 +87,6 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     # convert output to a dataframe
     df = pd.DataFrame([j | {"notes": i["notes"]} for i in response for j in i["missions"]])
     df = df.rename(columns={"confidence": "llm_confidences"})
-    # Convert 'mission' column values to uppercase
-    df["mission"] = df["mission"].str.upper()
 
     df = df.sort_values("mission").reset_index(drop=True)
 
@@ -219,7 +217,7 @@ def get_human_classification(paper: dict | str):
     """
     human_classes = {key.upper(): value for key, value in paper.get("class_missions", {}).items()}
     formatted_output = "\n".join([f"{mission}: {info['papertype']}" for mission, info in human_classes.items()])
-    logger.info(f"Human Classifications:\n {formatted_output}")
+    logger.info(f"Human Classifications:\n{formatted_output}")
     return human_classes
 
 
@@ -249,11 +247,13 @@ def compute_consistency(paper: dict | str, grouped_df: pd.DataFrame, human_class
         lambda x: (x["count"] / x["n_runs"]) * 100 if (x["llm_mission"], x["llm_papertype"]) in vv else 0, axis=1
     )
     # whether the mission is in human classification
-    grouped_df["in_human_class"] = grouped_df.apply(lambda x: (x["llm_mission"], x["llm_papertype"]) in vv, axis=1)
+    grouped_df["in_human_class"] = grouped_df.apply(
+        lambda x: (x["llm_mission"].upper(), x["llm_papertype"]) in vv, axis=1
+    )
 
     # get missing missions
-    missing_by_human = set(grouped_df["llm_mission"]) - set(human_classes)
-    missing_by_llm = set(human_classes) - set(grouped_df["llm_mission"])
+    missing_by_human = set(grouped_df["llm_mission"].str.upper()) - set(human_classes)
+    missing_by_llm = set(human_classes) - set(grouped_df["llm_mission"].str.upper())
 
     # check if missions are in the paper text body
     text = f"{paper['title'][0]}; {paper.get('abstract', '')}; {paper['body']}"
@@ -282,7 +282,7 @@ def check_hallucination(grouped_df):
 
     # Capture the hallucinated missions
     hallucinated_missions = [
-        grouped_df["llm_mission"][index]
+        grouped_df["llm_mission"][index].upper()
         for index, hallucination in enumerate(grouped_df["hallucination_by_llm"])
         if hallucination
     ]
@@ -326,6 +326,10 @@ def prepare_output(
         dictionary of paper, missions, and papertypes, pandas dataframe of llm assessment, and other
 
     """
+    # Capitalize mission names for output to make consistent with human class mission names
+    mission_df["llm_mission"] = mission_df["llm_mission"].str.upper()
+    grouped_df["llm_mission"] = mission_df["llm_mission"].str.upper()
+
     # reindex mission
     mm = mission_df.set_index("llm_mission")
 

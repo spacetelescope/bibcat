@@ -1,12 +1,12 @@
 # BibCat
-Bibcat classifies astronomical journal papers into multiple paper categories. The primary categories are "science", "mention", "data-influenced", and "ignore". This project is a work in progress.
+Bibcat classifies astronomical journal papers into multiple categories. The primary categories are "science" and "mention." In our work, we focus on distinguishing between "science" and "nonscience" papers, where "nonscience" includes "mention" and other non-mission-relevant papers.
 
 ## Development Workflow
 There are two main branches for bibcat work:
 
-- The **dev** branch contains ongoing development work and all new work should be done in branches that are merged against **dev**.
+- The dev branch contains ongoing development work. All new features and changes should be developed in branches that are merged into `dev`.
 
-- The **main** branch contains the latest stable release of `bibcat`.
+- The main branch contains the latest stable release of `bibcat`.
 
 ## Installation
 ### Required packages and versions
@@ -42,25 +42,28 @@ If you are interested in developing and contributing to **casper**, you should i
 ```shell
 pip install -e . # install editable mode
 ```
-To install the optional Tensorflow dependencies for use of the ML component of bibcat, run `pip install -e ".[ml]` or follow the tensorflow instructions below.
 
-To install all dependencies for development and testing, run `pip install -e ".[all]"`.
+To install all dependencies for development except for the ML component, testing, and documentation, run `pip install -e ".[dev,test,docs]"` or `pip install -e .[all]`.
+
 
 ### Spacy model downloads
+*Note that some core tests using `spacy` could fail if the version number is not `3.7.2`. You could reinstall `pip install spacy==3.7.2` if that happens. This is a work-around solution until we have the capacity to update the tests.
+
 This model is used for the [Pretrained model method](https://github.com/spacetelescope/bibcat/blob/dev/docs/pretrained.md)
 ```
 python -m spacy download en_core_web_sm
 ```
-### Tensorflow package installation
+
+### Tensorflow package installation for `Pretrained` method
 `tensorflow` packages are used for the [Pretrained model method](https://github.com/spacetelescope/bibcat/blob/dev/docs/pretrained.md)
 
-#### Extra required tensorflow pacakges for Apple silicon M1/M2/M3 chip
-- If you have an Apple Silicon chip computer and want to utilize your GPU, you should install `tensorflow-macos` and `tensorflow-metal`. If not, skip this part.
+#### For CPU computers (e.g., intel chips)
+To install the Tensorflow dependencies for use of the ML component of bibcat, run `pip install -e ".[cpu_ml]"`.
 
-  ```
-  pip install tensorflow-macos==2.15.0 tensorflow-metal==1.1.0
-  ```
-  To verify if tensorflow is set up to utilize your GPU, do the following:
+#### For Apple silicon M1/M2/M3 chip computers
+- If you have an Apple Silicon chip computer and want to utilize your GPU, you run `pip install -e ".[gpu_ml]"` and follow the tensorflow instructions below. If not, skip this part.
+
+ To verify if tensorflow is set up to utilize your GPU, do the following:
 
   ```python
   import tensorflow as tf
@@ -68,12 +71,7 @@ python -m spacy download en_core_web_sm
   ```
   You should see the following output: `[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]`.  If the output is an empty list, you are not setup for GPU use.
 
-#### Install `tensorflow-text`
-
-- If you are working on a non-apple silicon chip computer (e.g., intel chip),
-```
-pip install tensorflow-text==2.15.0
-```
+##### Install `tensorflow-text`
 
 - For Apple silicon M1/M2/M3 chip, to install `tensorflow-text`, the command `pip install -U "tensorflow-text"` **does not work** due to some package version conflict (as of sometime 2024, need to revisit). You need to download the latest release library compatible with your system and the tensorflow version (2.15.0 in the example) from [the Tensorflow library link.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases); For instance, if you have MacOSX with python 3.10, download [this library.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl)
 - Then `pip install /path-to-download/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl`
@@ -84,9 +82,9 @@ pip install tensorflow-text==2.15.0
 [pre-commit](https://pre-commit.com/) allows all collaborators push their commits compliant with the same set of lint and format rules in [pyproject.toml](https://github.com/spacetelescope/bibcat/blob/dev/pyproject.toml) by checking all files in the project at different stages of the git workflow. It runs commands specified in the [.pre-commit-config.yaml](https://github.com/spacetelescope/bibcat/blob/dev/.pre-commit-config.yaml) config file and runs checks before committing or pushing, to catch errors that would have caused a build failure before they reach CI.
 
 ### Install pre-commit
-You will need to install `pre-commit` manually.
+You will need to install `pre-commit` manually. `pre-commit` is included in `dev` dependencies in `pyproject.toml`.
 ```bash
-pip install pre-commit # if you haven't already installed the package
+pip install pre-commit # if you haven't already installed the package.
 ```
 
 ```bash

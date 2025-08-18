@@ -61,7 +61,7 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
     """
 
     n_bibcodes = len(data)
-    threshold = data[next(iter(data))]["threshold_acceptance"]
+    threshold = config.llms.performance.threshold
     logger.info(f"The {n_bibcodes} bibcodes are evaluated in the summary_ouput_t{threshold}.json")
     logger.info(f"{len(missions)} mission(s): {', '.join(missions)} is/are evaluated!\nLooping through papers! ")
 
@@ -445,7 +445,9 @@ def compute_and_save_metrics(
     }
     # Encode string labels into numeric values using LabelEncoder
     label_encoder = LabelEncoder()
-    human_labels_encoded = label_encoder.fit_transform(metrics_data["human_labels"])
+    label_encoder.fit(config.llms.papertypes)
+
+    human_labels_encoded = label_encoder.transform(metrics_data["human_labels"])
     llm_labels_encoded = label_encoder.transform(metrics_data["llm_labels"])
     papertypes = label_encoder.classes_
     # Determine number of classes

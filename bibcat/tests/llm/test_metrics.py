@@ -107,6 +107,7 @@ def test_extract_eval_data(mocker) -> None:
     mocker.patch.object(config.paths, "output", "/mock/output")
     mocker.patch.object(config.llms.openai, "model", "gpt-4o-mini")
     mocker.patch.object(config.llms, "metrics_file", "metrics_summary")
+    mocker.patch.object(config.llms.performance, "threshold", 0.7)
 
     # Call function using fixture
     metrics_data = extract_eval_data(data, missions)
@@ -130,7 +131,7 @@ def test_compute_and_save_metrics(mocker) -> None:
 
     # Mock dependencies
     mock_open = mocker.patch("builtins.open", mocker.mock_open())
-    mocker.patch("bibcat.llm.metrics.config")
+    mocker.patch("bibcat.llm.metrics.config.llms.papertypes", ["SCIENCE", "NONSCIENCE"])
     mock_save_json_file = mocker.patch("bibcat.llm.metrics.save_json_file")
     mocker.patch("bibcat.llm.metrics.logger")
 

@@ -17,12 +17,10 @@ from bibcat.llm.evaluate import evaluate_output
 from bibcat.llm.io import adjust_model
 from bibcat.llm.openai import OpenAIHelper, classify_paper
 from bibcat.llm.plots import confusion_matrix_plot, roc_plot
-from bibcat.llm.stats import (inconsistent_classifications,
-                              save_evaluation_stats, save_operation_stats)
+from bibcat.llm.stats import inconsistent_classifications, save_evaluation_stats, save_operation_stats
 from bibcat.pretrained.build_model import build_model
 from bibcat.pretrained.classify_papers import classify_papers
-from bibcat.pretrained.evaluate_basic_performance import \
-    evaluate_basic_performance
+from bibcat.pretrained.evaluate_basic_performance import evaluate_basic_performance
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
@@ -71,7 +69,7 @@ def dataset() -> None:
         return
 
     else:
-        logger.info("CLI option: 'dataset' selected")
+        logger.debug("CLI option: 'dataset' selected")
         build_dataset()
 
 
@@ -197,7 +195,7 @@ def run_gpt(filename, bibcode, index, model, num_runs, user_prompt_file, agent_p
     """Send a prompt to an OpenAI LLM model"""
     # override the config model
     start_time = time.time()
-    logger.info("CLI option: 'run_gpt' selected")
+    logger.debug("CLI option: 'llm run' selected")
     if model:
         config.llms.openai.model = model
     # override the config user prompt file
@@ -269,6 +267,7 @@ def run_gpt(filename, bibcode, index, model, num_runs, user_prompt_file, agent_p
 @click.pass_context
 def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, threshold):
     """Evaluate the ouput JSON from a LLM model"""
+    logger.debug("CLI option: 'llm evaluate' selected")
     # override the config model
     if model:
         config.llms.openai.model = model
@@ -293,14 +292,14 @@ def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, thre
     "--cm",
     is_flag=True,
     show_default=False,
-    help="Create a confusion matrix plot. This flag works with the '-m' flag with a mission name, for example, 'bibcat eval-plot -c -m JWST'",
+    help="Create a confusion matrix plot. This flag works with the '-m' flag with a mission name, for example, 'bibcat llm plot -c -m JWST'",
 )
 @click.option(
     "-r",
     "--roc",
     is_flag=True,
     show_default=False,
-    help="Create ROC curves. This flag works with the '-m' flag with a mission name, for example,'bibcat eval-plot -r -m JWST'",
+    help="Create ROC curves. This flag works with the '-m' flag with a mission name, for example,'bibcat llm plot -r -m JWST'",
 )
 @click.option(
     "-m",
@@ -309,17 +308,18 @@ def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, thre
     multiple=True,
     default=None,
     show_default=True,
-    help="List mission names; this flag works with the '-c' flag, for instance, 'bibcat -c -m JWST -m HST -m TESS' ",
+    help="List mission names; this flag works with the '-c' flag, for instance, 'bibcat llm plot -c -m JWST -m HST -m TESS' ",
 )
 @click.option(
     "-a",
     "--all-missions",
     is_flag=True,
     show_default=False,
-    help="Create plots for all missions, command example for a confusion matrix plot for all missions: 'bibcat eval-plot -c -a'",
+    help="Create plots for all missions, command example for a confusion matrix plot for all missions: 'bibcat llm plot -c -a'",
 )
 def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
     """Create the evaluation plots from a LLM model"""
+    logger.debug("CLI option: 'llm plot' selected")
     summary_output_path = (
         Path(config.paths.output)
         / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
@@ -346,14 +346,14 @@ def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
     "--ops",
     is_flag=True,
     show_default=False,
-    help="Create a OPS statistics table for llm mission-papertype pairs. This flag works with the '-o' flag. e.g., 'bibcat stat_llm -o'",
+    help="Create a OPS statistics table for llm mission-papertype pairs. This flag works with the '-o' flag. e.g., 'bibcat llm stat -o'",
 )
 @click.option(
     "-e",
     "--evaluation",
     is_flag=True,
     show_default=False,
-    help="Create an Evaluation statistics table for llm and human mission-papertype pairs. This flag works with the '-e' flag. e.g., 'bibcat stat_llm -e'",
+    help="Create an Evaluation statistics table for llm and human mission-papertype pairs. This flag works with the '-e' flag. e.g., 'bibcat llm stat -e'",
 )
 @click.option(
     "-t",
@@ -364,6 +364,7 @@ def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
 )
 def stats_llm(evaluation: bool, ops: bool, threshold: float):
     # override config threshold value
+    logger.debug("CLI option: 'llm stats' selected")
     if threshold:
         config.llms.performance.threshold = threshold
 
@@ -403,6 +404,7 @@ def stats_llm(evaluation: bool, ops: bool, threshold: float):
 @llmcli.command("audit", help="Create a JSON file to audit LLM classification")
 def audit_llms():
     """Create a JSON file of misclassified papers by LLM for auditing"""
+    logger.debug("CLI option: 'llm audit' selected")
 
     input_filepath = (
         Path(config.paths.output)
@@ -466,7 +468,7 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
         bibcat llm batch run -f /path/to/paper.pdf
     """
     start_time = time.time()
-    logger.info("CLI option: 'llm batch run' selected")
+    logger.debug("CLI option: 'llm batch run' selected")
     # override the config model
     if model:
         config.llms.openai.model = model
@@ -487,7 +489,7 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
     # get the list of files
     files = files or filename.read().splitlines()
     if filename:
-        logger.info(f"batch filename: {filename}")
+        logger.info(f"batch filename: {filename.name}")
 
     # iterate over the files
     for file in files:
@@ -530,6 +532,7 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
 def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
     """Batch evaluate a list of papers"""
     start_time = time.time()
+    logger.debug("CLI option: 'llm batch evaluate' selected")
 
     # override the config model
     if model:

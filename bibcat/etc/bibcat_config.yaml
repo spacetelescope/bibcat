@@ -32,8 +32,8 @@ paths:
   modiferrors: null
   TVTinfo: null
 
-# Ambiguous missions ["FIRST", "Copernicus"] need to be revisited
-missions: ["HST", "JWST", "Roman", "TESS", "KEPLER", "K2", "GALEX", "PanSTARRS", "FUSE", "IUE", "HUT", "UIT", "WUPPE", "BEFS", "TUES", "IMAPS", "EUVE"]
+# Kepler: Use the same capitalization as phrase_ambig[0] if mission is found in config.textprocessing.phrase_ambig, since both `casesensitive` and caseinsensitive` are empty.
+missions: ["BEFS","Copernicus", "EUVE", "FIRST",  "FUSE",  "GALEX","HST", "HUT", "IMAPS", "IUE", "JWST", "K2",  "Kepler", "PanSTARRS", "Roman", "TESS", "TUES","UIT", "WUPPE"]
 
 #### configs for LLMs
 llms:
@@ -51,7 +51,7 @@ llms:
   llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
   llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
   openai:
-    model: gpt-4o-mini
+    model: gpt-4.1-mini
   papertypes: ["SCIENCE", "NONSCIENCE"]
   map_papertypes: {
     "science": "science",
@@ -79,6 +79,7 @@ pretrained:
     "mention": "mention",
     "supermention": "mention",
     "data_influenced": "data_influenced",
+    "unresolved_gray": "other",
     "unresolved_grey": "other",
     "engineering": "other",
     "instrument": "other",
@@ -107,7 +108,10 @@ textprocessing:
   placeholder_number: "000" # For text that is anonymized against numbers, this is the text that the numbers are replaced with.
   placeholder_author: "Authorsetal" # For text that is anonymized against authors, this is the text that the authors are replaced with.
   which_modes: [none, skim, trim, anon, skim_trim_anon]
-  phrases_ambig: # Database of known true vs false positives (e.g., phrases that are mission-related (like "Hubble telescope") vs phrases that are false positives (like "Hubble constant").  Nouns should be given in singular form, since plurality is avoided internally to the code via synsets / internal meanings.  Column 1 is the mission; column 2 is the ambiguous phrase; column 3 is the boolean for true vs false positive status.
+  phrases_ambig: # Database of known true vs false positives (e.g., phrases that are mission-related (like "Hubble telescope") vs phrases that are false positives (like "Hubble constant").  Nouns should be given in singular form, since plurality is avoided internally to the code via synsets / internal meanings.  Column 1 is the mission, which should found in mission keyword object; column 2 is the ambiguous phrase; column 3 is the boolean for true vs false positive status.
+  - [Copernicus, Copernicus heliocentric, 'FALSE']
+  - [Copernicus, Nicolaus Copernicus, 'FALSE']
+  - [Copernicus, Copernicus velocity, 'FALSE']
   - [Kepler, Campos Kepler, 'FALSE']
   - [Kepler, Castanheira Kepler, 'FALSE']
   - [Kepler, Kepler 000, 'FALSE']
@@ -117,6 +121,7 @@ textprocessing:
   - [Kepler, Kepler AGN, 'FALSE']
   - [Kepler, Kepler Algol, 'FALSE']
   - [Kepler, Kepler binary, 'FALSE']
+  - [Kepler, Kepler cadence, 'TRUE']
   - [Kepler, Kepler CBP, 'FALSE']
   - [Kepler, Kepler census, 'FALSE']
   - [Kepler, Kepler code, 'FALSE']
@@ -129,6 +134,7 @@ textprocessing:
   - [Kepler, Kepler frequency, 'FALSE']
   - [Kepler, Kepler giant, 'FALSE']
   - [Kepler, Kepler host, 'FALSE']
+  - [Kepler, Kepler Jupiter, 'TRUE']
   - [Kepler, Kepler Law, 'FALSE']
   - [Kepler, Kepler magnitude, 'FALSE']
   - [Kepler, Kepler main sequence, 'FALSE']
@@ -140,6 +146,7 @@ textprocessing:
   - [Kepler, Kepler period, 'FALSE']
   - [Kepler, Kepler planet, 'FALSE']
   - [Kepler, Kepler population, 'FALSE']
+  - [Kepler, Kepler precision, 'TRUE']
   - [Kepler, Kepler progenitor, 'FALSE']
   - [Kepler, Kepler rotator, 'FALSE']
   - [Kepler, Kepler star, 'FALSE']
@@ -159,7 +166,7 @@ textprocessing:
   - [Kepler, e.g. Kepler, 'TRUE']
   - [Kepler, Kepler Input Catalog, 'TRUE']
   - [Kepler, Kepler K p, 'TRUE']
-  - [Kepler, Kepler K2, 'TRUE']
+  - [Kepler, Kepler K2, 'FALSE']
   - [Kepler, Kepler LC, 'TRUE']
   - [Kepler, Kepler light, 'TRUE']
   - [Kepler, Kepler measurement, 'TRUE']
@@ -189,6 +196,7 @@ textprocessing:
   - [K2, K2 giant, 'FALSE']
   - [K2, K2 model, 'FALSE']
   - [K2, K2 Neptune, 'FALSE']
+  - [K2, K2 precision, 'TRUE']
   - [K2, K2 star, 'FALSE']
   - [K2, K2 self, 'FALSE']
   - [K2, K2 transit, 'FALSE']
@@ -270,6 +278,7 @@ textprocessing:
   - [AnyMission, AnyMission lightcurve, 'TRUE']
   - [AnyMission, AnyMission mission, 'TRUE']
   - [AnyMission, AnyMission mode, 'TRUE']
+  - [AnyMission, AnyMission model, 'FALSE']
   - [AnyMission, AnyMission monitoring, 'TRUE']
   - [AnyMission, AnyMission observation, 'TRUE']
   - [AnyMission, AnyMission observatory, 'TRUE']
@@ -293,6 +302,7 @@ textprocessing:
   - [AnyMission, AnyMission target, 'TRUE']
   - [AnyMission, AnyMission telescope, 'TRUE']
   - [AnyMission, AnyMission telecscope, 'TRUE']
+  - [AnyMission, AnyMission theory, 'FALSE']
   - [AnyMission, AnyMission timeseries, 'TRUE']
   - [AnyMission, AnyMission treasury, 'TRUE']
 
@@ -425,7 +435,7 @@ results:
 grammar:
   regex:
     exp_acronym_midwords: ' +(?:(?:(?:for )|(?:the )|(?:in )|(?:of )|(?:from ))*)\b'
-    exp_nopunct: '[^\w\s]'  # For removing punctuation from strings
+    exp_nopunct: '[^\w\s]'  # For removing most punctuation from strings; (matches any character that’s not a letter, digit, underscore, or whitespace )
     exp_punctuation: ['\.', ',', ';', '\:', '\?', '\!']  # For matching open brackets in string
     set_punctuation: ['.', ',', ';', ':', '?', '!']  # For matching open brackets in string
     set_apostrophe: ["'"]  # For matching apostrophes
