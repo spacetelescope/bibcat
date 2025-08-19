@@ -272,14 +272,15 @@ class OpenAIHelper:
                     ],
                 }
             ]
-
         # send the request
+        logger.debug("Using model and reasoning: %s, %s", config.llms.openai.model, config.llms.openai.reasoning)
         try:
             result = self.client.responses.parse(
                 model=config.llms.openai.model,
                 instructions=get_llm_prompt("agent"),
                 input=llm_input,
                 text_format=InfoModel,
+                reasoning={"effort": config.llms.openai.reasoning},
             )
         except openai.BadRequestError as e:
             logger.error("Error sending request: %s", e)
@@ -463,6 +464,7 @@ class OpenAIHelper:
             batch_file = self.create_batch_file(bibcodes)
 
         # upload the batch file
+        logger.info("Uploading batch file %s", batch_file)
         self.upload_file(file_path=batch_file, purpose="batch")
 
         # submit the batch job
@@ -471,7 +473,7 @@ class OpenAIHelper:
         )
         logger.info("Submitting a batch run with batch ID %s", self.batch.id)
 
-    def retrieve_batch(self, batch_id: str = None):
+    def retrieve_batch(self, batch_id: str = None, output: str = None):
         """Retrieve a batch of papers for processing
 
         This method retrieves the status and results of a batch job submitted
@@ -515,13 +517,14 @@ class OpenAIHelper:
                 data[i["custom_id"]] = [ii.model_dump()]
 
             # write the output to our standard llm output file
-            out = (
-                pathlib.Path(config.paths.output)
-                / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
-            )
-            out.parent.mkdir(parents=True, exist_ok=True)
-            logger.info("Writing batch output to %s", out)
-            with open(out, "w", encoding="utf-8") as f:
+            if not output:
+                output = (
+                    pathlib.Path(config.paths.output)
+                    / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
+                )
+            output.parent.mkdir(parents=True, exist_ok=True)
+            logger.info("Writing batch output to %s", output)
+            with open(output, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
 
 
@@ -631,4 +634,5 @@ def classify_paper(
         # write the output response to a file
         key = oa.get_output_key()
         write_output(key, response)
+
 
