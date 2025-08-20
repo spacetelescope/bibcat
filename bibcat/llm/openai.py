@@ -17,8 +17,28 @@ from bibcat.utils.logger_config import setup_logger
 logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
+class CaseInsensitiveEnum(str, Enum):
+    """Case insensitive enum
+
+    Need these due to changes in mission capitalization in
+    https://github.com/spacetelescope/bibcat/pull/69
+    """
+
+    @classmethod
+    def _missing_(cls, value):
+        if not isinstance(value, str):
+            return None
+
+        v = value.lower()
+        # try by member value (mixed case)
+        for member in cls:
+            if member.lower() == v:
+                return member
+        return None
+
+
 # create an enum for the missions, using the config list
-MissionEnum = Enum("MissionEnum", dict(zip(map(str.lower, config.missions), config.missions)))
+MissionEnum = CaseInsensitiveEnum("MissionEnum", dict(zip(map(str.lower, config.missions), config.missions)))
 
 
 class PapertypeEnum(str, Enum):
@@ -52,6 +72,10 @@ class MissionInfo(BaseModel):
         """Ensure the confidence is a list of two floats that sum to 1"""
         if len(value) != 2:
             raise ValueError("Confidence must contain exactly two float values.")
+        if sum(value) == 0:
+            # must account for no data getting assigned confidences of [0,0]
+            # need this due to changes in https://github.com/spacetelescope/bibcat/commit/c8de9a6fae6bd8b6ca013c84870dc78e0331f865
+            return value
         if abs(sum(value) - 1.0) > 1e-6:
             raise ValueError(f"Confidence values must sum to 1.0, got {sum(value):.6f}.")
         return value
@@ -513,8 +537,14 @@ class OpenAIHelper:
             data = {}
             for line in file_response.response.iter_lines():
                 i = json.loads(line)
-                ii = InfoModel(**json.loads(i["response"]["body"]["output"][0]["content"][0]["text"]))
-                data[i["custom_id"]] = [ii.model_dump()]
+                try:
+                    ii = InfoModel(**json.loads(i["response"]["body"]["output"][0]["content"][0]["text"]))
+                except ValidationError as e:
+                    msg = f"Error validating batch {i['custom_id']}: {e}"
+                    logger.error(msg)
+                    raise RuntimeError(msg) from e
+                else:
+                    data[i["custom_id"]] = [ii.model_dump()]
 
             # write the output to our standard llm output file
             if not output:
