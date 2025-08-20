@@ -3,7 +3,6 @@ import itertools
 import math
 import os
 import pathlib
-import time
 from typing import Dict, List
 
 import yaml
@@ -46,7 +45,7 @@ class ChunkPlanner:
     ) -> None:
         # setup inputs and outputs
         self.input_file_path = pathlib.Path(input_file_path)
-        self.output_dir = self.input_file_path.parent / "batch_chunks2"
+        self.output_dir = self.input_file_path.parent / "batch_chunks"
         self.model = model
         self.all_output_files = []
         self.daily_batches = []
@@ -398,7 +397,13 @@ class ChunkPlanner:
         return self.get_submission_schedule()
 
     def plan_info(self) -> dict:
-        """Log and return a consolidated plan summary for easy inspection."""
+        """Print a consolidated plan summary.
+
+        Returns
+        -------
+        dict
+            stats on all the estimated parameters
+        """
         # Log file analysis in the same format used elsewhere
         logger.info("File analysis:")
         logger.info("  Total lines: %s", self.total_lines)
@@ -578,7 +583,13 @@ class ChunkPlanner:
 
     # --- Plan save/load ---
     def _save_plan(self, path: pathlib.Path) -> None:
-        """Save current plan state to YAML grouped by category for future recovery."""
+        """Save current plan state to YAML
+
+        Parameters
+        ----------
+        path : pathlib.Path
+            the path to the summary plan file
+        """
         plan = {
             "file_input": {
                 "file": str(self.input_file_path),
@@ -608,7 +619,13 @@ class ChunkPlanner:
             yaml.safe_dump(plan, f)
 
     def _load_plan(self, path: pathlib.Path) -> None:
-        """Load plan state from YAML grouped structure and restore instance attributes."""
+        """Load plan state from YAML file.
+
+        Parameters
+        ----------
+        path : pathlib.Path
+            The path to the summary plan file.
+        """
 
         with open(path, "r", encoding="utf-8") as f:
             plan = yaml.safe_load(f) or {}
@@ -687,7 +704,7 @@ class SubmissionManager:
 
     def get_next_batch(self) -> List[str]:
         """Return the next pending batch (full paths)."""
-        batches = self._get_pending_batches()
+        batches = self.planner._get_pending_batches()
         return batches[0] if batches else []
 
     def get_status(self) -> Dict:
@@ -770,40 +787,47 @@ class SubmissionManager:
             logger.warning("Failed to update saved plan after submission: %s", e)
         return {"chunk": str(chunk_path), "status": "submitted", "tokens_estimated": est_tokens, "batch_id": batch_id}
 
-    def run_submission_schedule(self, dry_run: bool = True, days: int = 1, pause_between_days: int = 0) -> List[Dict]:
+    def run_submission_schedule(self, dry_run: bool = True) -> List[Dict]:
         """Run the submission schedule for up to `days` (default 1).
 
         By default this submits only the next day's batch so you can run once per day
         and resume later. Set days>1 to process more days in one call.
         """
-        batches = self._get_pending_batches()
-        if not batches:
+        batch = self.get_next_batch()
+        if not batch:
             logger.info(
                 "No pending chunks to submit. All %s chunks already submitted.", len(self.planner.submitted_chunks)
             )
             return []
 
-        batches = batches[: max(1, int(days))]
+        # get current day
+        batch_num = 1 + self.planner.daily_batches.index(batch)
+        if self.planner.submission_log:
+            first = datetime.datetime.fromisoformat(self.planner.submission_log[0]["timestamp"])
+        else:
+            first = datetime.datetime.today()
+        today = datetime.datetime.today()
+        days = 1 + (today.date() - first.date()).days
 
-        results: List[Dict] = []
-        for day_idx, batch in enumerate(batches, start=1):
-            batch_tokens = sum(self._estimate_chunk_tokens(c) for c in batch)
-            logger.info("--- Day %s: submitting %s chunks (~%s tokens) ---", day_idx, len(batch), batch_tokens)
+        batch_tokens = sum(self._estimate_chunk_tokens(chunk) for chunk in batch)
+        results = []
+        logger.info(
+            "--- Day %s Batch %s: submitting %s chunks (~%s tokens) ---", days, batch_num, len(batch), batch_tokens
+        )
+        for chunk in batch:
+            # batch_tokens = sum(self._estimate_chunk_tokens(c) for c in batch)
 
-            for chunk in batch:
-                logger.info("Submitting chunk: %s", os.path.basename(chunk))
-                if dry_run:
-                    results.append({"chunk": str(chunk), "status": "dry-run"})
-                    continue
+            logger.info("Submitting chunk: %s", os.path.basename(chunk))
+            if dry_run:
+                results.append({"chunk": str(chunk), "status": "dry-run"})
+                continue
 
-                res = self._submit_chunk(chunk)
-                results.append(res)
+            res = self._submit_chunk(chunk)
+            results.append(res)
 
-            if pause_between_days and day_idx < len(batches):
-                logger.info("Pausing %s seconds before next day", pause_between_days)
-                time.sleep(pause_between_days)
+        if results[0]["status"] != "rejected":
+            logger.info("Submission run complete. %s records generated.", len(results))
 
-        logger.info("Submission run complete. %s records generated.", len(results))
         return results
 
     def check_batches_status(self) -> List[Dict]:
