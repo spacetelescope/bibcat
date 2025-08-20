@@ -557,10 +557,14 @@ class SubmissionManager:
     instance to avoid import-time side effects.
     """
 
-    def __init__(self, planner: ChunkPlanner, verbose: bool = None):
-        self.planner = planner
+    def __init__(self, planner: ChunkPlanner = None, file: str = None, verbose: bool = None):
+        self.planner = planner or ChunkPlanner(file) if file else None
         self.verbose = verbose or config.logging.verbose
         self.oa = OpenAIHelper(verbose=self.verbose)
+
+        if not self.planner:
+            logger.warning("No plan has been provided.")
+            return
 
         # expose some convenient attributes
         self.output_dir = self.planner.output_dir
@@ -776,9 +780,12 @@ class SubmissionManager:
                 self.planner.output_dir / f"{config.llms.prompt_output_file.replace('.json', '')}_chunk_{idx:>03}.json"
             )
             try:
-                self.oa.retrieve_batch(batch_id=bid)
+                self.oa.retrieve_batch(batch_id=bid, output=output)
             except openai.APIStatusError as e:
                 logger.error("Error retrieving batch %s: %s", bid, e)
+                results.append({"chunk": entry.get("chunk"), "batch_id": bid, "retrieved": False, "error": str(e)})
+            except RuntimeError as e:
+                logger.error("Error validating batch %s: %s", bid, e)
                 results.append({"chunk": entry.get("chunk"), "batch_id": bid, "retrieved": False, "error": str(e)})
             else:
                 results.append({"chunk": entry.get("chunk"), "batch_id": bid, "retrieved": True, "output": output})
