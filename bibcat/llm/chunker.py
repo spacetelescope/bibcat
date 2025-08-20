@@ -3,7 +3,6 @@ import itertools
 import math
 import os
 import pathlib
-from typing import Dict, List
 
 import yaml
 
@@ -76,8 +75,8 @@ class ChunkPlanner:
         self.all_output_files = list(sorted(self.output_dir.glob("*.jsonl")))
 
         # submission tracking
-        self.submitted_chunks: List[str] = []
-        self.submission_log: List[Dict] = []
+        self.submitted_chunks = []
+        self.submission_log = []
 
         # If chunks already exist, try to recover plan state from YAML
         if self.all_output_files:
@@ -307,7 +306,7 @@ class ChunkPlanner:
         return self.all_output_files
 
     # --- Verification and token accounting ---
-    def verify_chunks(self) -> Dict:
+    def verify_chunks(self) -> dict:
         """Verify each chunk against limits and estimate actual tokens per chunk."""
         if not self.all_output_files:
             raise ValueError("No output chunks to verify.")
@@ -423,7 +422,7 @@ class ChunkPlanner:
         logger.info("Batch Info:")
         logger.info("  Number of daily batches: %s", len(self.daily_batches))
         logger.info("  Submitted Batches: %s", len(self.submitted_chunks))
-        logger.info("  Remaining Batches: %s", len(self._get_pending_batches()))
+        logger.info("  Remaining Batches: %s", len(self.get_pending_batches()))
         logger.info("  Completed Batches: %s", len(self.completed_batches))
 
         info = {
@@ -441,145 +440,11 @@ class ChunkPlanner:
             "total_chunks": len(self.all_output_files),
             "n_daily_batches": len(self.daily_batches),
             "n_submitted_batches": len(self.submitted_chunks),
-            "n_remaining_batches": len(self._get_pending_batches()),
+            "n_remaining_batches": len(self.get_pending_batches()),
             "n_completed_batches": len(self.completed_batches),
         }
 
         return info
-
-    # # --- Submission simulation ---
-    # def _get_pending_batches(self) -> List[List[str]]:
-    #     """Return list of pending chunk batches (exclude already submitted)."""
-    #     if not self.all_output_files:
-    #         logger.info("No chunk files found, running prepare_all().")
-    #         self.prepare_all()
-
-    #     pending = [p for p in self.all_output_files if p not in self.submitted_chunks]
-    #     if not pending:
-    #         return []
-    #     return [pending[i : i + self.chunks_per_day] for i in range(0, len(pending), self.chunks_per_day)]
-
-    # def get_next_batch(self) -> List[str]:
-    #     """Return the next pending batch (full paths)."""
-    #     batches = self._get_pending_batches()
-    #     return batches[0] if batches else []
-
-    # def get_status(self) -> Dict:
-    #     """Return submission status: submitted count, remaining count, and next batch info."""
-    #     total = len(self.all_output_files)
-    #     submitted = len(self.submitted_chunks)
-    #     remaining = total - submitted
-    #     next_batch = [os.path.basename(p) for p in self.get_next_batch()]
-    #     chunks_today = self._chunks_submitted_today()
-    #     # estimate tokens today using estimated_tokens_per_chunk as a guide
-    #     tokens_today_est = int(chunks_today * max(1, self.estimated_tokens_per_chunk))
-    #     return {
-    #         "total_chunks": total,
-    #         "submitted_chunks": submitted,
-    #         "remaining_chunks": remaining,
-    #         "next_batch_files": next_batch,
-    #         "chunks_submitted_today": chunks_today,
-    #         "tokens_submitted_today_estimate": tokens_today_est,
-    #         "tokens_allowed_per_day": self.max_tokens_per_day,
-    #         "tokens_remaining_today_estimate": max(0, self.max_tokens_per_day - tokens_today_est),
-    #     }
-
-    # def _chunks_submitted_today(self) -> int:
-    #     """Return number of chunks recorded in submission_log for today's date."""
-    #     today_prefix = datetime.date.today().isoformat()
-    #     return sum(1 for item in self.submission_log if str(item.get("timestamp", "")).startswith(today_prefix))
-
-    # def _estimate_chunk_tokens(self, chunk_path: str) -> int:
-    #     """Estimate tokens for a single chunk based on sampled lines and avg_tokens_per_line."""
-    #     try:
-    #         with open(chunk_path, "r", encoding="utf-8") as f:
-    #             lines = sum(1 for _ in f)
-    #     except OSError:
-    #         return 0
-    #     return int(self.avg_tokens_per_line * lines) if self.avg_tokens_per_line > 0 else 0
-
-    # def _submit_chunk(self, chunk_path: str) -> Dict:
-    #     """Submit a single chunk enforcing plan-based per-day limits.
-
-    #     Uses estimated_tokens_per_chunk and chunks_per_day as the daily safeguards.
-    #     """
-    #     # use estimates rather than exact token counts
-    #     est_tokens = max(1, int(self.estimated_tokens_per_chunk))
-
-    #     chunks_today = self._chunks_submitted_today()
-    #     if self.chunks_per_day > 0 and chunks_today >= self.chunks_per_day:
-    #         msg = f"Daily chunk submission limit reached: {chunks_today} >= {self.chunks_per_day}"
-    #         logger.error(msg)
-    #         return {"chunk": str(chunk_path), "status": "rejected", "error": msg}
-
-    #     tokens_today_est = chunks_today * est_tokens
-    #     if tokens_today_est + est_tokens > self.max_tokens_per_day:
-    #         msg = (
-    #             f"Estimated submission would exceed daily token limit: today_est={tokens_today_est}, "
-    #             f"chunk_est={est_tokens}, limit={self.max_tokens_per_day}"
-    #         )
-    #         logger.error(msg)
-    #         return {"chunk": str(chunk_path), "status": "rejected", "error": msg}
-
-    #     # perform submission
-    #     try:
-    #         oa.submit_batch(batch_file=str(chunk_path))
-    #     except Exception as e:
-    #         logger.error("Error submitting chunk %s: %s", chunk_path, e)
-    #         return {"chunk": str(chunk_path), "status": "error", "error": str(e)}
-    #     else:
-    #         #oa.batch=type('A', (), {'id':str(uuid.uuid1())})()
-    #         self.batch_id = oa.batch.id
-
-    #     # success: record submission using estimated tokens
-    #     self.submitted_chunks.append(chunk_path)
-    #     entry = {"chunk": os.path.basename(chunk_path), "timestamp": datetime.datetime.utcnow().isoformat(),
-    #              "tokens": est_tokens, "batch_id": self.batch_id}
-    #     self.submission_log.append(entry)
-    #     try:
-    #         self._save_plan(self.output_dir / 'chunk_plan.yaml')
-    #     except Exception as e:
-    #         logger.warning("Failed to update saved plan after submission: %s", e)
-    #     return {"chunk": str(chunk_path), "status": "submitted", "tokens_estimated": est_tokens, "batch_id": self.batch_id}
-
-    # def run_submission_schedule(self, dry_run: bool = True) -> List[Dict]:
-    #     """Run the submission schedule for up to `days` (default 1).
-
-    #     By default this submits only the next day's batch so you can run once per day
-    #     and resume later. Set days>1 to process more days in one call.
-    #     """
-    #     batch = self.get_next_batch()
-    #     if not batch:
-    #         logger.info("No pending chunks to submit. All %s chunks already submitted.", len(self.submitted_chunks))
-    #         return []
-
-    #     # get current day
-    #     batch_num = 1 + self.daily_batches.index(batch)
-    #     if self.submission_log:
-    #         first = datetime.datetime.fromisoformat(self.submission_log[0]['timestamp'])
-    #     else:
-    #         first = datetime.datetime.today()
-    #     today = datetime.datetime.today()
-    #     days = 1 + (today.date() - first.date()).days
-
-    #     batch_tokens = sum(self._estimate_chunk_tokens(chunk) for chunk in batch)
-    #     results: List[Dict] = []
-    #     logger.info("--- Day %s Batch %s: submitting %s chunks (~%s tokens) ---", days, batch_num, len(batch), batch_tokens)
-    #     for chunk in batch:
-    #         #batch_tokens = sum(self._estimate_chunk_tokens(c) for c in batch)
-
-    #         logger.info("Submitting chunk: %s", os.path.basename(chunk))
-    #         if dry_run:
-    #             results.append({"chunk": str(chunk), "status": "dry-run"})
-    #             continue
-
-    #         res = self._submit_chunk(chunk)
-    #         results.append(res)
-
-    #     if results[0]['status'] != 'rejected':
-    #         logger.info("Submission run complete. %s records generated.", len(results))
-
-    #     return results
 
     # --- Plan save/load ---
     def _save_plan(self, path: pathlib.Path) -> None:
@@ -667,12 +532,12 @@ class ChunkPlanner:
         self.base_chunks_needed = max(self.base_chunks_needed, len(self.all_output_files))
 
     @property
-    def completed_batches(self) -> List[str]:
+    def completed_batches(self) -> list[str]:
         """List of completed batch file paths."""
         return [str(i) for i in sorted(self.output_dir.glob("*chunk*.json"))]
 
-    def _get_pending_batches(self) -> List[List[str]]:
-        """Return list of pending chunk batches (exclude already submitted)."""
+    def get_pending_batches(self) -> list[list[str]]:
+        """Return list of pending chunk batches to be submitted"""
         if not self.all_output_files:
             logger.info("No chunk files found, running planner.prepare_all().")
             self.prepare_all()
@@ -702,18 +567,23 @@ class SubmissionManager:
         self.max_tokens_per_day = self.planner.max_tokens_per_day
         self.chunks_per_day = self.planner.chunks_per_day
 
-    def get_next_batch(self) -> List[str]:
-        """Return the next pending batch (full paths)."""
-        batches = self.planner._get_pending_batches()
+    def get_next_batch(self) -> list[str]:
+        """Get the next pending batch"""
+        batches = self.planner.get_pending_batches()
         return batches[0] if batches else []
 
-    def get_status(self) -> Dict:
-        """Return submission status: submitted count, remaining count, and next batch info."""
+    def get_status(self) -> dict:
+        """Get submission status
+
+        Gets info on the submission status, including submitted,
+        remaining, and next batch info.
+        """
         total = len(self.planner.all_output_files)
         submitted = len(self.planner.submitted_chunks)
         remaining = total - submitted
         next_batch = [os.path.basename(p) for p in self.get_next_batch()]
         chunks_today = self._chunks_submitted_today()
+        # estimate tokens today using estimated_tokens_per_chunk
         tokens_today_est = int(chunks_today * max(1, self.planner.estimated_tokens_per_chunk))
         return {
             "total_chunks": total,
@@ -733,37 +603,48 @@ class SubmissionManager:
 
     def _estimate_chunk_tokens(self, chunk_path: str) -> int:
         """Estimate tokens for a single chunk based on sampled lines and planner.avg_tokens_per_line."""
-        try:
-            with open(chunk_path, "r", encoding="utf-8") as f:
-                lines = sum(1 for _ in f)
-        except OSError:
-            return 0
+
+        with open(chunk_path, "r", encoding="utf-8") as f:
+            lines = sum(1 for _ in f)
+
         return int(self.planner.avg_tokens_per_line * lines) if self.planner.avg_tokens_per_line > 0 else 0
 
-    def _submit_chunk(self, chunk_path: str) -> Dict:
-        """Submit a single chunk enforcing plan-based per-day limits.
+    def _submit_chunk(self, chunk_path: str) -> dict:
+        """Submit a single file chunk
 
-        Uses planner.estimated_tokens_per_chunk and planner.chunks_per_day as the daily safeguards.
+        Submit a single file chunk to the batch API. Disallow if
+        it would exceed the daily token or chunk limit.
+
+        Parameters
+        ----------
+        chunk_path : str
+            the path to the file chunk
+
+        Returns
+        -------
+        dict
+            chunk submission status
         """
+
         # use estimates rather than exact token counts
         est_tokens = max(1, int(self.planner.estimated_tokens_per_chunk))
 
+        # get the chunks submitted today and check if we'd hit our daily limit
         chunks_today = self._chunks_submitted_today()
-        if self.chunks_per_day > 0 and chunks_today >= self.chunks_per_day:
-            msg = f"Daily chunk submission limit reached: {chunks_today} >= {self.chunks_per_day}"
-            logger.error(msg)
-            return {"chunk": str(chunk_path), "status": "rejected", "error": msg}
-
+        chunk_limit_hit = self.chunks_per_day > 0 and chunks_today >= self.chunks_per_day
         tokens_today_est = chunks_today * est_tokens
-        if tokens_today_est + est_tokens > self.max_tokens_per_day:
+        token_limit_hit = tokens_today_est + est_tokens > self.max_tokens_per_day
+
+        if chunk_limit_hit or token_limit_hit:
             msg = (
-                f"Estimated submission would exceed daily token limit: today_est={tokens_today_est}, "
-                f"chunk_est={est_tokens}, limit={self.max_tokens_per_day}"
+                f"Daily chunk submission limit reached: {chunks_today} >= {self.chunks_per_day}. "
+                f"Estimated submission would exceed daily token limit: today+estimate={tokens_today_est + est_tokens}, "
+                f"limit={self.max_tokens_per_day}"
             )
             logger.error(msg)
             return {"chunk": str(chunk_path), "status": "rejected", "error": msg}
 
-        # perform submission using OpenAIHelper
+        # submit the chunk to the batch API
         try:
             self.oa.submit_batch(batch_file=str(chunk_path))
         except Exception as e:
@@ -772,7 +653,7 @@ class SubmissionManager:
         else:
             batch_id = getattr(self.oa.batch, "id", None)
 
-        # success: record submission using estimated tokens
+        # add the chunk info the submission log
         self.planner.submitted_chunks.append(chunk_path)
         entry = {
             "chunk": os.path.basename(chunk_path),
@@ -787,12 +668,24 @@ class SubmissionManager:
             logger.warning("Failed to update saved plan after submission: %s", e)
         return {"chunk": str(chunk_path), "status": "submitted", "tokens_estimated": est_tokens, "batch_id": batch_id}
 
-    def run_submission_schedule(self, dry_run: bool = True) -> List[Dict]:
-        """Run the submission schedule for up to `days` (default 1).
+    def submit_batch(self, dry_run: bool = True) -> list[dict]:
+        """Submit the next batch in a daily schedule
 
-        By default this submits only the next day's batch so you can run once per day
-        and resume later. Set days>1 to process more days in one call.
+        Submits the next batch of chunks for processing, while respecting
+        daily limits on chunk and token usage.
+
+        Parameters
+        ----------
+        dry_run : bool, optional
+            Flag for a test run, by default True
+
+        Returns
+        -------
+        list[dict]
+            a list of chunk submission statuses
         """
+
+        # get the next batch
         batch = self.get_next_batch()
         if not batch:
             logger.info(
@@ -809,14 +702,14 @@ class SubmissionManager:
         today = datetime.datetime.today()
         days = 1 + (today.date() - first.date()).days
 
+        # estimate tokens
         batch_tokens = sum(self._estimate_chunk_tokens(chunk) for chunk in batch)
         results = []
         logger.info(
             "--- Day %s Batch %s: submitting %s chunks (~%s tokens) ---", days, batch_num, len(batch), batch_tokens
         )
+        # submit each chunk in the daily batch of files
         for chunk in batch:
-            # batch_tokens = sum(self._estimate_chunk_tokens(c) for c in batch)
-
             logger.info("Submitting chunk: %s", os.path.basename(chunk))
             if dry_run:
                 results.append({"chunk": str(chunk), "status": "dry-run"})
@@ -830,17 +723,25 @@ class SubmissionManager:
 
         return results
 
-    def check_batches_status(self) -> List[Dict]:
-        """Check status of submitted batches using the OpenAI client.
+    def check_batches_status(self) -> list[dict]:
+        """Check status of submitted batches
 
-        Returns a list of dicts: {"chunk": ..., "batch_id": ..., "status": ...}
+        Retrieves the statuses of all submitted batches using the OpenAI
+        client.
+
+        Returns
+        -------
+        list[dict]
+            A list of statuses of each batch.
         """
+        # get the remote batches
         try:
             remote_batches = {batch.id: batch.status for batch in self.oa.client.batches.list()}
         except Exception as e:
             logger.error("Error listing remote batches: %s", e)
             remote_batches = {}
 
+        # cross-match with batch ids from submission logs
         results = []
         for entry in self.planner.submission_log:
             bid = entry.get("batch_id")
@@ -850,28 +751,32 @@ class SubmissionManager:
             results.append({"chunk": entry.get("chunk"), "batch_id": bid, "status": status})
         return results
 
-    def retrieve_batch_results(self) -> List[Dict]:
-        """Retrieve completed batches using OpenAIHelper.retrieve_batch (call left commented).
+    def retrieve_batch_results(self) -> list[dict]:
+        """Retrieve results for all completed batches.
 
-        For each logged batch_id this will attempt to retrieve the batch results. The actual
-        retrieval call is commented out so you can modify oa.retrieve_batch before enabling.
-        Returns a list of dicts with chunk, batch_id and a note about retrieval attempt.
+        Iterates over all submitted batch IDs, retrieve their results
+        from OpenAI, and formats them into the bibcat standard
+        llm output JSON.  The output filename uses the
+        config.llms.prompt_output_file suffixed by chunk number.
+
+        Returns
+        -------
+        list[dict]
+            A list of containing the retrieval status for each batch.
         """
-        results: List[Dict] = []
+        results = []
+        # iterate over all batches in the submission log
         for idx, entry in enumerate(self.planner.submission_log, start=1):
             bid = entry.get("batch_id")
             if not bid:
                 continue
 
+            # retrieve the batch and output to our standard llm output
             output = (
                 self.planner.output_dir / f"{config.llms.prompt_output_file.replace('.json', '')}_chunk_{idx:>03}.json"
             )
             try:
-                # Uncomment to perform real retrievals once OA.retrieve_batch signature is confirmed
-                # self.oa.retrieve_batch(batch_id=bid)
-                results.append(
-                    {"chunk": entry.get("chunk"), "batch_id": bid, "retrieved": False, "note": "call commented out"}
-                )
+                self.oa.retrieve_batch(batch_id=bid)
             except openai.APIStatusError as e:
                 logger.error("Error retrieving batch %s: %s", bid, e)
                 results.append({"chunk": entry.get("chunk"), "batch_id": bid, "retrieved": False, "error": str(e)})
