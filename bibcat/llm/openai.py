@@ -635,4 +635,3 @@ def classify_paper(
         key = oa.get_output_key()
         write_output(key, response)
 
-
