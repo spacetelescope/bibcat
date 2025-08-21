@@ -515,7 +515,7 @@ class OpenAIHelper:
             when the batch run has failed
         """
         # get the batch id
-        batch_id = batch_id or self.batch.id if self.batch else None
+        batch_id = batch_id or (self.batch.id if self.batch else None)
         if not batch_id and not self.batch:
             self.batch = next(iter(self.client.batches.list()), None)
             batch_id = batch_id or self.batch.id if self.batch else None
