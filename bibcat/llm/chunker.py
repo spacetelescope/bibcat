@@ -788,6 +788,9 @@ class SubmissionManager:
         llm output JSON.  The output filename uses the
         config.llms.prompt_output_file suffixed by chunk number.
 
+        To merge chunk files after completion, run ``merge_outputs``
+        with kind="llm".
+
         Returns
         -------
         list[dict]
@@ -821,11 +824,16 @@ class SubmissionManager:
     def evaluate_batch_results(self) -> list[dict]:
         """Evaluate results for all completed chunk outputs.
 
-        For each completed chunk file, set config.llms.prompt_output_file to the
-        chunk filename and set config.llms.eval_output_file to a per-chunk name,
-        then iterate the JSON keys (bibcodes) in the chunk and call evaluate_output
-        for each bibcode. Returns a list of evaluation status dicts.
+        Iterates over all completed chunk files and runs bibcat evaluate
+        for each of the bibcodes in the output. To merge chunk files after
+        completion, run ``merge_outputs`` with kind="eval".
+
+        Returns
+        -------
+        list[dict]
+            stats on results of the evaluation process
         """
+
         # verify the planner model
         self.planner.check_model(replace=True)
 
@@ -871,17 +879,33 @@ class SubmissionManager:
 
         return results
 
-    def merge_outputs(self, kind: str = "prompt") -> pathlib.Path:
+    def merge_outputs(self, kind: str = "llm") -> pathlib.Path:
         """Merge chunked JSON outputs into a single JSON file.
 
-        kind: 'prompt' to merge prompt output chunk files, 'eval' to merge evaluation outputs.
-        The merged file is written to the planner output_dir and returned as a Path.
+        Merges the chunked JSON files into a final single JSON, for
+        either the llm prompt output or the evaluation summary files.
+
+        Parameters
+        ----------
+        kind : str, optional
+            The type of output to merge, by default "llm"
+
+        Returns
+        -------
+        pathlib.Path
+            The path to the merged JSON file
+
+        Raises
+        ------
+        ValueError
+            If the kind is not recognized
         """
-        if kind not in {"prompt", "eval"}:
-            raise ValueError("kind must be 'prompt' or 'eval'")
+
+        if kind not in {"llm", "eval"}:
+            raise ValueError("kind must be 'llm' or 'eval'")
 
         # get correct parameter name
-        if kind == "prompt":
+        if kind == "llm":
             param = config.llms.prompt_output_file
             filename = param
         else:
