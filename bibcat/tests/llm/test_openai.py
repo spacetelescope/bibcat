@@ -1,9 +1,11 @@
 import json
 from enum import Enum
 
+import openai_responses
 import pytest
 
-from bibcat.llm.openai import InfoModel, OpenAIHelper, convert_to_classification, extract_response
+from bibcat import config
+from bibcat.llm.openai import InfoModel, MissionEnum, OpenAIHelper, convert_to_classification, extract_response
 
 
 def test_convert_to_classes():
@@ -166,3 +168,63 @@ def test_validate_batch(batchfile, nsamp, exp):
     oa = OpenAIHelper()
     valid = oa.is_batch_file_validated(batch)
     assert valid == exp
+
+
+@pytest.mark.parametrize("bibcode, file, expected", [
+    ("BIBCODE123", None, "BIBCODE123"),
+    (None, "temp_ABC123.json", "ABC123"),
+    (None, "paper_file.json", "paper_file.json"),
+], ids=['bibcode', 'tempfile', 'paper_file'])
+def test_get_output_key_bibcode_and_tempfile(tmp_path, bibcode, file, expected):
+    """ test get output key"""
+    oa = OpenAIHelper()
+    oa.bibcode = bibcode
+    oa.filename = file
+    if file:
+        tmpfile = tmp_path / file
+        tmpfile.write_text("{}", encoding="utf-8")
+    assert oa.get_output_key() == expected
+
+
+def test_submit_paper_with_paper_dict(mocker):
+    """ test we can submit a paper"""
+    oa = OpenAIHelper()
+
+    # stub populate_user_template and send_message to avoid heavy processing
+    mocker.patch('bibcat.llm.openai.get_source', return_value=paper)
+    mocker.patch('bibcat.llm.openai.identify_missions_in_text', return_value=[True]*len(config.missions))
+    mocker.patch.object(OpenAIHelper, "send_message", return_value={"notes": "n", "missions": []})
+
+    res = oa.submit_paper(bibcode=bibcodes[0])
+    assert res == {"notes": "n", "missions": []}
+
+
+@pytest.mark.parametrize("mission", ["kepler", "Kepler", "KEPLER"])
+def test_missionenum(mission):
+    """test mission enum returns correctly """
+    assert MissionEnum(mission) == "Kepler"
+
+
+response = {"notes": "I thought about it.",
+            "missions": [{"mission": "TESS",
+                          "papertype": "SCIENCE",
+                          'confidence': [1.0, 0.0],
+                          "quotes": ['I am a TESS paper'],
+                          "reason": "It said it was a TESS paper."}]
+            }
+class MockResponse:
+    """ mock response for openai response.parse """
+    error = None
+    output_parsed = InfoModel(**response)
+
+
+@openai_responses.mock()
+def test_send_request(mocker):
+    """ test we can send a request and get a response """
+    oa = OpenAIHelper()
+    mocker.patch.object(oa.client.responses, "parse", return_value=MockResponse())
+
+    user = oa.populate_user_template(paper)
+    resp = oa.send_message(user_prompt=user)
+
+    assert resp == response
