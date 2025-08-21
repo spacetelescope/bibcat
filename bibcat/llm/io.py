@@ -222,7 +222,7 @@ def read_output(bibcode: str | None = None, filename: str | pathlib.Path | None 
         return data.get(bibcode) if bibcode else data
 
 
-def write_summary(output: dict):
+def write_summary(output: dict, output_path: str = None):
     """Write the evaluation summary output to a file
 
     Write the output summary statistics and info from evaluation into a JSON file.
@@ -231,6 +231,8 @@ def write_summary(output: dict):
     ----------
     output : dict
         the output summary data
+    output_path: str, optional
+        optional output directory path
 
     Returns
     -------
@@ -238,10 +240,12 @@ def write_summary(output: dict):
 
     """
 
-    filename = (
-        pathlib.Path(config.paths.output)
-        / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
+    output_path = (
+        pathlib.Path(output_path)
+        if output_path
+        else pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}"
     )
+    filename = output_path / f"{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
 
     logger.info(f"Writing output to {filename}")
 
