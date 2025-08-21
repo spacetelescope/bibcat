@@ -1,10 +1,14 @@
+import copy
 import datetime
 import itertools
+import json
 import math
 import os
 import pathlib
 
 import yaml
+
+from bibcat.llm.evaluate import evaluate_output
 
 try:
     import tiktoken
@@ -39,7 +43,7 @@ class ChunkPlanner:
         max_lines: int = 50000,
         max_size_mb: int = 200,
         max_tokens_per_day: int = 40_000_000,
-        model: str = "gpt-4.1-mini",
+        model: str = config.llms.openai.model,
         days_to_distribute: int = 1,
     ) -> None:
         # setup inputs and outputs
@@ -74,6 +78,11 @@ class ChunkPlanner:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.all_output_files = list(sorted(self.output_dir.glob("*.jsonl")))
 
+        # set original output names
+        self.orig_prompt = copy.copy(config.llms.prompt_output_file)
+        self.orig_eval = copy.copy(config.llms.eval_output_file)
+        self.base_prompt = self.orig_prompt.replace(".json", "")
+
         # submission tracking
         self.submitted_chunks = []
         self.submission_log = []
@@ -88,7 +97,23 @@ class ChunkPlanner:
                 except Exception as e:
                     logger.warning("Failed to load plan state from %s: %s", plan_path, e)
 
-    # --- Token estimation helper ---
+    def check_model(self, replace=None):
+        """Check the config model against the model used in the batch request"""
+
+        with open(self.all_output_files[0], "r", encoding="utf-8") as ff:
+            data = ff.readlines()
+            req = json.loads(data[0])
+            reqmodel = req["body"]["model"]
+
+            if reqmodel != self.model:
+                logger.warning("Model mismatch between batch and config.  Setting config model to %s", reqmodel)
+                self.model = reqmodel
+
+            # replace the model in the config if asked
+            if replace:
+                config.llms.openai.model = reqmodel
+
+            # --- Token estimation helper ---
     def _estimate_tokens(self, text: str) -> int:
         """Estimate token count for a given text using tiktoken. Falls back gracefully."""
         if tiktoken is None:
@@ -534,7 +559,7 @@ class ChunkPlanner:
     @property
     def completed_batches(self) -> list[str]:
         """List of completed batch file paths."""
-        return [str(i) for i in sorted(self.output_dir.glob("*chunk*.json"))]
+        return [str(i) for i in sorted(self.output_dir.glob(f"{self.base_prompt}*chunk*.json"))]
 
     def get_pending_batches(self) -> list[list[str]]:
         """Return list of pending chunk batches to be submitted"""
@@ -771,6 +796,7 @@ class SubmissionManager:
         results = []
         # iterate over all batches in the submission log
         for idx, entry in enumerate(self.planner.submission_log, start=1):
+            logger.info("Retrieving batch %s for chunk %s", entry.get("batch_id"), entry.get("chunk"))
             bid = entry.get("batch_id")
             if not bid:
                 continue
@@ -791,3 +817,95 @@ class SubmissionManager:
                 results.append({"chunk": entry.get("chunk"), "batch_id": bid, "retrieved": True, "output": output})
 
         return results
+
+    def evaluate_batch_results(self) -> list[dict]:
+        """Evaluate results for all completed chunk outputs.
+
+        For each completed chunk file, set config.llms.prompt_output_file to the
+        chunk filename and set config.llms.eval_output_file to a per-chunk name,
+        then iterate the JSON keys (bibcodes) in the chunk and call evaluate_output
+        for each bibcode. Returns a list of evaluation status dicts.
+        """
+        # verify the planner model
+        self.planner.check_model(replace=True)
+
+        results: list[dict] = []
+        for idx, chunk in enumerate(self.planner.completed_batches, start=1):
+            chunk_path = pathlib.Path(chunk)
+            if not chunk_path.exists():
+                logger.warning("Chunk file not found, skipping: %s", chunk)
+                continue
+
+            # set prompt output name to this chunk file so evaluate.read_output reads it
+            config.llms.prompt_output_file = chunk_path.name
+
+            # set a per-chunk eval output filename
+            config.llms.eval_output_file = f"{self.planner.orig_eval}_chunk_{idx:03d}"
+
+            # read chunk JSON and iterate bibcodes
+            try:
+                with chunk_path.open("r", encoding="utf-8") as fh:
+                    data = json.load(fh)
+            except Exception as e:
+                logger.error("Failed to load chunk JSON %s: %s", chunk_path, e)
+                results.append({"chunk": chunk_path.name, "error": str(e)})
+                continue
+
+            if not isinstance(data, dict):
+                logger.warning("Chunk %s does not contain a JSON object, skipping", chunk_path)
+                results.append({"chunk": chunk_path.name, "error": "not a json object"})
+                continue
+
+            for bibcode in data.keys():
+                res = evaluate_output(bibcode=bibcode, write_file=True, base_path=self.planner.output_dir)
+                if res is None:
+                    msg = f"Error evaluating bibcode {bibcode} from {chunk_path}"
+                    logger.error(msg)
+                    results.append({"chunk": chunk_path.name, "bibcode": bibcode, "status": "error", "error": msg})
+                else:
+                    results.append({"chunk": chunk_path.name, "bibcode": bibcode, "status": "evaluated"})
+
+        # reset output names
+        config.llms.prompt_output_file = self.planner.orig_prompt
+        config.llms.eval_output_file = self.planner.orig_eval
+
+        return results
+
+    def merge_outputs(self, kind: str = "prompt") -> pathlib.Path:
+        """Merge chunked JSON outputs into a single JSON file.
+
+        kind: 'prompt' to merge prompt output chunk files, 'eval' to merge evaluation outputs.
+        The merged file is written to the planner output_dir and returned as a Path.
+        """
+        if kind not in {"prompt", "eval"}:
+            raise ValueError("kind must be 'prompt' or 'eval'")
+
+        # get correct parameter name
+        if kind == "prompt":
+            param = config.llms.prompt_output_file
+            filename = param
+        else:
+            param = config.llms.eval_output_file
+            filename = f"{param}_t{config.llms.performance.threshold}.json"
+
+        # search for files
+        base = str(param).replace(".json", "")
+        pattern = f"{base}_chunk_*.json"
+        files = sorted(self.planner.output_dir.glob(pattern))
+
+        # merge all jsons together
+        merged = {}
+        for fp in files:
+            with fp.open("r", encoding="utf-8") as fh:
+                data = json.load(fh)
+                merged.update(data)
+
+        # verify the planner model
+        self.planner.check_model()
+
+        # write out merged json
+        output = pathlib.Path(self.planner.output_dir.parent) / f"{filename}"
+        with open(output, "w", encoding="utf-8") as fh:
+            json.dump(merged, fh, indent=2)
+
+        return output
