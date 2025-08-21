@@ -470,6 +470,33 @@ class OpenAIHelper:
 
         return str(out)
 
+    @staticmethod
+    def is_batch_file_validated(batch_file: str):
+        """Check if the batch file is valid for processing
+
+        Checks if the batch file meets the requirements for processing
+        by the OpenAI Batch API, with given limits on number of lines
+        and file size.
+
+        Parameters
+        ----------
+        batch_file : str
+            The path to the batch file to validate.
+
+        Returns
+        -------
+        bool
+            True if the batch file is valid, False otherwise.
+        """
+        file_size = os.path.getsize(batch_file)
+        with open(batch_file, "r", encoding="utf-8") as f:
+            data = f.readlines()
+            n_lines = len(data)
+
+        max_lines = 50_000
+        max_size = 200
+        return n_lines < max_lines and file_size < max_size * 1024 * 1024
+
     def submit_batch(self, bibcodes: list[str] = None, batch_file: str = None):
         """Submit a batch of papers for processing
 
@@ -486,6 +513,11 @@ class OpenAIHelper:
         # create a batch file if not provided
         if not batch_file:
             batch_file = self.create_batch_file(bibcodes)
+
+        # check if batch file is validated
+        if not self.is_batch_file_validated(batch_file):
+            logger.error("Input batch file not valid for OpenAI Batch API.  Please use the Chunker instead.")
+            return
 
         # upload the batch file
         logger.info("Uploading batch file %s", batch_file)
