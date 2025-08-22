@@ -583,7 +583,7 @@ class SubmissionManager:
     """
 
     def __init__(self, planner: ChunkPlanner = None, file: str = None, verbose: bool = None):
-        self.planner = planner or ChunkPlanner(file) if file else None
+        self.planner = planner or (ChunkPlanner(file) if file else None)
         self.verbose = verbose or config.logging.verbose
         self.oa = OpenAIHelper(verbose=self.verbose)
 
@@ -592,7 +592,6 @@ class SubmissionManager:
             return
 
         # expose some convenient attributes
-        self.output_dir = self.planner.output_dir
         self.max_tokens_per_day = self.planner.max_tokens_per_day
         self.chunks_per_day = self.planner.chunks_per_day
 
