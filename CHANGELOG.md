@@ -3,7 +3,8 @@
 ### [Unreleased]
 - Bibcat to do list
     - Adding tutorial notebooks back
--
+- Adding support for chunk planning/submission for large batches to OpenAI Batch API
+
 ### Removed
 - [PR #48](https://github.com/spacetelescope/bibcat/pull/48)
     - Removed conda env file.

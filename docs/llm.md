@@ -112,6 +112,7 @@ Alternatively, if you already have a premade batch file for a given set of paper
 ```
 bibcat llm batch submit -b /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/my_batchfile.jsonl
 ```
+**Note:** For large batches of papers, due to current overheads in creating prompts, it is often best to prepare your batch file once, and then submit it directly to `batch submit`.
 
 You can check your batch job in your OpenAI [Batch dashboard](https://platform.openai.com/batches) and the JSONL file in your [File Storage](https://platform.openai.com/storage/files/).
 
@@ -143,6 +144,143 @@ This way you can easily evaluate it with
 ```
 bibcat llm batch evaulate -p papers_to_process.txt
 ```
+
+#### Processing Batches
+
+**OpenAI Rate Limits and Constraints**
+
+The OpenAI Batch API has certain contraints on the input file that can be submitted, as well as model- and organization- dependent rate limits on the number of tokens-per-day (TPD).
+
+- Maximum number of lines: 50,000
+- Maximum input file size: 200 MB
+- Daily Token Limit:
+
+  - Tier 3 - gpt-5/4.1-mini: 40,000,000
+  - Tier 4 - gpt-5/4.1-mini: 100,000,000
+
+See [Batch Limits](https://platform.openai.com/docs/guides/batch#rate-limits) and our [Organization Tier Rate Limits](https://platform.openai.com/settings/organization/limits) for more information.
+
+The above ``batch submit`` and ``batch retrieve`` commands only handle submissions for small-ish batches that already meet these constraints.  To properly account for the limits, use the `batch process` command to chunk your input batch file into subsets and create an optimized submission plan.
+
+**Batch Processing in Chunks**
+
+For processing a large batch of paper that hit the OpenAI API limits, use the `bibcat llm batch process` command to properly chunk your input batch JSONL file into smaller file subsets for submission to the API.  It splits your file into subsets and bundles them together into daily batches that stay within the daily token limit.
+
+To analyze your file, split it into chunks specified with a `chunk_XXX` suffix, plan a daily batch submission schedule, and do a test dry-run with `-t`, run:
+
+`bibcat llm batch process -b /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_large_batchfile.jsonl -t`
+
+Plan Output:
+```
+bibcat.llm.chunker - INFO - File analysis:
+bibcat.llm.chunker - INFO -   Total lines: 60030
+bibcat.llm.chunker - INFO -   File size: 40.52.03 MB
+bibcat.llm.chunker - INFO -   Estimated total tokens: 1055992772
+bibcat.llm.chunker - INFO -   Average tokens per line: 17563.1
+bibcat.llm.chunker - INFO - Chunking plan:
+bibcat.llm.chunker - INFO -   Base chunks needed: 21
+bibcat.llm.chunker - INFO -   Lines per chunk: 2859
+bibcat.llm.chunker - INFO -   Estimated tokens per chunk: 50285371
+bibcat.llm.chunker - INFO -   Chunks per day: 1
+bibcat.llm.chunker - INFO -   Days needed: 21
+bibcat.llm.chunker - INFO - Creating chunk 1: /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_batchfile_chunk_001.jsonl
+bibcat.llm.chunker - INFO - Creating chunk 2: /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_new/gs_large_batchfile_chunk_002.jsonl
+...
+bibcat.llm.chunker - INFO - Creating chunk 21: /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_new/gs_large_batchfile_chunk_021.jsonl
+bibcat.llm.chunker - INFO - Created 21 chunk files
+bibcat.llm.chunker - INFO - Saved chunk plan to /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_batchfile_chunk_plan.yaml
+bibcat.llm.chunker - INFO -   Chunk 1: 2859 lines, 193.20 MB, ~51516549 tokens
+bibcat.llm.chunker - INFO -   Chunk 2: 2859 lines, 192.84 MB, ~47402791 tokens
+...
+bibcat.llm.chunker - INFO -   Chunk 21: 2850 lines, 192.35 MB, ~50938790 tokens
+bibcat.llm.chunker - INFO - Total estimated tokens across all chunks: 1054242502
+bibcat.llm.chunker - INFO - Organized chunks into 21 daily batches
+21 chunks remaining. Submitting next batch.
+bibcat.llm.chunker - INFO - --- Day 1 Batch 1: submitting 1 chunks (~50292909 tokens) ---
+bibcat.llm.chunker - INFO - Submitting chunk: gs_batchfile_chunk_001.jsonl
+bibcat.llm.chunker - INFO - Submission run complete. 1 records generated.
+[{'chunk': '/Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_batchfile_chunk_001.jsonl', 'status': 'dry-run'}]
+```
+
+Running the command without `-t` will submit the first daily batch of chunks to OpenAI for batch processing: `bibcat llm batch process -b /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_large_batchfile.jsonl`
+
+```
+bibcat.llm.chunker - INFO - Loaded plan state from /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_new/gs_large_batchfile_chunk_plan.yaml
+bibcat.llm.chunker - INFO - --- Day 1 Batch 1: submitting 1 chunks (~50292909 tokens) ---
+bibcat.llm.chunker - INFO - Submitting chunk: gs_large_batchfile_chunk_001.jsonl
+bibcat.llm.openai - INFO - Uploading batch file /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_large_batchfile_chunk_001.jsonl
+ bibcat.llm.openai - INFO - Submitting a batch run with batch ID batch_68a8b1e5f89c8190bff5afda0b4dab9a
+bibcat.llm.chunker - INFO - Submission run complete. 1 records generated.
+[{'chunk': '/Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_large_batchfile_chunk_001.jsonl',
+  'status': 'submitted',
+  'tokens_estimated': 50285371,
+  'batch_id': 'batch_68a8b1e5f89c8190bff5afda0b4dab9a'}]
+```
+
+Running `batch process` a second time on the same day will result in an error that you
+
+```
+bibcat.llm.chunker - INFO - --- Day 1 Batch 2: submitting 1 chunks (~50292909 tokens) ---
+bibcat.llm.chunker - INFO - Submitting chunk: gs_large_batchfile_chunk_002.jsonl
+bibcat.llm.chunker - ERROR - Daily chunk submission limit reached: 1 >= 1. Estimated submission would exceed daily token limit: today+estimate=100570742, limit=100000000
+Out[12]:
+[{'chunk': '/Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_large_batchfile_chunk_002.jsonl',
+  'status': 'rejected',
+  'error': 'Daily chunk submission limit reached: 1 >= 1. Estimated submission would exceed daily token limit: today+estimate=100570742, limit=100000000'}]
+```
+Run the same command again the next day to process the next batch.
+
+**Check Status**
+
+To check the status of all batches submitted, use the check, `-c`, flag:
+
+`bibcat llm batch process -b /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_large_batchfile.jsonl -c`
+
+```
+bibcat.llm.chunker - INFO - Loaded plan state from /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_large_batchfile_chunk_plan.yaml
+[{'chunk': 'gs_large_batchfile_chunk_001.jsonl', 'batch_id': 'batch_68a4b230708c81908d44d556be4faadf', 'status': 'completed'}, {'chunk': 'gs_large_batchfile_chunk_002.jsonl', 'batch_id': 'batch_68a5cb9b75ec8190b253cbefbfa5812d', 'status': 'completed'}, {'chunk': 'gs_large_batchfile_chunk_003.jsonl', 'batch_id': 'batch_68a71c44de5481908c9b10027821340b', 'status': 'completed'}]
+```
+
+**Retrieve Results**
+
+To retrieve the results of all completed batches, use the retrieve_batch, `-r` flag:
+`bibcat llm batch process -b /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_large_batchfile.jsonl -r`
+
+```
+bibcat.llm.chunker - INFO - Loaded plan state from /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_batchfile_chunk_plan.yaml
+Retrieving completed batch results.
+bibcat.llm.chunker - INFO - Retrieving batch batch_68a8850c80908190930c09dbff85c84c for chunk gs_batchfile_chunk_001.jsonl
+bibcat.llm.openai - INFO - Writing batch output to /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_llm_batchtest_output_chunk_001.json
+```
+This produces chunked files (`chunk_XXX`) with the same name as `config.llms.prompt_output_file`. You can merge these together with the merge command.
+
+**Evaluate Results**
+
+You can optionally run `bibcat evaluate` on each chunked output instead of on the entire sample output, with the eval_batch, `-e`, flag:
+
+`bibcat llm batch process -b /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_large_batchfile.jsonl -e`
+
+```
+bibcat.llm.chunker - INFO - Loaded plan state from /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_batchfile_chunk_plan.yaml
+All batches already submitted.
+Evaluating batch results.
+...
+bibcat.llm.io - INFO - Writing output to /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_summary_batchtest_output_chunk_001_t0.5.json
+[{'chunk': 'gs_llm_batchtest_output_chunk_001.json', 'bibcode': '2018A&A...610A..11I', 'status': 'evaluated'},...]
+```
+
+This produces chunked files (`chunk_XXX`) with the same name as `config.llms.eval_output_file`. You can merge these together with the merge command.
+
+**Merge Chunks**
+
+To merge all llm output chunks back into a single file, use the merge, `-m` flag.
+`bibcat llm batch process -b /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_large_batchfile.jsonl -m`
+
+```
+bibcat.llm.chunker - INFO - Writing merged file to /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_llm_batchtest_output.json
+bibcat.llm.chunker - INFO - Writing merged file to /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_summary_batchtest_output_t0.5.json
+```
+
 
 ## User Configuration
 An example for the new ``llms`` section of the configuration.
