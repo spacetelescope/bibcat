@@ -779,6 +779,10 @@ class SubmissionManager:
             )
             return []
 
+        # check daily batches exist
+        if not self.planner.daily_batches:
+            self.planner.create_daily_batches()
+
         # get current day
         batch_num = 1 + self.planner.daily_batches.index(batch)
         if self.planner.submission_log:
