@@ -657,7 +657,9 @@ def process(filename, batch_file, model, test, retrieve_batch, check, eval_batch
 
     if not sm.all_batches_submitted and not check and not retrieve_batch:
         click.echo(f"{sm.remaining_chunks} chunks remaining. Submitting next batch.")
-        sm.submit_batch(dry_run=test)
+        click.echo(sm.submit_batch(dry_run=test))
+    elif sm.all_batches_submitted:
+        click.echo("All batches already submitted.")
 
     if check:
         click.echo(sm.check_batches_status())
@@ -665,11 +667,11 @@ def process(filename, batch_file, model, test, retrieve_batch, check, eval_batch
 
     if retrieve_batch:
         click.echo("Retrieving completed batch results.")
-        sm.retrieve_batch_results()
+        click.echo(sm.retrieve_batch_results())
 
     if eval_batch:
         click.echo("Evaluating batch results.")
-        sm.evaluate_batch_results()
+        click.echo(sm.evaluate_batch_results())
 
     completed = sm.all_batches_completed
     if merge and not completed:
