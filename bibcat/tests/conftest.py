@@ -33,6 +33,8 @@ def setenv(tmp_path_factory):
     os.environ["BIBCAT_DATA_DIR"] = str(data)
     os.environ["BIBCAT_OPSDATA_DIR"] = str(ops)
 
+    os.environ["OPENAI_API_KEY"] = "test_key"
+
 
 @pytest.fixture()
 def setconfig(mocker):
