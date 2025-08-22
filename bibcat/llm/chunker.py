@@ -77,7 +77,7 @@ class ChunkPlanner:
 
         # Ensure output dir exists and check for any existing chunks
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        self.all_output_files = list(sorted(self.output_dir.glob("*.jsonl")))
+        self.all_output_files = list(sorted(self.output_dir.glob(f"{self.input_file_path.stem}*.jsonl")))
 
         # set original output names
         self.orig_prompt = copy.copy(config.llms.prompt_output_file)
@@ -285,6 +285,11 @@ class ChunkPlanner:
             self.plan_chunks()
 
         return self.base_chunks_needed > 1
+
+    @property
+    def has_been_planned(self) -> bool:
+        """Check a plan has been made"""
+        return self.plan_path.exists()
 
     def create_chunks(self) -> list[str]:
         """Split the input file into subset chunks
@@ -599,10 +604,6 @@ class SubmissionManager:
             logger.warning("No plan has been provided.")
             return
 
-        # expose some convenient attributes
-        self.max_tokens_per_day = self.planner.max_tokens_per_day
-        self.chunks_per_day = self.planner.chunks_per_day
-
     def get_next_batch(self) -> list[str]:
         """Get the next pending batch"""
         batches = self.planner.get_pending_batches()
@@ -628,8 +629,8 @@ class SubmissionManager:
             "next_batch_files": next_batch,
             "chunks_submitted_today": chunks_today,
             "tokens_submitted_today_estimate": tokens_today_est,
-            "tokens_allowed_per_day": self.max_tokens_per_day,
-            "tokens_remaining_today_estimate": max(0, self.max_tokens_per_day - tokens_today_est),
+            "tokens_allowed_per_day": self.planner.max_tokens_per_day,
+            "tokens_remaining_today_estimate": max(0, self.planner.max_tokens_per_day - tokens_today_est),
         }
 
     def _chunks_submitted_today(self) -> int:
@@ -667,15 +668,15 @@ class SubmissionManager:
 
         # get the chunks submitted today and check if we'd hit our daily limit
         chunks_today = self._chunks_submitted_today()
-        chunk_limit_hit = self.chunks_per_day > 0 and chunks_today >= self.chunks_per_day
+        chunk_limit_hit = self.planner.chunks_per_day > 0 and chunks_today >= self.planner.chunks_per_day
         tokens_today_est = chunks_today * est_tokens
-        token_limit_hit = tokens_today_est + est_tokens > self.max_tokens_per_day
+        token_limit_hit = tokens_today_est + est_tokens > self.planner.max_tokens_per_day
 
         if chunk_limit_hit or token_limit_hit:
             msg = (
-                f"Daily chunk submission limit reached: {chunks_today} >= {self.chunks_per_day}. "
+                f"Daily chunk submission limit reached: {chunks_today} >= {self.planner.chunks_per_day}. "
                 f"Estimated submission would exceed daily token limit: today+estimate={tokens_today_est + est_tokens}, "
-                f"limit={self.max_tokens_per_day}"
+                f"limit={self.planner.max_tokens_per_day}"
             )
             logger.error(msg)
             return {"chunk": str(chunk_path), "status": "rejected", "error": msg}
@@ -720,6 +721,9 @@ class SubmissionManager:
         list[dict]
             a list of chunk submission statuses
         """
+
+        if not self.planner.has_been_planned:
+            raise ValueError("Cannot submit batches. A chunk plan has not been made yet.")
 
         # get the next batch
         batch = self.get_next_batch()

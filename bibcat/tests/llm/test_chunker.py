@@ -141,10 +141,10 @@ def test_load_plan(fullplan):
 def test_submission_manager(fullplan, twobatch):
     """test we can create the submission manager"""
     sm = SubmissionManager(fullplan)
-    assert sm.chunks_per_day == 2
+    assert sm.planner.chunks_per_day == 2
     assert "/batch_chunks" in str(sm.planner.output_dir)
     othersm = SubmissionManager(file=twobatch)
-    assert othersm.chunks_per_day == 2
+    assert othersm.planner.chunks_per_day == 2
 
 
 @pytest.fixture()
