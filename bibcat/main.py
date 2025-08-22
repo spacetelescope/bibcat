@@ -655,7 +655,7 @@ def process(filename, batch_file, model, test, retrieve_batch, check, eval_batch
         planner.prepare_all()
     sm = SubmissionManager(planner)
 
-    if not sm.all_batches_submitted and not check and not retrieve_batch:
+    if not sm.all_batches_submitted and not check and not retrieve_batch and not merge and not eval_batch:
         click.echo(f"{sm.remaining_chunks} chunks remaining. Submitting next batch.")
         click.echo(sm.submit_batch(dry_run=test))
     elif sm.all_batches_submitted:
