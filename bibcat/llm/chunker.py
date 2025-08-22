@@ -49,6 +49,7 @@ class ChunkPlanner:
         # setup inputs and outputs
         self.input_file_path = pathlib.Path(input_file_path)
         self.output_dir = self.input_file_path.parent / "batch_chunks"
+        self.plan_path = self.output_dir / f"{self.input_file_path.stem}_chunk_plan.yaml"
         self.model = model
         self.all_output_files = []
         self.daily_batches = []
@@ -89,13 +90,12 @@ class ChunkPlanner:
 
         # If chunks already exist, try to recover plan state from YAML
         if self.all_output_files:
-            plan_path = self.output_dir / "chunk_plan.yaml"
-            if plan_path.exists():
+            if self.plan_path.exists():
                 try:
-                    self._load_plan(plan_path)
-                    logger.info("Loaded plan state from %s", plan_path)
+                    self._load_plan(self.plan_path)
+                    logger.info("Loaded plan state from %s", self.plan_path)
                 except Exception as e:
-                    logger.warning("Failed to load plan state from %s: %s", plan_path, e)
+                    logger.warning("Failed to load plan state from %s: %s", self.plan_path, e)
 
     def check_model(self, replace=None):
         """Check the config model against the model used in the batch request"""
@@ -323,8 +323,8 @@ class ChunkPlanner:
 
         # save plan state to disk
         try:
-            self._save_plan(self.output_dir / "chunk_plan.yaml")
-            logger.info("Saved chunk plan to %s", self.output_dir / "chunk_plan.yaml")
+            self._save_plan(self.plan_path)
+            logger.info("Saved chunk plan to %s", self.plan_path)
         except Exception as e:
             logger.warning("Failed to save chunk plan: %s", e)
 
@@ -691,7 +691,7 @@ class SubmissionManager:
         }
         self.planner.submission_log.append(entry)
         try:
-            self.planner._save_plan(self.planner.output_dir / "chunk_plan.yaml")
+            self.planner._save_plan(self.planner.plan_path)
         except Exception as e:
             logger.warning("Failed to update saved plan after submission: %s", e)
         return {"chunk": str(chunk_path), "status": "submitted", "tokens_estimated": est_tokens, "batch_id": batch_id}

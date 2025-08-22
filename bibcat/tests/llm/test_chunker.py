@@ -83,8 +83,7 @@ def test_create_chunks(planner):
 
     res = planner.verify_chunks()
     assert res['total_actual_tokens'] > 10
-
-    assert (planner.output_dir / "chunk_plan.yaml").exists()
+    assert planner.plan_path.exists()
 
 
 def test_daily_batches(midplan):
@@ -150,7 +149,23 @@ def test_submission_manager(fullplan, twobatch):
     assert othersm.chunks_per_day == 2
 
 
+@pytest.fixture()
+def sm(fullplan):
+    """fixture for creating a submission manager"""
+    yield SubmissionManager(fullplan)
 
 
+def test_get_next_batch(sm):
+    batch = sm.get_next_batch()
+    assert batch[0].name == "batch_chunk_001.jsonl"
 
 
+def test_get_status(sm):
+    status = sm.get_status()
+    assert status["total_chunks"] == 2
+    assert status["submitted_chunks"] == 0
+    assert status["remaining_chunks"] == 2
+    assert status["next_batch_files"] == ["batch_chunk_001.jsonl", "batch_chunk_002.jsonl"]
+    assert status["chunks_submitted_today"] == 0
+    assert status["tokens_allowed_per_day"] == 40000000
+    assert status["tokens_remaining_today_estimate"] == 40000000
