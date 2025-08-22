@@ -59,7 +59,7 @@ class ChunkPlanner:
         input_file_path: str,
         max_lines: int = 50000,
         max_size_mb: int = 200,
-        max_tokens_per_day: int = 40_000_000,
+        max_tokens_per_day: int = config.llms.openai.batch_daily_token_limit,
         model: str = config.llms.openai.model,
         chunk_dir: str = "batch_chunks",
     ) -> None:

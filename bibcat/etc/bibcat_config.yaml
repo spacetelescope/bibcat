@@ -54,6 +54,7 @@ llms:
     model: gpt-4o-mini
     reasoning: medium
     verbosity: medium
+    batch_daily_token_limit: 40_000_000
   papertypes: ["SCIENCE", "NONSCIENCE"]
   map_papertypes: {
     "science": "science",
