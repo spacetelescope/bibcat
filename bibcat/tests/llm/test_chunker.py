@@ -43,10 +43,10 @@ def test_no_chunks_needed(onebatch):
     """test no chunking is needed"""
     planner = ChunkPlanner(str(onebatch), max_lines=75)
     res = planner.analyze(sample_lines=5)
-    print(res)
     assert res['total_lines'] == 50
 
     res = planner.plan_chunks()
+    assert planner.is_chunking_needed() is False
     assert res['lines_per_chunk'] == 50
     assert res['base_chunks_needed'] == 1
     assert res['days_needed'] == 1
@@ -56,11 +56,10 @@ def test_no_chunks_needed(onebatch):
 def test_analyze_and_plan(planner):
     """test analyze method"""
     res = planner.analyze(sample_lines=5)
-    print(res)
     assert res["total_lines"] == 100
 
     res = planner.plan_chunks()
-    print(res)
+    assert planner.is_chunking_needed() is True
     assert res['lines_per_chunk'] == 50
     assert res['base_chunks_needed'] == 2
     assert res['days_needed'] == 1
@@ -89,7 +88,6 @@ def test_create_chunks(planner):
 def test_daily_batches(midplan):
     """test we can create daily batches"""
     res = midplan.create_daily_batches()
-    print(res)
     assert len(res) == 1
     assert len(res[0]) == 2
     assert res[0][0].name == 'batch_chunk_001.jsonl'

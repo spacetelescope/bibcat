@@ -67,13 +67,13 @@ class ChunkPlanner:
         self.avg_tokens_per_line: float = 0.0
         self.total_estimated_tokens: int = 0
 
-        self.base_chunks_needed: int = 0
-        self.lines_per_chunk: int = 0
-        self.estimated_tokens_per_chunk: int = 0
-        self.chunks_per_day: int = 0
-        self.days_needed: int = 0
+        self.base_chunks_needed: int = None
+        self.lines_per_chunk: int = None
+        self.estimated_tokens_per_chunk: int = None
+        self.chunks_per_day: int = None
+        self.days_needed: int = None
 
-        self.total_actual_tokens: int = 0
+        self.total_actual_tokens: int = None
 
         # Ensure output dir exists and check for any existing chunks
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -277,6 +277,14 @@ class ChunkPlanner:
             "chunks_per_day": self.chunks_per_day,
             "days_needed": self.days_needed,
         }
+
+    def is_chunking_needed(self) -> bool:
+        """Check if chunking is needed"""
+        if not self.base_chunks_needed:
+            self.analyze()
+            self.plan_chunks()
+
+        return self.base_chunks_needed > 1
 
     def create_chunks(self) -> list[str]:
         """Split the input file into subset chunks
