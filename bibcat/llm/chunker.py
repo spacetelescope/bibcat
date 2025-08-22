@@ -179,9 +179,9 @@ class ChunkPlanner:
                 sample_tokens = self._estimate_tokens(sample_text)
             except Exception:
                 # If token estimation fails, treat tokens ~= words
-                sample_tokens = sum(max(1, len(l.split())) for l in sample_lines)
+                sample_tokens = sum(max(1, len(line.split())) for line in sample_lines)
 
-            sample_count = len([l for l in sample_lines if l.strip()])
+            sample_count = len([line for line in sample_lines if line.strip()])
 
             # estimate the average tokens per line and total tokens
             avg_tokens_per_line = (sample_tokens / sample_count) if sample_count else 0.0
