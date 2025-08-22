@@ -974,6 +974,10 @@ class SubmissionManager:
         pattern = f"{base}_chunk_*.json"
         files = sorted(self.planner.output_dir.glob(pattern))
 
+        if not files:
+            logger.info("No chunk files found to merge for kind=%s", kind)
+            return
+
         # merge all jsons together
         merged = {}
         for fp in files:
@@ -986,6 +990,7 @@ class SubmissionManager:
 
         # write out merged json
         output = pathlib.Path(self.planner.output_dir.parent) / f"{filename}"
+        logger.info("Writing merged file to %s", output)
         with open(output, "w", encoding="utf-8") as fh:
             json.dump(merged, fh, indent=2)
 
