@@ -320,7 +320,7 @@ class Paper(Base):
 
     def _build_single_info_entry(self, **kwargs):
         return {
-            "bool": kwargs.bool,
+            "bool": kwargs["bool"],
             "info": [kwargs],
         }
 
@@ -551,11 +551,11 @@ class Paper(Base):
             # Skip ahead
             return list_results
 
-    def _setup_consider_wordchunk(self, curr_chunk, keyword_objs_ambigs, setup_data):
+    def _setup_consider_wordchunk(self, curr_chunk, setup_data):
         # Extract representation of core meaning of current wordchunk
         tmp_res = self._extract_core_from_phrase(
             phrase_NLP=curr_chunk,
-            keyword_objs=keyword_objs_ambigs,
+            keyword_objs=setup_data.keyword_objs_ambigs,
             do_skip_useless=False,
             do_verbose=setup_data.do_verbose,
         )
