@@ -25,16 +25,33 @@ logger.setLevel(config.logging.level)
 
 
 class ChunkPlanner:
-    """Token-aware batch file chunker and batch manager.
+    """Class to plan and prepare an input JSONL file for batch processing
 
-    Usage:
-        c = Chunker(input_file_path, output_dir=None, model='gpt-4.1-mini', ...)
-        c.analyze()
-        c.create_chunks()
-        c.create_daily_batches()
-        c.verify_chunks()
+    Chunks an input JSONL file into smaller files based on OpenAI Batch API
+    constraints and rate limits.  Optimially chunks files to fit within the
+    OpenAI daily token-per-day limit, and file size and line limits.  Organizes
+    chunks into daily batches for submission.
 
-    After running, inspect attributes on the instance for details.
+    Parameters
+    ----------
+    input_file_path : str
+        the input batch JSONL file
+    max_lines : int, optional
+        the max line limit for the OpenAI batch jsonl, by default 50000
+    max_size_mb : int, optional
+        the max file size limit for the OpenAI batch jsonl, by default 200
+    max_tokens_per_day : int, optional
+        the max tokens per day limit (model-dependenent), by default 40_000_000
+    model : str, optional
+        the llm model to use, by default config.llms.openai.model
+    chunk_dir : str, optional
+        optional batch chunk sub-directory, by default "batch_chunks"
+
+    Example
+    -------
+    >>> # prepare a chunk plan, and create the chunk files
+    >>> planner = ChunkPlanner("path/to/batch.jsonl")
+    >>> planner.prepare_all()
     """
 
     def __init__(
@@ -44,11 +61,11 @@ class ChunkPlanner:
         max_size_mb: int = 200,
         max_tokens_per_day: int = 40_000_000,
         model: str = config.llms.openai.model,
-        days_to_distribute: int = 1,
+        chunk_dir: str = "batch_chunks",
     ) -> None:
         # setup inputs and outputs
         self.input_file_path = pathlib.Path(input_file_path)
-        self.output_dir = self.input_file_path.parent / "batch_chunks"
+        self.output_dir = self.input_file_path.parent / chunk_dir
         self.plan_path = self.output_dir / f"{self.input_file_path.stem}_chunk_plan.yaml"
         self.model = model
         self.all_output_files = []
@@ -58,7 +75,6 @@ class ChunkPlanner:
         self.max_lines = max_lines
         self.max_size_mb = max_size_mb
         self.max_tokens_per_day = max_tokens_per_day
-        self.days_to_distribute = days_to_distribute
 
         # Analysis / state fields
         self.file_size_bytes: int = 0
@@ -261,7 +277,7 @@ class ChunkPlanner:
         self.chunks_per_day = max(
             1, min(self.base_chunks_needed, self.max_tokens_per_day // max(1, self.estimated_tokens_per_chunk))
         )
-        self.days_needed = max(self.days_to_distribute, math.ceil(self.base_chunks_needed / self.chunks_per_day))
+        self.days_needed = max(1, math.ceil(self.base_chunks_needed / self.chunks_per_day))
 
         logger.info("Chunking plan:")
         logger.info("  Base chunks needed: %s", self.base_chunks_needed)
@@ -588,21 +604,51 @@ class ChunkPlanner:
 
 # Submission and monitoring manager
 class SubmissionManager:
-    """Handles submitting chunk files (daily batches) and monitoring batch status.
+    """Class to manage the submission of chunked files to the OpenAI Batch API
 
-    Works against a ChunkPlanner instance (planner) which holds chunk metadata and
-    persistence helpers. The OpenAIHelper client is created per SubmissionManager
-    instance to avoid import-time side effects.
+    Manages the plan for submitting chunked files to the OpenAI Batch API. Once
+    a plan has been created, you can submit the next batch with `submit_batch`.
+    Check overall status with `get_status`.  Check status of submitted batches
+    with `check_batches_status`. Retrieve results with `retrieve_completed_batches`.
+
+    Parameters
+    ----------
+    planner : ChunkPlanner, optional
+        a planner instance , by default None
+    file : str, optional
+        the main input batch JSONL file, by default None
+
+    Example
+    -------
+    >>> sm = SubmissionManager(file="path/to/batch.jsonl")
+    >>> sm.submit_batch()
     """
 
-    def __init__(self, planner: ChunkPlanner = None, file: str = None, verbose: bool = None):
+    def __init__(self, planner: ChunkPlanner = None, file: str = None):
         self.planner = planner or (ChunkPlanner(file) if file else None)
-        self.verbose = verbose or config.logging.verbose
-        self.oa = OpenAIHelper(verbose=self.verbose)
-
+        self.oa = OpenAIHelper()
         if not self.planner:
             logger.warning("No plan has been provided.")
             return
+
+    @property
+    def remaining_chunks(self) -> int:
+        """Get number of remaining chunks to be submitted"""
+        if not self.planner.has_been_planned:
+            return None
+        return self.get_status().get("remaining_chunks", None)
+
+    @property
+    def all_batches_submitted(self) -> int:
+        """Flag if all batches have been submitted"""
+        return self.remaining_chunks == 0
+
+    @property
+    def all_batches_completed(self) -> int:
+        """Flag if all batches have been completed"""
+        status = self.get_status()
+        batches = self.check_batches_status()
+        return len(batches) == status.get("total_chunks", None)
 
     def get_next_batch(self) -> list[str]:
         """Get the next pending batch"""
