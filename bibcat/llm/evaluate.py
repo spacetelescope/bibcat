@@ -76,7 +76,16 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
     # exit if no bibcode found in output
     if not response:
         logger.warning(f"No mission output found for {bibcode}")
-        write_summary({bibcode: {"error": f"No mission output found for {bibcode}."}})
+        # get the human paper classifications for record, even if no mission llm output
+        human_classes = get_human_classification(paper)
+        write_summary(
+            {
+                bibcode: {
+                    "error": f"No mission output found for {bibcode}.",
+                    "human": {k: v["papertype"] for k, v in human_classes.items()},
+                }
+            }
+        )
         return None
 
     n_runs = len(response)
