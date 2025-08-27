@@ -41,7 +41,8 @@ eval_data: Dict[str, Any] = {
             },
         ],
     },
-    "2024Sci...377.1211L": {"error": "No mission output found for 2024Sci...377.1211L."},
+    "2024Sci...377.1211L": {"error": "No mission output found for 2024Sci...377.1211L.", "human": {"HST": "SCIENCE"}},
+    "2019arXiv190205569A": {"error": "No paper source found"},
 }
 
 # OPS paper_output.json data
@@ -154,16 +155,15 @@ def test_inconsistent_classifications(tmp_path: str | pathlib.Path):
 def test_audit_summary():
     """test audit_summary"""
     audit_results = {
-        "bibcode1": {"failures": {"classification1": "false_positive", "classification2": "ignored"}},
-        "bibcode2": {
-            "failures": {"classification3": "false_negative", "classification4": "false_negative_because_ignored"}
-        },
+        "bibcode1": {"failures": {"TESS": "false_positive", "ROMAN": "ignored"}},
+        "bibcode2": {"failures": {"HST": "false_negative", "K2": "false_negative_because_ignored"}},
         "bibcode3": {"failures": {}},
+        "bibcode4": {"failures": {"flag": "llm_only_classfied"}, "human": {}},
     }
 
     expected_counts = {
-        "n_mismatched_bibcodes": 2,
-        "n_mismatched_classifications": 4,
+        "n_mismatched_bibcodes": 3,
+        "n_mismatched_classifications": 5,
         "false_positive": 1,
         "false_negative": 1,
         "false_negative_because_ignored": 1,
@@ -181,4 +181,3 @@ def test_analyze_missions():
     )
     assert failures == {"TESS": "ignored"}
     assert n_matched == 1
-    pass

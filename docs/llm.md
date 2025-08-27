@@ -748,10 +748,11 @@ bibcat llm audit
 
 #### File output for the inconsistent classifications
 
-The command line command, `bibcat llm audit`, will create a json file (`config.llms.inconsistent_classifications_file`) of failure bibcode + mission classifications and its summary counts.
+The command line command, `bibcat llm audit`, will create a json file (`config.llms.inconsistent_classifications_file`) of failure bibcode + mission classifications and its summary counts. It also create a json file (`llm_only_classified_list_for_audit.json`) which collects the bibcode items that human didn't classify any misisons but LLM classifies missions. You can use this list to further investigate if LLM hallucinates or human mistakenly missed classifications.
 
 The definitions of the JSON output columns are following.
 - **summary_counts** : stats summary of inconsistent classifications
+- **n_llm_only_classified_bibcodes** : the number of bibcodes that human didn't classify any missions but LLM classifies missions
 - **n_total_bibcodes**: the number of total bibcodes
 - **n_matched_classifications**: the number of matched classifications
 - **n_mismatched_bibcodes**: the number of mismatched (failure) bibcode
@@ -768,6 +769,7 @@ The output example is as follows:
 {
   "summary_counts": {
     "n_total_bibcodes": 89,
+    "n_llm_only_classified_bibcodes": 1,
     "n_matched_classifications": 81,
     "n_mismatched_bibcodes": 65,
     "n_mismatched_classifications": 134,
@@ -804,8 +806,23 @@ The output example is as follows:
         }
       ],
       "missions_not_in_text": []
+    },
+    "2020A&A...633A..48F": {
+      "failures": {
+        "flag": "llm_only_classified"
+      },
+      "human": {},
+      "llm": [
+        {
+          "HST": "MENTION",
+          "confidence": [
+            0.2,
+            0.8
+          ],
+          "mission_probability": 0.25
+        },
+      ]
     }
-  }
 }
 
 ```

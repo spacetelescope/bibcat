@@ -80,12 +80,8 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
 
     for bibcode, item in data.items():
         logger.info(f"\nbibcode: {bibcode}")
-
-        if "error" in item:
-            n_missing_output_bibcodes += 1
-            human_labels.extend([ignored_papertype] * len(missions))
-            llm_labels.extend([ignored_papertype] * len(missions))
-        else:
+        err = item.get("error", "")
+        if not err:
             human_data = item.get("human")
             n_human_mission_callouts += len(human_data)
 
@@ -118,6 +114,22 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
                 llm_df_missions,
                 n_human_llm_hallucination,
             )
+            continue
+
+        elif "No paper source found" in err:
+            continue  # should not count as missing llm output when paper source is not found
+
+        elif "No mission output found" in err:
+            n_missing_output_bibcodes += 1
+            # set llm labels to ignored papertype
+            llm_labels.extend([ignored_papertype] * len(missions))
+
+            human_data = item.get("human") or {}
+            n_human_mission_callouts += len(human_data)
+            # assign human labels when human classifications exist
+            human_labels = human_labels_when_no_llm_output(missions, human_data, human_labels, ignored_papertype)
+
+            continue
 
     # non-MAST mission callouts
     logger.info(f"Non MAST missions: {sorted(list(set(non_mast_mission_callouts)))} called out; \n")
@@ -127,8 +139,9 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
     logger.debug(f"llm_labels = {llm_labels}")
     logger.info(f" Set of human_labels = {set(human_labels)} and set of llm_labels = {set(llm_labels)}")
 
+    n_llm_mission_callouts = n_llm_callouts - len(non_mast_mission_callouts)
     logger.info(
-        f"""The total numbers of mission callouts by human and llm are {n_human_mission_callouts} and {n_llm_callouts - len(non_mast_mission_callouts)} respectively. \n
+        f"""The total numbers of mission callouts by human and llm are {n_human_mission_callouts} and {n_llm_mission_callouts} respectively. \n
         Among these callouts, only {len(human_llm_mission_callouts)} cases are called out by both llm and human and valid for further evaluations!\n
         {len(non_mast_mission_callouts)} non-MAST missions are called out!\n"""
     )
@@ -137,7 +150,7 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
         "threshold": threshold,
         "n_bibcodes": n_bibcodes,
         "n_human_mission_callouts": n_human_mission_callouts,
-        "n_llm_mission_callouts": n_llm_callouts - len(non_mast_mission_callouts),
+        "n_llm_mission_callouts": n_llm_mission_callouts,
         "n_non_mast_mission_callouts": len(non_mast_mission_callouts),
         "n_human_llm_mission_callouts": len(human_llm_mission_callouts),
         "n_human_llm_hallucination": n_human_llm_hallucination,
@@ -352,6 +365,37 @@ def append_human_labels_with_mapped_papertype(
     return human_labels
 
 
+def human_labels_when_no_llm_output(missions, human_data, human_labels, ignored_papertype):
+    """Assign human labels when human classifications exist even with no llm output
+
+    Parameters
+    ----------
+    missions: list[str]
+        list of missions
+    human_data: dict[str, str]
+        dictionary values of item["human"], e.g., {"JWST": "SCIENCE"}
+    human_labels: list[str]
+        True labels by human, a list of papertypes before papertype mapping,
+        For example, ["SCIENCE", "MENTION"]
+    ignored_papertype: str, uppercase
+        config.llms.map_papertypes.ignore.upper(), for instance, "NONSCIENCE"
+
+    Returns
+    -------
+    human_labels: list[str]
+        updated human labels based on the presence of human classifications
+    """
+    if not human_data:  # when no human labels found
+        human_labels.extend([ignored_papertype] * len(missions))
+    else:  # account human labels for metrics even if no llm output
+        for mission in missions:
+            if mission in human_data:
+                human_labels = append_human_labels_with_mapped_papertype(human_data, mission, human_labels)
+            else:
+                human_labels.append(ignored_papertype)
+    return human_labels
+
+
 def append_llm_labels_with_mapped_papertype(llm_data: list[dict], mission: str, llm_labels: list[str]) -> None:
     """Append llm papertype to the `llm_labels` list after mapping it to the allowed papertype
 
@@ -548,15 +592,9 @@ def extract_roc_data(data: dict[str, dict[str, Any]], missions: list[str]):
     for bibcode, item in data.items():
         logger.debug(f"bibcode: {bibcode}")
 
-        # assign the roc input values to NONSCIENCE and [0.0, 1.0] when there is no llm output
-        if "error" in item:
-            n_missing_output_bibcodes += 1
-            # setting ignore papertype to "NONSCIENCE"
-            human_labels.extend([ignored_papertype] * len(missions))
-            llm_confidences.extend([[0.0, 1.0]] * len(missions))
-
         # when llm output summary exists
-        else:
+        err = item.get("error")
+        if not err:
             human_data = item["human"]
 
             # llm missions for ROC; need to extract confidence values from `mission_conf` data frame
@@ -605,6 +643,19 @@ def extract_roc_data(data: dict[str, dict[str, Any]], missions: list[str]):
                 else:
                     human_labels.append(ignored_papertype)
                     llm_confidences.append([0.0, 1.0])
+            continue
+
+        elif "No paper source found" in err:
+            continue  # should not count as missing llm output when paper source is not found
+
+        # assign the roc input values to NONSCIENCE and [0.0, 1.0] when there is no llm output
+        elif "No mission output found" in err:
+            n_missing_output_bibcodes += 1
+            llm_confidences.extend([[0.0, 1.0]] * len(missions))
+
+            human_data = item.get("human") or {}
+            # assign human labels when human classifications exist.
+            human_labels = human_labels_when_no_llm_output(missions, human_data, human_labels, ignored_papertype)
 
     logger.info(f"The number of the mission callouts by both human and llm is {len(human_llm_mission_callouts)}")
 

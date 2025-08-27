@@ -21,12 +21,12 @@ def inconsistent_classifications(input_path: str | pathlib.Path, output_path: st
     Parameters
     ----------
     input_path: str | pathlib.Path
-        Input paper_output file name/path for statistics
+        Input eval_output file name/path for statistics
     output_path: str | pathlib.Path
         File name/path to save the JSON file
 
     Returns
-    =======
+    -------
     None
     """
 
@@ -35,13 +35,42 @@ def inconsistent_classifications(input_path: str | pathlib.Path, output_path: st
 
     results = {}
     n_matched_classifications = 0
+    n_llm_only_classified_bibcodes = 0
 
     for bibcode, item in data.items():
-        if "error" in item:
-            continue
-
         human_item = item.get("human", {})
         llm_item = item.get("llm", [])
+
+        err = item.get("error", "")
+        if "No paper source found" in err:
+            continue  # should skip when paper source is not found
+        elif "No mission output found" in err and not human_item:
+            continue  # should skip when both human and llm don't have labels
+
+        # save the bibcode items with llm only classifications but no human classfications at all.
+        elif not human_item and llm_item:
+            n_llm_only_classified_bibcodes += 1
+
+            results[bibcode] = {
+                "failures": {"flag": "llm_only_classified"},
+                "human": {},
+                "llm": llm_item,
+                "missions_not_in_text": item.get("hallucinated_missions", []),
+            }
+
+            llm_only_classified_bibcode_item = {
+                bibcode: {"llm": llm_item},
+            }
+            logger.debug(
+                "Saving the bibcode items with llm only classifications but no human classfications at all. Human might have completely missed classification or completely LLM hallunication! Investigate the list!"
+            )
+            save_json_file(
+                pathlib.Path(config.paths.output)
+                / f"llms/openai_{config.llms.openai.model}/llm_only_classified_list_for_audit.json",
+                llm_only_classified_bibcode_item,
+                indent=2,
+            )
+            continue
 
         failures, n_matched = analyze_missions(human_item, llm_item)
         n_matched_classifications += n_matched
@@ -58,6 +87,7 @@ def inconsistent_classifications(input_path: str | pathlib.Path, output_path: st
     summary_counts = audit_summary(results)
     summary_counts = {
         "n_total_bibcodes": len(data),
+        "n_llm_only_classified_bibcodes": n_llm_only_classified_bibcodes,
         "n_matched_classifications": n_matched_classifications,
         **summary_counts,
     }
@@ -75,9 +105,18 @@ def analyze_missions(human_item: dict[str, str], llm_item: list[dict[str, Any]])
     """Analyze and compare LLM classifications against human classifications.
 
     Parameters
-    ==========
+    ----------
     human_item: dict[str, str]
-        human classification of mission and papertype, e.g.,
+        human classification of mission and papertype, e.g., {"HST": "MENTION", "JWST": "SUPERMENTION"}
+    llm_item: list[dict[str, Any]]
+        list of llm classifications
+
+    Returns
+    -------
+    failure: dict
+        dictionary of failured cases
+    n_matched_classifications: int
+        number of matched classifications
     """
     failures = {}
     n_matched_classifications = 0
