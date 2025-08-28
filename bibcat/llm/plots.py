@@ -58,15 +58,19 @@ def confusion_matrix_plot(summary_output_path: str | pathlib.Path, missions: lis
     for axis in ax:
         axis.set_xlabel("LLM label")
         axis.set_ylabel("Human label")
+    # Leave more room above the subplots
+    fig.subplots_adjust(top=0.75)
 
     # Suptitle
-    fig.suptitle(f"Confusion Matrix at threshold = {threshold}", fontsize=14, fontweight="bold")
+    fig.suptitle(
+        f"Confusion Matrix at threshold = {threshold} ({config.llms.openai.model}) ", fontsize=14, fontweight="bold"
+    )
 
-    if len(human_llm_missions) > 13:
+    if len(missions) == len(config.missions):
         fig.text(
             0.5,
             0.9,
-            "More than 12 MAST Missions",
+            "All Missions considered",
             ha="center",
             fontsize=12,
             fontstyle="italic",
@@ -76,13 +80,23 @@ def confusion_matrix_plot(summary_output_path: str | pathlib.Path, missions: lis
         fig.text(
             0.5,
             0.9,
-            f"Mission(s): {', '.join(human_llm_missions)}",
+            f"Mission(s) considered: {', '.join(missions)}",
             ha="center",
             fontsize=12,
             fontstyle="italic",
             color="gray",
         )
-    plt.tight_layout(rect=[0, 0.05, 1, 0.95])
+    fig.text(
+        0.5,
+        0.85,
+        f"Mission(s) found: {', '.join(human_llm_missions)}",
+        ha="center",
+        fontsize=10,
+        fontstyle="italic",
+        color="gray",
+    )
+
+    # plt.tight_layout(rect=[0, 0.05, 1, 0.95])
 
     # Saving the figure
     cm_plot = (
