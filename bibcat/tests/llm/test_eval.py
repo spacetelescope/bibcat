@@ -9,6 +9,13 @@ paper = {
     "body": "This is the paper text of the source dataset. I am a TESS paper.",
     "class_missions": {"TESS": {"bibcode": "2022Sci...377.1211L", "papertype": "SCIENCE"}},
 }
+paper2 = {
+    "bibcode": "2024Sci...123.3451L",
+    "title": ["This paper does not call out mission"],
+    "abstract": "This is the abstract",
+    "body": "I am not a MAST paper",
+    "class_missions": {},
+}
 
 output = {
     "2022Sci...377.1211L": [
@@ -171,7 +178,7 @@ def test_group_by_mission(mocker):
 
 @pytest.mark.parametrize(
     "bibcode, return_source_value",
-    [("2024Sci...123.3451L", paper), ("2019arXiv190205569A", None)],
+    [("2024Sci...123.3451L", paper2), ("2019arXiv190205569A", None)],
 )
 def test_not_found(mocker, bibcode: str, return_source_value: dict | None):
     bibcode = "2024Sci...123.3451L"
