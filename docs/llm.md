@@ -574,15 +574,19 @@ bibcat llm batch evaluate -p bibcode_list.txt -s -n 20
 You can assess model performance using confusion matrix plots or Receiver Operating Characteristic (ROC) curves. A [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) plot helps evaluation classification model performance by showing true positives ($TP$), true negatives ($TN$), false positives ($FP$), and false negatives ($FN$), making it useful for understanding evaluation metrics such as accuracy ($\frac{TP+TN}{TP+TB+FP+FN}$), precision ($\frac{TP}{TP+FP}$), recall (sensitivity, $\frac{TP}{(TP+FN)}$), and F1 score ($2\times \frac{precision \times recall}{ precison + recall}$). A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curve evaluates a model's ability to distinguish between classes by plotting the true positive rate against the false positive rate at various thresholds, with the area under the curve (AUC) which represents the degree of separability between classes. For instance, AUC=1.0 indicates perfect and AUC =0.5 is as good as random guessing. To provide more reliable and stable performance metrics, larger datasets (hundreds or thousands) are recommended. With small datasets, you make interpreations less reliable.
 
 ### Confusion Matrix Plot
-To plot a confusion matrix for specific missions (default threshold probability = 0.7), run:
+To plot confusion matrices for specific missions (default threshold probability = 0.5), run:
 ```bash
 bibcat llm plot -c -m HST -m JWST
 ```
 
-To plot a confusion matrix for all missions, run:
+To plot confusion matrices for all missions, run:
 ```bash
 bibcat llm plot -c -a
 ```
+![confusion matrix example](images/example_confusion_matrix_plot_t0.5.png)
+
+In the example confusion matrix (CM) plot, we have both counts (left panel) and normalized counts (right panel). All counts were considered if the confidence value of each LLM classification is >= 0.5 (`threshold = 0.5`). We can see the distribution of true positives (top left quadrant), false positives (bottom left quadrant), true negatives (bottom right quadrant), and false negatives (top right quadrant) for the specified missions. This visualization helps in understanding the model's performance and identifying areas for improvement. Note that in this figure, all MAST missions were considered to create CM, but only a subset of the missions in the annotation, `Mission(s) found:` were actually called out by human and LLM as seen in. The missions not found in the sample only contribute to true negatives.
+
 These commands will also create metrics summary files ( `*metrics_summary_t0.5.txt` and `*metrics_summary_t0.5.json`).
 The outuput would look like
 
