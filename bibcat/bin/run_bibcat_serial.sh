@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Each bibcat job sleeps 2 hours after completion to be safe and not to run into RateLimitError because one job of 1000 API calls takes ~4500 seconds. To run this script on the terminal, run `chmod +x run_bibcat_serial.sh` and `./run_bibcat_serial.sh /path/to/batch_dir /path/to/logs`. If you want to dry-run, `./run_bibcat_serial.sh /path/to/batch_dir /path/to/logs --dry-run`.
+# Each bibcat job sleeps 5 mins after completion to be safe and not to run into RateLimitError because one job of 1000 API calls takes ~4500 seconds. To run this script on the terminal, run `chmod +x run_bibcat_serial.sh` and `./run_bibcat_serial.sh /path/to/batch_dir /path/to/logs`. If you want to dry-run, `./run_bibcat_serial.sh /path/to/batch_dir /path/to/logs --dry-run`.
 
 # Initialize total compute time
 TOTAL_COMPUTE_SECONDS=0
@@ -50,8 +50,9 @@ for arg in "$@"; do
     fi
 done
 
-# Run bibcat one at a time and wait 2 hrs before the next run for batch files.
-for i_file in "${BATCH_FILES[@]}"; do # for all batch files found in BATCH_DIR
+# Run bibcat one at a time and wait 5 mins before the next run for batch files.
+for idx in "${!BATCH_FILES[@]}"; do # for all batch files found in BATCH_DIR
+    i_file="${BATCH_FILES[$idx]}"
 
     echo "$(date '+%F %T') - Starting bibcat on $i_file" | tee -a "$LOG"
 
@@ -78,11 +79,14 @@ for i_file in "${BATCH_FILES[@]}"; do # for all batch files found in BATCH_DIR
             echo "[$(date '+%F %T')] ERROR: Failed: $i_file (exit code $?)" | tee -a "$LOG"
         fi
     fi
-    if $DRY_RUN; then
-        echo "DRY_RUN: would sleep for 2 hours" | tee -a $LOG
-    else
-        echo "Sleeping for 2 hours before the next run" | tee -a "$LOG"
-        sleep 2h
+    # Only sleep if this is not the last file
+    if [ "$idx" -lt "$(( ${#BATCH_FILES[@]} - 1 ))" ]; then
+        if $DRY_RUN; then
+            echo "DRY_RUN: would sleep for 5 mins" | tee -a "$LOG"
+        else
+            echo "Sleeping for 5 mins before the next run" | tee -a "$LOG"
+            sleep 5m
+        fi
     fi
 done
 
