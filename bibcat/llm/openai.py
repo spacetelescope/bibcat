@@ -2,6 +2,7 @@ import json
 import os
 import pathlib
 import re
+from collections import Counter
 from enum import Enum
 
 import openai
@@ -67,6 +68,23 @@ class InfoModel(BaseModel):
 
     notes: str = Field(..., description="all your notes and thoughts you have written down during your process")
     missions: list[MissionInfo] = Field(..., description="a list of your identified missions")
+
+    @field_validator("missions", mode="after")
+    @classmethod
+    def validate_unique_missions(cls, missions: list[MissionInfo]) -> list[MissionInfo]:
+        """
+        Ensure each mission appears only once in the list.
+        Each mission can only have one papertype, so duplicates are invalid.
+        """
+        mission_counts = Counter(m.mission for m in missions)
+        duplicates = [mission for mission, count in mission_counts.items() if count > 1]
+
+        if duplicates:
+            raise ValueError(
+                f"Duplicate mission(s) found in the classification: {', '.join(m.value for m in duplicates)}"
+            )
+
+        return missions
 
 
 class OpenAIHelper:
@@ -631,4 +649,3 @@ def classify_paper(
         # write the output response to a file
         key = oa.get_output_key()
         write_output(key, response)
-
