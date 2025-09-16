@@ -252,7 +252,7 @@ Retrieving completed batch results.
 bibcat.llm.chunker - INFO - Retrieving batch batch_68a8850c80908190930c09dbff85c84c for chunk gs_batchfile_chunk_001.jsonl
 bibcat.llm.openai - INFO - Writing batch output to /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_llm_batchtest_output_chunk_001.json
 ```
-This produces chunked files (`chunk_XXX`) with the same name as `config.llms.prompt_output_file`. You can merge these together with the merge command.
+This produces chunked files (`chunk_XXX`) with the same name as `config.llms.prompt_output_file`. You can merge these together with the merge command. See below how to merge the files.
 
 **Evaluate Results**
 
