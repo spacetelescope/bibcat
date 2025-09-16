@@ -183,6 +183,7 @@ def test_submit_paper_with_paper_dict(mocker):
 @pytest.mark.parametrize("mission", ["kepler", "Kepler", "KEPLER"])
 def test_missionenum(mission):
     """test mission enum returns correctly """
+    # follows mission capitalization in `config.missions`
     assert MissionEnum(mission) == "Kepler"
 
 
