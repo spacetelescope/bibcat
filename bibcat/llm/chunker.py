@@ -152,7 +152,7 @@ class ChunkPlanner:
 
         Parameters
         ----------
-        file : _type_
+        file : pathlib.Path
             the input file to sample
         n_sample : int, optional
             the number of lines to sample, by default 100
