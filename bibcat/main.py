@@ -619,7 +619,7 @@ def retrieve(batchid, verbose):
     help="The jsonl batch file for submission",
 )
 @click.option("-m", "--model", default=None, type=str, show_default=True, help="The model type to use")
-@click.option("-t", "--test", is_flag=True, show_default=True, help="Set to test a dry-run submission")
+@click.option("-t", "--dry-run", is_flag=True, show_default=True, help="Set to test a dry-run submission")
 @click.option("-c", "--check", is_flag=True, show_default=True, help="Set to check batch statues")
 @click.option(
     "-r", "--retrieve-batch", is_flag=True, show_default=True, help="Set to retrieve results of completed batches"
