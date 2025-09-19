@@ -273,7 +273,7 @@ This produces chunked files (`chunk_XXX`) with the same name as `config.llms.eva
 
 **Merge Chunks**
 
-To merge all llm output chunks back into a single file, use the merge, `-m` flag.
+To merge all llm output chunks back into a single file, use the merge, `-m` flag. This merges both the llm output files and any summary evaluation files.  See `chunker.SubmissionManager.merge_outputs` for details.
 `bibcat llm batch process -b /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_large_batchfile.jsonl -m`
 
 ```
