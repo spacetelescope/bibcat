@@ -20,7 +20,7 @@ def twobatch(batchfile):
 @pytest.fixture()
 def planner(twobatch):
     """fixture for creating a basic plan"""
-    yield ChunkPlanner(str(twobatch), max_lines=75)
+    yield ChunkPlanner(str(twobatch), max_lines=75, max_tokens_per_day=40000000)
 
 @pytest.fixture()
 def midplan(planner):
@@ -41,7 +41,7 @@ def fullplan(midplan):
 
 def test_no_chunks_needed(onebatch):
     """test no chunking is needed"""
-    planner = ChunkPlanner(str(onebatch), max_lines=75)
+    planner = ChunkPlanner(str(onebatch), max_lines=75, max_tokens_per_day=40000000)
     res = planner.analyze(sample_lines=5)
     assert res['total_lines'] == 50
 
