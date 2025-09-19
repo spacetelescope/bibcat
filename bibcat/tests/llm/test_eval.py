@@ -181,6 +181,8 @@ def test_group_by_mission(mocker):
     [("2024Sci...123.3451L", paper2), ("2019arXiv190205569A", None)],
 )
 def test_not_found(mocker, bibcode: str, return_source_value: dict | None):
+    """test evaluate when either 'error': 'no mission output found' or 'error': 'No paper source found' in llm_output"""
+
     bibcode = "2024Sci...123.3451L"
     mocker.patch("bibcat.llm.evaluate.get_source", return_value=return_source_value)
     mocker.patch("bibcat.llm.evaluate.read_output", return_value=output[bibcode])

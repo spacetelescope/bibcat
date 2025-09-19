@@ -44,10 +44,11 @@ def inconsistent_classifications(input_path: str | pathlib.Path, output_path: st
         err = item.get("error", "")
         if "No paper source found" in err:
             continue  # should skip when paper source is not found
-        elif "No mission output found" in err and not human_item:
+        elif not human_item and "No mission output found" in err:
             continue  # should skip when both human and llm don't have labels
 
-        # save the bibcode items with llm only classifications but no human classfications at all.
+        # save the bibcode items where llm only classifications for some missions but no human classfications at all
+        # for all missions into a file for further inspection
         elif not human_item and llm_item:
             n_llm_only_classified_bibcodes += 1
 
@@ -62,7 +63,8 @@ def inconsistent_classifications(input_path: str | pathlib.Path, output_path: st
                 bibcode: {"llm": llm_item},
             }
             logger.debug(
-                "Saving the bibcode items with llm only classifications but no human classfications at all. Human might have completely missed classification or completely LLM hallunication! Investigate the list!"
+                "Saving the bibcode items with llm only classifications but no human classfications at all.\n"
+                + "Human might have completely missed classification or completely LLM hallunication! Investigate the list!"
             )
             save_json_file(
                 pathlib.Path(config.paths.output)

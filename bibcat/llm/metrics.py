@@ -385,12 +385,17 @@ def human_labels_when_no_llm_output(missions, human_data, human_labels, ignored_
     human_labels: list[str]
         updated human labels based on the presence of human classifications
     """
-    if not human_data:  # when no human labels found
+
+    # when no human label found for any mission at all, human:[]
+    if not human_data:
         human_labels.extend([ignored_papertype] * len(missions))
-    else:  # account human labels for metrics even if no llm output
+    # when at least one mission found in human_data
+    else:
         for mission in missions:
+            # e.g., if "HST": "SCIENCE", this condition is met
             if mission in human_data:
                 human_labels = append_human_labels_with_mapped_papertype(human_data, mission, human_labels)
+            # e.g., the below condition meets if if "HST": "SCIENCE" and mission!="HST"
             else:
                 human_labels.append(ignored_papertype)
     return human_labels
