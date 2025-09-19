@@ -339,19 +339,9 @@ def prepare_output(
     """
     # Capitalize mission names for output to make consistent with human class mission names
     mission_df["llm_mission"] = mission_df["llm_mission"].str.upper()
-    grouped_df["llm_mission"] = mission_df["llm_mission"].str.upper()
-
+    grouped_df["llm_mission"] = grouped_df["llm_mission"].str.upper()
     # reindex mission
     mm = mission_df.set_index("llm_mission")
-
-    # drop NaN mission and keep only the papertype which has the largest value in weighted_confs list
-    # This is to prevent halting evaluate run when a mission have both the papertypes
-    grouped_df = (
-        grouped_df.dropna(subset=["llm_mission"])
-        .groupby("llm_mission", group_keys=False)
-        .apply(lambda g: g.loc[g["weighted_confs"].apply(max).idxmax()])
-        .reset_index(drop=True)
-    )
 
     # pass its llm's classification if the maximum weighted-confidence value is higher than the threshold
     # the maximum value is used because the papertype's confidence is aligned with the maximum value
