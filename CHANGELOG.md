@@ -3,7 +3,8 @@
 ### [Unreleased]
 - Bibcat to do list
     - Adding tutorial notebooks back
-- Adding support for chunk planning/submission for large batches to OpenAI Batch API
+
+## [0.2.0] - 2025-09-22
 
 ### Removed
 - [PR #48](https://github.com/spacetelescope/bibcat/pull/48)
@@ -118,6 +119,12 @@
     - updated formatting and styling
 
 ### Added
+- [PR #83](https://github.com/spacetelescope/bibcat/pull/83)
+    - added .readthedoc.yaml for the readthedoc documentation pages
+
+- [PR #81](https://github.com/spacetelescope/bibcat/pull/81)
+    - Added support for chunk planning/submission for large batches to OpenAI Batch API
+
 - [PR #79](https://github.com/spacetelescope/bibcat/pull/79)
     - Adding new batch cli commands for submitting a batch job using OpenAI's Batch API
     - Added new `bibcat llm batch submit` and `bibcat llm batch retreive` for submitting and retrieving batch jobs
