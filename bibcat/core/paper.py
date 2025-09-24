@@ -12,7 +12,7 @@ the rest of the text.
 
 import re
 from dataclasses import dataclass
-from typing import Any
+from typing import Dict, List
 
 import numpy as np
 import spacy
@@ -20,6 +20,7 @@ from nltk.corpus import wordnet  # type: ignore
 
 from bibcat import config
 from bibcat.core.base import Base
+from bibcat.core.keyword import Keyword
 
 nlp = spacy.load(config.grammar.spacy_language_model)
 
@@ -297,22 +298,21 @@ class Paper(Base):
 
     @dataclass
     class TruematchSetup:
-        text: Any
-        dict_ambigs: Any
-        keyword_objs: Any
-        do_verbose: Any
-        do_verbose_deep: Any
-        list_kw_ambigs: Any
-        list_exp_exact_ambigs: Any
-        list_exp_meaning_ambigs: Any
-        list_bool_ambigs: Any
-        list_text_ambigs: Any
-        lookup_ambigs: Any
-        lookup_ambigs_lower: Any
-        num_ambigs: Any
-        text: Any
-        keyword_objs_ambigs: Any
-        dict_kobjinfo: Any
+        text: str
+        dict_ambigs: Dict[str, List[str]]
+        keyword_objs: List[Keyword]
+        do_verbose: bool
+        do_verbose_deep: bool
+        list_kw_ambigs: List[str]
+        list_exp_exact_ambigs: List[str]
+        list_exp_meaning_ambigs: List[str]
+        list_bool_ambigs: List[str]
+        list_text_ambigs: List[str]
+        lookup_ambigs: List[str]
+        lookup_ambigs_lower: List[str]
+        num_ambigs: int
+        keyword_objs_ambigs: List[Keyword]
+        dict_kobjinfo: Dict[str, Dict[str, bool | List[List[int]]]]
 
         def log_if_verbose(self, str):
             if self.do_verbose:
