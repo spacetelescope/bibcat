@@ -21,6 +21,11 @@ from nltk.corpus import wordnet  # type: ignore
 from bibcat import config
 from bibcat.core.base import Base
 from bibcat.core.keyword import Keyword
+from bibcat.utils.logger_config import setup_logger
+
+# set up logger
+logger = setup_logger(__name__)
+logger.setLevel(config.logging.level)
 
 nlp = spacy.load(config.grammar.spacy_language_model)
 
@@ -316,7 +321,7 @@ class Paper(Base):
 
         def log_if_verbose(self, str):
             if self.do_verbose:
-                print(str)
+                logger.info(str)
 
     def _build_single_info_entry(self, **kwargs):
         return {
@@ -350,7 +355,7 @@ class Paper(Base):
 
         # Print some notes
         if do_verbose:
-            print(
+            logger.info(
                 ("\n> Running _check_truematch for text: '{0}'" + "\nOriginal text: {1}\nLookups: {2}").format(
                     text, text_orig, lookup_ambigs
                 )
@@ -583,9 +588,9 @@ class Paper(Base):
 
         # Print some notes
         if setup_data.do_verbose_deep:
-            print(f"Set of {label} assembled from ambig. database:")
+            logger.info(f"Set of {label} assembled from ambig. database:")
             for item1 in set_matches_raw:
-                print(item1)
+                logger.info(item1)
 
         return set_matches
 
@@ -630,7 +635,7 @@ class Paper(Base):
 
         # Print some notes
         if do_verbose:
-            print("\n> Running _extract_core_from_phrase for phrase: {0}".format(phrase_NLP))
+            logger.info("\n> Running _extract_core_from_phrase for phrase: {0}".format(phrase_NLP))
 
         # Initialize containers of core information
         core_keywords = []
@@ -641,9 +646,9 @@ class Paper(Base):
             curr_word = phrase_NLP[ii]
             # Print some notes
             if do_verbose:
-                print("-\nLatest keywords: {0}".format(core_keywords))
-                print("Latest synsets: {0}".format(core_synsets))
-                print("-Now considering word: {0}".format(curr_word))
+                logger.info("-\nLatest keywords: {0}".format(core_keywords))
+                logger.info("Latest synsets: {0}".format(core_synsets))
+                logger.info("-Now considering word: {0}".format(curr_word))
 
             # Skip if this word is punctuation or possessive marker
             if self._is_pos_word(word=curr_word, pos="PUNCTUATION") or self._is_pos_word(
@@ -651,7 +656,7 @@ class Paper(Base):
             ):
                 # Print some notes
                 if do_verbose:
-                    print("Word is punctuation or possessive. Skipping.")
+                    logger.info("Word is punctuation or possessive. Skipping.")
 
                 continue
 
@@ -666,7 +671,7 @@ class Paper(Base):
 
                     # Print some notes
                     if do_verbose:
-                        print("Word itself is keyword. Stored synset: {0}".format(core_synsets))
+                        logger.info("Word itself is keyword. Stored synset: {0}".format(core_synsets))
 
                     continue
                 # Otherwise, store keyword itself
@@ -677,7 +682,7 @@ class Paper(Base):
 
                     # Print some notes
                     if do_verbose:
-                        print("Word itself is keyword. Stored synset: {0}".format(core_synsets))
+                        logger.info("Word itself is keyword. Stored synset: {0}".format(core_synsets))
 
                     continue
 
@@ -687,7 +692,7 @@ class Paper(Base):
                 core_synsets.append([tmp_rep])
                 # Print some notes
                 if do_verbose:
-                    print("Word itself is a numeral. Stored synset: {0}".format(core_synsets))
+                    logger.info("Word itself is a numeral. Stored synset: {0}".format(core_synsets))
 
                 continue
 
@@ -697,7 +702,7 @@ class Paper(Base):
             if do_skip_useless and (check_useless and (not check_adj)):
                 # Print some notes
                 if do_verbose:
-                    print("Word itself is useless. Skipping.")
+                    logger.info("Word itself is useless. Skipping.")
 
                 continue
 
@@ -715,9 +720,9 @@ class Paper(Base):
 
             # Print some notes
             if do_verbose:
-                print("-Done considering word: {0}".format(curr_word))
-                print("Updated synsets: {0}".format(core_synsets))
-                print("Updated keywords: {0}".format(core_keywords))
+                logger.info("-Done considering word: {0}".format(curr_word))
+                logger.info("Updated synsets: {0}".format(core_synsets))
+                logger.info("Updated keywords: {0}".format(core_keywords))
 
         # Throw an error if any empty strings passed as synsets
         if any([("" in item) for item in core_synsets]):
@@ -737,7 +742,7 @@ class Paper(Base):
 
         # Return the core components
         if do_verbose:
-            print(
+            logger.info(
                 (
                     "\n-\nPhrase '{0}':\nKeyword: {1}\nSynsets: {2}" + "\nRoots: {3}\nString representation: {4}\n-\n"
                 ).format(phrase_NLP, core_keywords, core_synsets, core_roots, str_meaning)
