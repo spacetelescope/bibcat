@@ -31,32 +31,32 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
     -------
     metrics_data: dict[str]
         contains various metrics
-
-        threshold: float
-            threshold
-        n_bibcodes: int
-            The number of bibcodes (papers)
-        n_human_mission_callouts: int
-            The number of mission callouts by human classification
-        n_llm_mission_callouts: int
-            The number of mission callouts by llm classification
-        n_human_llm_mission_callouts: int
-            The number of mission callouts by both human and llm
-        n_non_mast_mission_callouts: int
-            The number of non-MAST missions by llm
-        n_human_llm_hallucination: int
-            The number of apparent hallucination by both human and llm
-            when "mission_in_text" = false
-        n_missing_ouptput_bibcodes: int
-            The number of bibcodes missing output
-        human_llm_missions: list[str]
-            The missions called out by both human and llm
-        non_mast_missions; list[str], sorted
-            Non MAST missions called out by llm
-        human_labels: list[str]
-            True labels, human classified labels like ["SCIENCE", "MENTION"]
-        llm_labels: list[str]
-            Predicted labels by llm
+    metrics_data contains following variables.
+    threshold: float
+        threshold
+    n_bibcodes: int
+        The number of bibcodes (papers)
+    n_human_mission_callouts: int
+        The number of mission callouts by human classification
+    n_llm_mission_callouts: int
+        The number of mission callouts by llm classification
+    n_human_llm_mission_callouts: int
+        The number of mission callouts by both human and llm
+    n_non_mast_mission_callouts: int
+        The number of non-MAST missions by llm
+    n_human_llm_hallucination: int
+        The number of apparent hallucination by both human and llm
+        when "mission_in_text" = false
+    n_missing_ouptput_bibcodes: int
+        The number of bibcodes missing output
+    human_llm_missions: list[str]
+        The missions called out by both human and llm
+    non_mast_missions; list[str], sorted
+        Non MAST missions called out by llm
+    human_labels: list[str]
+        True labels, human classified labels like ["SCIENCE", "MENTION"]
+    llm_labels: list[str]
+        Predicted labels by llm
 
     """
 
@@ -173,25 +173,24 @@ def extract_labels(
     llm_missions: list[str],
     llm_df_missions: list[str],
     n_human_llm_hallucination: int,
-):
-    """Extract human and llm papertype labels when the summary output of a bibcode has classification items other than "error"
+) -> tuple[list[str], list[str], int]:
+    """
+    Extract human and llm papertype labels when the summary output of a bibcode
+    has classification items other than "error"
 
     This function extracts human and llm papertype labels from the summary_output for constructing confusion matrix,
-    then map the papertypes to the allowed papertypes (for instance, "MENTION" maps to "NONSCIENCE").
+    then map the papertypes to the allowed papertypes (for instance, `MENTION` maps to `NONSCIENCE`).
     Because the summary_output provides only human and llm callouts of only relevant missions, not all MAST missions,
-    we need to extract the relevant labels depending on the following various conditions.
-        1. both human and llm call out a given mission and their papertypes
-            -> we assign them to the relevant papertypes
-        2. human calls out the mission but llm ignores the paper
-            -> we assign the human label to its relevant papertype but the llm label to `ignored_papertype`
-        3. human ignores the paper but llm calls out with a papertype
-            -> we assign the llm label to its relevant papertype but the human label to `ignored_papertype`
-        4. both human and llm ignore the paper for the mission
-            -> we assign them to `ignored_papertype`=
+    we need to extract the relevant labels depending on the following various conditions:
+
+    1. When both human and LLM call out a given mission and their papertypes, assign them to the relevant papertypes.
+    2. When human calls out the mission but LLM ignores the paper, assign the human label to its relevant papertype but the LLM label to `ignored_papertype`.
+    3. When human ignores the paper but LLM calls out with a papertype, assign the LLM label to its relevant papertype but the human label to `ignored_papertype`.
+    4. When both human and LLM ignore the paper for the mission, assign both to `ignored_papertype`.
 
     Parameters
-    ==========
-    missions: str
+    ----------
+    missions: list[str]
         MAST missions of interest
     human_labels: list[str]
         human papertypes before this bibcode
@@ -200,28 +199,29 @@ def extract_labels(
     human_llm_mission_callouts: list[str]
         Missions called out by both human and llm
     ignored_papertype: str, uppercase
-        config.llms.map_papertypes.ignore.upper(), for instance, "NONSCIENCE"
+        `config.llms.map_papertypes.ignore.upper()`, for instance, `NONSCIENCE`
     item: dict[str, dict[str, Any]]
         bibcode dictionary item
     human_data: dict[str, str]
-        dictionary values of item["human"], e.g., {"JWST": "SCIENCE"}
-    llm_data: list[dict[str,Any]]
-        dictionary value of item["llm"]
+        dictionary values of `item["human"]`, e.g., `{"JWST": "SCIENCE"}`
+    llm_data: list[dict[str, Any]]
+        dictionary value of `item["llm"]`
     llm_missions: list[str]
-        list of LLM mission callouts in item["llm"]
-    llm_df_missions:
-        list of LLM mision callouts in item["df"]
+        list of LLM mission callouts in `item["llm"]`
+    llm_df_missions: list[str]
+        list of LLM mision callouts in `item["df"]`
     n_human_llm_hallucination: int
         the number of hallucinations before the current bibcode
 
     Returns
-    =======
+    -------
     human_labels: list[str]
         human papertype labels updated after the current bibcode
-    llm_labels:list[str]
+    llm_labels: list[str]
         llm papertype labels updated after the current bibcode
     n_human_llm_hallucination: int
         the number of hallucinations updated after the current bibcode
+
     """
     for mission in missions:
         logger.info(f"Checking {mission} summary output")

@@ -12,14 +12,13 @@ To use this code you must have an OpenAI API key. Follow [these instructions](ht
 
 Here is a quick start guide.
 
-1. Follow the [Setup](https://github.com/spacetelescope/bibcat/blob/dev/README.md#setup) instructions from the main README file.
+1. Follow the [Setup](https://bibcat.readthedocs.io/en/latest/readme.html#setup) instructions from the main README file.
 2. Select a paper bibcode or index
    1. run: `bibcat llm run -b "2023MNRAS.521..497M"`
    2. or: `bibcat llm run -i 50`
 3. Check the response output `paper_output.json` file.
 
-You should see something like `INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], 'JWST': ['SCIENCE', [0.9, 0.1]]}`. See [Response Output](#response-output) for details about the response output.  [Submitting a paper](#submitting-a-paper) describes the command for sending papers to OpenAI. For customizing and trialing new gpt prompts, see [User Configuration](#user-configuration) and [User and Agent (System) Prompts](#user-and-agent-system-prompts).
-
+You should see something like `INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], 'JWST': ['SCIENCE', [0.9, 0.1]]}`. See [Response Output](https://bibcat.readthedocs.io/en/latest/llm.html#response-output) for details about the response output.  [Submitting a paper](https://bibcat.readthedocs.io/en/latest/llm.html#submitting-a-paper) describes the command for sending papers to OpenAI. For customizing and trialing new gpt prompts, see [User Configuration](https://bibcat.readthedocs.io/en/latest/llm.html#user-configuration) and [User and Agent (System) Prompts](https://bibcat.readthedocs.io/en/latest/llm.html#user-and-agent-system-prompts).
 
 ## Submitting a paper
 
@@ -49,7 +48,7 @@ bibcat llm batch run -p papers_to_process.txt
 ```
 
 where `papers_to_process.txt` might look like
-```txt
+```text
 2023Natur.616..266L
 2023ApJ...946L..13F
 2023ApJS..265....5H
@@ -138,7 +137,7 @@ If the job is still in progress, it will show:
 ```
 bibcat.llm.openai - INFO - Batch run is still in progress. Please wait and try again later.
 ```
-Once complete, bibcat will extract the output information, format it into bibcat's [Response Output](#response-output), and save it at that location, using your `prompt_output_file` config parameter.
+Once complete, bibcat will extract the output information, format it into bibcat's [Response Output](https://bibcat.readthedocs.io/en/latest/llm.html#response-output), and save it at that location, using your `prompt_output_file` config parameter.
 
 This way you can easily evaluate it with
 ```
@@ -339,13 +338,13 @@ INFO - Output: {'error': 'No JSON content found in response'}
 For more complex prompts, specify them in custom files at `$BIBCAT_DATA_DIR`.
 
 - Create a new text file, `my_user_prompt.txt` with the following content:
-```txt
+```text
 Which type of whale appeared in a 80's science fiction movie?
 ```
 
 - Create a new text file, `my_agent_prompt.txt` with the following content:
 
->```txt
+>```text
 >You are an professional expert on whales.
 >You are also witty and always respond with a clever pun.
 >*Always* format your response as valid JSON, with the following example as a guide:
@@ -385,7 +384,7 @@ INFO - Output: {'whale': 'Humpback', 'response': "The Humpback whale is the star
 If you have multiple custom prompt files, you can quickly switch between them using the `-u` or `-a` flags on `llm run`, for `user`, and `agent` prompts, respectively, without modifying your config file.
 
 - Create a new text file, `my_user_prompt2.txt` with the following content:
-```txt
+```text
 What color was the whale that Ahab hated?
 ```
 
@@ -506,7 +505,7 @@ Alternatively, you can both submit a paper for classfication and evaluate it in 
 this will classify the paper `num_runs` time before evaluation.
 
 This example first classifies paper index 1000, 20 times, then evaluates the output.
-```base
+```bash
 bibcat llm evaluate -i 1000 -s -n 20
 ```
 
@@ -724,7 +723,7 @@ bibcat llm plot -c -a
 These commands will also create metrics summary files ( `*metrics_summary_t0.5.txt` and `*metrics_summary_t0.5.json`).
 The outuput would look like
 
-```txt
+```text
 The number of bibcodes (papers) for evaluation metrics: 89
 The number of mission callouts by human: 217
 The number of mission callouts by llm with the threshold value, 0.5: 222

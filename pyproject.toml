@@ -53,6 +53,7 @@ docs = [
     "sphinx-astropy",
     "sphinx-autobuild",
     "sphinx-automodapi",
+    "sphinx-book-theme",
     "sphinx-rtd-theme",
     "sphinx-copybutton",
     "enchant",
