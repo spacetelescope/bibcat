@@ -7,17 +7,17 @@
 # http://www.sphinx-doc.org/en/master/config
 
 import os
+from importlib.metadata import version
 
 # -- Project information -----------------------------------------------------
 
-project = "bibcat"
+project = "BibCAT"
 copyright = "2023, Mikulski Archive for Space Telescopes"
 author = "MAST staff"
 
 # The full version, including alpha/beta/rc tags
-
-# release = __version__
-release = ".version"
+release = version("bibcat")
+version = ".".join(release.split(".")[:2])
 
 # -- General configuration ---------------------------------------------------
 
@@ -34,7 +34,7 @@ extensions = [
     "sphinx.ext.viewcode",  # adds [source] links
     "sphinx.ext.napoleon",  # for Google/NumPy style docstrings
     "sphinx.ext.doctest",  # Run doctest examples in docs to verify they work
-    # "sphinx.ext.mathjax", # Render LaTeX-style math using MathJax in HTML
+    "sphinx.ext.mathjax",  # Render LaTeX-style math using MathJax in HTML
     "sphinx_automodapi.automodapi",  # Astropy tool: auto-generate API docs with nice summaries
     "sphinx_automodapi.smart_resolver",  # Astropy tool: smarter cross-references for API docs
     "sphinxcontrib.spelling",  # Spell checker for docs (uses `pyenchant`)
@@ -95,7 +95,14 @@ intersphinx_mapping = {"python": ("https://docs.python.org/", None)}
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 html_theme = "sphinx_book_theme"  # "sphinx_rtd_theme"  # "bootstrap-astropy" # "alabaster" #
-
+html_theme_options = {
+    "repository_url": "https://github.com/spacetelescope/bibcat/",
+    "use_repository_button": True,  # shows the GitHub icon button
+    "use_edit_page_button": True,  # adds an "edit this page" link
+    "use_issues_button": True,  # adds a link to GitHub issues
+    "repository_branch": "dev",  #  default branch
+    "path_to_docs": "docs",  # <-- path to docs
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
