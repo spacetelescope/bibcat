@@ -1,30 +1,67 @@
 
 
 #  Using LLM Prompting
-Here we describe the `bibcat` options for extracting paper information using LLMs.  It currently only supports using the OpenAI API to prompt ``gpt`` models.  The default model used is `gpt4o-mini`, but can be customized using the ``config.llms.openai.model`` field.
+This section describes the available `bibcat` options for extracting paper information using LLMs. Currently, only the OpenAI API is supported for prompting `gpt` models. The default model is `gpt-5-mini`, but you can customize this by setting the `config.llms.openai.model` field.
 
 This code requires the `openai` python package.  Install it with `pip install openai`.
 
 To use this code you must have an OpenAI API key. Follow [these instructions](https://platform.openai.com/docs/quickstart) and set your new API key to a new `OPENAI_API_KEY` environment variable.
 
 
+## User Configuration
+An example for the new ``llms`` section of the configuration.
+
+```yaml
+llms:
+  user_prompt: null
+  agent_prompt: null
+  prompt_output_file: paper_output.json # llm classification primary output
+  batch_file: batch_file.jsonl # llm batch jsonl file
+  llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
+  llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
+  openai:
+    model: gpt-5-mini
+    reasoning: medium
+    verbosity: medium
+    batch_daily_token_limit: 40_000_000 # for batch processing
+ ```
+
+## User and Agent (System) Prompts
+
+User and agent prompts to the LLM can be customized through the `bibcat` configuration file, either via simple string prompts, specified with `config.llms.[role]_prompt` or via custom prompt files, specified with `config.llms.llm_[role]_prompt`.  Use the direct string prompts for simple prompts, like 'How old is the Earth?'.  For longer, or more complex, prompts, use the custom prompt files.  Custom prompt files take precedence over any config settings or defaults.  A ``user`` prompt is the text you provide the LLM as the question to be answered, or the task to be performed.  An ``agent`` prompt is the set of instructions, behaviors, or personality you wish the LLM model to follow when responding to your prompt.
+
+To create a new custom user or agent prompt file, create a new text file at the location of `$BIBCAT_DATA_DIR`.  The name of the file can be anything, but must be specified in your `config.llms.llm_user_prompt`, and `config.llms.llm_agent_prompt` fields.  These fields are the filename references.  The custom prompt file is preferred as it allows for the specification of larger, more complex prompt text and instructions.
+
+If no custom prompt file is found, the code defaults to the prompts found in `config.llms.user_prompt` and ``config.llms.agent_prompt`` or the default agent prompt in `etc/bibcat_config.yaml`.
+
+Check out [Prompt Testing](https://bibcat.readthedocs.io/en/latest/llm.html#testing-new-prompts) to test new prompts.
+
 ## Quick Start
 
 Here is a quick start guide.
 
 1. Follow the [Setup](https://bibcat.readthedocs.io/en/latest/readme.html#setup) instructions from the main README file.
-2. Select a paper bibcode or index
+2. Select a paper bibcode or index from the `path_source_data`, located in your `$BIBCAT_DATA_DIR` folder. You can either use a bibcode with the `-b` option, or an array list index with the `-i` option. For example:
    1. run: `bibcat llm run -b "2023MNRAS.521..497M"`
    2. or: `bibcat llm run -i 50`
 3. Check the response output `paper_output.json` file.
 
-You should see something like `INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], 'JWST': ['SCIENCE', [0.9, 0.1]]}`. See [Response Output](https://bibcat.readthedocs.io/en/latest/llm.html#response-output) for details about the response output.  [Submitting a paper](https://bibcat.readthedocs.io/en/latest/llm.html#submitting-a-paper) describes the command for sending papers to OpenAI. For customizing and trialing new gpt prompts, see [User Configuration](https://bibcat.readthedocs.io/en/latest/llm.html#user-configuration) and [User and Agent (System) Prompts](https://bibcat.readthedocs.io/en/latest/llm.html#user-and-agent-system-prompts).
+You should see output similar to:
+`INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], 'JWST': ['SCIENCE', [0.9, 0.1]]}`.
+Here each key is a mission, the first element is the papertype, and the confidence array is ordered [science, mention].
+
+For more details:
+- About the source data: [Input textdata](https://bibcat.readthedocs.io/en/asb-31188_refactor-docs/data_readme.html)
+- Response format and field meanings: [Response Output](https://bibcat.readthedocs.io/en/latest/llm.html#response-output)
+- How to submit papers to OpenAI: [Submitting a paper](https://bibcat.readthedocs.io/en/latest/llm.html#submitting-a-paper)
+- How to customize prompts and test new prompts: [User Configuration](https://bibcat.readthedocs.io/en/latest/llm.html#user-configuration) and [User and Agent (System) Prompts](https://bibcat.readthedocs.io/en/latest/llm.html#user-and-agent-system-prompts)
 
 ## Submitting a paper
 
-The cli `bibcat llm run` submits a prompt with paper content.  The paper content can either be a local filepath on disk, or a bibcode or array list index from source dataset ``dataset_combined_all_2018-2023.json``.  When specifying a bibcode or list array index, the paper data is pulled from the source JSON dataset.
+The cli `bibcat llm run` submits a prompt with paper content.  The paper content can either be a local filepath on disk (See [File Uploads](https://bibcat.readthedocs.io/en/latest/llm.html#file-uploads), or a bibcode or array list index from the source dataset.  When specifying a bibcode or list array index, the paper data is pulled from the source JSON dataset.
 
-The `llm run` command submits a single paper. Note that when submitting any paper whose bibcode contains `&`, double quotes `" "` are needed for the bibcode in the command line.
+The `llm run` command submits a single paper. If the bibcode contains an `&`, enclose it in double quotes (`" "`) when using it on the command line.
+
 ```python
 # submit a paper
 bibcat llm run -f /Users/bcherinka/Downloads/2406.15083v1.pdf
@@ -57,15 +94,15 @@ where `papers_to_process.txt` might look like
 
 ### Asynchronous Batch Runs on Virtual Machines
 
-When you have a large set of papers to process with Bibcat, you can run multiple Bibcat jobs serially using the Bash script `run_bibcat_serial.sh` in the `bins/ folder`. This script processes one batch input file (typically containing 1,000 papers) at a time and then sleeps for 2 hours before starting the next job, to avoid hitting the API rate limit. A single job of 1,000 API calls takes approximately 4,500 seconds to complete. Note that parallel batch processing would run into the API rate limits. We plan to implement [Openai Bath API] (https://platform.openai.com/docs/guides/batch/batch-api) for more time-efficient and cost-effective  asynchronous runs. But until then, you can use this Bash script below.
+When you have a large set of papers to process with Bibcat, you can run multiple Bibcat jobs serially using the Bash script `run_bibcat_serial.sh` in the `bins/` folder. This script processes one batch input file (typically containing 1,000 papers) at a time and then sleeps for 2 hours before starting the next job, to avoid hitting the API rate limit. A single job of 1,000 API calls takes approximately 4,500 seconds to complete. Note that parallel batch processing would run into the API rate limits. We plan to implement [OpenAI Batch API](https://platform.openai.com/docs/guides/batch/batch-api) for more time-efficient and cost-effective asynchronous runs. But until then, you can use this Bash script below.
 
-To run this script, set the path to the batch files and the logs directory on your command line below. Then, execute the script from the terminal using:
+To run this script, replace `/path/to/batch_files` and `/path/to/logs` with your actual batch files and logs directories, then execute the script from the terminal using:
 
 ```bash
 ./run_bibcat_serial.sh /path/to/batch_files /path/to/logs
 
 ```
-You can use the `--dry-run` flag at the end of the command for a dry-run
+You can use the `--dry-run` flag to perform a dry run.
 
 ```bash
  ./run_bibcat_serial.sh /path/to/batch_files /path/to/logs --dry-run
@@ -83,7 +120,7 @@ classify_paper(index=200)
 ```
 which gives output
 ```bash
-Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
+Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_gs.json
 2024-08-22 15:49:50,634 - bibcat.llm.openai - INFO - Using paper bibcode: 2023MNRAS.518..456D
 2024-08-22 15:49:56,781 - bibcat.llm.openai - INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], 'JWST': ['SCIENCE', [0.9, 0.1]]}
 ```
@@ -279,29 +316,6 @@ To merge all llm output chunks back into a single file, use the merge, `-m` flag
 bibcat.llm.chunker - INFO - Writing merged file to /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_llm_batchtest_output.json
 bibcat.llm.chunker - INFO - Writing merged file to /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_summary_batchtest_output_t0.5.json
 ```
-
-
-## User Configuration
-An example for the new ``llms`` section of the configuration.
-
-```yaml
-llms:
-  user_prompt: null
-  agent_prompt: null
-  prompt_output_file: paper_output.json
-  llm_user_prompt: llm_user_prompt.txt
-  llm_agent_prompt: llm_agent_prompt.txt
-  openai:
-    model: gpt-4o-mini
-```
-
-## User and Agent (System) Prompts
-
-User and agent prompts to the LLM can be customized through the `bibcat` configuration file, either via simple string prompts, specified with `config.llms.[role]_prompt` or via custom prompt files, specified with `config.llms.llm_[role]_prompt`.  Use the direct string prompts for simple prompts, like 'How old is the Earth?'.  For longer, or more complex, prompts, use the custom prompt files.  Custom prompt files take precedence over any config settings or defaults.  A ``user`` prompt is the text you provide the LLM as the question to be answered, or the task to be performed.  An ``agent`` prompt is the set of instructions, behaviors, or personality you wish the LLM model to follow when responding to your prompt.
-
-To create a new custom user or agent prompt file, create a new text file at the location of `$BIBCAT_DATA_DIR`.  The name of the file can be anything, but must be specified in your `config.llms.llm_user_prompt`, and `config.llms.llm_agent_prompt` fields.  These fields are the filename references.  The custom prompt file is preferred as it allows for the specification of larger, more complex prompt text and instructions.
-
-If no custom prompt file is found, the code defaults to the prompts found in `config.llms.user_prompt` and ``config.llms.agent_prompt`` or the default agent prompt in `etc/bibcat_config.yaml`.
 
 ### Testing New Prompts
 
@@ -545,7 +559,7 @@ Definitions of the output columns from the evaluation.
 - **missing_by_llm**: The set of missing missions by llm classification
 - **hallucinated_missions**: The list of missions hallucinated by llm
 
-#### Each mission/papertype DataFrame output, as "df"
+#### Mission + papertype summary, "df"
   This data frame represents stats based on each mission + papertype callout
 - **llm_mission**: The mission from the LLM output
 - **mean_llm_confidence**: The list of the mean confidence values of SCIENCE and MENTION across all trial runs, for each mission + papertype combination. Conditional probabilities. Sum to 1.
@@ -559,7 +573,7 @@ Definitions of the output columns from the evaluation.
 - **mission_in_text**: Flag whether or not the mission keyword is in the source paper text
 - **hallucination_by_llm**: Flag whether or not the mission keyword is hallucinated by LLM, i.e., mission is not found in text
 
-#### Output Statistics by each mission, as "mission_conf"
+#### Mission statistics, "mission_conf"
   This data frame represents stats based on each mission callout
 - **llm_mission**: The mission from the LLM output
 - **total_mission_conf**: The total confidence value for the given mission.  Sum of all weighted [science, mention] conf values.
@@ -708,7 +722,21 @@ bibcat llm batch evaluate -p bibcode_list.txt -s -n 20
 
 ## Plotting Evaluation Plots
 
-You can assess model performance using confusion matrix plots or Receiver Operating Characteristic (ROC) curves. A [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) plot helps evaluation classification model performance by showing true positives ($TP$), true negatives ($TN$), false positives ($FP$), and false negatives ($FN$), making it useful for understanding evaluation metrics such as accuracy ($\frac{TP+TN}{TP+TB+FP+FN}$), precision ($\frac{TP}{TP+FP}$), recall (sensitivity, $\frac{TP}{(TP+FN)}$), and F1 score ($2\times \frac{precision \times recall}{ precison + recall}$). A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curve evaluates a model's ability to distinguish between classes by plotting the true positive rate against the false positive rate at various thresholds, with the area under the curve (AUC) which represents the degree of separability between classes. For instance, AUC=1.0 indicates perfect and AUC =0.5 is as good as random guessing. To provide more reliable and stable performance metrics, larger datasets (hundreds or thousands) are recommended. With small datasets, you make interpreations less reliable.
+You can assess model performance using confusion matrix plots or Receiver Operating Characteristic (ROC) curves. A [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) plot helps evaluation classification model performance by showing true positives ($TP$), true negatives ($TN$), false positives ($FP$), and false negatives ($FN$), making it useful for understanding evaluation metrics such as
+
+$$
+   \text{Accuracy} = \dfrac{TP + TN}{TP + TN + FP + FN}
+
+   \text{Precision} = \dfrac{TP}{TP + FP}
+
+   \text{Recall} = \dfrac{TP}{TP + FN}
+
+   F_1 = 2 \times \dfrac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}
+$$
+
+<!-- accuracy ($\frac{TP+TN}{TP+TB+FP+FN}$), precision ($\frac{TP}{TP+FP}$), recall (sensitivity, $\frac{TP}{(TP+FN)}$), and F1 score ($2\times \frac{precision \times recall}{ precison + recall}$).  -->
+
+A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curve evaluates a model's ability to distinguish between classes by plotting the true positive rate against the false positive rate at various thresholds, with the area under the curve (AUC) which represents the degree of separability between classes. For instance, AUC = 1.0 indicates perfect and AUC =0.5 is as good as random guessing. To provide more reliable and stable performance metrics, larger datasets (hundreds or thousands) are recommended. With small datasets, you make interpreations less reliable.
 
 ### Confusion Matrix Plot
 To plot a confusion matrix for specific missions (default threshold probability = 0.7), run:
