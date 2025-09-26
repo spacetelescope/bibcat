@@ -735,15 +735,19 @@ $$
 A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curve evaluates a model's ability to distinguish between classes by plotting the true positive rate against the false positive rate at various thresholds, with the area under the curve (AUC) which represents the degree of separability between classes. For instance, AUC = 1.0 indicates perfect and AUC =0.5 is as good as random guessing. To provide more reliable and stable performance metrics, larger datasets (hundreds or thousands) are recommended. With small datasets, you make interpreations less reliable.
 
 ### Confusion Matrix Plot
-To plot a confusion matrix for specific missions (default threshold probability = 0.7), run:
+To plot confusion matrices for specific missions (default threshold probability = 0.5), run:
 ```bash
 bibcat llm plot -c -m HST -m JWST
 ```
 
-To plot a confusion matrix for all missions, run:
+To plot confusion matrices for all missions, run:
 ```bash
 bibcat llm plot -c -a
 ```
+![confusion matrix example](images/example_confusion_matrix_plot_t0.5.png)
+
+In the example confusion matrix (CM) plot, we have both counts (left panel) and normalized counts (right panel). All counts were considered if the confidence value of each LLM classification is >= 0.5 (`threshold = 0.5`). We can see the distribution of true positives (top left quadrant), false positives (bottom left quadrant), true negatives (bottom right quadrant), and false negatives (top right quadrant) for the specified missions. This visualization helps in understanding the model's performance and identifying areas for improvement. Note that in this figure, all MAST missions were considered to create CM, but only a subset of the missions in the annotation, `Mission(s) found:` were actually called out by human and LLM as seen in. The missions not found in the sample only contribute to true negatives.
+
 These commands will also create metrics summary files ( `*metrics_summary_t0.5.txt` and `*metrics_summary_t0.5.json`).
 The outuput would look like
 
@@ -909,10 +913,11 @@ bibcat llm audit
 
 #### File output for the inconsistent classifications
 
-The command line command, `bibcat llm audit`, will create a json file (`config.llms.inconsistent_classifications_file`) of failure bibcode + mission classifications and its summary counts.
+The command line command, `bibcat llm audit`, will create a json file (`config.llms.inconsistent_classifications_file`) of failure bibcode + mission classifications and its summary counts. It also create a json file (`llm_only_classified_list_for_audit.json`) which collects the bibcode items that human didn't classify any misisons but LLM classifies missions. You can use this list to further investigate if LLM hallucinates or human mistakenly missed classifications.
 
 The definitions of the JSON output columns are following.
 - **summary_counts** : stats summary of inconsistent classifications
+- **n_llm_only_classified_bibcodes** : the number of bibcodes that human didn't classify any missions but LLM classifies missions
 - **n_total_bibcodes**: the number of total bibcodes
 - **n_matched_classifications**: the number of matched classifications
 - **n_mismatched_bibcodes**: the number of mismatched (failure) bibcode
@@ -929,6 +934,7 @@ The output example is as follows:
 {
   "summary_counts": {
     "n_total_bibcodes": 89,
+    "n_llm_only_classified_bibcodes": 1,
     "n_matched_classifications": 81,
     "n_mismatched_bibcodes": 65,
     "n_mismatched_classifications": 134,
@@ -965,8 +971,23 @@ The output example is as follows:
         }
       ],
       "missions_not_in_text": []
+    },
+    "2020A&A...633A..48F": {
+      "failures": {
+        "flag": "llm_only_classified"
+      },
+      "human": {},
+      "llm": [
+        {
+          "HST": "MENTION",
+          "confidence": [
+            0.2,
+            0.8
+          ],
+          "mission_probability": 0.25
+        },
+      ]
     }
-  }
 }
 
 ```

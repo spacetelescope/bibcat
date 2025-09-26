@@ -63,7 +63,8 @@ def evaluate_output(
     paper = get_source(bibcode=bibcode, index=index)
     if not paper:
         logger.warning(f"No paper source found for {bibcode}")
-        write_summary({bibcode: {"error": "No paper source found"}}, output_path=base_path)
+        if write_file:
+            write_summary({bibcode: {"error": "No paper source found"}})
         return None
 
     bibcode = paper["bibcode"]
@@ -83,7 +84,17 @@ def evaluate_output(
     # exit if no bibcode found in output
     if not response:
         logger.warning(f"No mission output found for {bibcode}")
-        write_summary({bibcode: {"error": f"No mission output found for {bibcode}."}}, output_path=base_path)
+        # get the human paper classifications for record, even if no mission llm output
+        human_classes = get_human_classification(paper)
+        if write_file:
+            write_summary(
+                {
+                    bibcode: {
+                        "error": f"No mission output found for {bibcode}.",
+                        "human": {k: v["papertype"] for k, v in human_classes.items()},
+                    }
+                }
+            )
         return None
 
     n_runs = len(response)
@@ -335,8 +346,7 @@ def prepare_output(
     """
     # Capitalize mission names for output to make consistent with human class mission names
     mission_df["llm_mission"] = mission_df["llm_mission"].str.upper()
-    grouped_df["llm_mission"] = mission_df["llm_mission"].str.upper()
-
+    grouped_df["llm_mission"] = grouped_df["llm_mission"].str.upper()
     # reindex mission
     mm = mission_df.set_index("llm_mission")
 
