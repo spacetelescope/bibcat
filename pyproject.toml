@@ -9,11 +9,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bibcat"
-description = "Bibcat classifies astronomical journal papers into multiple paper categories."
+description = "BibCAT classifies astronomical journal papers into multiple paper categories."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "licenses/LICENSE.rst", content-type = "text/plain" }
-
 authors = [
   { name = "Mikulski Archive for Space Telescopes", email = "archive@stsci.edu" },
 ]
@@ -53,6 +52,7 @@ docs = [
     "sphinx-astropy",
     "sphinx-autobuild",
     "sphinx-automodapi",
+    "sphinx-book-theme",
     "sphinx-rtd-theme",
     "sphinx-copybutton",
     "enchant",

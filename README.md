@@ -1,12 +1,12 @@
-# BibCat
-Bibcat classifies astronomical journal papers into multiple categories. The primary categories are "science" and "mention." In our work, we focus on distinguishing between "science" and "nonscience" papers, where "nonscience" includes "mention" and other non-mission-relevant papers.
+# BibCAT
+BibCAT (Bibliography Classification Automation Tool) classifies astronomical journal papers into multiple categories. The primary categories are "science" and "mention." In our work, we focus on distinguishing between "science" and "nonscience" papers, where "nonscience" includes "mention" and other papers that are not relevant to the mission.
 
 ## Development Workflow
 There are two main branches for bibcat work:
 
 - The dev branch contains ongoing development work. All new features and changes should be developed in branches that are merged into `dev`.
 
-- The main branch contains the latest stable release of `bibcat`.
+- The main branch contains the latest stable release of `bibcat` (coming soon).
 
 ## Installation
 ### Required packages and versions
@@ -14,7 +14,7 @@ There are two main branches for bibcat work:
 - A few tensorflow packages required for Apple silicon chip computers should be installed manually; see below.
 
 ### Conda environment installation
-Change `env_name` below with whatever you want to name the environment.
+Change `env_name` below with your preferred name for the environment.
 - In the terminal, run these commands.
 
 
@@ -23,21 +23,21 @@ conda create -n env_name python=3.10
 conda activate env_name
 ```
 
-If you want to create a lightweight python environment, you can use `micromamba`, which is fast alternative to conda, written in C++, that implements the same CLI interface. Follow this [instructions](https://mamba.readthedocs.io/en/latest/installation/micromamba-installation.html) to install `micromamba`.
+If you want to create a lightweight python environment, you can use `micromamba`, which is fast alternative to conda, written in C++, that implements the same CLI interface. Follow this [mamba instruction](https://mamba.readthedocs.io/en/latest/installation/micromamba-installation.html) to install `micromamba` and the following step.
 
 ```shell
 micromamba create -n env_name python=3.10
 micromamba activate env_name
 ```
 
-### Bibcat installation
+### BibCAT installation
 The `bibcat` directory contains the python package itself, installable via pip. Move to the main bibcat root directory where `pyproject.toml` is located and run this command. This will only install the dependencies needed to run the LLM component of bibcat.  **Note:** you still need to manually run the `spacy download` command specified below.
 
 ```shell
 pip install .
 ```
 #### Installation for developers
-If you are interested in developing and contributing to **casper**, you should install this package with `-e`, it allows you to work on the package's source code and see changes reflected immediately without needing to reinstall.
+If you are interested in developing and contributing to **BibCAT**, you should install this package with `-e`, it allows you to work on the package's source code and see changes reflected immediately without needing to reinstall.
 
 ```shell
 pip install -e . # install editable mode
@@ -49,13 +49,13 @@ To install all dependencies for development except for the ML component, testing
 ### Spacy model downloads
 *Note that some core tests using `spacy` could fail if the version number is not `3.7.2`. You could reinstall `pip install spacy==3.7.2` if that happens. This is a work-around solution until we have the capacity to update the tests.
 
-This model is used for the [Pretrained model method](https://github.com/spacetelescope/bibcat/blob/dev/docs/pretrained.md)
+This model is used for the [Pretrained model method](https://bibcat.readthedocs.io/en/latest/pretrained.html)
 ```
 python -m spacy download en_core_web_sm
 ```
 
 ### Tensorflow package installation for `Pretrained` method
-`tensorflow` packages are used for the [Pretrained model method](https://github.com/spacetelescope/bibcat/blob/dev/docs/pretrained.md)
+`tensorflow` packages are used for the [Pretrained model method](https://bibcat.readthedocs.io/en/latest/pretrained.html)
 
 #### For CPU computers (e.g., intel chips)
 To install the Tensorflow dependencies for use of the ML component of bibcat, run `pip install -e ".[cpu_ml]"`.
@@ -103,15 +103,28 @@ For other configuration options and more detailed information, check out at the 
 
 
 ## Setup
-### Input JSON file <!--- THIS NEEDS A REVISION to remove the Box Links for PRODUCTION --->
-Download several data files (the ADS full text file and the papertrack file) to create models for training or combined fulltext dataset files for the input text. These files can be accessed only by authorized users. Downloading the files requires a single sign-on.
-Save the files outside the `bibcat` folder on your local computer, and you will set up the paths to the files. See more details in **User Configuration and Data Filepaths** below.
-We refer
-- the combined papers+classification JSON file ([combined_dataset_2025_07_08.json](https://stsci.box.com/s/4xnzbgq9vw3lt34lyxumeo0nnil7x7lx)) to `source data`,
-- the papertrack export JSON file ([papertrack_export_papertext_2025-07-08.json](https://stsci.box.com/s/4jdvotw1hdz6d9i1l7uvj1o2u2a3ddow)) to `papertrack data` (extract the tar.gz file to use), and
-- the ADS fulltext data file ([ST_Request2023_cleaned_2025_03_10.json](https://stsci.box.com/s/0a5uzmfsnokx1rth8m6wseybpz5bxne3)) to `papertext data`.
+### Input JSON file
 
-Check out [the readme about the input data](https://github.com/spacetelescope/bibcat/blob/dev/docs/data_readme.rst) for more details.
+To build training models or create a combined full-text dataset for input, you’ll need to download several data files: the ADS full-text file and the papertrack file. These files are accessible only to authorized users and require single sign-on (SSO) for download.
+
+> **Important:**
+Save these files **outside** the `bibcat` folder on your local machine. You will later configure file paths to point to them.
+For more on this setup, see [**User Configuration and Data Filepaths**](https://bibcat.readthedocs.io/en/latest/readme.html#user-configuration-and-data-filepaths).
+
+We refer to the following files throughout this guide:
+
+- **Source data**:
+  [combined_dataset_2025_07_08.json](https://stsci.box.com/s/4xnzbgq9vw3lt34lyxumeo0nnil7x7lx) — a combined papers + classification JSON file.
+
+- **Papertrack data**:
+  [papertrack_export_papertext_2025-07-08.json](https://stsci.box.com/s/4jdvotw1hdz6d9i1l7uvj1o2u2a3ddow) — export from papertrack.
+  _(Extract the `.tar.gz` file to access the JSON.)_
+
+- **Papertext data**:
+  [ST_Request2023_cleaned_2025_03_10.json](https://stsci.box.com/s/0a5uzmfsnokx1rth8m6wseybpz5bxne3) — full-text data from ADS.
+
+For details on the input files and how to use them to build your own datasets, see the [Input Data Readme](https://bibcat.readthedocs.io/en/latest/data_readme.html).
+
 
 ### User Configuration and Data Filepaths
 
@@ -149,8 +162,10 @@ Use `sphinx-apidoc` to automatically generate API documentation from your docstr
 Run
 ```shell
 
-sphinx-apidoc -o docs/api bibcat bibcat/tests/* # the last pattern indicates all test modules excluded from API Doc
+sphinx-apidoc -o docs/api bibcat bibcat/tests/
 ```
+The last pattern in the command indicates all test modules excluded from API Doc.
+
 To build live-reload documentation, run
 
 ```shell
@@ -190,11 +205,11 @@ for classifying papers, run `bibcat train --help`.
 
 ### Using Pretrained Models (BERT flavors)
 
-You can classify papers using the pretrained models like `BERT` or `RoBERTa`. Please see the following [Quick Start Guide using Pretrained Models](https://github.com/spacetelescope/bibcat/blob/dev/docs/pretrained.md) to get started.
+You can classify papers using the pretrained models like `BERT` or `RoBERTa`. Please see the following [Quick Start Guide using Pretrained Models](https://bibcat.readthedocs.io/en/latest/pretrained.html) to get started.
 
 ### Using LLM Prompting Method
 
-You can submit paper content to OpenAI's gpt models.  Please see the following [Quick Start Guide using LLM Prompting](https://github.com/spacetelescope/bibcat/blob/dev/docs/llm.md) to get started.
+You can submit paper content to OpenAI's gpt models.  Please see the following [Quick Start Guide using LLM Prompting](https://bibcat.readthedocs.io/en/latest/llm.html) to get started.
 
 
 ## License
