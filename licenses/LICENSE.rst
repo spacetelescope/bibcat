@@ -1,4 +1,4 @@
-Copyright (c) 2023, Jamila Pegues, Jinmi Yoon, Brian Cherinka
+Copyright (c) 2023, Mikulski Archive for Space Telescopes
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,

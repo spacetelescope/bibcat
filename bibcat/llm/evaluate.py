@@ -19,7 +19,9 @@ logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
 
-def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = False) -> pd.DataFrame:
+def evaluate_output(
+    bibcode: str = None, index: int = None, write_file: bool = False, base_path: str = None
+) -> pd.DataFrame:
     """Evaluate the output from the LLM model
 
     For a given paper bibcode, reads in the output from the LLM model and
@@ -43,15 +45,20 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
         the dataset array index, by default None
     write_file : bool, optional
         Flag to write the summary output to a file, by default False
+    base_path : str, optional
+        Optional base directory path for input and output files
 
     Returns
     -------
     pd.DataFrame
         an output pandas dataframe
     """
-    paper_output = (
-        pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
+    input_path = (
+        pathlib.Path(base_path)
+        if base_path
+        else pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}"
     )
+    paper_output = input_path / f"{config.llms.prompt_output_file}"
 
     paper = get_source(bibcode=bibcode, index=index)
     if not paper:
@@ -145,7 +152,7 @@ def evaluate_output(bibcode: str = None, index: int = None, write_file: bool = F
             missing_by_llm,
             hallucinated_missions,
         )
-        write_summary(output)
+        write_summary(output, output_path=base_path)
 
     # return the dataframe
     return grouped_df

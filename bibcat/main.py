@@ -13,6 +13,7 @@ import click
 
 from bibcat import config
 from bibcat.data.build_dataset import build_dataset
+from bibcat.llm.chunker import ChunkPlanner, SubmissionManager
 from bibcat.llm.evaluate import evaluate_output
 from bibcat.llm.io import adjust_model
 from bibcat.llm.openai import OpenAIHelper, classify_paper
@@ -599,6 +600,87 @@ def retrieve(batchid, verbose):
     """Retrieve a batch run from the OpenAI Batch API"""
     oa = OpenAIHelper(verbose=verbose)
     oa.retrieve_batch(batchid)
+
+
+@llmbatch.command("process", help="Process a large batch of papers with the OpenAI Batch API")
+@click.option(
+    "-p",
+    "--filename",
+    default=None,
+    type=click.File("r"),
+    show_default=True,
+    help="The path to a file of bibcodes to read in",
+)
+@click.option(
+    "-b",
+    "--batch-file",
+    default=None,
+    type=click.Path(exists=True, path_type=Path),
+    help="The jsonl batch file for submission",
+)
+@click.option("-m", "--model", default=None, type=str, show_default=True, help="The model type to use")
+@click.option("-t", "--test", is_flag=True, show_default=True, help="Set to test a dry-run submission")
+@click.option("-c", "--check", is_flag=True, show_default=True, help="Set to check batch statues")
+@click.option(
+    "-r", "--retrieve-batch", is_flag=True, show_default=True, help="Set to retrieve results of completed batches"
+)
+@click.option("-e", "--eval-batch", is_flag=True, show_default=True, help="Evaulate individual chunk results")
+@click.option("-g", "--merge", is_flag=True, show_default=True, help="Merge chunks into final single output file")
+def process(filename, batch_file, model, test, retrieve_batch, check, eval_batch, merge):
+    """Process a batch of papers using the OpenAI Batch API
+
+    Process a large batch of papers, with proper file chunking, for
+    submission to the OpenAI Batch API.  Handles chunking of large files
+    to account for the OpenAI API limites.  Manage daily submissions,
+    check batch status, and retrieve results.
+
+    """
+    # override the config model
+    if model:
+        orig = config.llms.openai.model
+        config.llms.openai.model = model
+
+        # update the existing batch file with the new model
+        if batch_file:
+            batch_file = adjust_model(batch_file, orig, model)
+
+    # get the bibcodes
+    if filename:
+        bibcodes = filename.read().splitlines() if filename else None
+        oa = OpenAIHelper()
+        batch_file = oa.create_batch_file(bibcodes)
+
+    planner = ChunkPlanner(batch_file)
+    if not planner.has_been_planned:
+        planner.prepare_all()
+    sm = SubmissionManager(planner)
+
+    if not sm.all_batches_submitted and not check and not retrieve_batch and not merge and not eval_batch:
+        click.echo(f"{sm.remaining_chunks} chunks remaining. Submitting next batch.")
+        click.echo(sm.submit_batch(dry_run=test))
+    elif sm.all_batches_submitted:
+        click.echo("All batches already submitted.")
+
+    if check:
+        click.echo(sm.check_batches_status())
+        return
+
+    if retrieve_batch:
+        click.echo("Retrieving completed batch results.")
+        click.echo(sm.retrieve_batch_results())
+
+    if eval_batch:
+        click.echo("Evaluating batch results.")
+        click.echo(sm.evaluate_batch_results())
+
+    completed = sm.all_batches_completed
+    if merge and not completed:
+        click.echo("All batches must be completed before merging.")
+        return
+    elif merge and completed:
+        click.echo("Merging prompt and evaluation chunks.")
+        sm.merge_outputs(kind="llm")
+        sm.merge_outputs(kind="eval")
 
 
 if __name__ == "__main__":

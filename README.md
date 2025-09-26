@@ -199,7 +199,8 @@ You can submit paper content to OpenAI's gpt models.  Please see the following [
 
 ## License
 
-This project is Copyright (c) Jamila Pegues, Jinmi Yoon, and Brian Cherinka and is licensed under the terms of the BSD 3-Clause license. This package is based upon the [Openastronomy packaging guide](https://github.com/OpenAstronomy/packaging-guide), which is licensed under the BSD 3-clause license. See the licenses folder for more information.
+This project is Copyright (c) Mikulski Archive for Space Telescopes and is licensed under the terms of the BSD 3-Clause license. This package is based upon the [Openastronomy packaging guide](https://github.com/OpenAstronomy/packaging-guide), which is licensed under the BSD 3-clause license. See the licenses folder for more information.
+
 ## Contributing
 
 We love contributions! bibcat is open source, built on open source, and we'd love to have you hang out in our community.
