@@ -7,35 +7,6 @@ This code requires the `openai` python package.  Install it with `pip install op
 
 To use this code you must have an OpenAI API key. Follow [these instructions](https://platform.openai.com/docs/quickstart) and set your new API key to a new `OPENAI_API_KEY` environment variable.
 
-
-## User Configuration
-An example for the new ``llms`` section of the configuration.
-
-```yaml
-llms:
-  user_prompt: null
-  agent_prompt: null
-  prompt_output_file: paper_output.json # llm classification primary output
-  batch_file: batch_file.jsonl # llm batch jsonl file
-  llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
-  llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
-  openai:
-    model: gpt-5-mini
-    reasoning: medium
-    verbosity: medium
-    batch_daily_token_limit: 40_000_000 # for batch processing
- ```
-
-## User and Agent (System) Prompts
-
-User and agent prompts to the LLM can be customized through the `bibcat` configuration file, either via simple string prompts, specified with `config.llms.[role]_prompt` or via custom prompt files, specified with `config.llms.llm_[role]_prompt`.  Use the direct string prompts for simple prompts, like 'How old is the Earth?'.  For longer, or more complex, prompts, use the custom prompt files.  Custom prompt files take precedence over any config settings or defaults.  A ``user`` prompt is the text you provide the LLM as the question to be answered, or the task to be performed.  An ``agent`` prompt is the set of instructions, behaviors, or personality you wish the LLM model to follow when responding to your prompt.
-
-To create a new custom user or agent prompt file, create a new text file at the location of `$BIBCAT_DATA_DIR`.  The name of the file can be anything, but must be specified in your `config.llms.llm_user_prompt`, and `config.llms.llm_agent_prompt` fields.  These fields are the filename references.  The custom prompt file is preferred as it allows for the specification of larger, more complex prompt text and instructions.
-
-If no custom prompt file is found, the code defaults to the prompts found in `config.llms.user_prompt` and ``config.llms.agent_prompt`` or the default agent prompt in `etc/bibcat_config.yaml`.
-
-Check out [Prompt Testing](https://bibcat.readthedocs.io/en/latest/llm.html#testing-new-prompts) to test new prompts.
-
 ## Quick Start
 
 Here is a quick start guide.
@@ -316,6 +287,33 @@ To merge all llm output chunks back into a single file, use the merge, `-m` flag
 bibcat.llm.chunker - INFO - Writing merged file to /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_llm_batchtest_output.json
 bibcat.llm.chunker - INFO - Writing merged file to /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_summary_batchtest_output_t0.5.json
 ```
+## User Configuration
+An example for the new ``llms`` section of the configuration.
+
+```yaml
+llms:
+  user_prompt: null
+  agent_prompt: null
+  prompt_output_file: paper_output.json # llm classification primary output
+  batch_file: batch_file.jsonl # llm batch jsonl file
+  llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
+  llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
+  openai:
+    model: gpt-5-mini
+    reasoning: medium
+    verbosity: medium
+    batch_daily_token_limit: 40_000_000 # for batch processing
+ ```
+
+## User and Agent (System) Prompts
+
+User and agent prompts to the LLM can be customized through the `bibcat` configuration file, either via simple string prompts, specified with `config.llms.[role]_prompt` or via custom prompt files, specified with `config.llms.llm_[role]_prompt`.  Use the direct string prompts for simple prompts, like 'How old is the Earth?'.  For longer, or more complex, prompts, use the custom prompt files.  Custom prompt files take precedence over any config settings or defaults.  A ``user`` prompt is the text you provide the LLM as the question to be answered, or the task to be performed.  An ``agent`` prompt is the set of instructions, behaviors, or personality you wish the LLM model to follow when responding to your prompt.
+
+To create a new custom user or agent prompt file, create a new text file at the location of `$BIBCAT_DATA_DIR`.  The name of the file can be anything, but must be specified in your `config.llms.llm_user_prompt`, and `config.llms.llm_agent_prompt` fields.  These fields are the filename references.  The custom prompt file is preferred as it allows for the specification of larger, more complex prompt text and instructions.
+
+If no custom prompt file is found, the code defaults to the prompts found in `config.llms.user_prompt` and ``config.llms.agent_prompt`` or the default agent prompt in `etc/bibcat_config.yaml`.
+
+Check out [Prompt Testing](https://bibcat.readthedocs.io/en/latest/llm.html#testing-new-prompts) to test new prompts.
 
 ### Testing New Prompts
 
