@@ -102,7 +102,7 @@ To run this script, replace `/path/to/batch_files` and `/path/to/logs` with your
 ./run_bibcat_serial.sh /path/to/batch_files /path/to/logs
 
 ```
-You can use the `--dry-run` flag to perform a dry run.
+You can use the `--dry-run` flag to perform a test run without submitting the job.
 
 ```bash
  ./run_bibcat_serial.sh /path/to/batch_files /path/to/logs --dry-run
@@ -120,7 +120,7 @@ classify_paper(index=200)
 ```
 which gives output
 ```bash
-Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_gs.json
+Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
 2024-08-22 15:49:50,634 - bibcat.llm.openai - INFO - Using paper bibcode: 2023MNRAS.518..456D
 2024-08-22 15:49:56,781 - bibcat.llm.openai - INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], 'JWST': ['SCIENCE', [0.9, 0.1]]}
 ```
@@ -338,7 +338,7 @@ llms:
 - Running `bibcat llm run -i 0 -v` in verbose mode produces:
 
 ```bash
-Loading source dataset: /path/to/dataset.json
+Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
 INFO - Using paper bibcode: 2023Natur.616..266L
 WARNING - Error in prompt JSON response. Cannot convert output.
 INFO - Agent Prompt: You are an professional expert on whales.  You are also witty and always respond with a clever pun.
