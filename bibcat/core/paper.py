@@ -454,8 +454,6 @@ class Paper(Base):
         WARNING! This method is *not* meant to be used directly by users.
         Purpose:
         - Return status as a true match if non-ambiguous keywords match to text.
-          - E.g. if "exoplanet" is a non-ambiguous keyword, and the text is "transiting exoplanet",
-            this method would return a true match.
         Parameters:
         - setup_data [TruematchSetup]:
           - An object containing all relevant variables for `_check_truematch`.
@@ -481,7 +479,6 @@ class Paper(Base):
         WARNING! This method is *not* meant to be used directly by users.
         Purpose:
         - Return status as a false match if no keywords match at all.
-          - E.g. "small Hubble constant" and "Keplerian orbits" would return a false match.
         Parameters:
         - setup_data [TruematchSetup]:
           - An object containing all relevant variables for `_check_truematch`.
@@ -506,7 +503,6 @@ class Paper(Base):
         WARNING! This method is *not* meant to be used directly by users.
         Purpose:
         - Return status as a true match if any acronyms match.
-          - E.g. "HST" and "H.S.T." would return a true match.
         Parameters:
         - setup_data [TruematchSetup]:
           - An object containing all relevant variables for `_check_truematch`.
@@ -534,9 +530,6 @@ class Paper(Base):
         WARNING! This method is *not* meant to be used directly by users.
         Purpose:
         - Return status as a true match if non-ambiguous phrases match to text.
-          - E.g. if "transiting exoplanet" is a non-ambiguous phrase,
-            and the text is "light curve of the transiting exoplanet",
-            this method would return a true match.
         Parameters:
         - setup_data [TruematchSetup]:
           - An object containing all relevant variables for `_check_truematch`.
@@ -608,7 +601,6 @@ class Paper(Base):
         WARNING! This method is *not* meant to be used directly by users.
         Purpose:
         - Return status as a true match if any wordchunk is an exact keyword match.
-          - E.g. "Hubble calibrated images" would return a true match.
         Parameters:
         - list_wordchunks [List[spacy.tokens.Doc]]:
           - A list of wordchunks returned by `_assemble_keyword_wordchunks_wrapper`.
