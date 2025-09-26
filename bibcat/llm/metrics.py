@@ -31,7 +31,7 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
     -------
     metrics_data: dict[str]
         contains various metrics
-    metrics_data contains following variables.
+    metrics_data contains following variables:
     threshold: float
         threshold
     n_bibcodes: int
