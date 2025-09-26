@@ -7,7 +7,7 @@
 - [PR #82](https://github.com/spacetelescope/bibcat/pull/82)
     - Improved LLM evaluation and metrics, in particular, by accounting for papers with human classifications but no llm output.
 - [PR #85](https://github.com/spacetelescope/bibcat/pull/85)
-    - Changed Sphinx theme to `book` and updated documentation accordingly.
+    - Changed Sphinx theme to `book` and updated documentation.
 ## [0.2.0] - 2025-09-22
 
 ### Removed
