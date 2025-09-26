@@ -338,7 +338,7 @@ llms:
 - Running `bibcat llm run -i 0 -v` in verbose mode produces:
 
 ```bash
-Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
+Loading source dataset: /path/to/dataset.json
 INFO - Using paper bibcode: 2023Natur.616..266L
 WARNING - Error in prompt JSON response. Cannot convert output.
 INFO - Agent Prompt: You are an professional expert on whales.  You are also witty and always respond with a clever pun.
@@ -387,7 +387,7 @@ llms:
 - Running `bibcat llm run -i 0` without verbosity produces:
 
 ```bash
-Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
+Loading source dataset: /path/to/dataset.json
 INFO - Using paper bibcode: 2023Natur.616..266L
 WARNING - Error converting output to classification format: too many values to unpack (expected 2)
 INFO - Output: {'whale': 'Humpback', 'response': "The Humpback whale is the star of 'Star Trek IV: The Voyage Home'. Talk about a cinematic whale ready for a 'fin'-tastic adventure!", 'source': 'https://en.wikipedia.org/wiki/Star_Trek_IV:_The_Voyage_Home'}
@@ -404,7 +404,7 @@ What color was the whale that Ahab hated?
 
 - Running `bibcat llm run -i 0 -u my_user_prompt2.txt`, produces:
 ```bash
-Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
+Loading source dataset: /path/to/dataset.json
 INFO - Using paper bibcode: 2023Natur.616..266L
 WARNING - Error converting output to classification format: too many values to unpack (expected 2)
 INFO - Output: {'whale': 'White', 'response': "Captain Ahab had a 'whale' of a problem with Moby Dick, the infamous white whale!", 'source': 'https://en.wikipedia.org/wiki/Moby-Dick'}
@@ -479,7 +479,7 @@ You can turn off structured response output with the `-u` flag, e.g. `bibcat llm
 
 ## Evaluating Output
 
-To assess how well an LLM might be doing, we can try to evaulate it by running repeated trial runs, collecting the output, and comparing
+To assess how well an LLM might be doing, we can try to evaluate it by running repeated trial runs, collecting the output, and comparing
 to the human classifications from the source dataset.
 
 First, run bibcat llm run with the `-n` flag to specify to run repeated submissions of the paper, and record all outputs in the output JSON file.
@@ -495,7 +495,7 @@ bibcat llm evaluate -b "2020A&A...642A.105K"
 
 You should see some output similar to
 ```bash
-Loading source dataset: /Users/jyoon/Documents/asb/bibliography_automation/bibcat_datasets//dataset_combined_all_2018-2023.json
+Loading source dataset: /path/to/dataset.json
 INFO - Evaluating output for 2020A&A...642A.105K
 INFO - Number of runs: 3
 INFO - Human Classifications:
@@ -508,15 +508,15 @@ llm_mission llm_papertype mean_llm_confidences std_llm_confidences  count  n_run
 INFO - Missing missions by humans: K2
 INFO - Missing missions by LLM:
 INFO - Hallucination by LLM: K2
-Writing output to /Users/jyoon/GitHub/bibcat/output/output/llms/openai_gpt-4o-mini/summary_output_t0.7.json
+Writing output to /path/to/output/llms/openai_gpt-4o-mini/summary_output_t0.7.json
 ```
 
 The output is also written to a file specified by `config.llms.eval_output_file`.
 
-For now this produces a Pandas dataframe, grouped by the LLM predicted mission and papertype, with its mean confidence score, the number of times that combination was output by the LLM, the total number of trial runs, frequency-weighted confidence values, an accuracy score of how well it matched the human classification, and a boolean flag if that combination appears in the human classification.  The human classication comes from the "class_missions" field in the source dataset file.
+For now, this produces a Pandas dataframe grouped by the LLM predicted mission and papertype, with its mean confidence score and the number of times that combination was output by the LLM. It also includes the total number of trial runs, frequency-weighted confidence values, an accuracy score of how well it matched the human classification, and a boolean flag if that combination appears in the human classification. The human classification comes from the "class_missions" field in the source dataset file.
 
-Alternatively, you can both submit a paper for classfication and evaluate it in a single command using the `-s`, `--submit` flag.  In combination with the `-n` flag,
-this will classify the paper `num_runs` time before evaluation.
+Alternatively, you can both submit a paper for classification and evaluate it in a single command using the `-s`, `--submit` flag.  In combination with the `-n` flag,
+this will classify the paper `num_runs` times before evaluation.
 
 This example first classifies paper index 1000, 20 times, then evaluates the output.
 ```bash
@@ -524,7 +524,7 @@ bibcat llm evaluate -i 1000 -s -n 20
 ```
 
 ```bash
-Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
+Loading source dataset: /path/to/dataset.json
 INFO - Using paper bibcode: 2022SPIE12184E..24M
 INFO - Output: {'JWST': ['MENTION', 0.7]}
 INFO - Using paper bibcode: 2022SPIE12184E..24M
@@ -733,8 +733,6 @@ $$
 
    F_1 = 2 \times \dfrac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}
 $$
-
-<!-- accuracy ($\frac{TP+TN}{TP+TB+FP+FN}$), precision ($\frac{TP}{TP+FP}$), recall (sensitivity, $\frac{TP}{(TP+FN)}$), and F1 score ($2\times \frac{precision \times recall}{ precison + recall}$).  -->
 
 A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curve evaluates a model's ability to distinguish between classes by plotting the true positive rate against the false positive rate at various thresholds, with the area under the curve (AUC) which represents the degree of separability between classes. For instance, AUC = 1.0 indicates perfect and AUC =0.5 is as good as random guessing. To provide more reliable and stable performance metrics, larger datasets (hundreds or thousands) are recommended. With small datasets, you make interpreations less reliable.
 
