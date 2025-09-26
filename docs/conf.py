@@ -15,9 +15,10 @@ project = "BibCAT"
 copyright = "2023, Mikulski Archive for Space Telescopes"
 author = "MAST staff"
 
-# The full version, including alpha/beta/rc tags
-release = version("bibcat")
-version = ".".join(release.split(".")[:2])
+# Full version string
+version = version("bibcat")
+# Short release version for Sphinx (optional)
+release = version.split("+", 1)[0]
 
 # -- General configuration ---------------------------------------------------
 

@@ -13,7 +13,6 @@ description = "BibCAT classifies astronomical journal papers into multiple paper
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "licenses/LICENSE.rst", content-type = "text/plain" }
-
 authors = [
   { name = "Mikulski Archive for Space Telescopes", email = "archive@stsci.edu" },
 ]
