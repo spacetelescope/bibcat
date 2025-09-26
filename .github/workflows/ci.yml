@@ -1,8 +1,6 @@
 name: CI Suite
 on:
   push:
-    tags:
-      - '*'  # Trigger on all tag pushes
   pull_request:
   workflow_dispatch:
     inputs:
@@ -76,18 +74,3 @@ jobs:
         with:
           name: sphinx-docs
           path: docs/_build/html
-
-  github_release:
-    name: Create GitHub Release
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
