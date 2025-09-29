@@ -1,9 +1,8 @@
 # Changelog
 
-### [Unreleased]
+## [Unreleased]
 ### Added
-- [PR #86](https://github.com/spacetelescope/bibcat/pull/86)
-    - github action for auto-release when git tag pushed and minor doc updates
+-
 
 ### Changed
 -
@@ -20,6 +19,10 @@
 -
 
 ---
+## ### Added
+- [PR #86](https://github.com/spacetelescope/bibcat/pull/86)
+    - github action for auto-release when git tag pushed and minor doc updates
+
 ## [0.2.2] - 2025-09-29
 ### Added
 - [PR #82](https://github.com/spacetelescope/bibcat/pull/82)
