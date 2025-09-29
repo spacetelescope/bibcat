@@ -1,5 +1,8 @@
-# bibcat output files
-src/models
+# bibcat files
+bibcat/data/operational_data
+output
+logs
+*.log
 
 # Compiled files
 *.py[cod]
@@ -20,12 +23,12 @@ build
 eggs
 .eggs
 parts
-bin
 var
 sdist
 develop-eggs
 .installed.cfg
 distribute-*.tar.gz
+bibcat/_version.py
 
 # Other
 .vs
@@ -50,9 +53,12 @@ __pycache__/
 *.idea
 *.pytest_cache
 *.devcontainer
-output/*
+
+# Sphinx documentation
+docs/_build/
+docs/api
+
 
 # Mac OSX
 .DS_Store
 *.DS_store
-

@@ -1,35 +1,231 @@
-# bibcat
+# BibCAT
+BibCAT (Bibliography Classification Automation Tool) classifies astronomical journal papers into multiple categories. The primary categories are "science" and "mention." In our work, we focus on distinguishing between "science" and "nonscience" papers, where "nonscience" includes "mention" and other papers that are not relevant to the mission.
 
-This repository contains the bibcat codebase, used to classify texts based on the categories of the journal papers using MAST data. The main category is "science", "data-influence", and "mention".
+## Development Workflow
+There are two main branches for bibcat work:
+
+- The dev branch contains ongoing development work. All new features and changes should be developed in branches that are merged into `dev`.
+
+- The main branch contains the latest stable release of `bibcat` (coming soon).
 
 ## Installation
-
 ### Required packages and versions
-- Python 3.10
-- spacy
-- nltk
-- tensorflow
-- tf-models-official
-### Conda installation
-Change `env_name` below with whatever you want to name the environment. 
-- Download conda installation yml file [here](bibcat_py310.yml)
-- conda env create -n `env_name` -f bibcat_py310.yml 
-- conda activate `env_name`
-- pip install -U "tensorflow-text"
-- python -m spacy download en_core_web_sm
+- See the required package dependencies found in the [pyproject.toml](https://github.com/spacetelescope/bibcat/blob/dev/pyproject.toml).
+- A few tensorflow packages required for Apple silicon chip computers should be installed manually; see below.
+
+### Conda environment installation
+Change `env_name` below with your preferred name for the environment.
+- In the terminal, run these commands.
 
 
+```shell
+conda create -n env_name python=3.10
+conda activate env_name
+```
+
+If you want to create a lightweight python environment, you can use `micromamba`, which is fast alternative to conda, written in C++, that implements the same CLI interface. Follow this [mamba instruction](https://mamba.readthedocs.io/en/latest/installation/micromamba-installation.html) to install `micromamba` and the following step.
+
+```shell
+micromamba create -n env_name python=3.10
+micromamba activate env_name
+```
+
+### BibCAT installation
+The `bibcat` directory contains the python package itself, installable via pip. Move to the main bibcat root directory where `pyproject.toml` is located and run this command. This will only install the dependencies needed to run the LLM component of bibcat.  **Note:** you still need to manually run the `spacy download` command specified below.
+
+```shell
+pip install .
+```
+#### Installation for developers
+If you are interested in developing and contributing to **BibCAT**, you should install this package with `-e`, it allows you to work on the package's source code and see changes reflected immediately without needing to reinstall.
+
+```shell
+pip install -e . # install editable mode
+```
+
+To install all dependencies for development except for the ML component, testing, and documentation, run `pip install -e ".[dev,test,docs]"` or `pip install -e .[all]`.
+
+
+### Spacy model downloads
+*Note that some core tests using `spacy` could fail if the version number is not `3.7.2`. You could reinstall `pip install spacy==3.7.2` if that happens. This is a work-around solution until we have the capacity to update the tests.
+
+This model is used for the [Pretrained model method](https://bibcat.readthedocs.io/en/latest/pretrained.html)
+```
+python -m spacy download en_core_web_sm
+```
+
+### Tensorflow package installation for `Pretrained` method
+`tensorflow` packages are used for the [Pretrained model method](https://bibcat.readthedocs.io/en/latest/pretrained.html)
+
+#### For CPU computers (e.g., intel chips)
+To install the Tensorflow dependencies for use of the ML component of bibcat, run `pip install -e ".[cpu_ml]"`.
+
+#### For Apple silicon M1/M2/M3 chip computers
+- If you have an Apple Silicon chip computer and want to utilize your GPU, you run `pip install -e ".[gpu_ml]"` and follow the tensorflow instructions below. If not, skip this part.
+
+ To verify if tensorflow is set up to utilize your GPU, do the following:
+
+  ```python
+  import tensorflow as tf
+  tf.config.list_physical_devices('GPU')
+  ```
+  You should see the following output: `[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]`.  If the output is an empty list, you are not setup for GPU use.
+
+##### Install `tensorflow-text`
+
+- For Apple silicon M1/M2/M3 chip, to install `tensorflow-text`, the command `pip install -U "tensorflow-text"` **does not work** due to some package version conflict (as of sometime 2024, need to revisit). You need to download the latest release library compatible with your system and the tensorflow version (2.15.0 in the example) from [the Tensorflow library link.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases); For instance, if you have MacOSX with python 3.10, download [this library.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl)
+- Then `pip install /path-to-download/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl`
+
+
+## pre-commit for development
+
+[pre-commit](https://pre-commit.com/) allows all collaborators push their commits compliant with the same set of lint and format rules in [pyproject.toml](https://github.com/spacetelescope/bibcat/blob/dev/pyproject.toml) by checking all files in the project at different stages of the git workflow. It runs commands specified in the [.pre-commit-config.yaml](https://github.com/spacetelescope/bibcat/blob/dev/.pre-commit-config.yaml) config file and runs checks before committing or pushing, to catch errors that would have caused a build failure before they reach CI.
+
+### Install pre-commit
+You will need to install `pre-commit` manually. `pre-commit` is included in `dev` dependencies in `pyproject.toml`.
+```bash
+pip install pre-commit # if you haven't already installed the package.
+```
+
+```bash
+pre-commit install # install default hooks `pre-commit`, `pre-push`, and `commit-msg` as specified in the config file.
+```
+
+If this is your first time running, you should run the hooks against for all files and it will fix all files based on your setting.
+```bash
+pre-commit run --all-files
+```
+Finally, you will need to update `pre-commit` regularly by running
+```bash
+pre-commit autoupdate
+```
+For other configuration options and more detailed information, check out at the [pre-commit](https://pre-commit.com/) page.
+
+
+## Setup
 ### Input JSON file
-Download the papers+classification JSON file ([dataset_combined_all.json](https://stsci.app.box.com/file/1284375342540)) from the Box folder. This file is accessed only by the authorized users. The downloading the file requires single sign-on. 
-Save the file outside the bibcat folder on your local computer and you will set up the path to the file as a variable called `path_json` in `bibcat_config.py`.
+
+To build training models or create a combined full-text dataset for input, you’ll need to download several data files: the ADS full-text file and the papertrack file. These files are accessible only to authorized users and require single sign-on (SSO) for download.
+
+> **Important:**
+Save these files **outside** the `bibcat` folder on your local machine. You will later configure file paths to point to them.
+For more on this setup, see [**User Configuration and Data Filepaths**](https://bibcat.readthedocs.io/en/latest/readme.html#user-configuration-and-data-filepaths).
+
+We refer to the following files throughout this guide:
+
+- **Source data**:
+  [combined_dataset_2025_07_08.json](https://stsci.box.com/s/4xnzbgq9vw3lt34lyxumeo0nnil7x7lx) — a combined papers + classification JSON file.
+
+- **Papertrack data**:
+  [papertrack_export_papertext_2025-07-08.json](https://stsci.box.com/s/4jdvotw1hdz6d9i1l7uvj1o2u2a3ddow) — export from papertrack.
+  _(Extract the `.tar.gz` file to access the JSON.)_
+
+- **Papertext data**:
+  [ST_Request2023_cleaned_2025_03_10.json](https://stsci.box.com/s/0a5uzmfsnokx1rth8m6wseybpz5bxne3) — full-text data from ADS.
+
+For details on the input files and how to use them to build your own datasets, see the [Input Data Readme](https://bibcat.readthedocs.io/en/latest/data_readme.html).
 
 
-## Quick start 
+### User Configuration and Data Filepaths
 
-- First, set the variables `path_json` (JSON file location path)  and `name_model` (Model name of your choice to save or load) in src/`bibcat_config.py`.
-- Next, run `bibcat_tutorial_trainingML.ipynb` to create a training model.  
-- Then, run `bibcat_tutorial_workflow.ipynb` to see the bibcat workflow overview.
-- Finally, run `bibcat_tutorial_performance.ipynb` to see some output (output/) below.
-    - confusion matrix plot: `confmatr.png`
-    - mis-classification lists: `test_misclassif_Operator_1.txt` and `test_misclassif_Operator_2.txt`
-    - `test_eval.npy`
+There are three user environment variables to set:
+
+- **BIBCAT_CONFIG_DIR**: a local path to your user configuration yaml file
+- **BIBCAT_OPSDATA_DIR** : a local path to the directory of operational data in JSON format.
+- **BIBCAT_DATA_DIR**: a local path to the directory of input data, e.g the input JSON files and full text
+- **BIBCAT_OUTPUT_DIR**: a local path to a directory where the output of bibcat will be written, e.g. the output model and QA plots
+
+If not set, all envvars will default to the user's home directory.  You can set these environment variables in your shell terminal, or in your shell config file, i.e. `.bashrc` or `.zshrc` file. For example,
+```bash
+export BIBCAT_CONFIG_DIR=/my/local/path/to/custom/config
+export BIBCAT_DATA_DIR=/my/local/path/to/input/data/dir
+export BIBCAT_OPSDATA_DIR=/my/local/path/to/operational/data/dir
+export BIBCAT_OUTPUT_DIR=/my/local/path/to/bibcat/output
+```
+
+All `bibcat` configuration is contained in a YAML configuration file, `bibcat_config.yaml` .  The default settings are located in `etc/bibcat_config.yaml`.  You don't modify this file directly.  To modify any of the settings, you do so through a custom user configuration file of the same name, placed in `$BIBCAT_CONFIG_DIR` or your home directory, mirroring the same default structure.  All user custom settings override the defaults.
+
+For example, to change the name of the output model saved, within your user `$BIBCAT_CONFIG_DIR/bibcat_config.yaml`, set
+```yaml
+output:
+  name_model: my_new_model
+```
+
+### When testing with pytest
+
+The test suite is located in `tests/`. We can recommend using `pytest` for running tests.  Navigate to `/tests/` and run `pytest`, or for extra verbosity run `pytest -vs`. `pytest` can find and run tests written with pytest or unittests.
+
+### Building the documentation
+Sphinx will create the documentation automatically using the module docstrings.
+Use `sphinx-apidoc` to automatically generate API documentation from your docstrings.
+
+Run
+```shell
+
+sphinx-apidoc -o docs/api bibcat bibcat/tests/
+```
+The last pattern in the command indicates all test modules excluded from API Doc.
+
+To build live-reload documentation, run
+
+```shell
+sphinx-autobuild docs docs/_build/html
+```
+
+For one time build,
+```shell
+make -C docs html
+```
+
+Then navigate to `docs/_build/html` and open `index.html` on your browser to see the built documentation.
+
+However, you can build live API docs and htmls together with this one command,
+
+```shell
+cd docs
+make live-docs
+```
+
+To remove existing output,
+
+```shell
+make clean
+```
+
+## Quick start
+
+There is a CLI interface to bibcat.  After installation with `pip install .`, a `bibcat` cli will be available from the terminal.  Run `bibcat --help` from the terminal to display the available commands.  All commands also have their own help.  For example to see the options
+for classifying papers, run `bibcat train --help`.
+
+- First, set the three user BIBCAT_XXX_DIR environment variables specified above, in particular `BIBCAT_DATA_DIR` points to the location of your input JSON files.
+
+### Build The Dataset
+
+- run `bibcat dataset`if you don't already have the source dataset combined from the papertrack data and the papertext data.
+
+### Using Pretrained Models (BERT flavors)
+
+You can classify papers using the pretrained models like `BERT` or `RoBERTa`. Please see the following [Quick Start Guide using Pretrained Models](https://bibcat.readthedocs.io/en/latest/pretrained.html) to get started.
+
+### Using LLM Prompting Method
+
+You can submit paper content to OpenAI's gpt models.  Please see the following [Quick Start Guide using LLM Prompting](https://bibcat.readthedocs.io/en/latest/llm.html) to get started.
+
+
+## License
+
+This project is Copyright (c) Mikulski Archive for Space Telescopes and is licensed under the terms of the BSD 3-Clause license. This package is based upon the [Openastronomy packaging guide](https://github.com/OpenAstronomy/packaging-guide), which is licensed under the BSD 3-clause license. See the licenses folder for more information.
+
+## Contributing
+
+We love contributions! bibcat is open source, built on open source, and we'd love to have you hang out in our community.
+
+**Imposter syndrome disclaimer**: We want your help. No, really.
+
+There may be a little voice inside your head that is telling you that you're not ready to be an open source contributor; that your skills aren't nearly good enough to contribute. What could you possibly offer a project like this one?
+
+We assure you - the little voice in your head is wrong. If you can write code at all, you can contribute code to open source. Contributing to open source projects is a fantastic way to advance one's coding skills. Writing perfect code isn't the measure of a good developer (that would disqualify all of us!); it's trying to create something, making mistakes, and learning from those mistakes. That's how we all improve, and we are happy to help others learn.
+
+Being an open source contributor doesn't just mean writing code, either. You can help out by writing documentation, tests, or even giving feedback about the project (and yes - that includes giving feedback about the contribution process). Some of these contributions may be the most valuable to the project as a whole, because you're coming to the project with fresh eyes, so you can see the errors and assumptions that seasoned contributors have glossed over.
+
+Note: This disclaimer was originally written by [Adrienne Lowe](https://github.com/adriennefriend) for a [PyCon talk](https://www.youtube.com/watch?v=6Uj746j9Heo), and was adapted by bibcat based on its use in the README file for the [MetPy project](https://github.com/Unidata/MetPy).

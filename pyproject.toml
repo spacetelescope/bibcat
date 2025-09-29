@@ -1,0 +1,140 @@
+[build-system]
+requires = [
+  "setuptools>=61.2",
+  "setuptools_scm[toml]>=6.2",
+  "wheel",
+
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bibcat"
+description = "BibCAT classifies astronomical journal papers into multiple paper categories."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "licenses/LICENSE.rst", content-type = "text/plain" }
+authors = [
+  { name = "Mikulski Archive for Space Telescopes", email = "archive@stsci.edu" },
+]
+
+dependencies = [
+  "click >= 8.1.0",
+  "spacy >= 3.7.2 ",
+  "nltk >= 3.8.1 ",
+  "deepmerge >=1.1.1",
+  "pandas >= 2.1.4",
+  "openai >= 1.99.0",
+  "matplotlib >=3.9.0",
+  "scikit-learn >=1.4.2",
+  "pydantic >= 2.5.0",
+  "PyYAML >= 6.0.1",
+  "tiktoken >= 0.10.0",
+]
+dynamic = ["version"]
+
+[project.scripts]
+bibcat = "bibcat.main:cli"
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit ==4.2.0",
+    "ruff == 0.11.10",
+]
+test = [
+    "pytest==8.2.1",
+    "pytest-doctestplus",
+    "pytest-mock>=3.14.0",
+]
+docs = [
+    "linkify-it-py",
+    "myst-parser",
+    "sphinx",
+    "sphinx-astropy",
+    "sphinx-autobuild",
+    "sphinx-automodapi",
+    "sphinx-book-theme",
+    "sphinx-rtd-theme",
+    "sphinx-copybutton",
+    "enchant",
+    "sphinxcontrib-spelling",
+    "sphinx_click",
+    "tomli; python_version <\"3.10\"",
+]
+all = ["bibcat[dev, test, docs]"] # all related to LLM method
+cpu_ml = [
+  "tensorflow==2.15.0",
+  "tensorflow-text==2.15.0"] # CPU only computers
+gpu_ml = [
+  "tensorflow-macos==2.15.0", # only for Apple M1-M3 apple chip
+  "tensorflow-metal==1.1.1",  # only for Apple M1-M3 apple chip
+  "tensorflow==2.15.0",
+  # "tensorflow-text==2.15.0", # this needs to be installed manually; see the README.md
+] # only for Apple M1-M3 apple chip
+
+
+[tool.ruff]
+lint.select = ["E4", "E7", "E9", "F", "I", "PL", "C901", "RUF010", "W291"]
+lint.ignore = ["PLR", "PLC0206"]  # Ignore specific Pylint refactor messages
+line-length = 120
+target-version = "py310"
+
+
+[project.urls]
+repository = "https://github.com/spacetelescope/bibcat"
+
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.packages.find]
+
+[tool.setuptools_scm]
+
+write_to = "bibcat/_version.py"
+
+
+
+[tool.pytest.ini_options]
+testpaths = [
+  "bibcat/tests",
+  "docs",
+]
+doctest_plus = "enabled"
+text_file_format = "rst"
+addopts = "--doctest-rst"
+
+[tool.coverage.run]
+omit = [
+ "bibcat/__init*",
+ "bibcat/conftest.py",
+ "bibcat/*setup_package*",
+ "bibcat/tests/*",
+ "bibcat/*/tests/*",
+ "bibcat/extern/*",
+ "bibcat/version*",
+ "*/bibcat/__init*",
+ "*/bibcat/conftest.py",
+ "*/bibcat/*setup_package*",
+ "*/bibcat/tests/*",
+ "*/bibcat/*/tests/*",
+ "*/bibcat/extern/*",
+ "*/bibcat/version*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  # Have to re-enable the standard pragma
+  "pragma: no cover",
+  # Don't complain about packages we have installed
+  "except ImportError",
+  # Don't complain if tests don't hit assertions
+  "raise AssertionError",
+  "raise NotImplementedError",
+  # Don't complain about script hooks
+  "def main(.*):",
+  # Ignore branches that don't pertain to this version of Python
+  "pragma: py{ignore_python_version}",
+  # Don't complain about IPython completion helper
+  "def _ipython_key_completions_",
+]
