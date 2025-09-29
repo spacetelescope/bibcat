@@ -125,3 +125,9 @@ def test_batch_retrieve() -> None:
     runner = CliRunner()
     result = runner.invoke(cli, ["llm", "batch", "retrieve", "--help"])
     assert "Retrieve a batch run from the OpenAI Batch API" in result.output
+
+def test_batch_process() -> None:
+    """test the cli batch process help command"""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["llm", "batch", "process", "--help"])
+    assert "Process a large batch of papers with the OpenAI Batch API" in result.output

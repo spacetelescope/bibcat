@@ -3,7 +3,7 @@ import re
 import pytest
 
 from bibcat import config
-from bibcat.llm.io import adjust_model, get_file, get_llm_prompt, get_source
+from bibcat.llm.io import adjust_model, get_file, get_llm_prompt, get_source, write_summary
 
 # expected data
 data = [
@@ -152,3 +152,16 @@ def test_adjust_model(tmp_path):
         new_batch_file.read_text(encoding="utf-8")
         == f'{{"model": "{model}", "id": "1"}}\n{{"model": "{model}", "id": "2"}}'
     )
+
+
+def test_write_summary(fixconfig, tmp_path):
+    """test we can write a summary"""
+    d = tmp_path / "llm"
+    d.mkdir()
+    config = fixconfig(str(d), "bibcat.llm.io")
+
+    filename = d / f"{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
+    output = {"test": "data"}
+    write_summary(output, output_path=str(d))
+
+    assert filename.exists()

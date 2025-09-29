@@ -48,7 +48,8 @@ data = {
             {"llm_mission": "LAMOST", "prob_papertype": [0.4, 0.6]},
         ],
     },
-    "2024Sci...377.1211L": {"error": "No mission output found for 2024Sci...377.1211L."},
+    "2024Sci...377.1211L": {"error": "No mission output found for 2024Sci...377.1211L.", "human": {"HST": "SCIENCE"}},
+    "2019arXiv190205569A": {"error": "No paper source found"},
 }
 
 
@@ -57,8 +58,8 @@ missions = ["HST", "JWST", "ROMAN"]
 
 sample_metrics_data = {
     "threshold": 0.7,
-    "n_bibcodes": 2,
-    "n_human_mission_callouts": 3,
+    "n_bibcodes": 3,
+    "n_human_mission_callouts": 4,
     "n_llm_mission_callouts": 2,
     "n_non_mast_mission_callouts": 1,
     "n_human_llm_mission_callouts": 2,
@@ -66,8 +67,15 @@ sample_metrics_data = {
     "n_missing_output_bibcodes": 1,
     "human_llm_missions": ["JWST", "ROMAN"],
     "non_mast_missions": ["LAMOST"],
-    "human_labels": ["NONSCIENCE", "SCIENCE", "SCIENCE", "NONSCIENCE", "NONSCIENCE", "NONSCIENCE"],
-    "llm_labels": ["NONSCIENCE", "SCIENCE", "NONSCIENCE", "NONSCIENCE", "NONSCIENCE", "NONSCIENCE"],
+    "human_labels": ["NONSCIENCE", "SCIENCE", "SCIENCE", "SCIENCE", "NONSCIENCE", "NONSCIENCE"],
+    "llm_labels": [
+        "NONSCIENCE",
+        "SCIENCE",
+        "NONSCIENCE",
+        "NONSCIENCE",
+        "NONSCIENCE",
+        "NONSCIENCE",
+    ],
 }
 
 
@@ -147,7 +155,7 @@ def test_compute_and_save_metrics(mocker) -> None:
     mock_save_json_file.assert_called_once()
     json_data = mock_save_json_file.call_args[0][1]
 
-    assert json_data["n_bibcodes"] == 2
+    assert json_data["n_bibcodes"] == 3
     assert json_data["SCIENCE"]["precision"] == 1.0
 
 
