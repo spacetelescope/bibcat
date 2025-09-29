@@ -126,7 +126,7 @@
 
 ### Added
 - [PR #86](https://github.com/spacetelescope/bibcat/pull/86)
-    - github action for auto-release when git tag pushed
+    - github action for auto-release when git tag pushed and minor doc updates
 - [PR #83](https://github.com/spacetelescope/bibcat/pull/83)
     - added .readthedoc.yaml for the readthedoc documentation pages
 
