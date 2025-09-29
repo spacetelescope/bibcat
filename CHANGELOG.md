@@ -4,17 +4,12 @@
 ### Added
 - [PR #86](https://github.com/spacetelescope/bibcat/pull/86)
     - github action for auto-release when git tag pushed and minor doc updates
-- [PR #82](https://github.com/spacetelescope/bibcat/pull/82)
-    - a field_validator to ensure that the LLM output classification is only one of the allowed keywords
+
 ### Changed
-- [PR #82](https://github.com/spacetelescope/bibcat/pull/82)
-    - Updated Confusion matrix (CM) plot text annotation of the mission names.
+-
 
 ### Fixed
-- [PR #82](https://github.com/spacetelescope/bibcat/pull/82)
-    - The bug in `grouped_df["llm_mission"] = mission_df["llm_mission"].str.upper()` in prepare_output() was fixed. This bug caused KeyError:nan error due to mismatched index between `mission_df` and `grouped_df` when there were both the papertypes for the same bibcode in `grouped_df`.
-    - When there is no llm output for a bibcode, but human classification exists, the output still outputs human classification in summay_output.
-    - Updated metrics.py and stats.py to account human classifications but not to count when source paper is not found;
+-
 ### Deprecated
 -
 
@@ -25,6 +20,20 @@
 -
 
 ---
+## [0.2.2] - 2025-09-29
+### Added
+- [PR #82](https://github.com/spacetelescope/bibcat/pull/82)
+    - a field_validator to ensure that the LLM output classification is only one of the allowed keywords
+
+### Changed
+- [PR #82](https://github.com/spacetelescope/bibcat/pull/82)
+    - Updated Confusion matrix (CM) plot text annotation of the mission names.
+
+### Fixed
+- [PR #82](https://github.com/spacetelescope/bibcat/pull/82)
+    - The bug in `grouped_df["llm_mission"] = mission_df["llm_mission"].str.upper()` in prepare_output() was fixed. This bug caused KeyError:nan error due to mismatched index between `mission_df` and `grouped_df` when there were both the papertypes for the same bibcode in `grouped_df`.
+    - When there is no llm output for a bibcode, but human classification exists, the output still outputs human classification in summay_output.
+    - Updated metrics.py and stats.py to account human classifications but not to count when source paper is not found;
 
 ## [0.2.1] - 2025-09-26
 ### Changed
