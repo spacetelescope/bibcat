@@ -45,6 +45,24 @@ bibcat llm run -b "2022A&A...668A..63R"
 bibcat llm run -i 101
 ```
 
+### Running within Python
+
+To run within a Python environment, use the `classify_paper` function:
+```python
+
+from bibcat.llm.openai import classify_paper
+
+# classify paper 200 from the dataset
+classify_paper(index=200)
+```
+which gives output
+```bash
+Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
+2024-08-22 15:49:50,634 - bibcat.llm.openai - INFO - Using paper bibcode: 2023MNRAS.518..456D
+2024-08-22 15:49:56,781 - bibcat.llm.openai - INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], 'JWST': ['SCIENCE', [0.9, 0.1]]}
+```
+## Batch Processing
+
 The `llm batch run` command submits a list of files.  The list can either be specified one of two ways:  1.) individually, with the `-f` option, as a filename, bibcode, or index, or 2.) a file that contains a list of filenames, bibcodes, or indices to use, with one line per entry.  By default, each paper in the list is submitted once.  You can instruct it to submit each paper multiple times with the `-n` option. Run `bibcat llm batch run --help` to see the full list of cli options.
 
 ```python
@@ -63,11 +81,14 @@ where `papers_to_process.txt` might look like
 2023ApJ...954...31C
 ```
 
-### Asynchronous Batch Runs on Virtual Machines
+### Synchronous Batch Submission
 
-When you have a large set of papers to process with Bibcat, you can run multiple Bibcat jobs serially using the Bash script `run_bibcat_serial.sh` in the `bins/` folder. This script processes one batch input file (typically containing 1,000 papers) at a time and then sleeps for 2 hours before starting the next job, to avoid hitting the API rate limit. A single job of 1,000 API calls takes approximately 4,500 seconds to complete. Note that parallel batch processing would run into the API rate limits. We plan to implement [OpenAI Batch API](https://platform.openai.com/docs/guides/batch/batch-api) for more time-efficient and cost-effective asynchronous runs. But until then, you can use this Bash script below.
+When you have a large set of papers to process with Bibcat, you can run multiple Bibcat jobs serially using the Bash script `run_bibcat_serial.sh` in the `bins/` folder. This script processes one batch input file (typically containing 1,000 papers) at a time and then sleeps for 2 mins before starting the next job, to avoid hitting the API rate limit (model dependent). A single job of 1,000 API calls (1000 papers) depends on the models, tokens, and network traffic. With GPT-4.1-mini, it takes approximately 4,500 seconds to complete 1000 papers. The reasoning model, GPT-5-mini, could take 200-400 minutes per 1000 papers.  We implemented [OpenAI Batch API](https://platform.openai.com/docs/guides/batch/batch-api) for more cost-effective asynchronous runs and check it out in the next section.
 
-To run this script, replace `/path/to/batch_files` and `/path/to/logs` with your actual batch files and logs directories, then execute the script from the terminal using:
+The script takes two arguments: the path to the folder containing the batch input files, and the path to the folder where you want to save the log files. Each batch input file should contain a list of bibcodes or indices, one per line. The script will create a log file for each batch job in the specified log folder. Note that this log file is only for the bash script output, not the Bibcat output, which is saved in the Bibcat output directory as specified in your config file.
+
+To run this script, replace `/path/to/batch_files` and `/path/to/logs` with the actual folder paths for your batch files and logs directories.
+Make sure the script is executable by running `chmod +x run_bibcat_serial.sh` if needed, then execute the script from the terminal using:
 
 ```bash
 ./run_bibcat_serial.sh /path/to/batch_files /path/to/logs
@@ -79,24 +100,7 @@ You can use the `--dry-run` flag to perform a test run without submitting the jo
  ./run_bibcat_serial.sh /path/to/batch_files /path/to/logs --dry-run
 ```
 
-### Running within Python
-
-To run within a Python environment, use the `classify_paper` function:
-```python
-
-from bibcat.llm.openai import classify_paper
-
-# classify paper 200 from the dataset
-classify_paper(index=200)
-```
-which gives output
-```bash
-Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
-2024-08-22 15:49:50,634 - bibcat.llm.openai - INFO - Using paper bibcode: 2023MNRAS.518..456D
-2024-08-22 15:49:56,781 - bibcat.llm.openai - INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], 'JWST': ['SCIENCE', [0.9, 0.1]]}
-```
-
-### Batch Submission
+### Asynchronous Batch Submission with OpenAI Batch API
 
 OpenAI supports asynchronous job submission via their [Batch API](https://platform.openai.com/docs/guides/batch). This API submits
 a batch job to run within a 24h period. You can submit a batch paper processing job in bibcat with `bibcat llm batch submit`. This command takes as input a text file of bibcodes, e.g. the above `papers_to_process.txt`, creates the required [JSONL](https://jsonlines.org/) file input for OpenAI, and submits the batch job.
