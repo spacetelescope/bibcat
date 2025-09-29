@@ -1,15 +1,45 @@
-# Change Log
+# Changelog
 
 ### [Unreleased]
-- Bibcat to do list
-    - Adding tutorial notebooks back
-- [PR #82](https://github.com/spacetelescope/bibcat/pull/82)
-    - Improved LLM evaluation and metrics, in particular, by accounting for papers with human classifications but no llm output.
+### Added
+- [PR #86](https://github.com/spacetelescope/bibcat/pull/86)
+    - github action for auto-release when git tag pushed and minor doc updates
 
+### Changed
+-
+
+### Fixed
+-
+### Deprecated
+-
+
+### Removed
+-
+
+### Security
+-
+
+---
+## [0.2.2] - 2025-09-29
+### Added
 - [PR #82](https://github.com/spacetelescope/bibcat/pull/82)
-    - Improved LLM evaluation and metrics, in particular, by accounting for papers with human classifications but no llm output.
+    - a field_validator to ensure that the LLM output classification is only one of the allowed keywords
+
+### Changed
+- [PR #82](https://github.com/spacetelescope/bibcat/pull/82)
+    - Updated Confusion matrix (CM) plot text annotation of the mission names.
+
+### Fixed
+- [PR #82](https://github.com/spacetelescope/bibcat/pull/82)
+    - The bug in `grouped_df["llm_mission"] = mission_df["llm_mission"].str.upper()` in prepare_output() was fixed. This bug caused KeyError:nan error due to mismatched index between `mission_df` and `grouped_df` when there were both the papertypes for the same bibcode in `grouped_df`.
+    - When there is no llm output for a bibcode, but human classification exists, the output still outputs human classification in summay_output.
+    - Updated metrics.py and stats.py to account human classifications but not to count when source paper is not found;
+
+## [0.2.1] - 2025-09-26
+### Changed
 - [PR #85](https://github.com/spacetelescope/bibcat/pull/85)
-    - Changed Sphinx theme to `book` and updated documentation.
+    - Changed Sphinx theme to `book` and updated documentation and updated docs.
+
 ## [0.2.0] - 2025-09-22
 
 ### Removed
@@ -23,8 +53,6 @@
     - Deleted all previous codes and files for a fresh start
 
 ### Changed
-- [PR #85](https://github.com/spacetelescope/bibcat/pull/85)
-    - Changed Sphinx theme to `book` and updated documentation and updated docs.
 - [PR #78](https://github.com/spacetelescope/bibcat/pull/78)
     - The combined dataset link is updated to use updated papertrack with flagship gold sample verdict
 - [PR #77](https://github.com/spacetelescope/bibcat/pull/77)
@@ -222,3 +250,8 @@
 ## [0.1.0] - 2024-01-29
 
 Initial tag to preserve code before refactor
+
+[Unreleased]: https://github.com/spacetelescope/bibcat/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/spacetelescope/bibcat/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/spacetelescope/bibcat/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/spacetelescope/bibcat/compare/v0.0.1...v0.1.0
