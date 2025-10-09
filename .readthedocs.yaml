@@ -4,16 +4,22 @@
 
 # Required
 version: 2
+git:
+  depth: 0
 
 # Set the OS, Python version, and other tools you might need
 build:
   os: ubuntu-24.04
   tools:
     python: "3.10"
+  jobs:
+    pre_build:
+      - sphinx-apidoc -o docs/api/ bibcat bibcat/tests/*
+      - make -C docs html
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
-   configuration: docs/conf.py
+  configuration: docs/conf.py
 
 # Optionally, but recommended,
 # declare the Python requirements required to build your documentation
