@@ -4,6 +4,8 @@
 
 # Required
 version: 2
+git:
+  depth: 0
 
 # Set the OS, Python version, and other tools you might need
 build:
