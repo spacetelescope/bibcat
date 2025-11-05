@@ -8,7 +8,8 @@
 -
 
 ### Fixed
--
+- [PR #92](https://github.com/spacetelescope/bibcat/pull/92)
+    - Unpinned tensorflow-metal version.
 ### Deprecated
 -
 
