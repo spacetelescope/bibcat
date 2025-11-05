@@ -726,15 +726,15 @@ bibcat llm batch evaluate -p bibcode_list.txt -s -n 20
 
 You can assess model performance using confusion matrix plots or Receiver Operating Characteristic (ROC) curves. A [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) plot helps evaluation classification model performance by showing true positives ($TP$), true negatives ($TN$), false positives ($FP$), and false negatives ($FN$), making it useful for understanding evaluation metrics such as
 
-$$
-   \text{Accuracy} = \dfrac{TP + TN}{TP + TN + FP + FN}
 
-   \text{Precision} = \dfrac{TP}{TP + FP}
+   $\text{Accuracy} = \dfrac{TP + TN}{TP + TN + FP + FN}$
 
-   \text{Recall} = \dfrac{TP}{TP + FN}
+   $\text{Precision} = \dfrac{TP}{TP + FP}$
 
-   F_1 = 2 \times \dfrac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}
-$$
+   $\text{Recall} = \dfrac{TP}{TP + FN}$
+
+   $F_1 = 2 \times \dfrac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}$
+
 
 A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curve evaluates a model's ability to distinguish between classes by plotting the true positive rate against the false positive rate at various thresholds, with the area under the curve (AUC) which represents the degree of separability between classes. For instance, AUC = 1.0 indicates perfect and AUC =0.5 is as good as random guessing. To provide more reliable and stable performance metrics, larger datasets (hundreds or thousands) are recommended. With small datasets, you make interpreations less reliable.
 
