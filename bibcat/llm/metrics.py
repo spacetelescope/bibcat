@@ -66,6 +66,10 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
     logger.info(f"{len(missions)} mission(s): {', '.join(missions)} is/are evaluated!\nLooping through papers! ")
 
     human_labels, llm_labels = [], []  # Store ground truth papertypes and LLM papertypes
+    # parallel list of bibcodes corresponding to each label pair (one entry per mission)
+    label_bibcodes: list[str] = []
+    # parallel list of raw labels (before mapping) for each sample: dict with keys 'human_raw' and 'llm_raw'
+    label_raws: list[dict] = []
     human_llm_mission_callouts = []  # missions that have both human and llm classified papertypes
     non_mast_mission_callouts = []  # non-MAST missions outside the config.missions list
 
@@ -100,7 +104,7 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
             ]
             non_mast_mission_callouts.extend(non_mast_mission)
 
-            # extracting human labels and llm labels
+            # extracting human labels and llm labels (also record bibcodes and raw labels per mission)
             human_labels, llm_labels, n_human_llm_hallucination = extract_labels(
                 missions,
                 human_labels,
@@ -113,11 +117,15 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
                 llm_missions,
                 llm_df_missions,
                 n_human_llm_hallucination,
+                bibcode,
+                label_bibcodes,
+                label_raws,
             )
-            continue
+            # processed non-error summary output for this bibcode
 
         elif "No paper source found" in err:
-            continue  # should not count as missing llm output when paper source is not found
+            # should not count as missing llm output when paper source is not found
+            pass
 
         elif "No mission output found" in err:
             n_missing_output_bibcodes += 1
@@ -125,11 +133,19 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
             llm_labels.extend([ignored_papertype] * len(missions))
 
             human_data = item.get("human") or {}
+
+            # record bibcodes and raw label placeholders for these missions (one per mission)
+            for mission in missions:
+                label_bibcodes.append(bibcode)
+                # human raw label if present, else explicit marker; llm raw set to explicit marker since no output
+                human_raw = human_data.get(mission) if human_data and mission in human_data else "IGNORED"
+                label_raws.append({"human_raw": human_raw, "llm_raw": "IGNORED"})
+
             n_human_mission_callouts += len(human_data)
             # assign human labels when human classifications exist
             human_labels = human_labels_when_no_llm_output(missions, human_data, human_labels, ignored_papertype)
 
-            continue
+            # handled missing mission output for this bibcode
 
     # non-MAST mission callouts
     logger.info(f"Non MAST missions: {sorted(list(set(non_mast_mission_callouts)))} called out; \n")
@@ -159,6 +175,8 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
         "non_mast_missions": sorted(list(set(non_mast_mission_callouts))),
         "human_labels": human_labels,
         "llm_labels": llm_labels,
+        "label_bibcodes": label_bibcodes,
+        "label_raws": label_raws,
     }
 
     for k, v in metrics_data.items():
@@ -186,6 +204,9 @@ def extract_labels(
     llm_missions: list[str],
     llm_df_missions: list[str],
     n_human_llm_hallucination: int,
+    bibcode: str,
+    label_bibcodes: list[str],
+    label_raws: list[dict],
 ) -> tuple[list[str], list[str], int]:
     """
     Extract human and llm papertype labels when the summary output of a bibcode
@@ -239,6 +260,11 @@ def extract_labels(
     for mission in missions:
         logger.info(f"Checking {mission} summary output")
         llm_mission_in_text = next((i["mission_in_text"] for i in item.get("df") if i["llm_mission"] == mission), False)
+
+        # capture raw labels before mapping for this mission
+        # use explicit "IGNORED" marker when absent to make outputs clearer
+        human_raw = human_data.get(mission) if human_data and mission in human_data else "IGNORED"
+        llm_raw = next((v for i in llm_data for k, v in i.items() if k == mission), "IGNORED")
 
         # When both human and llm callout the mission with its papertype,
         # this below blcok will extract and map the human/llm papertypes to their designated papertype in the config file
@@ -302,6 +328,10 @@ def extract_labels(
 
             human_labels.append(ignored_papertype)
             llm_labels.append(ignored_papertype)
+
+        # record bibcode and raw labels for this mission sample (one entry per mission)
+        label_bibcodes.append(bibcode)
+        label_raws.append({"human_raw": human_raw, "llm_raw": llm_raw})
     return human_labels, llm_labels, n_human_llm_hallucination
 
 
@@ -509,8 +539,14 @@ def compute_and_save_metrics(
     )
 
     logger.info(f"classification report\n {classification_performance_report}")
+    # For binary classification, also collect bibcodes for TN/FP/FN/TP along with raw labels.
+    label_bibcodes = metrics_data.get("label_bibcodes", [])
+    label_raws = metrics_data.get("label_raws", [])
+    entries = collect_confusion_cell_entries(
+        human_labels_encoded, llm_labels_encoded, label_bibcodes, label_raws, n_classes
+    )
 
-    # Write results to an ASCII file
+    # Write results to an ASCII file (single open in 'w' mode)
     with open(output_ascii_path, "w") as f:
         f.write(f"The number of bibcodes (papers) for evaluation metrics: {metrics_data['n_bibcodes']}\n")
         f.write(
@@ -542,13 +578,81 @@ def compute_and_save_metrics(
         f.write(
             f"classification report\n {classification_report(human_labels_encoded, llm_labels_encoded, target_names=papertypes, digits=4)}\n"
         )
+        # Also write bibcode lists for confusion matrix cells into the same file (no append needed)
+        f.write("\nBibcodes per confusion matrix cell:\n")
+
+        def _format_entries(lst: list[dict]) -> str:
+            return ", ".join(f"{e['bibcode']} (human: {e.get('human_raw')} -> llm: {e.get('llm_raw')})" for e in lst)
+
+        f.write(f"True Negatives ({len(entries.get('tn', []))}): {_format_entries(entries.get('tn', []))}\n")
+        f.write(f"False Positives ({len(entries.get('fp', []))}): {_format_entries(entries.get('fp', []))}\n")
+        f.write(f"False Negatives ({len(entries.get('fn', []))}): {_format_entries(entries.get('fn', []))}\n")
+        f.write(f"True Positives ({len(entries.get('tp', []))}): {_format_entries(entries.get('tp', []))}\n")
     logger.info(f"Metrics saved to {output_ascii_path}")
 
     # Save metrics_data and classlifcation report to a json file
     filtered_metrics_data = {k: v for k, v in metrics_data.items() if k not in {"human_labels", "llm_labels"}}
-    save_json_file(
-        output_json_path, {**filtered_metrics_data, **confusion_matrix_metrics, **classification_performance_report}
+
+    # For binary classification, also collect bibcodes for TN/FP/FN/TP along with raw labels.
+    # Delegate to helper functions for modularity and testing.
+    label_bibcodes = metrics_data.get("label_bibcodes", [])
+    label_raws = metrics_data.get("label_raws", [])
+    entries = collect_confusion_cell_entries(
+        human_labels_encoded, llm_labels_encoded, label_bibcodes, label_raws, n_classes
     )
+
+    # append bibcode lists into the saved json
+    save_json_file(
+        output_json_path,
+        {
+            **filtered_metrics_data,
+            **confusion_matrix_metrics,
+            **classification_performance_report,
+            "fp_bibcodes": entries.get("fp", []),
+            "fn_bibcodes": entries.get("fn", []),
+            "tp_bibcodes": entries.get("tp", []),
+            "tn_bibcodes": entries.get("tn", []),
+        },
+    )
+
+    # all done; JSON saved below
+
+
+def collect_confusion_cell_entries(
+    human_labels_encoded: NDArray[np.int64],
+    llm_labels_encoded: NDArray[np.int64],
+    label_bibcodes: list[str],
+    label_raws: list[dict],
+    n_classes: int,
+) -> dict:
+    """Collect bibcode + raw-label dicts for confusion matrix cells.
+
+    Returns a dict with keys 'tn','fp','fn','tp' each mapping to a list of entry dicts.
+    Each entry dict has keys: 'bibcode','human_raw','llm_raw'.
+    """
+    # Default empty structure
+    entries = {"tn": [], "fp": [], "fn": [], "tp": []}
+
+    if not (
+        n_classes == 2
+        and label_bibcodes
+        and label_raws
+        and len(label_bibcodes) == len(human_labels_encoded)
+        and len(label_raws) == len(human_labels_encoded)
+    ):
+        return entries
+
+    for t, p, bc, raw in zip(human_labels_encoded, llm_labels_encoded, label_bibcodes, label_raws):
+        entry = {"bibcode": bc, "human_raw": raw.get("human_raw"), "llm_raw": raw.get("llm_raw")}
+        if t == 0 and p == 0:
+            entries["tn"].append(entry)
+        elif t == 0 and p == 1:
+            entries["fp"].append(entry)
+        elif t == 1 and p == 0:
+            entries["fn"].append(entry)
+        elif t == 1 and p == 1:
+            entries["tp"].append(entry)
+    return entries
 
 
 def extract_roc_data(data: dict[str, dict[str, Any]], missions: list[str]):
@@ -649,10 +753,10 @@ def extract_roc_data(data: dict[str, dict[str, Any]], missions: list[str]):
                 else:
                     human_labels.append(ignored_papertype)
                     llm_confidences.append([0.0, 1.0])
-            continue
 
         elif "No paper source found" in err:
-            continue  # should not count as missing llm output when paper source is not found
+            # should not count as missing llm output when paper source is not found
+            pass
 
         # assign the roc input values to NONSCIENCE and [0.0, 1.0] when there is no llm output
         elif "No mission output found" in err:

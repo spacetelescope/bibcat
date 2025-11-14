@@ -123,10 +123,13 @@ def test_extract_eval_data(mocker) -> None:
 
     expected_metrics_data = sample_metrics_data
     assert isinstance(metrics_data, dict), "metrics_data should be a dictionary"
-    assert set(metrics_data.keys()) == set(expected_metrics_data.keys()), "keys mismatch in metrics_data"
+    # Allow additional keys (like label_bibcodes / label_raws) to be present
+    assert set(expected_metrics_data.keys()).issubset(set(metrics_data.keys())), "missing expected keys in metrics_data"
 
     for key, value in expected_metrics_data.items():
         assert value == metrics_data[key], f"{key} mismatch"
+
+    # Per-sample label lists are not required in outputs; do not assert their presence here.
 
     # Expected file path
     expected_json_path = str(Path("/mock/output") / "llms/openai_gpt-4o-mini/metrics_summary_t0.7.json")
@@ -148,6 +151,7 @@ def test_compute_and_save_metrics(mocker) -> None:
 
     compute_and_save_metrics(sample_metrics_data, output_ascii_filepath, output_json_filepath)
 
+    # The function opens the ascii output once for write ('w').
     mock_open.assert_called_with(output_ascii_filepath, "w")
     file_handle = mock_open.return_value.__enter__.return_value
     file_handle.write.assert_called()
@@ -157,6 +161,11 @@ def test_compute_and_save_metrics(mocker) -> None:
 
     assert json_data["n_bibcodes"] == 3
     assert json_data["SCIENCE"]["precision"] == 1.0
+
+    # Per-sample confusion-cell bibcode lists removed from JSON output; ensure aggregate metrics still present
+    # 'tn' and 'tp' should be numeric counts (allow numpy integer types)
+    assert "tn" in json_data and isinstance(json_data.get("tn"), (int, np.integer))
+    assert "tp" in json_data and isinstance(json_data.get("tp"), (int, np.integer))
 
 
 def test_extract_roc_data():
