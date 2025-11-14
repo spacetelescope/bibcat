@@ -129,7 +129,9 @@ def test_extract_eval_data(mocker) -> None:
     for key, value in expected_metrics_data.items():
         assert value == metrics_data[key], f"{key} mismatch"
 
-    # Per-sample label lists are not required in outputs; do not assert their presence here.
+    # bibcodes, original papertypes in confusion matrix cells introduced by metrics: ensure they're present and of correct type
+    assert "label_bibcodes" in metrics_data and isinstance(metrics_data["label_bibcodes"], list)
+    assert "label_raws" in metrics_data and isinstance(metrics_data["label_raws"], list)
 
     # Expected file path
     expected_json_path = str(Path("/mock/output") / "llms/openai_gpt-4o-mini/metrics_summary_t0.7.json")
@@ -162,10 +164,13 @@ def test_compute_and_save_metrics(mocker) -> None:
     assert json_data["n_bibcodes"] == 3
     assert json_data["SCIENCE"]["precision"] == 1.0
 
-    # Per-sample confusion-cell bibcode lists removed from JSON output; ensure aggregate metrics still present
-    # 'tn' and 'tp' should be numeric counts (allow numpy integer types)
     assert "tn" in json_data and isinstance(json_data.get("tn"), (int, np.integer))
     assert "tp" in json_data and isinstance(json_data.get("tp"), (int, np.integer))
+
+    assert "tn_bibcodes" in json_data and isinstance(json_data["tn_bibcodes"], list)
+    assert "fp_bibcodes" in json_data and isinstance(json_data["fp_bibcodes"], list)
+    assert "fn_bibcodes" in json_data and isinstance(json_data["fn_bibcodes"], list)
+    assert "tp_bibcodes" in json_data and isinstance(json_data["tp_bibcodes"], list)
 
 
 def test_extract_roc_data():

@@ -546,7 +546,7 @@ def compute_and_save_metrics(
         human_labels_encoded, llm_labels_encoded, label_bibcodes, label_raws, n_classes
     )
 
-    # Write results to an ASCII file (single open in 'w' mode)
+    # Write results to an ASCII file
     with open(output_ascii_path, "w") as f:
         f.write(f"The number of bibcodes (papers) for evaluation metrics: {metrics_data['n_bibcodes']}\n")
         f.write(
@@ -578,20 +578,12 @@ def compute_and_save_metrics(
         f.write(
             f"classification report\n {classification_report(human_labels_encoded, llm_labels_encoded, target_names=papertypes, digits=4)}\n"
         )
-        # Also write bibcode lists for confusion matrix cells into the same file (no append needed)
-        f.write("\nBibcodes per confusion matrix cell:\n")
-
-        def _format_entries(lst: list[dict]) -> str:
-            return ", ".join(f"{e['bibcode']} (human: {e.get('human_raw')} -> llm: {e.get('llm_raw')})" for e in lst)
-
-        f.write(f"True Negatives ({len(entries.get('tn', []))}): {_format_entries(entries.get('tn', []))}\n")
-        f.write(f"False Positives ({len(entries.get('fp', []))}): {_format_entries(entries.get('fp', []))}\n")
-        f.write(f"False Negatives ({len(entries.get('fn', []))}): {_format_entries(entries.get('fn', []))}\n")
-        f.write(f"True Positives ({len(entries.get('tp', []))}): {_format_entries(entries.get('tp', []))}\n")
     logger.info(f"Metrics saved to {output_ascii_path}")
 
     # Save metrics_data and classlifcation report to a json file
-    filtered_metrics_data = {k: v for k, v in metrics_data.items() if k not in {"human_labels", "llm_labels"}}
+    filtered_metrics_data = {
+        k: v for k, v in metrics_data.items() if k not in {"human_labels", "llm_labels", "label_bibcodes", "label_raws"}
+    }
 
     # For binary classification, also collect bibcodes for TN/FP/FN/TP along with raw labels.
     # Delegate to helper functions for modularity and testing.
