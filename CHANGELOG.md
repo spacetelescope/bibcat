@@ -2,8 +2,8 @@
 
 ## [Unreleased]
 ### Added
--
-
+- [PR #93](https://github.com/spacetelescope/bibcat/pull/93)
+    - Update bibcat llm metrics to collect bibcodes for confusion matrix cells
 ### Changed
 -
 

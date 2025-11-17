@@ -828,6 +828,49 @@ weighted avg     0.9736    0.9721    0.9728      1648
     "f1-score": 0.9756842233523534,
     "support": 1691.0
   }
+  "fp_bibcodes": [
+    {
+      "bibcode": "bibcode1",
+      "human_raw": "MENTION",
+      "llm_raw": "SCIENCE"
+    },
+    {
+      "bibcode": "bicode12",
+      "human_raw": "IGNORED",
+      "llm_raw": "SCIENCE"
+    }
+  ],
+  "fn_bibcodes": [
+    {
+      "bibcode": "bibcode2",
+      "human_raw": "SCIENCE",
+      "llm_raw": "MENTION"
+    },
+    {
+      "bibcode": "bibcode2",
+      "human_raw": "SCIENCE",
+      "llm_raw": "IGNORED"
+    },
+  ],
+  "tp_bibcodes": [
+    {
+      "bibcode": "bicode30",
+      "human_raw": "SCIENCE",
+      "llm_raw": "SCIENCE"
+    },
+  ],
+   "tn_bibcodes": [
+    {
+      "bibcode": "bicode30",
+      "human_raw": "IGNORE",
+      "llm_raw": "MENTION"
+    },
+    {
+      "bibcode": "bicode35",
+      "human_raw": "MENTION",
+      "llm_raw": "MENTION"
+    }
+  ]
 }
 ```
 
