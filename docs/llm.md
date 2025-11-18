@@ -783,26 +783,18 @@ weighted avg     0.9736    0.9721    0.9728      1648
 
 ```json
 {
-  "threshold": 0.5,
   "n_bibcodes": 89,
-  "n_human_mission_callouts": 217,
-  "n_llm_mission_callouts": 222,
-  "n_non_mast_mission_callouts": 2,
-  "n_valid_mission_callouts": 149,
-  "valid_missions": [
-    "FUSE",
-    "GALEX",
-    "HUT",
-    "IUE",
-    "K2",
-    "KEPLER",
-    "TESS",
-    "WUPPE"
+  "n_human_callouts": 217,
+  "n_llm_callouts": 222,
+  "n_non_mast_callouts": 0,
+  "n_missing_output_bibcodes": 5,
+  "non_mast_missions": [],
+  "human_llm_missions": [
+    "HST",
+    "JWST",
   ],
-  "non_mast_missions": [
-    "EDEN",
-    "NUSTAR"
-  ],
+  "n_human_llm_mission_callouts": 80,
+  "n_human_llm_hallucination": 5,
   "NONSCIENCE": {
     "precision": 0.9901538461538462,
     "recall": 0.9834963325183375,
@@ -827,15 +819,17 @@ weighted avg     0.9736    0.9721    0.9728      1648
     "recall": 0.9745712596096984,
     "f1-score": 0.9756842233523534,
     "support": 1691.0
-  }
+  },
   "fp_bibcodes": [
     {
       "bibcode": "bibcode1",
+      "mision": "HST",
       "human_raw": "MENTION",
       "llm_raw": "SCIENCE"
     },
     {
       "bibcode": "bicode12",
+      "mision": "JWST",
       "human_raw": "IGNORED",
       "llm_raw": "SCIENCE"
     }
@@ -843,11 +837,13 @@ weighted avg     0.9736    0.9721    0.9728      1648
   "fn_bibcodes": [
     {
       "bibcode": "bibcode2",
+      "mision": "HST",
       "human_raw": "SCIENCE",
       "llm_raw": "MENTION"
     },
     {
       "bibcode": "bibcode2",
+      "mision": "HST",
       "human_raw": "SCIENCE",
       "llm_raw": "IGNORED"
     },
@@ -855,6 +851,7 @@ weighted avg     0.9736    0.9721    0.9728      1648
   "tp_bibcodes": [
     {
       "bibcode": "bicode30",
+      "mision": "JWST",
       "human_raw": "SCIENCE",
       "llm_raw": "SCIENCE"
     },
@@ -862,11 +859,13 @@ weighted avg     0.9736    0.9721    0.9728      1648
    "tn_bibcodes": [
     {
       "bibcode": "bicode30",
-      "human_raw": "IGNORE",
+      "mision": "HST",
+      "human_raw": "IGNORED",
       "llm_raw": "MENTION"
     },
     {
       "bibcode": "bicode35",
+      "mision": "HST",
       "human_raw": "MENTION",
       "llm_raw": "MENTION"
     }
