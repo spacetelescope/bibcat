@@ -2,14 +2,13 @@
 
 ## [Unreleased]
 ### Added
-- [PR #93](https://github.com/spacetelescope/bibcat/pull/93)
+- [PR #92](https://github.com/spacetelescope/bibcat/pull/92)
     - Update bibcat llm metrics to collect bibcodes for confusion matrix cells
 ### Changed
 -
 
 ### Fixed
-- [PR #92](https://github.com/spacetelescope/bibcat/pull/92)
-    - Unpinned tensorflow-metal version.
+- Unpinned tensorflow-metal version.
 ### Deprecated
 -
 
