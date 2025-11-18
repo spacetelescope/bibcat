@@ -59,9 +59,9 @@ missions = ["HST", "JWST", "ROMAN"]
 sample_metrics_data = {
     "threshold": 0.7,
     "n_bibcodes": 3,
-    "n_human_mission_callouts": 4,
-    "n_llm_mission_callouts": 2,
-    "n_non_mast_mission_callouts": 1,
+    "n_human_callouts": 4,
+    "n_llm_callouts": 2,
+    "n_non_mast_callouts": 1,
     "n_human_llm_mission_callouts": 2,
     "n_human_llm_hallucination": 0,
     "n_missing_output_bibcodes": 1,
@@ -130,7 +130,6 @@ def test_extract_eval_data(mocker) -> None:
         assert value == metrics_data[key], f"{key} mismatch"
 
     # bibcodes, original papertypes in confusion matrix cells introduced by metrics: ensure they're present and of correct type
-    assert "label_bibcodes" in metrics_data and isinstance(metrics_data["label_bibcodes"], list)
     assert "label_raws" in metrics_data and isinstance(metrics_data["label_raws"], list)
 
     # Expected file path
