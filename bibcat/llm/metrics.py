@@ -118,7 +118,7 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
                 llm_raw = next((v for i in llm_data for k, v in i.items() if k == mission), "IGNORED")
                 # record bibcode and raw labels for this mission sample (one entry per mission)
                 label_bibcodes.append(bibcode)
-                label_raws.append({"human_raw": human_raw, "llm_raw": llm_raw})
+                label_raws.append({"mission": mission, "human_raw": human_raw, "llm_raw": llm_raw})
 
             # extracting human labels and llm labels
             human_labels, llm_labels, n_human_llm_hallucination = extract_labels(
@@ -148,7 +148,7 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
                 label_bibcodes.append(bibcode)
                 # human raw label if present, else explicit marker; llm raw set to explicit marker since no output
                 human_raw = human_data.get(mission) if human_data and mission in human_data else "IGNORED"
-                label_raws.append({"human_raw": human_raw, "llm_raw": "IGNORED"})
+                label_raws.append({"mission": mission, "human_raw": human_raw, "llm_raw": "IGNORED"})
 
             n_human_mission_callouts += len(human_data)
             # assign human labels when human classifications exist
@@ -646,7 +646,13 @@ def collect_confusion_matrix_cell_entries(
         return entries
 
     for t, p, bc, raw in zip(human_labels_encoded, llm_labels_encoded, label_bibcodes, label_raws):
-        entry = {"bibcode": bc, "human_raw": raw.get("human_raw"), "llm_raw": raw.get("llm_raw")}
+        entry = {
+            bc: {
+                "mission": raw.get("mission"),
+                "human_raw": raw.get("human_raw"),
+                "llm_raw": raw.get("llm_raw"),
+            },
+        }
         if t == 0 and p == 0:
             entries["tn"].append(entry)
         elif t == 0 and p == 1:
