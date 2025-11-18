@@ -125,7 +125,6 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
                 item,
                 n_human_llm_hallucination,
             )
-            # processed non-error summary output for this bibcode
 
         elif "No paper source found" in err:
             # should not count as missing llm output when paper source is not found
@@ -138,7 +137,7 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
 
             human_data = item.get("human") or {}
 
-            # record bibcodes and raw label placeholders for these missions (one per mission)
+            # record bibcodes and raw label for the missions (one per mission)
             for mission in missions:
                 # human raw label if present, else explicit marker; llm raw set to explicit marker since no output
                 human_raw = human_data.get(mission) if human_data and mission in human_data else "IGNORED"
@@ -149,8 +148,6 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
             n_human_callouts += len(human_data)
             # assign human labels when human classifications exist
             human_labels = human_labels_when_no_llm_output(missions, human_data, human_labels, ignored_papertype)
-
-            # handled missing mission output for this bibcode
 
     # non-MAST mission callouts
     logger.info(f"Non MAST missions: {sorted(list(set(non_mast_callouts)))} called out; \n")
