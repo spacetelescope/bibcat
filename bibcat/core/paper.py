@@ -768,7 +768,7 @@ class Paper(Base):
           - "text_database": ambiguous phrase from the database
           - "text_wordchunk": the wordchunk being evaluated
           - "exp": the regular expression in the database
-          - "matcher": the regilar expression match object (if any)
+          - "matcher": the regular expression match object (if any)
           - "bool": the boolean flag associated with the ambiguous phrase
         """
         set_matches_raw = [
