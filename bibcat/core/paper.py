@@ -752,7 +752,7 @@ class Paper(Base):
         - exp_list [List[str]]:
           - The ambiguous dictionary to use.
         - label [str]:
-          - The name of the ambiguous dictionary used for logging/debugging.
+          - The name of the ambiguous dictionary used for logging/debugging, "exact" or "meaning"
         - curr_chunk_text [str]:
           - The wordchunk (noun phrase) to consider.
         - curr_meaning [str]:
