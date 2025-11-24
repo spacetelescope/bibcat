@@ -1,0 +1,1001 @@
+import copy
+import datetime
+import itertools
+import json
+import math
+import os
+import pathlib
+
+import yaml
+
+from bibcat.llm.evaluate import evaluate_output
+
+try:
+    import tiktoken
+except ImportError:
+    tiktoken = None
+import openai
+
+from bibcat import config
+from bibcat.llm.openai import OpenAIHelper
+from bibcat.utils.logger_config import setup_logger
+
+logger = setup_logger(__name__)
+logger.setLevel(config.logging.level)
+
+
+class ChunkPlanner:
+    """Class to plan and prepare an input JSONL file for batch processing
+
+    Chunks an input JSONL file into smaller files based on OpenAI Batch API
+    constraints and rate limits.  Optimially chunks files to fit within the
+    OpenAI daily token-per-day limit, and file size and line limits.  Organizes
+    chunks into daily batches for submission.
+
+    Parameters
+    ----------
+    input_file_path : str
+        the input batch JSONL file
+    max_lines : int, optional
+        the max line limit for the OpenAI batch jsonl, by default 50000
+    max_size_mb : int, optional
+        the max file size limit for the OpenAI batch jsonl, by default 200
+    max_tokens_per_day : int, optional
+        the max tokens per day limit (model-dependenent), by default 40_000_000
+    model : str, optional
+        the llm model to use, by default config.llms.openai.model
+    chunk_dir : str, optional
+        optional batch chunk sub-directory, by default "batch_chunks"
+
+    Example
+    -------
+    >>> # prepare a chunk plan, and create the chunk files
+    >>> planner = ChunkPlanner("path/to/batch.jsonl")
+    >>> planner.prepare_all()
+    """
+
+    def __init__(
+        self,
+        input_file_path: str,
+        max_lines: int = 50000,
+        max_size_mb: int = 200,
+        max_tokens_per_day: int = config.llms.openai.batch_daily_token_limit,
+        model: str = config.llms.openai.model,
+        chunk_dir: str = "batch_chunks",
+    ) -> None:
+        # setup inputs and outputs
+        self.input_file_path = pathlib.Path(input_file_path)
+        self.output_dir = self.input_file_path.parent / chunk_dir
+        self.plan_path = self.output_dir / f"{self.input_file_path.stem}_chunk_plan.yaml"
+        self.model = model
+        self.all_output_files = []
+        self.daily_batches = []
+
+        # limits
+        self.max_lines = max_lines
+        self.max_size_mb = max_size_mb
+        self.max_tokens_per_day = max_tokens_per_day
+
+        # Analysis / state fields
+        self.file_size_bytes: int = 0
+        self.file_size_mb: float = 0.0
+        self.total_lines: int = 0
+        self.avg_tokens_per_line: float = 0.0
+        self.total_estimated_tokens: int = 0
+
+        self.base_chunks_needed: int = None
+        self.lines_per_chunk: int = None
+        self.estimated_tokens_per_chunk: int = None
+        self.chunks_per_day: int = None
+        self.days_needed: int = None
+
+        self.total_actual_tokens: int = None
+
+        # Ensure output dir exists and check for any existing chunks
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.all_output_files = list(sorted(self.output_dir.glob(f"{self.input_file_path.stem}*.jsonl")))
+
+        # set original output names
+        self.orig_prompt = copy.copy(config.llms.prompt_output_file)
+        self.orig_eval = copy.copy(config.llms.eval_output_file)
+        self.base_prompt = self.orig_prompt.replace(".json", "")
+
+        # submission tracking
+        self.submitted_chunks = []
+        self.submission_log = []
+
+        # If chunks already exist, try to recover plan state from YAML
+        if self.all_output_files:
+            if self.plan_path.exists():
+                try:
+                    self._load_plan(self.plan_path)
+                    logger.info("Loaded plan state from %s", self.plan_path)
+                except Exception as e:
+                    logger.warning("Failed to load plan state from %s: %s", self.plan_path, e)
+
+    def check_model(self, replace=None):
+        """Check the config model against the model used in the batch request"""
+
+        with open(self.all_output_files[0], "r", encoding="utf-8") as ff:
+            data = ff.readlines()
+            req = json.loads(data[0])
+            reqmodel = req["body"]["model"]
+
+            if reqmodel != self.model:
+                logger.warning("Model mismatch between batch and config.  Setting config model to %s", reqmodel)
+                self.model = reqmodel
+
+            # replace the model in the config if asked
+            if replace:
+                config.llms.openai.model = reqmodel
+
+            # --- Token estimation helper ---
+    def _estimate_tokens(self, text: str) -> int:
+        """Estimate token count for a given text using tiktoken. Falls back gracefully."""
+        if tiktoken is None:
+            raise ImportError("tiktoken is required for token estimation. Install with: pip install tiktoken")
+
+        try:
+            encoding = tiktoken.encoding_for_model(self.model)
+        except Exception:
+            encoding = tiktoken.get_encoding("cl100k_base")
+
+        return len(encoding.encode(text))
+
+    def _sample_file(self, file, n_sample: int = 100) -> tuple:
+        """Sample lines from a file for token estimation.
+
+        Reads a file and samples a specified number of lines
+        to estimate the token count. It returns the total number of lines,
+        the average tokens per line, and the estimated tokens for the sampled
+        lines.
+
+        Parameters
+        ----------
+        file : pathlib.Path
+            the input file to sample
+        n_sample : int, optional
+            the number of lines to sample, by default 100
+
+        Returns
+        -------
+        tuple
+            A tuple of total number of lines, average tokens per line, and estimated tokens.
+        """
+
+        # read the file
+        with open(file, "r", encoding="utf-8") as f:
+            # sample first N lines
+            sample_lines = [ln.strip() for ln in itertools.islice(f, n_sample) if ln.strip()]
+
+            # count remaining lines
+            sampled_count = len(sample_lines)
+            remaining = sum(1 for _ in f)
+            total_lines = sampled_count + remaining
+
+            # estimate tokens for the whole sample
+            sample_text = "\n".join(sample_lines)
+            try:
+                sample_tokens = self._estimate_tokens(sample_text)
+            except Exception:
+                # If token estimation fails, treat tokens ~= words
+                sample_tokens = sum(max(1, len(line.split())) for line in sample_lines)
+
+            sample_count = len([line for line in sample_lines if line.strip()])
+
+            # estimate the average tokens per line and total tokens
+            avg_tokens_per_line = (sample_tokens / sample_count) if sample_count else 0.0
+            estimated_tokens = int(avg_tokens_per_line * total_lines)
+
+            return total_lines, avg_tokens_per_line, estimated_tokens
+
+    # --- File Analysis ---
+    def analyze(self, sample_lines: int = 1000) -> dict:
+        """Analyze the main batch JSONL
+
+        Analyze the input file to get the number of lines, the filesize,
+        and to estimate the number of tokens.  Uses a sample of input
+        lines to estimate the tokens.
+
+        Parameters
+        ----------
+        sample_lines : int, optional
+            the number of lines to sample, by default 1000
+
+        Returns
+        -------
+        dict
+            stats on input file
+
+        Raises
+        ------
+        FileNotFoundError
+            when input file doesn't exist
+        """
+        if not self.input_file_path.exists():
+            raise FileNotFoundError(f"Input file not found: {self.input_file_path}")
+
+        self.file_size_bytes = self.input_file_path.stat().st_size
+        self.file_size_mb = self.file_size_bytes / (1024 * 1024)
+
+        # sample the input file
+        total_lines, avg_tokens_per_line, estimated_tokens = self._sample_file(self.input_file_path, sample_lines)
+
+        # estimate the average tokens per line and total tokens
+        self.total_lines = total_lines
+        self.avg_tokens_per_line = avg_tokens_per_line
+        self.total_estimated_tokens = estimated_tokens
+
+        logger.info("File analysis:")
+        logger.info("  Total lines: %s", self.total_lines)
+        logger.info("  File size: %.2f MB", self.file_size_mb)
+        logger.info("  Estimated total tokens: %s", self.total_estimated_tokens)
+        logger.info("  Average tokens per line: %.1f", self.avg_tokens_per_line)
+
+        return {
+            "total_lines": self.total_lines,
+            "file_size_mb": self.file_size_mb,
+            "total_estimated_tokens": self.total_estimated_tokens,
+            "avg_tokens_per_line": self.avg_tokens_per_line,
+        }
+
+    # --- Chunk calculation and creation ---
+    def plan_chunks(self) -> dict:
+        """Plan the chunking of the input file.
+
+        Using the input file estimates, plans best how to split it into
+        chunks based on the various constraints and rate limits, such as
+        max lines, max size, and estimated tokens.
+
+        Returns
+        -------
+        dict
+            stats on the planned chunks
+        """
+        # the max filesize in bytes
+        max_size_bytes = self.max_size_mb * 1024 * 1024
+
+        # estimate number of chunks based on line and size rate limits
+        chunks_needed_for_lines = math.ceil(self.total_lines / max(1, self.max_lines))
+        chunks_needed_for_size = math.ceil(self.file_size_bytes / max(1, max_size_bytes))
+
+        # Conservative tokens per chunk estimate
+        if self.avg_tokens_per_line > 0:
+            chunks_needed_for_tokens = math.ceil(self.total_estimated_tokens / max(1, self.max_tokens_per_day))
+        else:
+            chunks_needed_for_tokens = 1
+
+        # Estimate optimal number of file chunks needed
+        self.base_chunks_needed = max(chunks_needed_for_lines, chunks_needed_for_size, chunks_needed_for_tokens, 1)
+        self.lines_per_chunk = math.ceil(self.total_lines / self.base_chunks_needed)
+        if self.base_chunks_needed > 0:
+            self.estimated_tokens_per_chunk = math.ceil(self.total_estimated_tokens / self.base_chunks_needed)
+        else:
+            self.estimated_tokens_per_chunk = self.total_estimated_tokens
+
+        # Determine chunks_per_day and days needed
+        self.chunks_per_day = max(
+            1, min(self.base_chunks_needed, self.max_tokens_per_day // max(1, self.estimated_tokens_per_chunk))
+        )
+        self.days_needed = max(1, math.ceil(self.base_chunks_needed / self.chunks_per_day))
+
+        logger.info("Chunking plan:")
+        logger.info("  Base chunks needed: %s", self.base_chunks_needed)
+        logger.info("  Lines per chunk: %s", self.lines_per_chunk)
+        logger.info("  Estimated tokens per chunk: %s", self.estimated_tokens_per_chunk)
+        logger.info("  Chunks per day: %s", self.chunks_per_day)
+        logger.info("  Days needed: %s", self.days_needed)
+
+        return {
+            "base_chunks_needed": self.base_chunks_needed,
+            "lines_per_chunk": self.lines_per_chunk,
+            "estimated_tokens_per_chunk": self.estimated_tokens_per_chunk,
+            "chunks_per_day": self.chunks_per_day,
+            "days_needed": self.days_needed,
+        }
+
+    def is_chunking_needed(self) -> bool:
+        """Check if chunking is needed"""
+        if not self.base_chunks_needed:
+            self.analyze()
+            self.plan_chunks()
+
+        return self.base_chunks_needed > 1
+
+    @property
+    def has_been_planned(self) -> bool:
+        """Check a plan has been made"""
+        return self.plan_path.exists()
+
+    def create_chunks(self) -> list[str]:
+        """Split the input file into subset chunks
+
+        Reads the input file and splits it into smaller chunks
+        based on the lines_per_chunk attribute. Each chunk is written to a
+        separate file.
+
+        Returns
+        -------
+        list[str]
+            the list of output chunked file subsets
+
+        Raises
+        ------
+        ValueError
+            when no plan has been created
+        """
+        # error if the chunk plan has not been created
+        if self.lines_per_chunk <= 0:
+            raise ValueError("No chunk plan yet made. Call analyze() and plan_chunks() first")
+
+        # set base output chunk parts
+        base = pathlib.Path(self.input_file_path).stem
+        ext = pathlib.Path(self.input_file_path).suffix
+        self.all_output_files = []
+
+        # chunk the input file into a number of subset files
+        with open(self.input_file_path, "r", encoding="utf-8") as infile:
+            # iterate over number of needed chunks
+            for i in range(self.base_chunks_needed):
+                # slice the input file data into lines per chunk
+                chunk_lines = list(itertools.islice(infile, self.lines_per_chunk))
+                if not chunk_lines:
+                    break
+                chunk_path = self.output_dir / f"{base}_chunk_{i + 1:03d}{ext}"
+                # write chunk
+                with open(chunk_path, "w", encoding="utf-8") as out:
+                    out.writelines(chunk_lines)
+                self.all_output_files.append(chunk_path)
+                logger.info("Creating chunk %s: %s", i + 1, chunk_path)
+
+        logger.info("Created %s chunk files", len(self.all_output_files))
+
+        # save plan state to disk
+        try:
+            self._save_plan(self.plan_path)
+            logger.info("Saved chunk plan to %s", self.plan_path)
+        except Exception as e:
+            logger.warning("Failed to save chunk plan: %s", e)
+
+        return self.all_output_files
+
+    # --- Verification and token accounting ---
+    def verify_chunks(self) -> dict:
+        """Verify each chunk against limits and estimate actual tokens per chunk."""
+        if not self.all_output_files:
+            raise ValueError("No output chunks to verify.")
+
+        n_sample = 50
+        total_tokens = 0
+        # iterate over all chunks
+        for i, chunk_path in enumerate(self.all_output_files, start=1):
+            chunk_size_mb = pathlib.Path(chunk_path).stat().st_size / (1024 * 1024)
+            # sample file
+            chunk_lines, __, chunk_tokens = self._sample_file(chunk_path, n_sample)
+            total_tokens += chunk_tokens
+            logger.info("  Chunk %s: %s lines, %.2f MB, ~%s tokens", i, chunk_lines, chunk_size_mb, chunk_tokens)
+
+            if chunk_lines > self.max_lines:
+                raise ValueError(f"Chunk {i} exceeds line limit: {chunk_lines} > {self.max_lines}")
+            if chunk_size_mb > self.max_size_mb:
+                raise ValueError(f"Chunk {i} exceeds size limit: {chunk_size_mb:.2f} MB > {self.max_size_mb} MB")
+
+        self.total_actual_tokens = total_tokens
+        logger.info("Total estimated tokens across all chunks: %s", self.total_actual_tokens)
+
+        return {"total_actual_tokens": self.total_actual_tokens}
+
+    # --- Daily batching ---
+    def create_daily_batches(self) -> list[list[str]]:
+        """Organize chunks into daily batches based on chunks_per_day and days_needed.
+
+        Splits the file chunks into daily batches that fit
+        within the daily token limits, as a list of lists of files.
+
+        Returns
+        -------
+        list[list[str]]
+            A list of daily batches, each containing chunk file paths.
+
+        Raises
+        ------
+        ValueError
+            when no input chunks are available
+        """
+        if not self.all_output_files:
+            raise ValueError("No chunk files found; run create_chunks() first")
+
+        self.daily_batches = []
+        # iterate over days
+        for day in range(self.days_needed):
+            # split the chunks into daily batches
+            start_idx = day * self.chunks_per_day
+            end_idx = min(start_idx + self.chunks_per_day, len(self.all_output_files))
+            if start_idx < len(self.all_output_files):
+                self.daily_batches.append(self.all_output_files[start_idx:end_idx])
+
+        logger.info("Organized chunks into %s daily batches", len(self.daily_batches))
+        return self.daily_batches
+
+    def get_submission_schedule(self) -> dict:
+        """Return the planned submission schedule and strategy info."""
+
+        return {
+            "total_tokens": self.total_actual_tokens,
+            "total_chunks": len(self.all_output_files),
+            "days_needed": self.days_needed,
+            "chunks_per_day": self.chunks_per_day,
+            "strategy": "multi_day_batching" if self.days_needed > 1 else "single_day_chunking",
+            "daily_batches": self.daily_batches,
+        }
+
+    def prepare_all(self, sample_lines: int = 1000) -> dict:
+        """Runs the chunk preparation pipeline.
+
+        Parameters
+        ----------
+        sample_lines : int, optional
+            the number of lines to sample, by default 1000
+
+        Returns
+        -------
+        dict
+            stats on the submission plan
+        """
+        self.analyze(sample_lines=sample_lines)
+        self.plan_chunks()
+        self.create_chunks()
+        self.verify_chunks()
+        self.create_daily_batches()
+        return self.get_submission_schedule()
+
+    def plan_info(self) -> dict:
+        """Print a consolidated plan summary.
+
+        Returns
+        -------
+        dict
+            stats on all the estimated parameters
+        """
+        # Log file analysis in the same format used elsewhere
+        logger.info("File analysis:")
+        logger.info("  Total lines: %s", self.total_lines)
+        logger.info("  File size: %.2f MB", self.file_size_mb)
+        logger.info("  Estimated total tokens: %s", self.total_estimated_tokens)
+        logger.info("  Average tokens per line: %.1f", self.avg_tokens_per_line)
+
+        # Log chunking plan
+        logger.info("Chunking plan:")
+        logger.info("  Base chunks needed: %s", self.base_chunks_needed)
+        logger.info("  Lines per chunk: %s", self.lines_per_chunk)
+        logger.info("  Estimated tokens per chunk: %s", self.estimated_tokens_per_chunk)
+        logger.info("  Chunks per day: %s", self.chunks_per_day)
+        logger.info("  Days needed: %s", self.days_needed)
+
+        # Log daily batches with per-day file lists
+        logger.info("Batch Info:")
+        logger.info("  Number of daily batches: %s", len(self.daily_batches))
+        logger.info("  Submitted Batches: %s", len(self.submitted_chunks))
+        logger.info("  Remaining Batches: %s", len(self.get_pending_batches()))
+        logger.info("  Completed Batches: %s", len(self.completed_batches))
+
+        info = {
+            "file": str(self.input_file_path),
+            "total_lines": self.total_lines,
+            "file_size_mb": self.file_size_mb,
+            "total_estimated_tokens": self.total_estimated_tokens,
+            "avg_tokens_per_line": self.avg_tokens_per_line,
+            "base_chunks_needed": self.base_chunks_needed,
+            "lines_per_chunk": self.lines_per_chunk,
+            "estimated_tokens_per_chunk": self.estimated_tokens_per_chunk,
+            "chunks_per_day": self.chunks_per_day,
+            "days_needed": self.days_needed,
+            "total_actual_tokens": self.total_actual_tokens,
+            "total_chunks": len(self.all_output_files),
+            "n_daily_batches": len(self.daily_batches),
+            "n_submitted_batches": len(self.submitted_chunks),
+            "n_remaining_batches": len(self.get_pending_batches()),
+            "n_completed_batches": len(self.completed_batches),
+        }
+
+        return info
+
+    # --- Plan save/load ---
+    def _save_plan(self, path: pathlib.Path) -> None:
+        """Save current plan state to YAML
+
+        Parameters
+        ----------
+        path : pathlib.Path
+            the path to the summary plan file
+        """
+        plan = {
+            "file_input": {
+                "file": str(self.input_file_path),
+                "file_size_mb": self.file_size_mb,
+                "total_lines": self.total_lines,
+                "avg_tokens_per_line": self.avg_tokens_per_line,
+                "total_estimated_tokens": self.total_estimated_tokens,
+            },
+            "chunk_plan": {
+                "base_chunks_needed": self.base_chunks_needed,
+                "lines_per_chunk": self.lines_per_chunk,
+                "estimated_tokens_per_chunk": self.estimated_tokens_per_chunk,
+                "total_chunks": len(self.all_output_files),
+                "all_chunks": [os.path.basename(p) for p in self.all_output_files],
+            },
+            "submission_strategy": {
+                "chunks_per_day": self.chunks_per_day,
+                "days_needed": self.days_needed,
+                "total_actual_tokens": self.total_actual_tokens,
+                "daily_batches": [[os.path.basename(p) for p in batch] for batch in self.daily_batches],
+                "submitted_chunks": [os.path.basename(p) for p in self.submitted_chunks],
+                "submission_log": list(self.submission_log),
+                "completed_chunks": [os.path.basename(p) for p in self.completed_batches],
+            },
+        }
+        with open(path, "w", encoding="utf-8") as f:
+            yaml.safe_dump(plan, f)
+
+    def _load_plan(self, path: pathlib.Path) -> None:
+        """Load plan state from YAML file.
+
+        Parameters
+        ----------
+        path : pathlib.Path
+            The path to the summary plan file.
+        """
+
+        with open(path, "r", encoding="utf-8") as f:
+            plan = yaml.safe_load(f) or {}
+
+        file_input = plan.get("file_input", {})
+        chunk_plan = plan.get("chunk_plan", {})
+        submission = plan.get("submission_strategy", {})
+
+        # restore file input info
+        self.total_lines = file_input.get("total_lines", self.total_lines)
+        self.file_size_mb = file_input.get("file_size_mb", self.file_size_mb)
+        self.total_estimated_tokens = file_input.get("total_estimated_tokens", self.total_estimated_tokens)
+        self.avg_tokens_per_line = file_input.get("avg_tokens_per_line", self.avg_tokens_per_line)
+
+        # restore chunk plan
+        self.base_chunks_needed = chunk_plan.get("base_chunks_needed", self.base_chunks_needed)
+        self.lines_per_chunk = chunk_plan.get("lines_per_chunk", self.lines_per_chunk)
+        self.estimated_tokens_per_chunk = chunk_plan.get("estimated_tokens_per_chunk", self.estimated_tokens_per_chunk)
+
+        all_chunks = chunk_plan.get("all_chunks", [])
+        self.all_output_files = [str(self.output_dir / c) for c in all_chunks]
+
+        # restore submission strategy
+        self.chunks_per_day = submission.get("chunks_per_day", self.chunks_per_day)
+        self.days_needed = submission.get("days_needed", self.days_needed)
+        self.total_actual_tokens = submission.get("total_actual_tokens", self.total_actual_tokens)
+
+        daily = submission.get("daily_batches", [])
+        self.daily_batches = [[str(self.output_dir / c) for c in batch] for batch in daily]
+
+        # restore submitted chunks
+        submitted = submission.get("submitted_chunks", [])
+        self.submitted_chunks = [str(self.output_dir / c) for c in submitted]
+
+        # restore submission log
+        self.submission_log = submission.get("submission_log", [])
+
+        # ensure base_chunks_needed matches actual number of chunks
+        self.base_chunks_needed = max(self.base_chunks_needed, len(self.all_output_files))
+
+    @property
+    def completed_batches(self) -> list[str]:
+        """List of completed batch file paths."""
+        return [str(i) for i in sorted(self.output_dir.glob(f"{self.base_prompt}*chunk*.json"))]
+
+    def get_pending_batches(self) -> list[list[str]]:
+        """Return list of pending chunk batches to be submitted"""
+        if not self.all_output_files:
+            logger.info("No chunk files found, running planner.prepare_all().")
+            self.prepare_all()
+
+        pending = [p for p in self.all_output_files if p not in self.submitted_chunks]
+        if not pending:
+            return []
+        return [pending[i : i + self.chunks_per_day] for i in range(0, len(pending), self.chunks_per_day)]
+
+
+# Submission and monitoring manager
+class SubmissionManager:
+    """Class to manage the submission of chunked files to the OpenAI Batch API
+
+    Manages the plan for submitting chunked files to the OpenAI Batch API. Once
+    a plan has been created, you can submit the next batch with `submit_batch`.
+    Check overall status with `get_status`.  Check status of submitted batches
+    with `check_batches_status`. Retrieve results with `retrieve_completed_batches`.
+
+    Parameters
+    ----------
+    planner : ChunkPlanner, optional
+        a planner instance , by default None
+    file : str, optional
+        the main input batch JSONL file, by default None
+
+    Example
+    -------
+    >>> sm = SubmissionManager(file="path/to/batch.jsonl")
+    >>> sm.submit_batch()
+    """
+
+    def __init__(self, planner: ChunkPlanner = None, file: str = None):
+        self.planner = planner or (ChunkPlanner(file) if file else None)
+        self.oa = OpenAIHelper()
+        if not self.planner:
+            logger.warning("No plan has been provided.")
+            return
+
+    @property
+    def remaining_chunks(self) -> int:
+        """Get number of remaining chunks to be submitted"""
+        if not self.planner.has_been_planned:
+            return None
+        return self.get_status().get("remaining_chunks", None)
+
+    @property
+    def all_batches_submitted(self) -> int:
+        """Flag if all batches have been submitted"""
+        return self.remaining_chunks == 0
+
+    @property
+    def all_batches_completed(self) -> int:
+        """Flag if all batches have been completed"""
+        status = self.get_status()
+        batches = self.check_batches_status()
+        return len(batches) == status.get("total_chunks", None)
+
+    def get_next_batch(self) -> list[str]:
+        """Get the next pending batch"""
+        batches = self.planner.get_pending_batches()
+        return batches[0] if batches else []
+
+    def get_status(self) -> dict:
+        """Get submission status
+
+        Gets info on the submission status, including submitted,
+        remaining, and next batch info.
+        """
+        total = len(self.planner.all_output_files)
+        submitted = len(self.planner.submitted_chunks)
+        remaining = total - submitted
+        next_batch = [os.path.basename(p) for p in self.get_next_batch()]
+        chunks_today = self._chunks_submitted_today()
+        # estimate tokens today using estimated_tokens_per_chunk
+        tokens_today_est = int(chunks_today * max(1, self.planner.estimated_tokens_per_chunk))
+        return {
+            "total_chunks": total,
+            "submitted_chunks": submitted,
+            "remaining_chunks": remaining,
+            "next_batch_files": next_batch,
+            "chunks_submitted_today": chunks_today,
+            "tokens_submitted_today_estimate": tokens_today_est,
+            "tokens_allowed_per_day": self.planner.max_tokens_per_day,
+            "tokens_remaining_today_estimate": max(0, self.planner.max_tokens_per_day - tokens_today_est),
+        }
+
+    def _chunks_submitted_today(self) -> int:
+        """Return number of chunks recorded in planner.submission_log for today's date."""
+        today_prefix = datetime.date.today().isoformat()
+        return sum(1 for item in self.planner.submission_log if str(item.get("timestamp", "")).startswith(today_prefix))
+
+    def _estimate_chunk_tokens(self, chunk_path: str) -> int:
+        """Estimate tokens for a single chunk based on sampled lines and planner.avg_tokens_per_line."""
+
+        with open(chunk_path, "r", encoding="utf-8") as f:
+            lines = sum(1 for _ in f)
+
+        return int(self.planner.avg_tokens_per_line * lines) if self.planner.avg_tokens_per_line > 0 else 0
+
+    def _submit_chunk(self, chunk_path: str) -> dict:
+        """Submit a single file chunk
+
+        Submit a single file chunk to the batch API. Disallow if
+        it would exceed the daily token or chunk limit.
+
+        Parameters
+        ----------
+        chunk_path : str
+            the path to the file chunk
+
+        Returns
+        -------
+        dict
+            chunk submission status
+        """
+
+        # use estimates rather than exact token counts
+        est_tokens = max(1, int(self.planner.estimated_tokens_per_chunk))
+
+        # get the chunks submitted today and check if we'd hit our daily limit
+        chunks_today = self._chunks_submitted_today()
+        chunk_limit_hit = self.planner.chunks_per_day > 0 and chunks_today >= self.planner.chunks_per_day
+        tokens_today_est = chunks_today * est_tokens
+        token_limit_hit = tokens_today_est + est_tokens > self.planner.max_tokens_per_day
+
+        if chunk_limit_hit or token_limit_hit:
+            msg = (
+                f"Daily chunk submission limit reached: {chunks_today} >= {self.planner.chunks_per_day}. "
+                f"Estimated submission would exceed daily token limit: today+estimate={tokens_today_est + est_tokens}, "
+                f"limit={self.planner.max_tokens_per_day}"
+            )
+            logger.error(msg)
+            return {"chunk": str(chunk_path), "status": "rejected", "error": msg}
+
+        # submit the chunk to the batch API
+        try:
+            self.oa.submit_batch(batch_file=str(chunk_path))
+        except Exception as e:
+            logger.error("Error submitting chunk %s: %s", chunk_path, e)
+            return {"chunk": str(chunk_path), "status": "error", "error": str(e)}
+        else:
+            batch_id = getattr(self.oa.batch, "id", None)
+
+        # add the chunk info the submission log
+        self.planner.submitted_chunks.append(chunk_path)
+        entry = {
+            "chunk": os.path.basename(chunk_path),
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "tokens": est_tokens,
+            "batch_id": batch_id,
+        }
+        self.planner.submission_log.append(entry)
+        try:
+            self.planner._save_plan(self.planner.plan_path)
+        except Exception as e:
+            logger.warning("Failed to update saved plan after submission: %s", e)
+        return {"chunk": str(chunk_path), "status": "submitted", "tokens_estimated": est_tokens, "batch_id": batch_id}
+
+    def submit_batch(self, dry_run: bool = True) -> list[dict]:
+        """Submit the next batch in a daily schedule
+
+        Submits the next batch of chunks for processing, while respecting
+        daily limits on chunk and token usage.
+
+        Parameters
+        ----------
+        dry_run : bool, optional
+            Flag for a test run, by default True
+
+        Returns
+        -------
+        list[dict]
+            a list of chunk submission statuses
+        """
+
+        if not self.planner.has_been_planned:
+            raise ValueError("Cannot submit batches. A chunk plan has not been made yet.")
+
+        # get the next batch
+        batch = self.get_next_batch()
+        if not batch:
+            logger.info(
+                "No pending chunks to submit. All %s chunks already submitted.", len(self.planner.submitted_chunks)
+            )
+            return []
+
+        # check daily batches exist
+        if not self.planner.daily_batches:
+            self.planner.create_daily_batches()
+
+        # get current day
+        batch_num = 1 + self.planner.daily_batches.index(batch)
+        if self.planner.submission_log:
+            first = datetime.datetime.fromisoformat(self.planner.submission_log[0]["timestamp"])
+        else:
+            first = datetime.datetime.today()
+        today = datetime.datetime.today()
+        days = 1 + (today.date() - first.date()).days
+
+        # estimate tokens
+        batch_tokens = sum(self._estimate_chunk_tokens(chunk) for chunk in batch)
+        results = []
+        logger.info(
+            "--- Day %s Batch %s: submitting %s chunks (~%s tokens) ---", days, batch_num, len(batch), batch_tokens
+        )
+        # submit each chunk in the daily batch of files
+        for chunk in batch:
+            logger.info("Submitting chunk: %s", os.path.basename(chunk))
+            if dry_run:
+                results.append({"chunk": str(chunk), "status": "dry-run"})
+                continue
+
+            res = self._submit_chunk(chunk)
+            results.append(res)
+
+        if results[0]["status"] != "rejected":
+            logger.info("Submission run complete. %s records generated.", len(results))
+
+        return results
+
+    def check_batches_status(self) -> list[dict]:
+        """Check status of submitted batches
+
+        Retrieves the statuses of all submitted batches using the OpenAI
+        client.
+
+        Returns
+        -------
+        list[dict]
+            A list of statuses of each batch.
+        """
+        # get the remote batches
+        try:
+            remote_batches = {batch.id: batch.status for batch in self.oa.client.batches.list()}
+        except Exception as e:
+            logger.error("Error listing remote batches: %s", e)
+            remote_batches = {}
+
+        # cross-match with batch ids from submission logs
+        results = []
+        for entry in self.planner.submission_log:
+            bid = entry.get("batch_id")
+            if not bid:
+                continue
+            status = remote_batches.get(bid, "not_found")
+            results.append({"chunk": entry.get("chunk"), "batch_id": bid, "status": status})
+        return results
+
+    def retrieve_batch_results(self) -> list[dict]:
+        """Retrieve results for all completed batches.
+
+        Iterates over all submitted batch IDs, retrieve their results
+        from OpenAI, and formats them into the bibcat standard
+        llm output JSON.  The output filename uses the
+        config.llms.prompt_output_file suffixed by chunk number.
+
+        To merge chunk files after completion, run ``merge_outputs``
+        with kind="llm".
+
+        Returns
+        -------
+        list[dict]
+            A list of containing the retrieval status for each batch.
+        """
+        results = []
+        # iterate over all batches in the submission log
+        for idx, entry in enumerate(self.planner.submission_log, start=1):
+            logger.info("Retrieving batch %s for chunk %s", entry.get("batch_id"), entry.get("chunk"))
+            bid = entry.get("batch_id")
+            if not bid:
+                continue
+
+            # retrieve the batch and output to our standard llm output
+            output = (
+                self.planner.output_dir / f"{config.llms.prompt_output_file.replace('.json', '')}_chunk_{idx:>03}.json"
+            )
+            try:
+                self.oa.retrieve_batch(batch_id=bid, output=output)
+            except openai.APIStatusError as e:
+                logger.error("Error retrieving batch %s: %s", bid, e)
+                results.append({"chunk": entry.get("chunk"), "batch_id": bid, "retrieved": False, "error": str(e)})
+            except RuntimeError as e:
+                logger.error("Error validating batch %s: %s", bid, e)
+                results.append({"chunk": entry.get("chunk"), "batch_id": bid, "retrieved": False, "error": str(e)})
+            else:
+                results.append({"chunk": entry.get("chunk"), "batch_id": bid, "retrieved": True, "output": output})
+
+        return results
+
+    def evaluate_batch_results(self) -> list[dict]:
+        """Evaluate results for all completed chunk outputs.
+
+        Iterates over all completed chunk files and runs bibcat evaluate
+        for each of the bibcodes in the output. To merge chunk files after
+        completion, run ``merge_outputs`` with kind="eval".
+
+        Returns
+        -------
+        list[dict]
+            stats on results of the evaluation process
+        """
+
+        # verify the planner model
+        self.planner.check_model(replace=True)
+
+        results: list[dict] = []
+        for idx, chunk in enumerate(self.planner.completed_batches, start=1):
+            chunk_path = pathlib.Path(chunk)
+            if not chunk_path.exists():
+                logger.warning("Chunk file not found, skipping: %s", chunk)
+                continue
+
+            # set prompt output name to this chunk file so evaluate.read_output reads it
+            config.llms.prompt_output_file = chunk_path.name
+
+            # set a per-chunk eval output filename
+            config.llms.eval_output_file = f"{self.planner.orig_eval}_chunk_{idx:03d}"
+
+            # read chunk JSON and iterate bibcodes
+            try:
+                with chunk_path.open("r", encoding="utf-8") as fh:
+                    data = json.load(fh)
+            except Exception as e:
+                logger.error("Failed to load chunk JSON %s: %s", chunk_path, e)
+                results.append({"chunk": chunk_path.name, "error": str(e)})
+                continue
+
+            if not isinstance(data, dict):
+                logger.warning("Chunk %s does not contain a JSON object, skipping", chunk_path)
+                results.append({"chunk": chunk_path.name, "error": "not a json object"})
+                continue
+
+            for bibcode in data.keys():
+                res = evaluate_output(bibcode=bibcode, write_file=True, base_path=self.planner.output_dir)
+                if res is None:
+                    msg = f"Error evaluating bibcode {bibcode} from {chunk_path}"
+                    logger.error(msg)
+                    results.append({"chunk": chunk_path.name, "bibcode": bibcode, "status": "error", "error": msg})
+                else:
+                    results.append({"chunk": chunk_path.name, "bibcode": bibcode, "status": "evaluated"})
+
+        # reset output names
+        config.llms.prompt_output_file = self.planner.orig_prompt
+        config.llms.eval_output_file = self.planner.orig_eval
+
+        return results
+
+    def merge_outputs(self, kind: str = "llm") -> pathlib.Path:
+        """Merge chunked JSON outputs into a single JSON file.
+
+        Merges the chunked JSON files into a final single JSON, for
+        either the llm prompt output or the evaluation summary files.
+
+        Parameters
+        ----------
+        kind : str, optional
+            The type of output to merge, by default "llm"
+
+        Returns
+        -------
+        pathlib.Path
+            The path to the merged JSON file
+
+        Raises
+        ------
+        ValueError
+            If the kind is not recognized
+        """
+
+        if kind not in {"llm", "eval"}:
+            raise ValueError("kind must be 'llm' or 'eval'")
+
+        # get correct parameter name
+        if kind == "llm":
+            param = config.llms.prompt_output_file
+            filename = param
+        else:
+            param = config.llms.eval_output_file
+            filename = f"{param}_t{config.llms.performance.threshold}.json"
+
+        # search for files
+        base = str(param).replace(".json", "")
+        pattern = f"{base}_chunk_*.json"
+        files = sorted(self.planner.output_dir.glob(pattern))
+
+        if not files:
+            logger.info("No chunk files found to merge for kind=%s", kind)
+            return
+
+        # merge all jsons together
+        merged = {}
+        for fp in files:
+            with fp.open("r", encoding="utf-8") as fh:
+                data = json.load(fh)
+                merged.update(data)
+
+        # verify the planner model
+        self.planner.check_model()
+
+        # write out merged json
+        output = pathlib.Path(self.planner.output_dir.parent) / f"{filename}"
+        logger.info("Writing merged file to %s", output)
+        with open(output, "w", encoding="utf-8") as fh:
+            json.dump(merged, fh, indent=2)
+
+        return output

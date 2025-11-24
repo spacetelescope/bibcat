@@ -1,31 +1,38 @@
 
 
 #  Using LLM Prompting
-Here we describe the `bibcat` options for extracting paper information using LLMs.  It currently only supports using the OpenAI API to prompt ``gpt`` models.  The default model used is `gpt4o-mini`, but can be customized using the ``config.llms.openai.model`` field.
+This section describes the available `bibcat` options for extracting paper information using LLMs. Currently, only the OpenAI API is supported for prompting `gpt` models. The default model is `gpt-5-mini`, but you can customize this by setting the `config.llms.openai.model` field.
 
 This code requires the `openai` python package.  Install it with `pip install openai`.
 
 To use this code you must have an OpenAI API key. Follow [these instructions](https://platform.openai.com/docs/quickstart) and set your new API key to a new `OPENAI_API_KEY` environment variable.
 
-
 ## Quick Start
 
 Here is a quick start guide.
 
-1. Follow the [Setup](https://github.com/spacetelescope/bibcat/blob/dev/README.md#setup) instructions from the main README file.
-2. Select a paper bibcode or index
+1. Follow the [Setup](https://bibcat.readthedocs.io/en/latest/readme.html#setup) instructions from the main README file.
+2. Select a paper bibcode or index from the `path_source_data`, located in your `$BIBCAT_DATA_DIR` folder. You can either use a bibcode with the `-b` option, or an array list index with the `-i` option. For example:
    1. run: `bibcat llm run -b "2023MNRAS.521..497M"`
    2. or: `bibcat llm run -i 50`
 3. Check the response output `paper_output.json` file.
 
-You should see something like `INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], 'JWST': ['SCIENCE', [0.9, 0.1]]}`. See [Response Output](#response-output) for details about the response output.  [Submitting a paper](#submitting-a-paper) describes the command for sending papers to OpenAI. For customizing and trialing new gpt prompts, see [User Configuration](#user-configuration) and [User and Agent (System) Prompts](#user-and-agent-system-prompts).
+You should see output similar to:
+`INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], 'JWST': ['SCIENCE', [0.9, 0.1]]}`.
+Here each key is a mission, the first element is the papertype, and the confidence array is ordered [science, mention].
 
+For more details:
+- About the source data: [Input textdata](https://bibcat.readthedocs.io/en/asb-31188_refactor-docs/data_readme.html)
+- Response format and field meanings: [Response Output](https://bibcat.readthedocs.io/en/latest/llm.html#response-output)
+- How to submit papers to OpenAI: [Submitting a paper](https://bibcat.readthedocs.io/en/latest/llm.html#submitting-a-paper)
+- How to customize prompts and test new prompts: [User Configuration](https://bibcat.readthedocs.io/en/latest/llm.html#user-configuration) and [User and Agent (System) Prompts](https://bibcat.readthedocs.io/en/latest/llm.html#user-and-agent-system-prompts)
 
 ## Submitting a paper
 
-The cli `bibcat llm run` submits a prompt with paper content.  The paper content can either be a local filepath on disk, or a bibcode or array list index from source dataset ``dataset_combined_all_2018-2023.json``.  When specifying a bibcode or list array index, the paper data is pulled from the source JSON dataset.
+The cli `bibcat llm run` submits a prompt with paper content.  The paper content can either be a local filepath on disk (See [File Uploads](https://bibcat.readthedocs.io/en/latest/llm.html#file-uploads), or a bibcode or array list index from the source dataset.  When specifying a bibcode or list array index, the paper data is pulled from the source JSON dataset.
 
-The `llm run` command submits a single paper. Note that when submitting any paper whose bibcode contains `&`, double quotes `" "` are needed for the bibcode in the command line.
+The `llm run` command submits a single paper. If the bibcode contains an `&`, enclose it in double quotes (`" "`) when using it on the command line.
+
 ```python
 # submit a paper
 bibcat llm run -f /Users/bcherinka/Downloads/2406.15083v1.pdf
@@ -36,40 +43,6 @@ bibcat llm run -b "2022A&A...668A..63R"
 
 # submit with entry 101 from the papertrack source dataset
 bibcat llm run -i 101
-```
-
-The `llm batch run` command submits a list of files.  The list can either be specified one of two ways:  1.) individually, with the `-f` option, as a filename, bibcode, or index, or 2.) a file that contains a list of filenames, bibcodes, or indices to use, with one line per entry.  By default, each paper in the list is submitted once.  You can instruct it to submit each paper multiple times with the `-n` option. Run `bibcat llm batch run --help` to see the full list of cli options.
-
-```python
-# batch submit a list of papers, using source index
-bibcat llm batch run -f 101 -f 102 -f 103
-
-# batch submit from a file of files
-bibcat llm batch run -p papers_to_process.txt
-```
-
-where `papers_to_process.txt` might look like
-```txt
-2023Natur.616..266L
-2023ApJ...946L..13F
-2023ApJS..265....5H
-2023ApJ...954...31C
-```
-
-### Asynchronous Batch Runs on Virtual Machines
-
-When you have a large set of papers to process with Bibcat, you can run multiple Bibcat jobs serially using the Bash script `run_bibcat_serial.sh` in the `bins/ folder`. This script processes one batch input file (typically containing 1,000 papers) at a time and then sleeps for 2 hours before starting the next job, to avoid hitting the API rate limit. A single job of 1,000 API calls takes approximately 4,500 seconds to complete. Note that parallel batch processing would run into the API rate limits. We plan to implement [Openai Bath API] (https://platform.openai.com/docs/guides/batch/batch-api) for more time-efficient and cost-effective  asynchronous runs. But until then, you can use this Bash script below.
-
-To run this script, set the path to the batch files and the logs directory on your command line below. Then, execute the script from the terminal using:
-
-```bash
-./run_bibcat_serial.sh /path/to/batch_files /path/to/logs
-
-```
-You can use the `--dry-run` flag at the end of the command for a dry-run
-
-```bash
- ./run_bibcat_serial.sh /path/to/batch_files /path/to/logs --dry-run
 ```
 
 ### Running within Python
@@ -88,8 +61,46 @@ Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined
 2024-08-22 15:49:50,634 - bibcat.llm.openai - INFO - Using paper bibcode: 2023MNRAS.518..456D
 2024-08-22 15:49:56,781 - bibcat.llm.openai - INFO - Output: {'HST': ['MENTION', [0.3, 0.7]], 'JWST': ['SCIENCE', [0.9, 0.1]]}
 ```
+## Batch Processing
 
-### Batch Submission
+The `llm batch run` command submits a list of files.  The list can either be specified one of two ways:  1.) individually, with the `-f` option, as a filename, bibcode, or index, or 2.) a file that contains a list of filenames, bibcodes, or indices to use, with one line per entry.  By default, each paper in the list is submitted once.  You can instruct it to submit each paper multiple times with the `-n` option. Run `bibcat llm batch run --help` to see the full list of cli options.
+
+```python
+# batch submit a list of papers, using source index
+bibcat llm batch run -f 101 -f 102 -f 103
+
+# batch submit from a file of files
+bibcat llm batch run -p papers_to_process.txt
+```
+
+where `papers_to_process.txt` might look like
+```text
+2023Natur.616..266L
+2023ApJ...946L..13F
+2023ApJS..265....5H
+2023ApJ...954...31C
+```
+
+### Synchronous Batch Submission
+
+When you have a large set of papers to process with Bibcat, you can run multiple Bibcat jobs serially using the Bash script `run_bibcat_serial.sh` in the `bins/` folder. This script processes one batch input file (typically containing 1,000 papers) at a time and then sleeps for 2 mins before starting the next job, to avoid hitting the API rate limit (model dependent). A single job of 1,000 API calls (1000 papers) depends on the models, tokens, and network traffic. With GPT-4.1-mini, it takes approximately 4,500 seconds to complete 1000 papers. The reasoning model, GPT-5-mini, could take 200-400 minutes per 1000 papers.  We implemented [OpenAI Batch API](https://platform.openai.com/docs/guides/batch/batch-api) for more cost-effective asynchronous runs and check it out in the next section.
+
+The script takes two arguments: the path to the folder containing the batch input files, and the path to the folder where you want to save the log files. Each batch input file should contain a list of bibcodes or indices, one per line. The script will create a log file for each batch job in the specified log folder. Note that this log file is only for the bash script output, not the Bibcat output, which is saved in the Bibcat output directory as specified in your config file.
+
+To run this script, replace `/path/to/batch_files` and `/path/to/logs` with the actual folder paths for your batch files and logs directories.
+Make sure the script is executable by running `chmod +x run_bibcat_serial.sh` if needed, then execute the script from the terminal using:
+
+```bash
+./run_bibcat_serial.sh /path/to/batch_files /path/to/logs
+
+```
+You can use the `--dry-run` flag to perform a test run without submitting the job.
+
+```bash
+ ./run_bibcat_serial.sh /path/to/batch_files /path/to/logs --dry-run
+```
+
+### Asynchronous Batch Submission with OpenAI Batch API
 
 OpenAI supports asynchronous job submission via their [Batch API](https://platform.openai.com/docs/guides/batch). This API submits
 a batch job to run within a 24h period. You can submit a batch paper processing job in bibcat with `bibcat llm batch submit`. This command takes as input a text file of bibcodes, e.g. the above `papers_to_process.txt`, creates the required [JSONL](https://jsonlines.org/) file input for OpenAI, and submits the batch job.
@@ -112,6 +123,7 @@ Alternatively, if you already have a premade batch file for a given set of paper
 ```
 bibcat llm batch submit -b /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/my_batchfile.jsonl
 ```
+**Note:** For large batches of papers, due to current overheads in creating prompts, it is often best to prepare your batch file once, and then submit it directly to `batch submit`.
 
 You can check your batch job in your OpenAI [Batch dashboard](https://platform.openai.com/batches) and the JSONL file in your [File Storage](https://platform.openai.com/storage/files/).
 
@@ -137,13 +149,148 @@ If the job is still in progress, it will show:
 ```
 bibcat.llm.openai - INFO - Batch run is still in progress. Please wait and try again later.
 ```
-Once complete, bibcat will extract the output information, format it into bibcat's [Response Output](#response-output), and save it at that location, using your `prompt_output_file` config parameter.
+Once complete, bibcat will extract the output information, format it into bibcat's [Response Output](https://bibcat.readthedocs.io/en/latest/llm.html#response-output), and save it at that location, using your `prompt_output_file` config parameter.
 
 This way you can easily evaluate it with
 ```
 bibcat llm batch evaulate -p papers_to_process.txt
 ```
 
+#### Processing Batches
+
+**OpenAI Rate Limits and Constraints**
+
+The OpenAI Batch API has certain contraints on the input file that can be submitted, as well as model- and organization- dependent rate limits on the number of tokens-per-day (TPD).
+
+- Maximum number of lines: 50,000
+- Maximum input file size: 200 MB
+- Daily Token Limit:
+
+  - Tier 3 - gpt-5/4.1-mini: 40,000,000
+  - Tier 4 - gpt-5/4.1-mini: 100,000,000
+
+See [Batch Limits](https://platform.openai.com/docs/guides/batch#rate-limits) and our [Organization Tier Rate Limits](https://platform.openai.com/settings/organization/limits) for more information.
+
+The above ``batch submit`` and ``batch retrieve`` commands only handle submissions for small-ish batches that already meet these constraints.  To properly account for the limits, use the `batch process` command to chunk your input batch file into subsets and create an optimized submission plan.
+
+**Batch Processing in Chunks**
+
+For processing a large batch of paper that hit the OpenAI API limits, use the `bibcat llm batch process` command to properly chunk your input batch JSONL file into smaller file subsets for submission to the API.  It splits your file into subsets and bundles them together into daily batches that stay within the daily token limit.
+
+To analyze your file, split it into chunks specified with a `chunk_XXX` suffix, plan a daily batch submission schedule, and do a test dry-run with `-t`, run:
+
+`bibcat llm batch process -b /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_large_batchfile.jsonl -t`
+
+Plan Output:
+```
+bibcat.llm.chunker - INFO - File analysis:
+bibcat.llm.chunker - INFO -   Total lines: 60030
+bibcat.llm.chunker - INFO -   File size: 40.52.03 MB
+bibcat.llm.chunker - INFO -   Estimated total tokens: 1055992772
+bibcat.llm.chunker - INFO -   Average tokens per line: 17563.1
+bibcat.llm.chunker - INFO - Chunking plan:
+bibcat.llm.chunker - INFO -   Base chunks needed: 21
+bibcat.llm.chunker - INFO -   Lines per chunk: 2859
+bibcat.llm.chunker - INFO -   Estimated tokens per chunk: 50285371
+bibcat.llm.chunker - INFO -   Chunks per day: 1
+bibcat.llm.chunker - INFO -   Days needed: 21
+bibcat.llm.chunker - INFO - Creating chunk 1: /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_batchfile_chunk_001.jsonl
+bibcat.llm.chunker - INFO - Creating chunk 2: /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_new/gs_large_batchfile_chunk_002.jsonl
+...
+bibcat.llm.chunker - INFO - Creating chunk 21: /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_new/gs_large_batchfile_chunk_021.jsonl
+bibcat.llm.chunker - INFO - Created 21 chunk files
+bibcat.llm.chunker - INFO - Saved chunk plan to /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_batchfile_chunk_plan.yaml
+bibcat.llm.chunker - INFO -   Chunk 1: 2859 lines, 193.20 MB, ~51516549 tokens
+bibcat.llm.chunker - INFO -   Chunk 2: 2859 lines, 192.84 MB, ~47402791 tokens
+...
+bibcat.llm.chunker - INFO -   Chunk 21: 2850 lines, 192.35 MB, ~50938790 tokens
+bibcat.llm.chunker - INFO - Total estimated tokens across all chunks: 1054242502
+bibcat.llm.chunker - INFO - Organized chunks into 21 daily batches
+21 chunks remaining. Submitting next batch.
+bibcat.llm.chunker - INFO - --- Day 1 Batch 1: submitting 1 chunks (~50292909 tokens) ---
+bibcat.llm.chunker - INFO - Submitting chunk: gs_batchfile_chunk_001.jsonl
+bibcat.llm.chunker - INFO - Submission run complete. 1 records generated.
+[{'chunk': '/Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_batchfile_chunk_001.jsonl', 'status': 'dry-run'}]
+```
+
+Running the command without `-t` will submit the first daily batch of chunks to OpenAI for batch processing: `bibcat llm batch process -b /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_large_batchfile.jsonl`
+
+```
+bibcat.llm.chunker - INFO - Loaded plan state from /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_new/gs_large_batchfile_chunk_plan.yaml
+bibcat.llm.chunker - INFO - --- Day 1 Batch 1: submitting 1 chunks (~50292909 tokens) ---
+bibcat.llm.chunker - INFO - Submitting chunk: gs_large_batchfile_chunk_001.jsonl
+bibcat.llm.openai - INFO - Uploading batch file /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_large_batchfile_chunk_001.jsonl
+ bibcat.llm.openai - INFO - Submitting a batch run with batch ID batch_68a8b1e5f89c8190bff5afda0b4dab9a
+bibcat.llm.chunker - INFO - Submission run complete. 1 records generated.
+[{'chunk': '/Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_large_batchfile_chunk_001.jsonl',
+  'status': 'submitted',
+  'tokens_estimated': 50285371,
+  'batch_id': 'batch_68a8b1e5f89c8190bff5afda0b4dab9a'}]
+```
+
+Running `batch process` a second time on the same day will result in an error that you
+
+```
+bibcat.llm.chunker - INFO - --- Day 1 Batch 2: submitting 1 chunks (~50292909 tokens) ---
+bibcat.llm.chunker - INFO - Submitting chunk: gs_large_batchfile_chunk_002.jsonl
+bibcat.llm.chunker - ERROR - Daily chunk submission limit reached: 1 >= 1. Estimated submission would exceed daily token limit: today+estimate=100570742, limit=100000000
+Out[12]:
+[{'chunk': '/Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_large_batchfile_chunk_002.jsonl',
+  'status': 'rejected',
+  'error': 'Daily chunk submission limit reached: 1 >= 1. Estimated submission would exceed daily token limit: today+estimate=100570742, limit=100000000'}]
+```
+Run the same command again the next day to process the next batch.
+
+**Check Status**
+
+To check the status of all batches submitted, use the check, `-c`, flag:
+
+`bibcat llm batch process -b /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_large_batchfile.jsonl -c`
+
+```
+bibcat.llm.chunker - INFO - Loaded plan state from /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_large_batchfile_chunk_plan.yaml
+[{'chunk': 'gs_large_batchfile_chunk_001.jsonl', 'batch_id': 'batch_68a4b230708c81908d44d556be4faadf', 'status': 'completed'}, {'chunk': 'gs_large_batchfile_chunk_002.jsonl', 'batch_id': 'batch_68a5cb9b75ec8190b253cbefbfa5812d', 'status': 'completed'}, {'chunk': 'gs_large_batchfile_chunk_003.jsonl', 'batch_id': 'batch_68a71c44de5481908c9b10027821340b', 'status': 'completed'}]
+```
+
+**Retrieve Results**
+
+To retrieve the results of all completed batches, use the retrieve_batch, `-r` flag:
+`bibcat llm batch process -b /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_large_batchfile.jsonl -r`
+
+```
+bibcat.llm.chunker - INFO - Loaded plan state from /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_batchfile_chunk_plan.yaml
+Retrieving completed batch results.
+bibcat.llm.chunker - INFO - Retrieving batch batch_68a8850c80908190930c09dbff85c84c for chunk gs_batchfile_chunk_001.jsonl
+bibcat.llm.openai - INFO - Writing batch output to /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_llm_batchtest_output_chunk_001.json
+```
+This produces chunked files (`chunk_XXX`) with the same name as `config.llms.prompt_output_file`. You can merge these together with the merge command. See below how to merge the files.
+
+**Evaluate Results**
+
+You can optionally run `bibcat evaluate` on each chunked output instead of on the entire sample output, with the eval_batch, `-e`, flag:
+
+`bibcat llm batch process -b /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_large_batchfile.jsonl -e`
+
+```
+bibcat.llm.chunker - INFO - Loaded plan state from /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_batchfile_chunk_plan.yaml
+All batches already submitted.
+Evaluating batch results.
+...
+bibcat.llm.io - INFO - Writing output to /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/batch_chunks/gs_summary_batchtest_output_chunk_001_t0.5.json
+[{'chunk': 'gs_llm_batchtest_output_chunk_001.json', 'bibcode': '2018A&A...610A..11I', 'status': 'evaluated'},...]
+```
+
+This produces chunked files (`chunk_XXX`) with the same name as `config.llms.eval_output_file`. You can merge these together with the merge command.
+
+**Merge Chunks**
+
+To merge all llm output chunks back into a single file, use the merge, `-m` flag. This merges both the llm output files and any summary evaluation files.  See `chunker.SubmissionManager.merge_outputs` for details.
+`bibcat llm batch process -b /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_large_batchfile.jsonl -m`
+
+```
+bibcat.llm.chunker - INFO - Writing merged file to /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_llm_batchtest_output.json
+bibcat.llm.chunker - INFO - Writing merged file to /Users/bcherinka/Work/stsci/bibcat_data/output/output/llms/openai_gpt-4.1-mini/gs_summary_batchtest_output_t0.5.json
+```
 ## User Configuration
 An example for the new ``llms`` section of the configuration.
 
@@ -151,12 +298,16 @@ An example for the new ``llms`` section of the configuration.
 llms:
   user_prompt: null
   agent_prompt: null
-  prompt_output_file: paper_output.json
-  llm_user_prompt: llm_user_prompt.txt
-  llm_agent_prompt: llm_agent_prompt.txt
+  prompt_output_file: paper_output.json # llm classification primary output
+  batch_file: batch_file.jsonl # llm batch jsonl file
+  llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
+  llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
   openai:
-    model: gpt-4o-mini
-```
+    model: gpt-5-mini
+    reasoning: medium
+    verbosity: medium
+    batch_daily_token_limit: 40_000_000 # for batch processing
+ ```
 
 ## User and Agent (System) Prompts
 
@@ -165,6 +316,8 @@ User and agent prompts to the LLM can be customized through the `bibcat` configu
 To create a new custom user or agent prompt file, create a new text file at the location of `$BIBCAT_DATA_DIR`.  The name of the file can be anything, but must be specified in your `config.llms.llm_user_prompt`, and `config.llms.llm_agent_prompt` fields.  These fields are the filename references.  The custom prompt file is preferred as it allows for the specification of larger, more complex prompt text and instructions.
 
 If no custom prompt file is found, the code defaults to the prompts found in `config.llms.user_prompt` and ``config.llms.agent_prompt`` or the default agent prompt in `etc/bibcat_config.yaml`.
+
+Check out [Prompt Testing](https://bibcat.readthedocs.io/en/latest/llm.html#testing-new-prompts) to test new prompts.
 
 ### Testing New Prompts
 
@@ -201,13 +354,13 @@ INFO - Output: {'error': 'No JSON content found in response'}
 For more complex prompts, specify them in custom files at `$BIBCAT_DATA_DIR`.
 
 - Create a new text file, `my_user_prompt.txt` with the following content:
-```txt
+```text
 Which type of whale appeared in a 80's science fiction movie?
 ```
 
 - Create a new text file, `my_agent_prompt.txt` with the following content:
 
->```txt
+>```text
 >You are an professional expert on whales.
 >You are also witty and always respond with a clever pun.
 >*Always* format your response as valid JSON, with the following example as a guide:
@@ -236,7 +389,7 @@ llms:
 - Running `bibcat llm run -i 0` without verbosity produces:
 
 ```bash
-Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
+Loading source dataset: /path/to/dataset.json
 INFO - Using paper bibcode: 2023Natur.616..266L
 WARNING - Error converting output to classification format: too many values to unpack (expected 2)
 INFO - Output: {'whale': 'Humpback', 'response': "The Humpback whale is the star of 'Star Trek IV: The Voyage Home'. Talk about a cinematic whale ready for a 'fin'-tastic adventure!", 'source': 'https://en.wikipedia.org/wiki/Star_Trek_IV:_The_Voyage_Home'}
@@ -247,13 +400,13 @@ INFO - Output: {'whale': 'Humpback', 'response': "The Humpback whale is the star
 If you have multiple custom prompt files, you can quickly switch between them using the `-u` or `-a` flags on `llm run`, for `user`, and `agent` prompts, respectively, without modifying your config file.
 
 - Create a new text file, `my_user_prompt2.txt` with the following content:
-```txt
+```text
 What color was the whale that Ahab hated?
 ```
 
 - Running `bibcat llm run -i 0 -u my_user_prompt2.txt`, produces:
 ```bash
-Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
+Loading source dataset: /path/to/dataset.json
 INFO - Using paper bibcode: 2023Natur.616..266L
 WARNING - Error converting output to classification format: too many values to unpack (expected 2)
 INFO - Output: {'whale': 'White', 'response': "Captain Ahab had a 'whale' of a problem with Moby Dick, the infamous white whale!", 'source': 'https://en.wikipedia.org/wiki/Moby-Dick'}
@@ -328,7 +481,7 @@ You can turn off structured response output with the `-u` flag, e.g. `bibcat llm
 
 ## Evaluating Output
 
-To assess how well an LLM might be doing, we can try to evaulate it by running repeated trial runs, collecting the output, and comparing
+To assess how well an LLM might be doing, we can try to evaluate it by running repeated trial runs, collecting the output, and comparing
 to the human classifications from the source dataset.
 
 First, run bibcat llm run with the `-n` flag to specify to run repeated submissions of the paper, and record all outputs in the output JSON file.
@@ -344,7 +497,7 @@ bibcat llm evaluate -b "2020A&A...642A.105K"
 
 You should see some output similar to
 ```bash
-Loading source dataset: /Users/jyoon/Documents/asb/bibliography_automation/bibcat_datasets//dataset_combined_all_2018-2023.json
+Loading source dataset: /path/to/dataset.json
 INFO - Evaluating output for 2020A&A...642A.105K
 INFO - Number of runs: 3
 INFO - Human Classifications:
@@ -357,23 +510,23 @@ llm_mission llm_papertype mean_llm_confidences std_llm_confidences  count  n_run
 INFO - Missing missions by humans: K2
 INFO - Missing missions by LLM:
 INFO - Hallucination by LLM: K2
-Writing output to /Users/jyoon/GitHub/bibcat/output/output/llms/openai_gpt-4o-mini/summary_output_t0.7.json
+Writing output to /path/to/output/llms/openai_gpt-4o-mini/summary_output_t0.7.json
 ```
 
 The output is also written to a file specified by `config.llms.eval_output_file`.
 
-For now this produces a Pandas dataframe, grouped by the LLM predicted mission and papertype, with its mean confidence score, the number of times that combination was output by the LLM, the total number of trial runs, frequency-weighted confidence values, an accuracy score of how well it matched the human classification, and a boolean flag if that combination appears in the human classification.  The human classication comes from the "class_missions" field in the source dataset file.
+For now, this produces a Pandas dataframe grouped by the LLM predicted mission and papertype, with its mean confidence score and the number of times that combination was output by the LLM. It also includes the total number of trial runs, frequency-weighted confidence values, an accuracy score of how well it matched the human classification, and a boolean flag if that combination appears in the human classification. The human classification comes from the "class_missions" field in the source dataset file.
 
-Alternatively, you can both submit a paper for classfication and evaluate it in a single command using the `-s`, `--submit` flag.  In combination with the `-n` flag,
-this will classify the paper `num_runs` time before evaluation.
+Alternatively, you can both submit a paper for classification and evaluate it in a single command using the `-s`, `--submit` flag.  In combination with the `-n` flag,
+this will classify the paper `num_runs` times before evaluation.
 
 This example first classifies paper index 1000, 20 times, then evaluates the output.
-```base
+```bash
 bibcat llm evaluate -i 1000 -s -n 20
 ```
 
 ```bash
-Loading source dataset: /Users/bcherinka/Work/stsci/bibcat_data/dataset_combined_all_2018-2023.json
+Loading source dataset: /path/to/dataset.json
 INFO - Using paper bibcode: 2022SPIE12184E..24M
 INFO - Output: {'JWST': ['MENTION', 0.7]}
 INFO - Using paper bibcode: 2022SPIE12184E..24M
@@ -408,7 +561,7 @@ Definitions of the output columns from the evaluation.
 - **missing_by_llm**: The set of missing missions by llm classification
 - **hallucinated_missions**: The list of missions hallucinated by llm
 
-#### Each mission/papertype DataFrame output, as "df"
+#### Mission + papertype summary, "df"
   This data frame represents stats based on each mission + papertype callout
 - **llm_mission**: The mission from the LLM output
 - **mean_llm_confidence**: The list of the mean confidence values of SCIENCE and MENTION across all trial runs, for each mission + papertype combination. Conditional probabilities. Sum to 1.
@@ -422,7 +575,7 @@ Definitions of the output columns from the evaluation.
 - **mission_in_text**: Flag whether or not the mission keyword is in the source paper text
 - **hallucination_by_llm**: Flag whether or not the mission keyword is hallucinated by LLM, i.e., mission is not found in text
 
-#### Output Statistics by each mission, as "mission_conf"
+#### Mission statistics, "mission_conf"
   This data frame represents stats based on each mission callout
 - **llm_mission**: The mission from the LLM output
 - **total_mission_conf**: The total confidence value for the given mission.  Sum of all weighted [science, mention] conf values.
@@ -571,22 +724,38 @@ bibcat llm batch evaluate -p bibcode_list.txt -s -n 20
 
 ## Plotting Evaluation Plots
 
-You can assess model performance using confusion matrix plots or Receiver Operating Characteristic (ROC) curves. A [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) plot helps evaluation classification model performance by showing true positives ($TP$), true negatives ($TN$), false positives ($FP$), and false negatives ($FN$), making it useful for understanding evaluation metrics such as accuracy ($\frac{TP+TN}{TP+TB+FP+FN}$), precision ($\frac{TP}{TP+FP}$), recall (sensitivity, $\frac{TP}{(TP+FN)}$), and F1 score ($2\times \frac{precision \times recall}{ precison + recall}$). A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curve evaluates a model's ability to distinguish between classes by plotting the true positive rate against the false positive rate at various thresholds, with the area under the curve (AUC) which represents the degree of separability between classes. For instance, AUC=1.0 indicates perfect and AUC =0.5 is as good as random guessing. To provide more reliable and stable performance metrics, larger datasets (hundreds or thousands) are recommended. With small datasets, you make interpreations less reliable.
+You can assess model performance using confusion matrix plots or Receiver Operating Characteristic (ROC) curves. A [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) plot helps evaluation classification model performance by showing true positives ($TP$), true negatives ($TN$), false positives ($FP$), and false negatives ($FN$), making it useful for understanding evaluation metrics such as
+
+$$
+   \text{Accuracy} = \dfrac{TP + TN}{TP + TN + FP + FN}
+
+   \text{Precision} = \dfrac{TP}{TP + FP}
+
+   \text{Recall} = \dfrac{TP}{TP + FN}
+
+   F_1 = 2 \times \dfrac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}
+$$
+
+A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curve evaluates a model's ability to distinguish between classes by plotting the true positive rate against the false positive rate at various thresholds, with the area under the curve (AUC) which represents the degree of separability between classes. For instance, AUC = 1.0 indicates perfect and AUC =0.5 is as good as random guessing. To provide more reliable and stable performance metrics, larger datasets (hundreds or thousands) are recommended. With small datasets, you make interpreations less reliable.
 
 ### Confusion Matrix Plot
-To plot a confusion matrix for specific missions (default threshold probability = 0.7), run:
+To plot confusion matrices for specific missions (default threshold probability = 0.5), run:
 ```bash
 bibcat llm plot -c -m HST -m JWST
 ```
 
-To plot a confusion matrix for all missions, run:
+To plot confusion matrices for all missions, run:
 ```bash
 bibcat llm plot -c -a
 ```
+![confusion matrix example](images/example_confusion_matrix_plot_t0.5.png)
+
+In the example confusion matrix (CM) plot, we have both counts (left panel) and normalized counts (right panel). All counts were considered if the confidence value of each LLM classification is >= 0.5 (`threshold = 0.5`). We can see the distribution of true positives (top left quadrant), false positives (bottom left quadrant), true negatives (bottom right quadrant), and false negatives (top right quadrant) for the specified missions. This visualization helps in understanding the model's performance and identifying areas for improvement. Note that in this figure, all MAST missions were considered to create CM, but only a subset of the missions in the annotation, `Mission(s) found:` were actually called out by human and LLM as seen in. The missions not found in the sample only contribute to true negatives.
+
 These commands will also create metrics summary files ( `*metrics_summary_t0.5.txt` and `*metrics_summary_t0.5.json`).
 The outuput would look like
 
-```txt
+```text
 The number of bibcodes (papers) for evaluation metrics: 89
 The number of mission callouts by human: 217
 The number of mission callouts by llm with the threshold value, 0.5: 222
@@ -748,10 +917,11 @@ bibcat llm audit
 
 #### File output for the inconsistent classifications
 
-The command line command, `bibcat llm audit`, will create a json file (`config.llms.inconsistent_classifications_file`) of failure bibcode + mission classifications and its summary counts.
+The command line command, `bibcat llm audit`, will create a json file (`config.llms.inconsistent_classifications_file`) of failure bibcode + mission classifications and its summary counts. It also create a json file (`llm_only_classified_list_for_audit.json`) which collects the bibcode items that human didn't classify any misisons but LLM classifies missions. You can use this list to further investigate if LLM hallucinates or human mistakenly missed classifications.
 
 The definitions of the JSON output columns are following.
 - **summary_counts** : stats summary of inconsistent classifications
+- **n_llm_only_classified_bibcodes** : the number of bibcodes that human didn't classify any missions but LLM classifies missions
 - **n_total_bibcodes**: the number of total bibcodes
 - **n_matched_classifications**: the number of matched classifications
 - **n_mismatched_bibcodes**: the number of mismatched (failure) bibcode
@@ -768,6 +938,7 @@ The output example is as follows:
 {
   "summary_counts": {
     "n_total_bibcodes": 89,
+    "n_llm_only_classified_bibcodes": 1,
     "n_matched_classifications": 81,
     "n_mismatched_bibcodes": 65,
     "n_mismatched_classifications": 134,
@@ -804,8 +975,23 @@ The output example is as follows:
         }
       ],
       "missions_not_in_text": []
+    },
+    "2020A&A...633A..48F": {
+      "failures": {
+        "flag": "llm_only_classified"
+      },
+      "human": {},
+      "llm": [
+        {
+          "HST": "MENTION",
+          "confidence": [
+            0.2,
+            0.8
+          ],
+          "mission_probability": 0.25
+        },
+      ]
     }
-  }
 }
 
 ```

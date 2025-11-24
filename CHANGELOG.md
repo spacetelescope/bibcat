@@ -1,9 +1,50 @@
-# Change Log
+# Changelog
 
-### [Unreleased]
-- Bibcat to do list
-    - Adding tutorial notebooks back
+## [Unreleased]
+### Added
 -
+
+### Changed
+-
+
+### Fixed
+-
+### Deprecated
+-
+
+### Removed
+-
+
+### Security
+-
+
+---
+## ### Added
+- [PR #86](https://github.com/spacetelescope/bibcat/pull/86)
+    - github action for auto-release when git tag pushed and minor doc updates
+
+## [0.2.2] - 2025-09-29
+### Added
+- [PR #82](https://github.com/spacetelescope/bibcat/pull/82)
+    - a field_validator to ensure that the LLM output classification is only one of the allowed keywords
+
+### Changed
+- [PR #82](https://github.com/spacetelescope/bibcat/pull/82)
+    - Updated Confusion matrix (CM) plot text annotation of the mission names.
+
+### Fixed
+- [PR #82](https://github.com/spacetelescope/bibcat/pull/82)
+    - The bug in `grouped_df["llm_mission"] = mission_df["llm_mission"].str.upper()` in prepare_output() was fixed. This bug caused KeyError:nan error due to mismatched index between `mission_df` and `grouped_df` when there were both the papertypes for the same bibcode in `grouped_df`.
+    - When there is no llm output for a bibcode, but human classification exists, the output still outputs human classification in summay_output.
+    - Updated metrics.py and stats.py to account human classifications but not to count when source paper is not found;
+
+## [0.2.1] - 2025-09-26
+### Changed
+- [PR #85](https://github.com/spacetelescope/bibcat/pull/85)
+    - Changed Sphinx theme to `book` and updated documentation and updated docs.
+
+## [0.2.0] - 2025-09-22
+
 ### Removed
 - [PR #48](https://github.com/spacetelescope/bibcat/pull/48)
     - Removed conda env file.
@@ -117,6 +158,12 @@
     - updated formatting and styling
 
 ### Added
+- [PR #83](https://github.com/spacetelescope/bibcat/pull/83)
+    - added .readthedoc.yaml for the readthedoc documentation pages
+
+- [PR #81](https://github.com/spacetelescope/bibcat/pull/81)
+    - Added support for chunk planning/submission for large batches to OpenAI Batch API
+
 - [PR #79](https://github.com/spacetelescope/bibcat/pull/79)
     - Adding new batch cli commands for submitting a batch job using OpenAI's Batch API
     - Added new `bibcat llm batch submit` and `bibcat llm batch retreive` for submitting and retrieving batch jobs
@@ -206,3 +253,8 @@
 ## [0.1.0] - 2024-01-29
 
 Initial tag to preserve code before refactor
+
+[Unreleased]: https://github.com/spacetelescope/bibcat/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/spacetelescope/bibcat/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/spacetelescope/bibcat/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/spacetelescope/bibcat/compare/v0.0.1...v0.1.0

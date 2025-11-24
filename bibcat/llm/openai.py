@@ -2,6 +2,7 @@ import json
 import os
 import pathlib
 import re
+from collections import Counter
 from enum import Enum
 
 import openai
@@ -17,8 +18,28 @@ from bibcat.utils.logger_config import setup_logger
 logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
+class CaseInsensitiveEnum(str, Enum):
+    """Case insensitive enum
+
+    Need these due to changes in mission capitalization in
+    https://github.com/spacetelescope/bibcat/pull/69
+    """
+
+    @classmethod
+    def _missing_(cls, value):
+        if not isinstance(value, str):
+            return None
+
+        v = value.lower()
+        # try by member value (mixed case)
+        for member in cls:
+            if member.lower() == v:
+                return member
+        return None
+
+
 # create an enum for the missions, using the config list
-MissionEnum = Enum("MissionEnum", dict(zip(map(str.lower, config.missions), config.missions)))
+MissionEnum = CaseInsensitiveEnum("MissionEnum", dict(zip(map(str.lower, config.missions), config.missions)))
 
 
 class PapertypeEnum(str, Enum):
@@ -52,6 +73,10 @@ class MissionInfo(BaseModel):
         """Ensure the confidence is a list of two floats that sum to 1"""
         if len(value) != 2:
             raise ValueError("Confidence must contain exactly two float values.")
+        if sum(value) == 0:
+            # must account for no data getting assigned confidences of [0,0]
+            # need this due to changes in https://github.com/spacetelescope/bibcat/commit/c8de9a6fae6bd8b6ca013c84870dc78e0331f865
+            return value
         if abs(sum(value) - 1.0) > 1e-6:
             raise ValueError(f"Confidence values must sum to 1.0, got {sum(value):.6f}.")
         return value
@@ -67,6 +92,23 @@ class InfoModel(BaseModel):
 
     notes: str = Field(..., description="all your notes and thoughts you have written down during your process")
     missions: list[MissionInfo] = Field(..., description="a list of your identified missions")
+
+    @field_validator("missions", mode="after")
+    @classmethod
+    def validate_unique_missions(cls, missions: list[MissionInfo]) -> list[MissionInfo]:
+        """
+        Ensure each mission appears only once in the list.
+        Each mission can only have one papertype, so duplicates are invalid.
+        """
+        mission_counts = Counter(m.mission for m in missions)
+        duplicates = [mission for mission, count in mission_counts.items() if count > 1]
+
+        if duplicates:
+            raise ValueError(
+                f"Duplicate mission(s) found in the classification: {', '.join(m.value for m in duplicates)}"
+            )
+
+        return missions
 
 
 class OpenAIHelper:
@@ -272,14 +314,15 @@ class OpenAIHelper:
                     ],
                 }
             ]
-
         # send the request
+        logger.debug("Using model and reasoning: %s, %s", config.llms.openai.model, config.llms.openai.reasoning)
         try:
             result = self.client.responses.parse(
                 model=config.llms.openai.model,
                 instructions=get_llm_prompt("agent"),
                 input=llm_input,
                 text_format=InfoModel,
+                reasoning={"effort": config.llms.openai.reasoning},
             )
         except openai.BadRequestError as e:
             logger.error("Error sending request: %s", e)
@@ -445,6 +488,33 @@ class OpenAIHelper:
 
         return str(out)
 
+    @staticmethod
+    def is_batch_file_validated(batch_file: str):
+        """Check if the batch file is valid for processing
+
+        Checks if the batch file meets the requirements for processing
+        by the OpenAI Batch API, with given limits on number of lines
+        and file size.
+
+        Parameters
+        ----------
+        batch_file : str
+            The path to the batch file to validate.
+
+        Returns
+        -------
+        bool
+            True if the batch file is valid, False otherwise.
+        """
+        file_size = os.path.getsize(batch_file)
+        with open(batch_file, "r", encoding="utf-8") as f:
+            data = f.readlines()
+            n_lines = len(data)
+
+        max_lines = 50_000
+        max_size = 200
+        return n_lines < max_lines and file_size < max_size * 1024 * 1024
+
     def submit_batch(self, bibcodes: list[str] = None, batch_file: str = None):
         """Submit a batch of papers for processing
 
@@ -462,7 +532,13 @@ class OpenAIHelper:
         if not batch_file:
             batch_file = self.create_batch_file(bibcodes)
 
+        # check if batch file is validated
+        if not self.is_batch_file_validated(batch_file):
+            logger.error("Input batch file not valid for OpenAI Batch API.  Please use the Chunker instead.")
+            return
+
         # upload the batch file
+        logger.info("Uploading batch file %s", batch_file)
         self.upload_file(file_path=batch_file, purpose="batch")
 
         # submit the batch job
@@ -471,7 +547,7 @@ class OpenAIHelper:
         )
         logger.info("Submitting a batch run with batch ID %s", self.batch.id)
 
-    def retrieve_batch(self, batch_id: str = None):
+    def retrieve_batch(self, batch_id: str = None, output: str = None):
         """Retrieve a batch of papers for processing
 
         This method retrieves the status and results of a batch job submitted
@@ -489,7 +565,7 @@ class OpenAIHelper:
             when the batch run has failed
         """
         # get the batch id
-        batch_id = batch_id or self.batch.id if self.batch else None
+        batch_id = batch_id or (self.batch.id if self.batch else None)
         if not batch_id and not self.batch:
             self.batch = next(iter(self.client.batches.list()), None)
             batch_id = batch_id or self.batch.id if self.batch else None
@@ -511,17 +587,24 @@ class OpenAIHelper:
             data = {}
             for line in file_response.response.iter_lines():
                 i = json.loads(line)
-                ii = InfoModel(**json.loads(i["response"]["body"]["output"][0]["content"][0]["text"]))
-                data[i["custom_id"]] = [ii.model_dump()]
+                try:
+                    ii = InfoModel(**json.loads(i["response"]["body"]["output"][0]["content"][0]["text"]))
+                except ValidationError as e:
+                    msg = f"Error validating batch {i['custom_id']}: {e}"
+                    logger.error(msg)
+                    raise RuntimeError(msg) from e
+                else:
+                    data[i["custom_id"]] = [ii.model_dump()]
 
             # write the output to our standard llm output file
-            out = (
-                pathlib.Path(config.paths.output)
-                / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
-            )
-            out.parent.mkdir(parents=True, exist_ok=True)
-            logger.info("Writing batch output to %s", out)
-            with open(out, "w", encoding="utf-8") as f:
+            if not output:
+                output = (
+                    pathlib.Path(config.paths.output)
+                    / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
+                )
+            output.parent.mkdir(parents=True, exist_ok=True)
+            logger.info("Writing batch output to %s", output)
+            with open(output, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
 
 
@@ -631,4 +714,3 @@ def classify_paper(
         # write the output response to a file
         key = oa.get_output_key()
         write_output(key, response)
-
