@@ -51,7 +51,7 @@ To install all dependencies for development except for the ML component, testing
 
 This model is used for the [Pretrained model method](https://github.com/spacetelescope/bibcat/blob/dev/docs/pretrained.md)
 ```
-python -m spacy download en_core_web_sm
+python -m spacy download en_core_web_sm-3.7.1
 ```
 
 ### Tensorflow package installation for `Pretrained` method

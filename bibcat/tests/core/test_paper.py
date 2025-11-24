@@ -441,7 +441,7 @@ class TestPaper(unittest.TestCase):
         def test_assemble_keyword_wordchunks_wrapper(self):
             # Prepare text and answers for test
             dict_tests = {
-                "Hubble calibrated images": {"lookup": "Hubble", "result": ["Hubble"]},
+                "Hubble calibrated images": {"lookup": "Hubble", "result": ["Hubble calibrated images"]},
                 "Hubble's calibrated data": {"lookup": "Hubble", "result": ["Hubble's calibrated data"]},
                 "Hubble and more data.": {"lookup": "Hubble", "result": ["Hubble"]},
                 "Kepler fields.": {"lookup": "Kepler", "result": ["Kepler fields"]},
@@ -492,7 +492,7 @@ class TestPaper(unittest.TestCase):
         def test_early_true_exact_wordchunk(self):
             # Prepare text and answers for test
             dict_tests = {
-                "Hubble calibrated images": {"lookup": "Hubble", "result": True},
+                "Hubble calibrated images": {"lookup": "Hubble", "result": None},
                 "Hubble's calibrated data": {"lookup": "Hubble", "result": None},
                 "Hubble and more data.": {"lookup": "Hubble", "result": True},
                 "Kepler fields.": {"lookup": "Kepler", "result": None},
@@ -554,7 +554,7 @@ class TestPaper(unittest.TestCase):
                 },
                 "Hubble et al. 2000": {
                     "lookup": "Hubble",
-                    "result": [("Hubble et al 2000", False, "AnyMission et al")],
+                    "result": [("Hubble et al", False, "AnyMission et al")],
                 },
                 "Table 1 then gives the measured Kepler velocity data and Kepler planets.": {
                     "lookup": "Kepler",
@@ -627,7 +627,7 @@ class TestPaper(unittest.TestCase):
                 },
                 "Hubble et al. 2000": {
                     "lookup": "Hubble",
-                    "result": [("Hubble et al 2000", "hubble et alabama aluminum 000", ["hubble"])],
+                    "result": [("Hubble et al", "hubble et alabama aluminum", ["hubble"])],
                 },
                 "Kepler velocity fields.": {
                     "lookup": "Kepler",
@@ -700,7 +700,7 @@ class TestPaper(unittest.TestCase):
                 },
                 "Hubble et al. 2000": {
                     "lookup": "Hubble",
-                    "result": {"Hubble et al 2000": {"matches": 0, "meanings": 2}},
+                    "result": {"Hubble et al": {"matches": 0, "meanings": 2}},
                 },
                 "Kepler velocity fields.": {
                     "lookup": "Kepler",
@@ -780,7 +780,7 @@ class TestPaper(unittest.TestCase):
                 },
                 "Hubble et al. 2000": {
                     "lookup": "Hubble",
-                    "result": {"Hubble et al 2000": ["matcher", "bool", "text_wordchunk", "text_database"]},
+                    "result": {"Hubble et al": ["matcher", "bool", "text_wordchunk", "text_database"]},
                 },
                 "Kepler velocity fields.": {
                     "lookup": "Kepler",
