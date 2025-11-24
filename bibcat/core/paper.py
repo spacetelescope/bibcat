@@ -750,7 +750,7 @@ class Paper(Base):
           and if no matches are found, retries with `list_exp_meaning_ambigs`.
         Parameters:
         - exp_list [List[str]]:
-          - The ambiguous dictionary to use.
+          - The ambiguous dictionary to use, `list_exp_exact_ambigs` or `list_exp_meaning_ambigs`
         - label [str]:
           - The name of the ambiguous dictionary used for logging/debugging, "exact" or "meaning"
         - curr_chunk_text [str]:
