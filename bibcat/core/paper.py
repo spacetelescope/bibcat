@@ -30,6 +30,56 @@ logger.setLevel(config.logging.level)
 nlp = spacy.load(config.grammar.spacy_language_model)
 
 
+@dataclass
+class TruematchSetup:
+    """
+    Container for all variables required during the `_check_truematch` process in paper.py.
+
+    Attributes:
+    - text: The input text being analyzed.
+    - dict_ambigs: Database of ambiguous mission phrases loaded or provided.
+    - keyword_objs: List of keyword objects used for matching.
+    - do_verbose: Flag to enable surface-level log information and tests.
+    - do_verbose_deep: Flag to enable inner log information and tests.
+    - list_kw_ambigs: List of keywords associated with ambiguous phrases.
+    - list_exp_exact_ambigs: List of regex patterns for exact ambiguous matches.
+    - list_exp_meaning_ambigs: List of regex patterns for meaning-based ambiguous matches.
+    - list_bool_ambigs: List of boolean flags indicating ambiguity status.
+    - list_text_ambigs: Original ambiguous phrases from the database.
+    - lookup_ambigs: List of lookup terms for ambiguity detection.
+    - lookup_ambigs_lower: Lowercased version of lookup terms.
+    - num_ambigs: Total number of ambiguous phrases.
+    - keyword_objs_ambigs: Subset of keyword objects that are potentially ambiguous.
+    - dict_kobjinfo: Mapping of keyword objects to their match info provided by `Keyword.identify_keyword`.
+    """
+
+    text: str
+    dict_ambigs: Dict[str, List[str]]
+    keyword_objs: List[Keyword]
+    do_verbose: bool
+    do_verbose_deep: bool
+    list_kw_ambigs: List[str]
+    list_exp_exact_ambigs: List[str]
+    list_exp_meaning_ambigs: List[str]
+    list_bool_ambigs: List[str]
+    list_text_ambigs: List[str]
+    lookup_ambigs: List[str]
+    lookup_ambigs_lower: List[str]
+    num_ambigs: int
+    keyword_objs_ambigs: List[Keyword]
+    dict_kobjinfo: Dict[str, Dict[str, bool | List[List[int]]]]
+
+    def log_if_verbose(self, str):
+        """
+        Logs a message if verbose mode is enabled.
+
+        Parameters:
+        - message (str): The message to log.
+        """
+        if self.do_verbose:
+            logger.info(str)
+
+
 class Paper(Base):
     """
     Class: Paper
@@ -303,55 +353,6 @@ class Paper(Base):
         }
         return fin_result
 
-    @dataclass
-    class TruematchSetup:
-        """
-        Container for all variables required during the `_check_truematch` process.
-
-        Attributes:
-        - text: The input text being analyzed.
-        - dict_ambigs: Database of ambiguous mission phrases loaded or provided.
-        - keyword_objs: List of keyword objects used for matching.
-        - do_verbose: Flag to enable surface-level log information and tests.
-        - do_verbose_deep: Flag to enable inner log information and tests.
-        - list_kw_ambigs: List of keywords associated with ambiguous phrases.
-        - list_exp_exact_ambigs: List of regex patterns for exact ambiguous matches.
-        - list_exp_meaning_ambigs: List of regex patterns for meaning-based ambiguous matches.
-        - list_bool_ambigs: List of boolean flags indicating ambiguity status.
-        - list_text_ambigs: Original ambiguous phrases from the database.
-        - lookup_ambigs: List of lookup terms for ambiguity detection.
-        - lookup_ambigs_lower: Lowercased version of lookup terms.
-        - num_ambigs: Total number of ambiguous phrases.
-        - keyword_objs_ambigs: Subset of keyword objects that are potentially ambiguous.
-        - dict_kobjinfo: Mapping of keyword objects to their match info provided by `Keyword.identify_keyword`.
-        """
-
-        text: str
-        dict_ambigs: Dict[str, List[str]]
-        keyword_objs: List[Keyword]
-        do_verbose: bool
-        do_verbose_deep: bool
-        list_kw_ambigs: List[str]
-        list_exp_exact_ambigs: List[str]
-        list_exp_meaning_ambigs: List[str]
-        list_bool_ambigs: List[str]
-        list_text_ambigs: List[str]
-        lookup_ambigs: List[str]
-        lookup_ambigs_lower: List[str]
-        num_ambigs: int
-        keyword_objs_ambigs: List[Keyword]
-        dict_kobjinfo: Dict[str, Dict[str, bool | List[List[int]]]]
-
-        def log_if_verbose(self, str):
-            """
-            Logs a message if verbose mode is enabled.
-
-            Parameters:
-            - message (str): The message to log.
-            """
-            if self.do_verbose:
-                logger.info(str)
-
     def _build_single_info_entry(self, **kwargs):
         """
         Method: _build_single_info_entry
@@ -430,7 +431,7 @@ class Paper(Base):
         # Extract keyword identification information for each kobj
         dict_kobjinfo = {item._get_info("name"): item.identify_keyword(text) for item in keyword_objs}
 
-        return self.TruematchSetup(
+        return TruematchSetup(
             text=text,
             dict_ambigs=dict_ambigs,
             keyword_objs=keyword_objs,
