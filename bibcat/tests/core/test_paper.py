@@ -131,7 +131,7 @@ class TestPaper(unittest.TestCase):
 
                 # Prepare and run test for bibcat class instance
                 testpaper = paper.Paper(text=curr_text, keyword_objs=test_list_lookup_kobj, do_check_truematch=True)
-                _ = testpaper.process_paragraphs(buffer=curr_buffer)
+                testpaper.process_paragraphs(buffer=curr_buffer)
                 test_res = testpaper.get_paragraphs()[curr_name]
 
                 # ambig_output = testpaper._get_info("_results_ambig")[curr_name]
