@@ -12,7 +12,7 @@ the rest of the text.
 
 import re
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 import spacy
@@ -35,22 +35,38 @@ class TruematchSetup:
     """
     Container for all variables required during the `_check_truematch` process in paper.py.
 
-    Attributes:
-    - text: The input text being analyzed.
-    - dict_ambigs: Database of ambiguous mission phrases loaded or provided.
-    - keyword_objs: List of keyword objects used for matching.
-    - do_verbose: Flag to enable surface-level log information and tests.
-    - do_verbose_deep: Flag to enable inner log information and tests.
-    - list_kw_ambigs: List of keywords associated with ambiguous phrases.
-    - list_exp_exact_ambigs: List of regex patterns for exact ambiguous matches.
-    - list_exp_meaning_ambigs: List of regex patterns for meaning-based ambiguous matches.
-    - list_bool_ambigs: List of boolean flags indicating ambiguity status.
-    - list_text_ambigs: Original ambiguous phrases from the database.
-    - lookup_ambigs: List of lookup terms for ambiguity detection.
-    - lookup_ambigs_lower: Lowercased version of lookup terms.
-    - num_ambigs: Total number of ambiguous phrases.
-    - keyword_objs_ambigs: Subset of keyword objects that are potentially ambiguous.
-    - dict_kobjinfo: Mapping of keyword objects to their match info provided by `Keyword.identify_keyword`.
+    Attributes
+    ----------
+    text : str
+        The input text being analyzed.
+    dict_ambigs : dict of str to list of str
+        Database of ambiguous mission phrases loaded or provided.
+    keyword_objs : list of Keyword
+        List of keyword objects used for matching.
+    do_verbose : bool
+        Flag to enable surface-level log information and tests.
+    do_verbose_deep : bool
+        Flag to enable inner log information and tests.
+    list_kw_ambigs : list of str
+        List of keywords associated with ambiguous phrases.
+    list_exp_exact_ambigs : list of str
+        List of regex patterns for exact ambiguous matches.
+    list_exp_meaning_ambigs : list of str
+        List of regex patterns for meaning-based ambiguous matches.
+    list_bool_ambigs : list of str
+        List of boolean flags indicating ambiguity status.
+    list_text_ambigs : list of str
+        Original ambiguous phrases from the database.
+    lookup_ambigs : list of str
+        List of lookup terms for ambiguity detection.
+    lookup_ambigs_lower : list of str
+        Lowercased version of lookup terms.
+    num_ambigs : int
+        Total number of ambiguous phrases.
+    keyword_objs_ambigs : list of Keyword
+        Subset of keyword objects that are potentially ambiguous.
+    dict_kobjinfo : dict
+        Mapping of keyword objects to their match info provided by `Keyword.identify_keyword`.
     """
 
     text: str
@@ -69,15 +85,17 @@ class TruematchSetup:
     keyword_objs_ambigs: List[Keyword]
     dict_kobjinfo: Dict[str, Dict[str, bool | List[List[int]]]]
 
-    def log_if_verbose(self, str):
+    def log_if_verbose(self, message: str) -> None:
         """
         Logs a message if verbose mode is enabled.
 
-        Parameters:
-        - message (str): The message to log.
+        Parameters
+        ----------
+        message : str
+            The message to log.
         """
         if self.do_verbose:
-            logger.info(str)
+            logger.info(message)
 
 
 class Paper(Base):
@@ -279,47 +297,59 @@ class Paper(Base):
         # Return the buffered index spans
         return spans_buffered_merged
 
-    # Return boolean for whether or not text contains a true vs false match to the given keywords
-    def _check_truematch(self, text, keyword_objs, dict_ambigs, do_verbose=None, do_verbose_deep=False):  # noqa: C901
-        """
-        Method: _check_truematch
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-          - Determine if given text contains a true vs. false match to keywords.
-            - E.g.: 'Edwin Hubble' as a false match to Hubble Space Telescope.
-        Arguments:
-        - text [str]:
-          - The text to search.
-        - keyword_objs [list of Keyword instances]:
-          - Target missions; terms will be used to search the text.
-        - dict_ambigs [None or dict (default=None)]:
-          - If None, will load and process external database of ambiguous mission phrases.
+    def _check_truematch(
+        self,
+        text: str,
+        keyword_objs: list,
+        dict_ambigs: dict | None,
+        do_verbose: bool | None = None,
+        do_verbose_deep: bool = False,
+    ) -> dict:  # noqa: C901
+        """Return boolean for whether or not text contains a true vs false match to the given keywords.
+
+        Determine if given text contains a true vs. false match to keywords.
+        E.g.: 'Edwin Hubble' as a false match to Hubble Space Telescope.
+
+        Parameters
+        ----------
+        text : str
+            The text to search.
+        keyword_objs : list
+            Target missions; terms will be used to search the text.
+        dict_ambigs : dict or None
+            If None, will load and process external database of ambiguous mission phrases.
             If given, will use what is given.
-        - do_verbose [bool (default=False)]:
-          - Whether or not to print surface-level log information and tests.
-        - do_verbose_deep [bool (default=False)]:
-          - Whether or not to print inner log information and tests.
-        Returns:
-          - A dictionary with the following parameters
+        do_verbose : bool or None, optional
+            Whether or not to print surface-level log information and tests.
+        do_verbose_deep : bool, optional
+            Whether or not to print inner log information and tests.
+
+        Returns
+        -------
+        dict
+            A dictionary with the following parameters:
             - bool: boolean for whether or not text contains a true vs false match to the given keywords
             - info (if no keywords found or non-ambiguous match): an array with one item
-               - bool: same value as bool above
-               - text_wordchunk: status of search
-               - text_database: None
-               - matcher: None
-               - set: None if non-ambiguous match, otherwise omitted
-            - info (if going through ambiguous phrases): an array with multiple items, one for each phrase
-               - bool: result of that particular phrase. If any phrase matches true, the "bool" above is true
-               - text_wordchunk: the chunk of text searched
-               - text_database: the phrase searched within the chunk of text
-               - matcher: the result of regex search
-        Raises:
-        - ValueError: If no wordchunks are identified after short-circuit checks,
+                - bool: same value as bool above
+                - text_wordchunk: status of search
+                - text_database: None
+                - matcher: None
+                - set: None if non-ambiguous match, otherwise omitted
+            - info (if only ambiguous matches found): an array with multiple items, one for each phrase
+                - bool: result for that particular phrase. If any phrase matches true, the "bool" above is true
+                - text_wordchunk: the chunk of text searched
+                - text_database: the phrase searched within the chunk of text
+                - matcher: the result of regex search
+
+        Raises
+        ------
+        ValueError
+            If no wordchunks are identified after short-circuit checks,
             raises an error with detailed part-of-speech diagnostics.
-        - NotImplementedError: If a wordchunk was found after short-circuit checks,
+        NotImplementedError
+            If a wordchunk was found after short-circuit checks,
             but no matches or meanings are found in the ambiguous database for the wordchunk.
         """
-
         # Set up initial variables
         setup_data = self._setup_check_truematch_vars(text, dict_ambigs, keyword_objs, do_verbose, do_verbose_deep)
 
@@ -353,16 +383,18 @@ class Paper(Base):
         }
         return fin_result
 
-    def _build_single_info_entry(self, **kwargs):
-        """
-        Method: _build_single_info_entry
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-        - Formats the provided keyword arguments into the structure expected by `_check_truematch`.
-        Parameters:
-        - kwargs: Arbitrary keyword arguments. Must include a key named "bool".
-        Returns:
-        - A dictionary with:
+    def _build_single_info_entry(self, **kwargs: dict) -> dict:
+        """Formats the provided keyword arguments into the structure expected by `_check_truematch`.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Arbitrary keyword arguments. Must include a key named "bool".
+
+        Returns
+        -------
+        dict
+            A dictionary with:
             - "bool": the value of the "bool" keyword argument.
             - "info": a list containing the original keyword arguments.
         """
@@ -371,26 +403,34 @@ class Paper(Base):
             "info": [kwargs],
         }
 
-    def _setup_check_truematch_vars(self, text, dict_ambigs, keyword_objs, do_verbose=None, do_verbose_deep=None):
-        """
-        Method: _setup_check_truematch_vars
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-        - Initializes and prepares all necessary variables and data structures required by `_check_truematch`.
-        Parameters:
-        - text [str]:
-          - The text to search.
-        - keyword_objs [list of Keyword instances]:
-          - Target missions; terms will be used to search the text.
-        - dict_ambigs [None or dict (default=None)]:
-          - If None, will load and process external database of ambiguous mission phrases.
+    def _setup_check_truematch_vars(
+        self,
+        text: str,
+        dict_ambigs: dict | None,
+        keyword_objs: list,
+        do_verbose: Optional[bool] = None,
+        do_verbose_deep: Optional[bool] = None,
+    ) -> TruematchSetup:
+        """Initializes and prepares all necessary variables and data structures required by `_check_truematch`.
+
+        Parameters
+        ----------
+        text : str
+            The text to search.
+        keyword_objs : list
+            Target missions; terms will be used to search the text.
+        dict_ambigs : dict or None
+            If None, will load and process external database of ambiguous mission phrases.
             If given, will use what is given.
-        - do_verbose [bool (default=False)]:
-          - Whether or not to print surface-level log information and tests.
-        - do_verbose_deep [bool (default=False)]:
-          - Whether or not to print inner log information and tests.
-        Returns:
-        - TruematchSetup: An object containing all relevant variables for `_check_truematch`.
+        do_verbose : bool or None, optional
+            Whether or not to print surface-level log information and tests.
+        do_verbose_deep : bool or None, optional
+            Whether or not to print inner log information and tests.
+
+        Returns
+        -------
+        TruematchSetup
+            An object containing all relevant variables for `_check_truematch`.
         """
         # Load global variables
         if do_verbose is None:
@@ -449,18 +489,19 @@ class Paper(Base):
             dict_kobjinfo=dict_kobjinfo,
         )
 
-    def _early_true_non_ambig_keywords(self, setup_data):
-        """
-        Method: _early_true_non_ambig_keywords
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-        - Return status as a true match if non-ambiguous keywords match to text.
-        Parameters:
-        - setup_data [TruematchSetup]:
-          - An object containing all relevant variables for `_check_truematch`.
-        Returns:
-        - A formatted dictionary indicating a true match, if any non-ambiguous keywords are found.
-          If no matches are found, returns None.
+    def _early_true_non_ambig_keywords(self, setup_data: TruematchSetup) -> dict | None:
+        """Return status as a true match if non-ambiguous keywords match to text.
+
+        Parameters
+        ----------
+        setup_data : TruematchSetup
+            An object containing all relevant variables for `_check_truematch`.
+
+        Returns
+        -------
+        dict or None
+            A formatted dictionary indicating a true match, if any non-ambiguous keywords are found.
+            If no matches are found, returns None.
         """
         keyword_objs_non_ambigs = [
             item1 for item1 in setup_data.keyword_objs if item1 not in setup_data.keyword_objs_ambigs
@@ -474,18 +515,19 @@ class Paper(Base):
                 matcher=None, set=None, bool=True, text_wordchunk="<Not ambig.>", text_database=None
             )
 
-    def _early_false_no_keyword_match(self, setup_data):
-        """
-        Method: _early_false_no_keyword_match
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-        - Return status as a false match if no keywords match at all.
-        Parameters:
-        - setup_data [TruematchSetup]:
-          - An object containing all relevant variables for `_check_truematch`.
-        Returns:
-        - A formatted dictionary indicating a false match, if no keywords found.
-          If any match is found, returns None.
+    def _early_false_no_keyword_match(self, setup_data: TruematchSetup) -> dict | None:
+        """Return status as a false match if no keywords match at all.
+
+        Parameters
+        ----------
+        setup_data : TruematchSetup
+            An object containing all relevant variables for `_check_truematch`.
+
+        Returns
+        -------
+        dict or None
+            A formatted dictionary indicating a false match, if no keywords found.
+            If any match is found, returns None.
         """
         if not any(
             [setup_data.dict_kobjinfo[item._get_info("name")]["bool"] for item in setup_data.keyword_objs_ambigs]
@@ -498,18 +540,19 @@ class Paper(Base):
                 matcher=None, text_database=None, bool=False, text_wordchunk="<No matching keywords at all.>"
             )
 
-    def _early_true_acronym_match(self, setup_data):
-        """
-        Method: _early_true_acronym_match
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-        - Return status as a true match if any acronyms match.
-        Parameters:
-        - setup_data [TruematchSetup]:
-          - An object containing all relevant variables for `_check_truematch`.
-        Returns:
-        - A formatted dictionary indicating a true match, if any acronyms match.
-          If any match is found, returns None.
+    def _early_true_acronym_match(self, setup_data: TruematchSetup) -> dict | None:
+        """Return status as a true match if any acronyms match.
+
+        Parameters
+        ----------
+        setup_data : TruematchSetup
+            An object containing all relevant variables for `_check_truematch`.
+
+        Returns
+        -------
+        dict or None
+            A formatted dictionary indicating a true match, if any acronyms match.
+            If any match is found, returns None.
         """
         if any(
             [
@@ -525,18 +568,19 @@ class Paper(Base):
                 matcher=None, set=None, bool=True, text_wordchunk="<Not ambig.>", text_database=None
             )
 
-    def _early_true_non_ambig_phrases(self, setup_data):
-        """
-        Method: _early_true_non_ambig_phrases
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-        - Return status as a true match if non-ambiguous phrases match to text.
-        Parameters:
-        - setup_data [TruematchSetup]:
-          - An object containing all relevant variables for `_check_truematch`.
-        Returns:
-        - A formatted dictionary indicating a true match, if any non-ambiguous phrases are found.
-          If no matches are found, returns None.
+    def _early_true_non_ambig_phrases(self, setup_data: TruematchSetup) -> dict | None:
+        """Return status as a true match if non-ambiguous phrases match to text.
+
+        Parameters
+        ----------
+        setup_data : TruematchSetup
+            An object containing all relevant variables for `_check_truematch`.
+
+        Returns
+        -------
+        dict or None
+            A formatted dictionary indicating a true match, if any non-ambiguous phrases are found.
+            If no matches are found, returns None.
         """
         for obj in setup_data.keyword_objs_ambigs:
             for kw in obj._get_info("keywords"):
@@ -551,21 +595,27 @@ class Paper(Base):
                         matcher=None, set=None, bool=True, text_wordchunk="<Not ambig.>", text_database=None
                     )
 
-    def _assemble_keyword_wordchunks_wrapper(self, setup_data):
-        """
-        Method: _assemble_keyword_wordchunks
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-        - Wraps the `_assemble_keyword_wordchunks` method (inherited from `base.py`) with verbose logging and error handling.
-        - The base method assembles noun chunks around keyword terms found in the input text.
-        Parameters:
-        - setup_data [TruematchSetup]:
-          - An object containing all relevant variables for `_check_truematch`.
-        Returns:
-        - A list of wordchunks (noun phrases), provided as spacy Doc objects,
-          that can be used by `_early_true_exact_wordchunk` and `_consider_wordchunk`.
-        Raises:
-        - ValueError: If no wordchunks are identified, raises an error with detailed part-of-speech diagnostics.
+    def _assemble_keyword_wordchunks_wrapper(self, setup_data: TruematchSetup) -> List[spacy.tokens.Doc]:
+        """Wrapper for Base._assemble_keyword_wordchunks() used by Paper._check_truematch()
+
+        Wraps the `_assemble_keyword_wordchunks` method (inherited from `base.py`) with verbose logging and error handling.
+        The base method assembles noun chunks around keyword terms found in the input text.
+
+        Parameters
+        ----------
+        setup_data : TruematchSetup
+            An object containing all relevant variables for `_check_truematch`.
+
+        Returns
+        -------
+        List of spacy.tokens.Doc
+            A list of wordchunks (noun phrases), provided as spacy Doc objects,
+            that can be used by `_early_true_exact_wordchunk` and `_consider_wordchunk`.
+
+        Raises
+        ------
+        ValueError
+            If no wordchunks are identified, raises an error with detailed part-of-speech diagnostics.
         """
         # Print some notes
         setup_data.log_if_verbose("Building noun chunks around keywords...")
@@ -596,20 +646,23 @@ class Paper(Base):
 
         return list_wordchunks
 
-    def _early_true_exact_wordchunk(self, list_wordchunks, setup_data):
-        """
-        Method: _early_true_exact_wordchunk
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-        - Return status as a true match if any wordchunk is an exact keyword match.
-        Parameters:
-        - list_wordchunks [List[spacy.tokens.Doc]]:
-          - A list of wordchunks returned by `_assemble_keyword_wordchunks_wrapper`.
-        - setup_data [TruematchSetup]:
-          - An object containing all relevant variables for `_check_truematch`.
-        Returns:
-        - A formatted dictionary indicating a true match, if any exact keyword matches are found.
-          If no matches are found, returns None.
+    def _early_true_exact_wordchunk(
+        self, list_wordchunks: List[spacy.tokens.Doc], setup_data: TruematchSetup
+    ) -> dict | None:
+        """Return status as a true match if any wordchunk is an exact keyword match.
+
+        Parameters
+        ----------
+        list_wordchunks : list of spacy.tokens.Doc
+            A list of wordchunks returned by `_assemble_keyword_wordchunks_wrapper`.
+        setup_data : TruematchSetup
+            An object containing all relevant variables for `_check_truematch`.
+
+        Returns
+        -------
+        dict or None
+            A formatted dictionary indicating a true match, if any exact keyword matches are found.
+            If no matches are found, returns None.
         """
         if any([(item.text.lower() in setup_data.lookup_ambigs) for item in list_wordchunks]):
             # Print some notes
@@ -619,23 +672,29 @@ class Paper(Base):
                 matcher=None, text_database=None, bool=True, text_wordchunk="<Wordchunk has exact term match.>"
             )
 
-    def _consider_wordchunk(self, curr_chunk, setup_data):
-        """
-        Method: _consider_wordchunk
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-        - Evaluates a given wordchunk (noun phrase) to determine if it matches any known ambiguous phrases or meanings.
-        - If a match is found, returns a list of formatted match results.
-        - If no match is found, raises a `NotImplementedError` to signal an unrecognized ambiguous phrase.
-        Parameters:
-        - curr_chunk [spacy.tokens.Doc]:
-          - The wordchunk (noun phrase) to consider.
-        - setup_data [TruematchSetup]:
-          - An object containing all relevant variables for `_check_truematch`.
-        Returns:
-        - A list of formatted match results if a valid ambiguous phrase match is found.
-        Raises:
-        - NotImplementedError: If no matches or meanings are found in the ambiguous database for the wordchunk.
+    def _consider_wordchunk(self, curr_chunk: spacy.tokens.Doc, setup_data: TruematchSetup) -> list:
+        """Evaluates a given wordchunk for an ambiguous match or meaning.
+
+        Evaluates a given wordchunk (noun phrase) to determine if it matches any known ambiguous phrases or meanings.
+        If a match is found, returns a list of formatted match results.
+        If no match is found, raises a `NotImplementedError` to signal an unrecognized ambiguous phrase.
+
+        Parameters
+        ----------
+        curr_chunk : spacy.tokens.Doc
+            The wordchunk (noun phrase) to consider.
+        setup_data : TruematchSetup
+            An object containing all relevant variables for `_check_truematch`.
+
+        Returns
+        -------
+        list
+            A list of formatted match results if a valid ambiguous phrase match is found.
+
+        Raises
+        ------
+        NotImplementedError
+            If no matches or meanings are found in the ambiguous database for the wordchunk.
         """
         curr_chunk_text = curr_chunk.text
         # Print some notes
@@ -673,21 +732,24 @@ class Paper(Base):
 
         return list_results
 
-    def _early_true_non_ambig_term(self, curr_chunk_text, setup_data):
-        """
-        Method: _early_true_non_ambig_term
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-        - Evaluates a given wordchunk (noun phrase) to determine if it matches any known ambiguous phrases or meanings.
-          If a match is found, returns a true match.
-        Parameters:
-        - curr_chunk_text [str]:
-          - The wordchunk (noun phrase) to consider.
-        - setup_data [TruematchSetup]:
-          - An object containing all relevant variables for `_check_truematch`.
-        Returns:
-        - A formatted dictionary indicating a true match, if a non-ambiguous term is found.
-          If any match is found, returns None.
+    def _early_true_non_ambig_term(self, curr_chunk_text: str, setup_data: TruematchSetup) -> dict | None:
+        """Evaluates if a wordchunk matches a non-ambiguous phrase.
+
+        Evaluates a given wordchunk (noun phrase) to determine if it matches any known non-ambiguous phrases.
+        If a match is found, returns a true match.
+
+        Parameters
+        ----------
+        curr_chunk_text : str
+            The wordchunk (noun phrase) to consider.
+        setup_data : TruematchSetup
+            An object containing all relevant variables for `_check_truematch`.
+
+        Returns
+        -------
+        dict or None
+            A formatted dictionary indicating a true match, if a non-ambiguous term is found.
+            If any match is found, returns None.
         """
         # Store as non-ambig. phrase and skip ahead if non-ambig. term
         is_exact = any(
@@ -713,19 +775,20 @@ class Paper(Base):
             # Skip ahead
             return list_results
 
-    def _setup_consider_wordchunk(self, curr_chunk, setup_data):
-        """
-        Method: _setup_consider_wordchunk
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-        - Returns setup variables for use by _extract_ambig_phrases_substrings.
-        Parameters:
-        - curr_chunk [spacy.tokens.Doc]:
-          - The wordchunk (noun phrase) to consider.
-        - setup_data [TruematchSetup]:
-          - An object containing all relevant variables for `_check_truematch`.
-        Returns:
-        - The string representation of the core meaning of the current wordchunk, and any matched keywords.
+    def _setup_consider_wordchunk(self, curr_chunk: spacy.tokens.Doc, setup_data: TruematchSetup) -> tuple:
+        """Returns setup variables for use by _extract_ambig_phrases_substrings.
+
+        Parameters
+        ----------
+        curr_chunk : spacy.tokens.Doc
+            The wordchunk (noun phrase) to consider.
+        setup_data : TruematchSetup
+            An object containing all relevant variables for `_check_truematch`.
+
+        Returns
+        -------
+        tuple
+            The string representation of the core meaning of the current wordchunk, and any matched keywords.
         """
         # Extract representation of core meaning of current wordchunk
         tmp_res = self._extract_core_from_phrase(
@@ -740,37 +803,45 @@ class Paper(Base):
         return curr_meaning, curr_inner_kw
 
     def _extract_ambig_phrases_substrings(
-        self, exp_list, label, curr_chunk_text, curr_meaning, curr_inner_kw, setup_data
-    ):
-        """
-        Method: _extract_ambig_phrases_substrings
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-        - Extract all ambig. phrases+substrings that match to this meaning
-        - `_consider_wordchunk` runs this first initially against `list_exp_exact_ambigs`,
-          and if no matches are found, retries with `list_exp_meaning_ambigs`.
-        Parameters:
-        - exp_list [List[str]]:
-          - The ambiguous dictionary to use, `list_exp_exact_ambigs` or `list_exp_meaning_ambigs`
-        - label [str]:
-          - The name of the ambiguous dictionary used for logging/debugging, "exact" or "meaning"
-        - curr_chunk_text [str]:
-          - The wordchunk (noun phrase) to consider.
-        - curr_meaning [str]:
-          - The string representation of the core meaning of the wordchunk.
-        - curr_inner_kw [List[str]]:
-          - A list of keywords extracted from the wordchunk.
-        - setup_data [TruematchSetup]:
-          - An object containing all relevant variables for `_check_truematch`.
-        Returns:
-        - A list of match dictionaries, the best of which will be returned by
-          `_assemble_consider_wordchunk_results`. Each dictionary contains:
-          - "ind": index of the match in the ambiguous list
-          - "text_database": ambiguous phrase from the database
-          - "text_wordchunk": the wordchunk being evaluated
-          - "exp": the regular expression in the database
-          - "matcher": the regular expression match object (if any)
-          - "bool": the boolean flag associated with the ambiguous phrase
+        self,
+        exp_list: list[str],
+        label: str,
+        curr_chunk_text: str,
+        curr_meaning: str,
+        curr_inner_kw: list[str],
+        setup_data: TruematchSetup,
+    ) -> list:
+        """Extract all ambiguous phrases and substrings that match to this meaning.
+
+        `_consider_wordchunk` runs this first initially against `list_exp_exact_ambigs`,
+        and if no matches are found, retries with `list_exp_meaning_ambigs`.
+
+        Parameters
+        ----------
+        exp_list : list of str
+            The ambiguous dictionary to use, `list_exp_exact_ambigs` or `list_exp_meaning_ambigs`.
+        label : str
+            The name of the ambiguous dictionary used for logging/debugging, "exact" or "meaning".
+        curr_chunk_text : str
+            The wordchunk (noun phrase) to consider.
+        curr_meaning : str
+            The string representation of the core meaning of the wordchunk.
+        curr_inner_kw : list of str
+            A list of keywords extracted from the wordchunk.
+        setup_data : TruematchSetup
+            An object containing all relevant variables for `_check_truematch`.
+
+        Returns
+        -------
+        list
+            A list of match dictionaries, the best of which will be returned by
+            `_assemble_consider_wordchunk_results`. Each dictionary contains:
+            - "ind": index of the match in the ambiguous list
+            - "text_database": ambiguous phrase from the database
+            - "text_wordchunk": the wordchunk being evaluated
+            - "exp": the regular expression in the database
+            - "matcher": the regular expression match object (if any)
+            - "bool": the boolean flag associated with the ambiguous phrase
         """
         set_matches_raw = [
             {
