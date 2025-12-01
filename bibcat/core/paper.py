@@ -1066,7 +1066,7 @@ class Paper(Base):
         if do_check_truematch:
             # Print some notes
             if do_verbose:
-                print("do_check_truematch=True, so will verify ambig. phrases.")
+                logger.info("do_check_truematch=True, so will verify ambig. phrases.")
 
             # Load previously stored ambig. phrase data
             dict_ambigs = self._get_info("dict_ambigs")
@@ -1074,7 +1074,7 @@ class Paper(Base):
 
         # Print some notes
         if do_verbose:
-            print("Fetching inds of target sentences...")
+            logger.info("Fetching inds of target sentences...")
 
         # Get indices of sentences that contain any target mission terms
         # For keyword terms
@@ -1089,7 +1089,7 @@ class Paper(Base):
 
         # Print some notes
         if do_verbose:
-            print(
+            logger.info(
                 ("Found:\n# of keyword sentences: {0}\n" + "# of acronym sentences: {1}...").format(
                     len(inds_with_keywords_init), len(inds_with_acronyms)
                 )
@@ -1103,7 +1103,7 @@ class Paper(Base):
         ):
             # Print some notes
             if do_verbose:
-                print("Verifying ambiguous phrases...")
+                logger.info("Verifying ambiguous phrases...")
 
             # Run ambiguous phrase check on all sentences with keyword terms
             output_truematch = [
@@ -1121,10 +1121,10 @@ class Paper(Base):
 
             # Print some notes
             if do_verbose:
-                print("Done verifying ambiguous phrases.")
-                print("Match output:\n{0}".format(output_truematch))
-                print("Indices with true matches:\n{0}".format(inds_with_keywords_truematch))
-                print("Keyword sentences with true matches:\n{0}".format(sentences[inds_with_keywords_truematch]))
+                logger.info("Done verifying ambiguous phrases.")
+                logger.info("Match output:\n{0}".format(output_truematch))
+                logger.info("Indices with true matches:\n{0}".format(inds_with_keywords_truematch))
+                logger.info("Keyword sentences with true matches:\n{0}".format(sentences[inds_with_keywords_truematch]))
 
         # Otherwise, set empty
         else:
@@ -1138,7 +1138,7 @@ class Paper(Base):
         if buffer > 0:
             # Print some notes
             if do_verbose:
-                print("Buffering sentences with buffer={0}...".format(buffer))
+                logger.info("Buffering sentences with buffer={0}...".format(buffer))
             #
             ranges_buffered = self._buffer_indices(
                 indices=inds_with_terms, buffer=buffer, max_index=(num_sentences - 1)
@@ -1148,7 +1148,7 @@ class Paper(Base):
             ]  # Combined sentences
             # Print some notes
             if do_verbose:
-                print("Done buffering sentences.\nRanges = {0}.".format(ranges_buffered))
+                logger.info("Done buffering sentences.\nRanges = {0}.".format(ranges_buffered))
 
         # Otherwise, just copy over previous indices
         else:
