@@ -336,7 +336,6 @@ class Paper(Base):
                 - text_wordchunk: status of search
                 - text_database: None
                 - matcher: None
-                - set: None if non-ambiguous match, otherwise omitted
             - info (if only ambiguous matches found): an array with multiple items, one for each phrase
                 - bool: result for that particular phrase. If any phrase matches true, the "bool" above is true
                 - text_wordchunk: the chunk of text searched
@@ -520,7 +519,7 @@ class Paper(Base):
 
             # Return status as true match
             return self._build_single_info_entry(
-                matcher=None, set=None, bool=True, text_wordchunk="<Not ambig.>", text_database=None
+                matcher=None, bool=True, text_wordchunk="<Not ambig.>", text_database=None
             )
 
     def _early_false_no_keyword_match(self, setup_data: TruematchSetup) -> dict | None:
@@ -573,7 +572,7 @@ class Paper(Base):
 
             # Return status as true match
             return self._build_single_info_entry(
-                matcher=None, set=None, bool=True, text_wordchunk="<Not ambig.>", text_database=None
+                matcher=None, bool=True, text_wordchunk="<Not ambig.>", text_database=None
             )
 
     def _early_true_non_ambig_phrases(self, setup_data: TruematchSetup) -> dict | None:
@@ -600,7 +599,7 @@ class Paper(Base):
 
                     # Return status as true match
                     return self._build_single_info_entry(
-                        matcher=None, set=None, bool=True, text_wordchunk="<Not ambig.>", text_database=None
+                        matcher=None, bool=True, text_wordchunk="<Not ambig.>", text_database=None
                     )
 
     def _assemble_keyword_wordchunks_wrapper(self, setup_data: TruematchSetup) -> List[spacy.tokens.Doc]:
