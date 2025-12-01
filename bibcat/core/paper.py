@@ -308,7 +308,9 @@ class Paper(Base):
         """Return boolean for whether or not text contains a true vs false match to the given keywords.
 
         Determine if given text contains a true vs. false match to keywords.
-        E.g.: 'Edwin Hubble' as a false match to Hubble Space Telescope.
+        A match is a true match if it refers to the given mission (e.g. HST as a reference to Hubble).
+        A match is a false match if it has a different meaning altogether (e.g. Edwin Hubble as a
+        reference to the Hubble Space Telescope).
 
         Parameters
         ----------
@@ -354,6 +356,7 @@ class Paper(Base):
         setup_data = self._setup_check_truematch_vars(text, dict_ambigs, keyword_objs, do_verbose, do_verbose_deep)
 
         # Short-circuit checks
+        # If any of these return true or false, we can return the result right away
         for check in (
             self._early_true_non_ambig_keywords,
             self._early_false_no_keyword_match,
@@ -364,16 +367,21 @@ class Paper(Base):
             if result is not None:
                 return result
 
-        # Assemble makeshift wordchunks (not using NLP ones here)
-        # Not sure why happened, but NLP sometimes failed to identify nouns/num.
+        # Assemble makeshift wordchunks
+        # A wordchunk is a noun and the words that describe it (e.g. "our Hubble results")
+        # We are interested in wordchunks around mission keywords
+        # Not using NLP wordchunks here
+        # Not sure why it happened, but NLP sometimes failed to identify nouns/num.
         list_wordchunks = self._assemble_keyword_wordchunks_wrapper(setup_data)
 
         # Short-circuit check for exact wordchunks
+        # If this returns true, we can return the result right away
         result = self._early_true_exact_wordchunk(list_wordchunks, setup_data)
         if result is not None:
             return result
 
-        # Iterate through wordchunks to determine true vs false match status
+        # Iterate through each wordchunk to determine true vs false match status
+        # If any wordchunk is a true match, the overall result will be true
         list_results = [self._consider_wordchunk(curr_chunk, setup_data) for curr_chunk in list_wordchunks]
 
         # Combine the results and return overall boolean match
@@ -436,11 +444,11 @@ class Paper(Base):
         if do_verbose is None:
             do_verbose = self._get_info("do_verbose", do_flag_hidden=True)
 
-        # Process ambig. phrase data, if not given
+        # Process ambiguous phrase data, if not given
         if dict_ambigs is None:
             dict_ambigs = self._process_database_ambig(do_verbose=do_verbose_deep, keyword_objs=keyword_objs)
 
-        # Extract info from ambig. database
+        # Extract info from ambiguous database
         list_kw_ambigs = dict_ambigs["all_kw_ambigs"]
         list_exp_exact_ambigs = dict_ambigs["all_exp_exact_ambigs"]
         list_exp_meaning_ambigs = dict_ambigs["all_exp_meaning_ambigs"]
@@ -468,7 +476,7 @@ class Paper(Base):
             item1 for item1 in keyword_objs if any([item1.identify_keyword(item2)["bool"] for item2 in lookup_ambigs])
         ]
 
-        # Extract keyword identification information for each kobj
+        # Extract keyword identification information for each keyword object
         dict_kobjinfo = {item._get_info("name"): item.identify_keyword(text) for item in keyword_objs}
 
         return TruematchSetup(
@@ -708,7 +716,9 @@ class Paper(Base):
         # Setup variables
         curr_meaning, curr_inner_kw = self._setup_consider_wordchunk(curr_chunk, setup_data)
 
-        # Extract all ambig. phrases+substrings that match to this meaning
+        # Extract all ambiguous phrases and substrings that are either in:
+        # - the list of exact ambiguous matches (setup_data.list_exp_exact_ambigs)
+        # - the list of meaning-based ambiguous matches (setup_data.list_exp_meaning_ambigs)
         set_matches = self._extract_ambig_phrases_substrings(
             setup_data.list_exp_exact_ambigs, "matches", curr_chunk_text, curr_meaning, curr_inner_kw, setup_data
         ) or self._extract_ambig_phrases_substrings(
@@ -727,7 +737,7 @@ class Paper(Base):
                 )
             )
 
-        # Determine and extract best match (=match with shortest substring)
+        # Determine and extract best match (match with shortest substring)
         list_results = self._assemble_consider_wordchunk_results(set_matches, curr_chunk, curr_meaning, setup_data)
 
         return list_results
