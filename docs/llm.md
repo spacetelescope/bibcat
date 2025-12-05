@@ -813,8 +813,9 @@ The definitions of the JSON output columns are following.
 - **mision**: The mission name
 - **human_raw**: The original human classification for the mission before mapping to SCIENCE/NONSCIENCE
   - *SCIENCE*, *MENTION*, *DATA_INFLUENCED*, *SUPERMENTION*, *ENGINEERING*, and *GREY* or *GRAY* are available
-  - *IGNORED* is introduced to represesnt no classification by human for that mission in the source dataset
-- **llm_raw**: The original llm classification for the mission before mapping to SCIENCE/NONSCIENCE
+  - *IGNORED* is introduced to tag mission with no classification by human for that mission in the source dataset
+- **llm_raw**: The original llm classification (*SCIENCE*, *MENTION*) for the mission before mapping to SCIENCE/NONSCIENCE
+  - *IGNORED* is introduced to tag mission with no classification by human for that mission
 
 An example output file would look like:
 
