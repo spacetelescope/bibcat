@@ -4,7 +4,7 @@ import time
 
 from bibcat import config
 
-# Define the logs directory at the project level
+# Define the logs directory at output root path with current date
 LOG_DIR = os.path.join(config.output.root_path, "logs", time.strftime("%Y-%m-%d"))
 
 # Get the start time in a readable format
