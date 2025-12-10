@@ -315,7 +315,7 @@ class Paper(Base):
                 - matcher: None
             - info (if only ambiguous matches found): an array with multiple items, one for each phrase
                 - bool: result for that particular phrase. If any phrase matches true, the "bool" above is true
-                - text_wordchunk: the chunk of text searched
+                - text_wordchunk: the chunk of text searched (e.g. "our Hubble results")
                 - text_database: the phrase searched within the chunk of text
                 - matcher: the result of regex search
 
