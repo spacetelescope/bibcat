@@ -430,7 +430,7 @@ class Paper(Base):
         text = re.sub(r"-\b[0-9]+\b", ("-" + placeholder_number), text_orig)
 
         # Print some notes
-        logger.debug(
+        logger.info(
             ("\n> Running _check_truematch for text: '{0}'" + "\nOriginal text: {1}\nLookups: {2}").format(
                 text, text_orig, lookup_ambigs
             )
