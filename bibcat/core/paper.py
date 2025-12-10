@@ -10,6 +10,7 @@ the rest of the text.
 
 """
 
+import logging
 import re
 from dataclasses import dataclass
 from typing import Dict, List, Optional
@@ -410,9 +411,12 @@ class Paper(Base):
             An object containing all relevant variables for `_check_truematch`.
         """
 
+        # Get verbosity of logger
+        is_logger_verbose = logger.getEffectiveLevel() == logging.DEBUG
+
         # Process ambiguous phrase data, if not given
         if dict_ambigs is None:
-            dict_ambigs = self._process_database_ambig(keyword_objs=keyword_objs)
+            dict_ambigs = self._process_database_ambig(do_verbose=is_logger_verbose, keyword_objs=keyword_objs)
 
         # Extract info from ambiguous database
         list_kw_ambigs = dict_ambigs["all_kw_ambigs"]
@@ -762,11 +766,15 @@ class Paper(Base):
         tuple
             The string representation of the core meaning of the current wordchunk, and any matched keywords.
         """
+        # Get verbosity of logger
+        is_logger_verbose = logger.getEffectiveLevel() == logging.DEBUG
+
         # Extract representation of core meaning of current wordchunk
         tmp_res = self._extract_core_from_phrase(
             phrase_NLP=curr_chunk,
             keyword_objs=setup_data.keyword_objs_ambigs,
             do_skip_useless=False,
+            do_verbose=is_logger_verbose,
         )
         curr_meaning = tmp_res["str_meaning"]  # Str representation of meaning
         curr_inner_kw = tmp_res["keywords"]  # Matched keywords
