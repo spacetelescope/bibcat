@@ -35,7 +35,7 @@ def paper_setup():
     Shared setup fixture for tests
     """
     testpaper = paper.Paper(text="", keyword_objs=[params.kobj_hubble], do_check_truematch=False)
-    dict_ambigs = testpaper._process_database_ambig(do_verbose=False, keyword_objs=test_list_lookup_kobj)
+    dict_ambigs = testpaper._process_database_ambig(keyword_objs=test_list_lookup_kobj)
     return testpaper, dict_ambigs
 
 
@@ -82,8 +82,6 @@ def test_check_truematch(paper_setup, phrase, lookup, expected):
     test_res = testpaper._check_truematch(
         text=phrase,
         keyword_objs=curr_kobjs,
-        do_verbose=False,
-        do_verbose_deep=False,
         dict_ambigs=dict_ambigs,
     )
     assert test_res["bool"] == expected
@@ -111,8 +109,6 @@ def test_early_false_no_keyword_match(paper_setup, phrase, lookup, expected):
     setup_data = testpaper._setup_check_truematch_vars(
         text=phrase,
         keyword_objs=curr_kobjs,
-        do_verbose=False,
-        do_verbose_deep=False,
         dict_ambigs=dict_ambigs,
     )
     test_res = testpaper._early_false_no_keyword_match(setup_data)
@@ -143,8 +139,6 @@ def test_early_true_acronym_match(paper_setup, phrase, lookup, expected):
     setup_data = testpaper._setup_check_truematch_vars(
         text=phrase,
         keyword_objs=curr_kobjs,
-        do_verbose=False,
-        do_verbose_deep=False,
         dict_ambigs=dict_ambigs,
     )
     test_res = testpaper._early_true_acronym_match(setup_data)
@@ -183,8 +177,6 @@ def test_early_true_non_ambig_phrases(paper_setup, phrase, lookup, expected):
     setup_data = testpaper._setup_check_truematch_vars(
         text=phrase,
         keyword_objs=curr_kobjs,
-        do_verbose=False,
-        do_verbose_deep=False,
         dict_ambigs=dict_ambigs,
     )
     test_res = testpaper._early_true_non_ambig_phrases(setup_data)
@@ -218,8 +210,6 @@ def test_assemble_keyword_wordchunks_wrapper(paper_setup, phrase, lookup, expect
     setup_data = testpaper._setup_check_truematch_vars(
         text=phrase,
         keyword_objs=curr_kobjs,
-        do_verbose=False,
-        do_verbose_deep=False,
         dict_ambigs=dict_ambigs,
     )
     test_res = testpaper._assemble_keyword_wordchunks_wrapper(setup_data)
@@ -248,8 +238,6 @@ def test_early_true_exact_wordchunk(paper_setup, phrase, lookup, expected):
     setup_data = testpaper._setup_check_truematch_vars(
         text=phrase,
         keyword_objs=curr_kobjs,
-        do_verbose=False,
-        do_verbose_deep=False,
         dict_ambigs=dict_ambigs,
     )
     list_wordchunks = testpaper._assemble_keyword_wordchunks_wrapper(setup_data)
@@ -292,8 +280,6 @@ def test_consider_wordchunk(paper_setup, phrase, lookup, expected):
     setup_data = testpaper._setup_check_truematch_vars(
         text=phrase,
         keyword_objs=curr_kobjs,
-        do_verbose=False,
-        do_verbose_deep=False,
         dict_ambigs=dict_ambigs,
     )
     list_wordchunks = testpaper._assemble_keyword_wordchunks_wrapper(setup_data)
@@ -346,8 +332,6 @@ def test_setup_consider_wordchunk(paper_setup, phrase, lookup, expected):
     setup_data = testpaper._setup_check_truematch_vars(
         text=phrase,
         keyword_objs=curr_kobjs,
-        do_verbose=False,
-        do_verbose_deep=False,
         dict_ambigs=dict_ambigs,
     )
     list_wordchunks = testpaper._assemble_keyword_wordchunks_wrapper(setup_data)
@@ -382,8 +366,6 @@ def test_extract_ambig_phrases_substrings(paper_setup, phrase, lookup, expected)
     setup_data = testpaper._setup_check_truematch_vars(
         text=phrase,
         keyword_objs=curr_kobjs,
-        do_verbose=False,
-        do_verbose_deep=False,
         dict_ambigs=dict_ambigs,
     )
     list_wordchunks = testpaper._assemble_keyword_wordchunks_wrapper(setup_data)
@@ -438,8 +420,6 @@ def test_assemble_consider_wordchunk_results(paper_setup, phrase, lookup, expect
     setup_data = testpaper._setup_check_truematch_vars(
         text=phrase,
         keyword_objs=curr_kobjs,
-        do_verbose=False,
-        do_verbose_deep=False,
         dict_ambigs=dict_ambigs,
     )
     list_wordchunks = testpaper._assemble_keyword_wordchunks_wrapper(setup_data)

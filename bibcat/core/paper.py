@@ -43,10 +43,6 @@ class TruematchSetup:
         Database of ambiguous mission phrases loaded or provided.
     keyword_objs : list of Keyword
         List of keyword objects used for matching.
-    do_verbose : bool
-        Flag to enable surface-level log information and tests.
-    do_verbose_deep : bool
-        Flag to enable inner log information and tests.
     list_kw_ambigs : list of str
         List of keywords associated with ambiguous phrases.
     list_exp_exact_ambigs : list of str
@@ -72,8 +68,6 @@ class TruematchSetup:
     text: str
     dict_ambigs: Dict[str, List[str]]
     keyword_objs: List[Keyword]
-    do_verbose: bool
-    do_verbose_deep: bool
     list_kw_ambigs: List[str]
     list_exp_exact_ambigs: List[str]
     list_exp_meaning_ambigs: List[str]
@@ -84,18 +78,6 @@ class TruematchSetup:
     num_ambigs: int
     keyword_objs_ambigs: List[Keyword]
     dict_kobjinfo: Dict[str, Dict[str, bool | List[List[int]]]]
-
-    def log_if_verbose(self, message: str) -> None:
-        """
-        Logs a message if verbose mode is enabled.
-
-        Parameters
-        ----------
-        message : str
-            The message to log.
-        """
-        if self.do_verbose:
-            logger.info(message)
 
 
 class Paper(Base):
@@ -302,8 +284,6 @@ class Paper(Base):
         text: str,
         keyword_objs: list,
         dict_ambigs: dict | None,
-        do_verbose: bool | None = None,
-        do_verbose_deep: bool = False,
     ) -> dict:  # noqa: C901
         """Return boolean for whether or not text contains a true vs false match to the given keywords.
 
@@ -321,10 +301,6 @@ class Paper(Base):
         dict_ambigs : dict or None
             If None, will load and process external database of ambiguous mission phrases.
             If given, will use what is given.
-        do_verbose : bool or None, optional
-            Whether or not to print surface-level log information and tests.
-        do_verbose_deep : bool, optional
-            Whether or not to print inner log information and tests.
 
         Returns
         -------
@@ -352,7 +328,7 @@ class Paper(Base):
             but no matches or meanings are found in the ambiguous database for the wordchunk.
         """
         # Set up initial variables
-        setup_data = self._setup_check_truematch_vars(text, dict_ambigs, keyword_objs, do_verbose, do_verbose_deep)
+        setup_data = self._setup_check_truematch_vars(text, dict_ambigs, keyword_objs)
 
         # Short-circuit checks
         # If any of these return true or false, we can return the result right away
@@ -415,8 +391,6 @@ class Paper(Base):
         text: str,
         dict_ambigs: dict | None,
         keyword_objs: list,
-        do_verbose: Optional[bool] = None,
-        do_verbose_deep: Optional[bool] = None,
     ) -> TruematchSetup:
         """Initializes and prepares all necessary variables and data structures required by `_check_truematch`.
 
@@ -429,23 +403,16 @@ class Paper(Base):
         dict_ambigs : dict or None
             If None, will load and process external database of ambiguous mission phrases.
             If given, will use what is given.
-        do_verbose : bool or None, optional
-            Whether or not to print surface-level log information and tests.
-        do_verbose_deep : bool or None, optional
-            Whether or not to print inner log information and tests.
 
         Returns
         -------
         TruematchSetup
             An object containing all relevant variables for `_check_truematch`.
         """
-        # Load global variables
-        if do_verbose is None:
-            do_verbose = self._get_info("do_verbose", do_flag_hidden=True)
 
         # Process ambiguous phrase data, if not given
         if dict_ambigs is None:
-            dict_ambigs = self._process_database_ambig(do_verbose=do_verbose_deep, keyword_objs=keyword_objs)
+            dict_ambigs = self._process_database_ambig(keyword_objs=keyword_objs)
 
         # Extract info from ambiguous database
         list_kw_ambigs = dict_ambigs["all_kw_ambigs"]
@@ -463,12 +430,11 @@ class Paper(Base):
         text = re.sub(r"-\b[0-9]+\b", ("-" + placeholder_number), text_orig)
 
         # Print some notes
-        if do_verbose:
-            logger.info(
-                ("\n> Running _check_truematch for text: '{0}'" + "\nOriginal text: {1}\nLookups: {2}").format(
-                    text, text_orig, lookup_ambigs
-                )
+        logger.debug(
+            ("\n> Running _check_truematch for text: '{0}'" + "\nOriginal text: {1}\nLookups: {2}").format(
+                text, text_orig, lookup_ambigs
             )
+        )
 
         # Extract keyword objects that are potentially ambiguous
         keyword_objs_ambigs = [
@@ -482,8 +448,6 @@ class Paper(Base):
             text=text,
             dict_ambigs=dict_ambigs,
             keyword_objs=keyword_objs,
-            do_verbose=do_verbose,
-            do_verbose_deep=do_verbose_deep,
             list_kw_ambigs=list_kw_ambigs,
             list_exp_exact_ambigs=list_exp_exact_ambigs,
             list_exp_meaning_ambigs=list_exp_meaning_ambigs,
@@ -515,7 +479,7 @@ class Paper(Base):
         ]
         if any([setup_data.dict_kobjinfo[item1._get_info("name")]["bool"] for item1 in keyword_objs_non_ambigs]):
             # Print some notes
-            setup_data.log_if_verbose("Text matches unambiguous keyword. Returning true state.")
+            logger.debug("Text matches unambiguous keyword. Returning true state.")
 
             # Return status as true match
             return self._build_single_info_entry(
@@ -540,7 +504,7 @@ class Paper(Base):
             [setup_data.dict_kobjinfo[item._get_info("name")]["bool"] for item in setup_data.keyword_objs_ambigs]
         ):
             # Print some notes
-            setup_data.log_if_verbose("Text matches no keywords at all. Returning false state.")
+            logger.debug("Text matches no keywords at all. Returning false state.")
 
             # Return status as false match
             return self._build_single_info_entry(
@@ -568,7 +532,7 @@ class Paper(Base):
             ]
         ):
             # Print some notes
-            setup_data.log_if_verbose("Text matches acronym. Returning true state.")
+            logger.debug("Text matches acronym. Returning true state.")
 
             # Return status as true match
             return self._build_single_info_entry(
@@ -595,7 +559,7 @@ class Paper(Base):
                     continue
                 if re.search(rf"\b{re.escape(kw)}\b", setup_data.text, flags=re.IGNORECASE):
                     # Print some notes
-                    setup_data.log_if_verbose("Text matches unambiguous phrase. Returning true state.")
+                    logger.debug("Text matches unambiguous phrase. Returning true state.")
 
                     # Return status as true match
                     return self._build_single_info_entry(
@@ -605,7 +569,7 @@ class Paper(Base):
     def _assemble_keyword_wordchunks_wrapper(self, setup_data: TruematchSetup) -> List[spacy.tokens.Doc]:
         """Wrapper for Base._assemble_keyword_wordchunks() used by Paper._check_truematch()
 
-        Wraps the `_assemble_keyword_wordchunks` method (inherited from `base.py`) with verbose logging and error handling.
+        Wraps the `_assemble_keyword_wordchunks` method (inherited from `base.py`) with debug logging and error handling.
         The base method assembles noun chunks around keyword terms found in the input text.
 
         Parameters
@@ -625,13 +589,12 @@ class Paper(Base):
             If no wordchunks are identified, raises an error with detailed part-of-speech diagnostics.
         """
         # Print some notes
-        setup_data.log_if_verbose("Building noun chunks around keywords...")
+        logger.debug("Building noun chunks around keywords...")
 
         # Generate the keyword-based wordchunks
         list_wordchunks = self._assemble_keyword_wordchunks(
             text=setup_data.text,
             keyword_objs=setup_data.keyword_objs,
-            do_verbose=setup_data.do_verbose,
             do_include_verbs=False,
         )
         # Throw error if no wordchunks identified
@@ -649,7 +612,7 @@ class Paper(Base):
             raise ValueError(errstr)
 
         # Print some notes
-        setup_data.log_if_verbose("\n- Wordchunks determined for text: {0}".format(list_wordchunks))
+        logger.debug("\n- Wordchunks determined for text: {0}".format(list_wordchunks))
 
         return list_wordchunks
 
@@ -673,7 +636,7 @@ class Paper(Base):
         """
         if any([(item.text.lower() in setup_data.lookup_ambigs) for item in list_wordchunks]):
             # Print some notes
-            setup_data.log_if_verbose("Exact keyword match found. Returning true status...")
+            logger.debug("Exact keyword match found. Returning true status...")
 
             return self._build_single_info_entry(
                 matcher=None, text_database=None, bool=True, text_wordchunk="<Wordchunk has exact term match.>"
@@ -705,7 +668,7 @@ class Paper(Base):
         """
         curr_chunk_text = curr_chunk.text
         # Print some notes
-        setup_data.log_if_verbose("Considering wordchunk: {0}".format(curr_chunk_text))
+        logger.debug("Considering wordchunk: {0}".format(curr_chunk_text))
 
         # Short-circuit check
         result = self._early_true_non_ambig_term(curr_chunk_text, setup_data)
@@ -775,7 +738,7 @@ class Paper(Base):
         )  # Check if wordchunk matches to any non-ambig terms
         if is_exact:
             # Print some notes
-            setup_data.log_if_verbose("Exact match to non-ambig. phrase. Marking true...")
+            logger.debug("Exact match to non-ambig. phrase. Marking true...")
 
             # Store info for this true match
             list_results = self._build_single_info_entry(
@@ -804,7 +767,6 @@ class Paper(Base):
             phrase_NLP=curr_chunk,
             keyword_objs=setup_data.keyword_objs_ambigs,
             do_skip_useless=False,
-            do_verbose=setup_data.do_verbose,
         )
         curr_meaning = tmp_res["str_meaning"]  # Str representation of meaning
         curr_inner_kw = tmp_res["keywords"]  # Matched keywords
@@ -867,10 +829,9 @@ class Paper(Base):
         set_matches = [item for item in set_matches_raw if (item["matcher"] is not None)]
 
         # Print some notes
-        if setup_data.do_verbose_deep:
-            logger.info(f"Set of {label} assembled from ambig. database:")
-            for item1 in set_matches_raw:
-                logger.info(item1)
+        logger.debug(f"Set of {label} assembled from ambig. database:")
+        for item1 in set_matches_raw:
+            logger.debug(item1)
 
         return set_matches
 
@@ -895,12 +856,10 @@ class Paper(Base):
         best_set = sorted(set_matches, key=(lambda w: len(w["matcher"][0])))[0]
 
         # Print some notes
-        setup_data.log_if_verbose(
-            "Current wordchunk: {0}\nMeaning: {2}\nBest set: {1}-".format(curr_chunk, best_set, curr_meaning)
-        )
+        logger.debug("Current wordchunk: {0}\nMeaning: {2}\nBest set: {1}-".format(curr_chunk, best_set, curr_meaning))
 
         # Exit method early since match found
-        setup_data.log_if_verbose("Match found. Returning status...")
+        logger.debug("Match found. Returning status...")
 
         list_results = self._build_single_info_entry(
             matcher=best_set["matcher"],
