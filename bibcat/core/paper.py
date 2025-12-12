@@ -295,6 +295,9 @@ class Paper(Base):
         A match is a false match if it has a different meaning altogether (e.g. Edwin
             Hubble as a reference to the Hubble Space Telescope).
 
+        This function checks the text against the ambiguous phrases in
+            config.textprocessing.phrases_ambig; new ambiguities should be added there.
+
         The decision proceeds in four stages, short-circuiting when a definitive verdict
             is reached:
 

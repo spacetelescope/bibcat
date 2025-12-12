@@ -14,7 +14,7 @@ from bibcat.core import parameters as params
 from bibcat.core.parameters import kobj_copernicus, kobj_hubble, kobj_k2, kobj_kepler
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def nlp_model():
     return spacy.load(config.grammar.spacy_language_model)
 
