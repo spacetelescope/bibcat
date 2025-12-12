@@ -44,8 +44,8 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
         The number of non-MAST missions by llm in the whole dataset
     n_missing_ouptput_bibcodes: int
         The number of bibcodes missing output in the whole dataset
-    non_mast_missions; list[str], sorted
-        Non MAST missions called out by llm in the whole dataset
+    non_mast_missions: list[str], sorted
+        The non-MAST missions called out by llm in the whole dataset
     n_human_llm_mission_callouts: int
         The number of mission callouts by both human and llm in the given missions
     n_human_llm_hallucination: int
