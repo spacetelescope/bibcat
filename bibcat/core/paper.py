@@ -63,7 +63,8 @@ class TruematchSetup:
     keyword_objs_ambigs : list of Keyword
         Subset of keyword objects that are potentially ambiguous.
     dict_kobjinfo : dict
-        Mapping of keyword objects to their match info provided by `Keyword.identify_keyword`.
+        Mapping of keyword objects to their match info provided by
+        `Keyword.identify_keyword`.
     """
 
     text: str
@@ -454,7 +455,7 @@ class Paper(Base):
         dict_ambigs: dict | None,
         keyword_objs: list,
     ) -> TruematchSetup:
-        """Initializes and prepares all necessary variables and data structures required by `_check_truematch`.
+        """Sets up variables and data structures required by `_check_truematch`.
 
         Parameters
         ----------
@@ -536,9 +537,20 @@ class Paper(Base):
         Returns
         -------
         dict or None
-            A formatted dictionary indicating a true match, if any non-ambiguous keywords are found.
+            A dictionary indicating a true match in the `_check_truematch` return format,
+            if any non-ambiguous keywords are found:
+            - bool: True
+            - info: A single-element list containing a dictionary with:
+                * `bool` : True
+                * `text_wordchunk` : "<Not ambig.>"
+                * `text_database` : None
+                * `matcher` : None
             If no matches are found, returns None.
-            See `_build_single_info_entry()` for an explanation of the return format.
+
+        See Also
+        --------
+        _build_single_info_entry : Return format used by `_check_truematch` and related
+            helper functions.
         """
         keyword_objs_non_ambigs = [
             item1 for item1 in setup_data.keyword_objs if item1 not in setup_data.keyword_objs_ambigs
@@ -563,9 +575,19 @@ class Paper(Base):
         Returns
         -------
         dict or None
-            A formatted dictionary indicating a false match, if no keywords found.
-            If any match is found, returns None.
-            See `_build_single_info_entry()` for an explanation of the return format.
+            A formatted dictionary indicating a false match, if no keywords found:
+            - bool: False
+            - info: A single-element list containing a dictionary with:
+                * `bool` : False
+                * `text_wordchunk` : "<No matching keywords at all.>"
+                * `text_database` : None
+                * `matcher` : None
+            If any matches are found, returns None.
+
+        See Also
+        --------
+        _build_single_info_entry : Return format used by `_check_truematch` and related
+            helper functions.
         """
         if not any(
             [setup_data.dict_kobjinfo[item._get_info("name")]["bool"] for item in setup_data.keyword_objs_ambigs]
@@ -589,9 +611,19 @@ class Paper(Base):
         Returns
         -------
         dict or None
-            A formatted dictionary indicating a true match, if any acronyms match.
-            If any match is found, returns None.
-            See `_build_single_info_entry()` for an explanation of the return format.
+            A formatted dictionary indicating a true match, if any acronyms match:
+            - bool: True
+            - info: A single-element list containing a dictionary with:
+                * `bool` : True
+                * `text_wordchunk` : "<Not ambig.>"
+                * `text_database` : None
+                * `matcher` : None
+            If any matches are found, returns None.
+
+        See Also
+        --------
+        _build_single_info_entry : Return format used by `_check_truematch` and related
+            helper functions.
         """
         if any(
             [
@@ -618,9 +650,20 @@ class Paper(Base):
         Returns
         -------
         dict or None
-            A formatted dictionary indicating a true match, if any non-ambiguous phrases are found.
+            A formatted dictionary indicating a true match, if any non-ambiguous phrases
+            are found:
+            - bool: True
+            - info: A single-element list containing a dictionary with:
+                * `bool` : True
+                * `text_wordchunk` : "<Not ambig.>"
+                * `text_database` : None
+                * `matcher` : None
             If no matches are found, returns None.
-            See `_build_single_info_entry()` for an explanation of the return format.
+
+        See Also
+        --------
+        _build_single_info_entry : Return format used by `_check_truematch` and related
+            helper functions.
         """
         for obj in setup_data.keyword_objs_ambigs:
             for kw in obj._get_info("keywords"):
@@ -636,10 +679,11 @@ class Paper(Base):
                     )
 
     def _assemble_keyword_wordchunks_wrapper(self, setup_data: TruematchSetup) -> List[spacy.tokens.Doc]:
-        """Wrapper for Base._assemble_keyword_wordchunks() used by Paper._check_truematch()
+        """Wrapper for Base._assemble_keyword_wordchunks() used by _check_truematch()
 
-        Wraps the `_assemble_keyword_wordchunks` method (inherited from `base.py`) with debug logging and error handling.
-        The base method assembles noun chunks around keyword terms found in the input text.
+        Wraps the `_assemble_keyword_wordchunks` method (inherited from `base.py`) with
+        debug logging and error handling. The base method assembles noun chunks around
+        keyword terms found in the input text.
 
         Parameters
         ----------
@@ -655,7 +699,8 @@ class Paper(Base):
         Raises
         ------
         ValueError
-            If no wordchunks are identified, raises an error with detailed part-of-speech diagnostics.
+            If no wordchunks are identified, raises an error with detailed part-of-speech
+            diagnostics.
         """
         # Print some notes
         logger.debug("Building noun chunks around keywords...")
@@ -700,9 +745,20 @@ class Paper(Base):
         Returns
         -------
         dict or None
-            A formatted dictionary indicating a true match, if any exact keyword matches are found.
+            A formatted dictionary indicating a true match, if any exact keyword matches
+            are found:
+            - bool: True
+            - info: A single-element list containing a dictionary with:
+                * `bool` : True
+                * `text_wordchunk` : "<Wordchunk has exact term match.>"
+                * `text_database` : None
+                * `matcher` : None
             If no matches are found, returns None.
-            See `_build_single_info_entry()` for an explanation of the return format.
+
+        See Also
+        --------
+        _build_single_info_entry : Return format used by `_check_truematch` and related
+            helper functions.
         """
         if any([(item.text.lower() in setup_data.lookup_ambigs) for item in list_wordchunks]):
             # Print some notes
@@ -715,9 +771,10 @@ class Paper(Base):
     def _consider_wordchunk(self, curr_chunk: spacy.tokens.Doc, setup_data: TruematchSetup) -> list:
         """Evaluates a given wordchunk for an ambiguous match or meaning.
 
-        Evaluates a given wordchunk (noun phrase) to determine if it matches any known ambiguous phrases or meanings.
-        If a match is found, returns a list of formatted match results.
-        If no match is found, raises a `NotImplementedError` to signal an unrecognized ambiguous phrase.
+        Evaluates a given wordchunk (noun phrase) to determine if it matches any known
+        ambiguous phrases or meanings. If a match is found, returns a list of formatted
+        match results. If no match is found, raises a `NotImplementedError` to signal an
+        unrecognized ambiguous phrase.
 
         Parameters
         ----------
@@ -734,7 +791,8 @@ class Paper(Base):
         Raises
         ------
         NotImplementedError
-            If no matches or meanings are found in the ambiguous database for the wordchunk.
+            If no matches or meanings are found in the ambiguous database for the
+            wordchunk.
         """
         curr_chunk_text = curr_chunk.text
         # Print some notes
@@ -777,8 +835,8 @@ class Paper(Base):
     def _early_true_non_ambig_term(self, curr_chunk_text: str, setup_data: TruematchSetup) -> dict | None:
         """Evaluates if a wordchunk matches a non-ambiguous phrase.
 
-        Evaluates a given wordchunk (noun phrase) to determine if it matches any known non-ambiguous phrases.
-        If a match is found, returns a true match.
+        Evaluates a given wordchunk (noun phrase) to determine if it matches any known
+        non-ambiguous phrases. If a match is found, returns a true match.
 
         Parameters
         ----------
@@ -790,9 +848,21 @@ class Paper(Base):
         Returns
         -------
         dict or None
-            A formatted dictionary indicating a true match, if a non-ambiguous term is found.
-            If any match is found, returns None.
-            See `_build_single_info_entry()` for an explanation of the return format.
+            A formatted dictionary indicating a true match, if a non-ambiguous term is
+            found:
+            - bool: True
+            - info: A single-element list containing a dictionary with:
+                * `bool` : True
+                * `text_wordchunk` : The chunk of text searched.
+                    (e.g. "our Hubble results")
+                * `text_database` : None
+                * `matcher` : None
+            If no matches are found, returns None.
+
+        See Also
+        --------
+        _build_single_info_entry : Return format used by `_check_truematch` and related
+            helper functions.
         """
         # Store as non-ambig. phrase and skip ahead if non-ambig. term
         is_exact = any(
@@ -831,7 +901,8 @@ class Paper(Base):
         Returns
         -------
         tuple
-            The string representation of the core meaning of the current wordchunk, and any matched keywords.
+            The string representation of the core meaning of the current wordchunk, and
+            any matched keywords.
         """
         # Get verbosity of logger
         is_logger_verbose = logger.getEffectiveLevel() == logging.DEBUG
@@ -865,9 +936,11 @@ class Paper(Base):
         Parameters
         ----------
         exp_list : list of str
-            The ambiguous dictionary to use, `list_exp_exact_ambigs` or `list_exp_meaning_ambigs`.
+            The ambiguous dictionary to use, `list_exp_exact_ambigs` or
+            `list_exp_meaning_ambigs`.
         label : str
-            The name of the ambiguous dictionary used for logging/debugging, "exact" or "meaning".
+            The name of the ambiguous dictionary used for logging/debugging, "exact" or
+            "meaning".
         curr_chunk_text : str
             The wordchunk (noun phrase) to consider.
         curr_meaning : str
@@ -882,12 +955,12 @@ class Paper(Base):
         list
             A list of match dictionaries, the best of which will be returned by
             `_assemble_consider_wordchunk_results`. Each dictionary contains:
-            - "ind": index of the match in the ambiguous list
-            - "text_database": ambiguous phrase from the database
-            - "text_wordchunk": the wordchunk being evaluated
-            - "exp": the regular expression in the database
-            - "matcher": the regular expression match object (if any)
-            - "bool": the boolean flag associated with the ambiguous phrase
+            - "ind": Index of the match in the ambiguous list.
+            - "text_database": Ambiguous phrase from the database.
+            - "text_wordchunk": The wordchunk being evaluated.
+            - "exp": The regular expression in the database.
+            - "matcher": The regular expression match object (if any).
+            - "bool": The boolean flag associated with the ambiguous phrase.
         """
         set_matches_raw = [
             {
@@ -910,24 +983,41 @@ class Paper(Base):
 
         return set_matches
 
-    def _assemble_consider_wordchunk_results(self, set_matches, curr_chunk, curr_meaning, setup_data):
-        """
-        Method: _assemble_consider_wordchunk_results
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-        - Selects the best match from a list of ambiguous phrase matches, based on the shortest matched substring.
-        Parameters:
-        - set_matches [List[Dict[str, str | int | re.Match]]]:
-          - A list of matches provided by `_extract_ambig_phrases_substrings`.
-        - curr_chunk [spacy.tokens.Doc]:
-          - The wordchunk (noun phrase) to consider.
-        - curr_meaning [str]:
-          - The string representation of the core meaning of the wordchunk.
-        - setup_data [TruematchSetup]:
-          - An object containing all relevant variables for `_check_truematch`.
-        Returns:
-        - A formatted dictionary representing the best match result.
-          See `_build_single_info_entry()` for an explanation of the return format.
+    def _assemble_consider_wordchunk_results(
+        self, set_matches: list[dict], curr_chunk: spacy.tokens.Doc, curr_meaning: str, setup_data: TruematchSetup
+    ) -> dict:
+        """Selects the best match from a list of ambiguous phrase matches.
+
+        The ambiguous phrase with the shortest matched substring will be chosen as the
+            best match.
+
+        Parameters
+        ----------
+        set_matches : list of dict
+            A list of matches provided by `_extract_ambig_phrases_substrings`.
+        curr_chunk : spacy.tokens.Doc
+            The wordchunk (noun phrase) to consider.
+        curr_meaning : str
+            The string representation of the core meaning of the wordchunk.
+        setup_data : TruematchSetup
+            An object containing all relevant variables for `_check_truematch`.
+
+        Returns
+        -------
+        dict
+            A formatted dictionary representing the best match result:
+            - bool: True or False decision for the match result.
+            - info: A single-element list containing a dictionary with:
+                * `bool` : True or False decision for the match result.
+                * `text_wordchunk` : The chunk of text searched for the match result.
+                    (e.g. "our Hubble results")
+                * `text_database` : The database which matches with the result.
+                * `matcher` : The regular expression used to obtain the match result.
+
+        See Also
+        --------
+        _build_single_info_entry : Return format used by `_check_truematch` and related
+            helper functions.
         """
         best_set = sorted(set_matches, key=(lambda w: len(w["matcher"][0])))[0]
 
