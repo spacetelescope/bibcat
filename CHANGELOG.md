@@ -5,7 +5,8 @@
 -
 
 ### Changed
--
+- [PR #80](https://github.com/spacetelescope/bibcat/pull/80)
+    - Refactored check_truematch for readability
 
 ### Fixed
 - [PR #92](https://github.com/spacetelescope/bibcat/pull/92)
