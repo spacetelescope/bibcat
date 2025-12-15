@@ -36,28 +36,29 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
         threshold
     n_bibcodes: int
         The number of bibcodes (papers)
-    n_human_mission_callouts: int
-        The number of mission callouts by human classification
-    n_llm_mission_callouts: int
-        The number of mission callouts by llm classification
-    n_human_llm_mission_callouts: int
-        The number of mission callouts by both human and llm
-    n_non_mast_mission_callouts: int
-        The number of non-MAST missions by llm
-    n_human_llm_hallucination: int
-        The number of apparent hallucination by both human and llm
-        when "mission_in_text" = false
+    n_human_callouts: int
+        The number of callouts by human classification in the whole dataset
+    n_llm_callouts: int
+        The number of callouts by llm classification in the whole dataset
+    n_non_mast_callouts: int
+        The number of non-MAST missions by llm in the whole dataset
     n_missing_ouptput_bibcodes: int
-        The number of bibcodes missing output
+        The number of bibcodes missing output in the whole dataset
+    non_mast_missions: list[str], sorted
+        The non-MAST missions called out by llm in the whole dataset
+    n_human_llm_mission_callouts: int
+        The number of mission callouts by both human and llm in the given missions
+    n_human_llm_hallucination: int
+        The number of apparent hallucination by both human and llm in the given missions
+        when "mission_in_text" = false
     human_llm_missions: list[str]
-        The missions called out by both human and llm
-    non_mast_missions; list[str], sorted
-        Non MAST missions called out by llm
+        The missions called out by both human and llm in the given missions
     human_labels: list[str]
-        True labels, human classified labels like ["SCIENCE", "MENTION"]
+        True labels, human classified labels like ["SCIENCE", "MENTION"] after mapping
     llm_labels: list[str]
-        Predicted labels by llm
-
+        Predicted labels by llm after mapping
+    label_raws: list[dict]
+        list of raw labels (before mapping): dict with keys `bibcode`, `mission`, 'human_raw' and 'llm_raw'
     """
 
     n_bibcodes = len(data)
@@ -65,11 +66,17 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
     logger.info(f"The {n_bibcodes} bibcodes are evaluated in the summary_ouput_t{threshold}.json")
     logger.info(f"{len(missions)} mission(s): {', '.join(missions)} is/are evaluated!\nLooping through papers! ")
 
-    human_labels, llm_labels = [], []  # Store ground truth papertypes and LLM papertypes
-    human_llm_mission_callouts = []  # missions that have both human and llm classified papertypes
-    non_mast_mission_callouts = []  # non-MAST missions outside the config.missions list
+    # To keep track of and output the bibcode lists and their original classifications for confusion matrix quadrants
+    # original (raw) labels before mapping papertypes, dict with keys `bibcode`, `mission`, 'human_raw' and 'llm_raw'
+    label_raws: list[dict] = []
 
-    n_human_mission_callouts = n_llm_callouts = (
+    # Keep track of human and llm labels after mapping papertype for confusion matrix
+    human_labels, llm_labels = [], []  # Store ground truth papertypes and LLM papertypes
+
+    # Bookkeeping mission callouts
+    human_llm_mission_callouts = []  # missions that have both human and llm classified papertypes
+    non_mast_callouts = []  # non-MAST missions outside the config.missions list
+    n_human_callouts = n_llm_all_callouts = (
         0  # counting human mission callouts and llm callouts including non-MAST missions
     )
     n_human_llm_hallucination = 0  # counting mission_in_text = false in both llm and human callouts
@@ -82,11 +89,11 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
         logger.info(f"\nbibcode: {bibcode}")
         err = item.get("error", "")
         if not err:
-            human_data = item.get("human")
-            n_human_mission_callouts += len(human_data)
+            human_data = item.get("human") or {}
+            n_human_callouts += len(human_data)
 
             llm_data = item.get("llm")  # only llm classification accepted by the threshold value
-            n_llm_callouts += len(llm_data)
+            n_llm_all_callouts += len(llm_data)
             llm_missions = [next(iter(i)) for i in llm_data]  # get llm missions
             logger.info(f"llm classification accepted ={llm_missions}")
 
@@ -98,7 +105,15 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
             non_mast_mission = [
                 next(iter(i)) for i in llm_data if next(iter(i)) not in [s.upper() for s in config.missions]
             ]
-            non_mast_mission_callouts.extend(non_mast_mission)
+            non_mast_callouts.extend(non_mast_mission)
+
+            for mission in missions:
+                # capture raw labels before mapping and extracting for this mission
+                # use explicit "IGNORED" marker when absent to make outputs clearer
+                human_raw = human_data.get(mission) if human_data and mission in human_data else "IGNORED"
+                llm_raw = next((v for i in llm_data for k, v in i.items() if k == mission), "IGNORED")
+                # record bibcode and raw labels for this mission sample (one entry per mission)
+                label_raws.append({"bibcode": bibcode, "mission": mission, "human_raw": human_raw, "llm_raw": llm_raw})
 
             # extracting human labels and llm labels
             human_labels, llm_labels, n_human_llm_hallucination = extract_labels(
@@ -108,16 +123,12 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
                 human_llm_mission_callouts,
                 ignored_papertype,
                 item,
-                human_data,
-                llm_data,
-                llm_missions,
-                llm_df_missions,
                 n_human_llm_hallucination,
             )
-            continue
 
         elif "No paper source found" in err:
-            continue  # should not count as missing llm output when paper source is not found
+            # should not count as missing llm output when paper source is not found
+            pass
 
         elif "No mission output found" in err:
             n_missing_output_bibcodes += 1
@@ -125,40 +136,48 @@ def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
             llm_labels.extend([ignored_papertype] * len(missions))
 
             human_data = item.get("human") or {}
-            n_human_mission_callouts += len(human_data)
+
+            # record bibcodes and raw label for the missions (one per mission)
+            for mission in missions:
+                # human raw label if present, else explicit marker; llm raw set to explicit marker since no output
+                human_raw = human_data.get(mission) if human_data and mission in human_data else "IGNORED"
+                label_raws.append(
+                    {"bibcode": bibcode, "mission": mission, "human_raw": human_raw, "llm_raw": "IGNORED"}
+                )
+
+            n_human_callouts += len(human_data)
             # assign human labels when human classifications exist
             human_labels = human_labels_when_no_llm_output(missions, human_data, human_labels, ignored_papertype)
 
-            continue
-
     # non-MAST mission callouts
-    logger.info(f"Non MAST missions: {sorted(list(set(non_mast_mission_callouts)))} called out; \n")
-    logger.debug(f"Non MAST mission call outs: \n {non_mast_mission_callouts}")
+    logger.info(f"Non MAST missions: {sorted(list(set(non_mast_callouts)))} called out; \n")
+    logger.debug(f"Non MAST mission call outs: \n {non_mast_callouts}")
 
     logger.debug(f"human_labels = {human_labels}")
     logger.debug(f"llm_labels = {llm_labels}")
     logger.info(f" Set of human_labels = {set(human_labels)} and set of llm_labels = {set(llm_labels)}")
 
-    n_llm_mission_callouts = n_llm_callouts - len(non_mast_mission_callouts)
+    n_llm_callouts = n_llm_all_callouts - len(non_mast_callouts)
     logger.info(
-        f"""The total numbers of mission callouts by human and llm are {n_human_mission_callouts} and {n_llm_mission_callouts} respectively. \n
+        f"""The total numbers of mission callouts by human and llm are {n_human_callouts} and {n_llm_callouts} respectively. \n
         Among these callouts, only {len(human_llm_mission_callouts)} cases are called out by both llm and human and valid for further evaluations!\n
-        {len(non_mast_mission_callouts)} non-MAST missions are called out!\n"""
+        {len(non_mast_callouts)} non-MAST missions are called out!\n"""
     )
 
     metrics_data = {
         "threshold": threshold,
         "n_bibcodes": n_bibcodes,
-        "n_human_mission_callouts": n_human_mission_callouts,
-        "n_llm_mission_callouts": n_llm_mission_callouts,
-        "n_non_mast_mission_callouts": len(non_mast_mission_callouts),
+        "n_human_callouts": n_human_callouts,
+        "n_llm_callouts": n_llm_callouts,
+        "n_missing_output_bibcodes": n_missing_output_bibcodes,
+        "n_non_mast_callouts": len(non_mast_callouts),
+        "non_mast_missions": sorted(list(set(non_mast_callouts))),
+        "human_llm_missions": sorted(list(set(human_llm_mission_callouts))),
         "n_human_llm_mission_callouts": len(human_llm_mission_callouts),
         "n_human_llm_hallucination": n_human_llm_hallucination,
-        "n_missing_output_bibcodes": n_missing_output_bibcodes,
-        "human_llm_missions": sorted(list(set(human_llm_mission_callouts))),
-        "non_mast_missions": sorted(list(set(non_mast_mission_callouts))),
         "human_labels": human_labels,
         "llm_labels": llm_labels,
+        "label_raws": label_raws,
     }
 
     for k, v in metrics_data.items():
@@ -181,10 +200,6 @@ def extract_labels(
     human_llm_mission_callouts: list[str],
     ignored_papertype: str,
     item: dict[str, dict[str, Any]],
-    human_data: dict[str, str],
-    llm_data: list[dict[str, Any]],
-    llm_missions: list[str],
-    llm_df_missions: list[str],
     n_human_llm_hallucination: int,
 ) -> tuple[list[str], list[str], int]:
     """
@@ -215,14 +230,6 @@ def extract_labels(
         `config.llms.map_papertypes.ignore.upper()`, for instance, `NONSCIENCE`
     item: dict[str, dict[str, Any]]
         bibcode dictionary item
-    human_data: dict[str, str]
-        dictionary values of `item["human"]`, e.g., `{"JWST": "SCIENCE"}`
-    llm_data: list[dict[str, Any]]
-        dictionary value of `item["llm"]`
-    llm_missions: list[str]
-        list of LLM mission callouts in `item["llm"]`
-    llm_df_missions: list[str]
-        list of LLM mision callouts in `item["df"]`
     n_human_llm_hallucination: int
         the number of hallucinations before the current bibcode
 
@@ -236,6 +243,11 @@ def extract_labels(
         the number of hallucinations updated after the current bibcode
 
     """
+    human_data = item.get("human") or {}  #  e.g., `{"JWST": "SCIENCE"}`
+    llm_data = item.get("llm") or []
+    llm_missions = [next(iter(i)) for i in llm_data]  # list of LLM mission callouts in `item["llm"]`
+    llm_df_missions = [i["llm_mission"] for i in item.get("df")]  # list of LLM mision callouts in `item["df"]`
+
     for mission in missions:
         logger.info(f"Checking {mission} summary output")
         llm_mission_in_text = next((i["mission_in_text"] for i in item.get("df") if i["llm_mission"] == mission), False)
@@ -302,6 +314,7 @@ def extract_labels(
 
             human_labels.append(ignored_papertype)
             llm_labels.append(ignored_papertype)
+
     return human_labels, llm_labels, n_human_llm_hallucination
 
 
@@ -309,12 +322,12 @@ def map_papertype(papertype: str) -> str | None:
     """Map a classified papertype to an allowed papertypes, for instance, if `papertype` is "SUPERMENTION" or "IGNORE", it will returns "NONSCIENCE" or a custom papertype.
 
     Parameters
-    ==========
+    ----------
     papertype: str, uppercase
         human or llm classified papertype, e.g., "SCIENCE", "DATA_INFLUENCED"
 
     Returns
-    =======
+    -------
     mapped_papertype: str, uppercase
         mapped papertype follwing `config.llms.map_papertypes`, e.g., "MENTION" if `papertype` is "SUPERMENTION"
     """
@@ -344,7 +357,7 @@ def append_human_labels_with_mapped_papertype(
     """Append human papertype to the `human_labels` list after mapping it to the allowed papertype
 
     Parameters
-    ==========
+    ----------
     human_data: dict[str]
         human classification data per bibcode in summary_output.
         e.g., "human": {"GALEX": "SCIENCE", "HST": "DATA-INFLUENCED"}
@@ -354,7 +367,7 @@ def append_human_labels_with_mapped_papertype(
         list of human papertype labels for confusion matrix, e.g., ["SCIENCE","NONSCIENCE","SCIENCE"]
 
     Returns
-    ======
+    -------
     None
     """
 
@@ -406,7 +419,7 @@ def append_llm_labels_with_mapped_papertype(llm_data: list[dict], mission: str, 
     """Append llm papertype to the `llm_labels` list after mapping it to the allowed papertype
 
     Parameters
-    ==========
+    ----------
     llm_data: list[dict]
         llm classification data per bibcode in summary_output.
         e.g., "llm": [{"JWST": "SCIENCE"}, {"ROMAN": "SUPERMENTION"}, {"HST": "SCIENCE"}]
@@ -416,7 +429,7 @@ def append_llm_labels_with_mapped_papertype(llm_data: list[dict], mission: str, 
         list of llm papertype labels for confusion matrix, e.g., ["SCIENCE","NONSCIENCE","SCIENCE"]
 
     Returns
-    ======
+    -------
     None
     """
 
@@ -436,42 +449,44 @@ def compute_and_save_metrics(
     """Compute llm performance metrics (accuracy, f1, precision, and recall scores) and other stats and save results to an ascii file
 
     Parameters
-    ==========
+    ----------
     metrics_data: dict[str]
         contains various metrics
-
-        threshold: float
-            threshold
-        n_bibcodes: int
-            The number of bibcodes (papers)
-        n_human_mission_callouts: int
-            The number of mission callouts by human classification
-        n_llm_mission_callouts: int
-            The number of mission callouts by llm classification
-        n_human_llm_mission_callouts: int
-            The number of mission callouts by both human and llm
-        n_non_mast_mission_callouts: int
-            The number of non-MAST missions by llm
-        n_human_llm_hallucination: int
-            The number of apparent hallucination by both human and llm
-            when "mission_in_text" = false
-        n_missing_output_bibcodes: int
-            The number of bibcodes missing output
-        human_llm_missions: list[str], sorted
-            The missions called out by both human and llm
-        non_mast_missions; list[str], sorted
-            Non MAST missions called out by llm
-        human_labels: list[str]
-            True labels, human classified labels like ["SCIENCE", "MENTION"]
-        llm_labels: list[str]
-            Predicted labels by llm
+    metrics_data contains following variables:
+    threshold: float
+        threshold
+    n_bibcodes: int
+        The number of bibcodes (papers)
+    n_human_callouts: int
+        The number of callouts by human classification in the whole dataset
+    n_llm_callouts: int
+        The number of callouts by llm classification in the whole dataset
+    n_non_mast_callouts: int
+        The number of non-MAST missions by llm in the whole dataset
+    n_missing_ouptput_bibcodes: int
+        The number of bibcodes missing output in the whole dataset
+    non_mast_missions; list[str], sorted
+        Non MAST missions called out by llm in the whole dataset
+    n_human_llm_mission_callouts: int
+        The number of mission callouts by both human and llm in the given missions
+    n_human_llm_hallucination: int
+        The number of apparent hallucination by both human and llm in the given missions
+        when "mission_in_text" = false
+    human_llm_missions: list[str]
+        The missions called out by both human and llm in the given missions
+    human_labels: list[str]
+        True labels, human classified labels like ["SCIENCE", "MENTION"]
+    llm_labels: list[str]
+        Predicted labels by llm
+    label_raws: list[dict]
+        list of raw labels (before mapping): dict with keys 'human_raw' and 'llm_raw'
     output_ascii_path: str | Path
         output file path to save the metrics summary in .txt
     output_json_path: str | Path
         output file path to save the metrics summary in .json
 
     Return
-    ======
+    ------
     None
 
     """
@@ -509,23 +524,26 @@ def compute_and_save_metrics(
     )
 
     logger.info(f"classification report\n {classification_performance_report}")
+    # For binary classification, collect bibcodes for TN/FP/FN/TP along with raw labels.
+    label_raws = metrics_data.get("label_raws", [])
+    entries = collect_confusion_matrix_cell_entries(human_labels_encoded, llm_labels_encoded, label_raws, n_classes)
 
     # Write results to an ASCII file
     with open(output_ascii_path, "w") as f:
-        f.write(f"The number of bibcodes (papers) for evaluation metrics: {metrics_data['n_bibcodes']}\n")
+        f.write(f"The total number of bibcodes (papers) for evaluation metrics: {metrics_data['n_bibcodes']}\n")
         f.write(
             f"The number of bibcodes missing output, i.e., ignored papers by flagship and mast: {metrics_data['n_missing_output_bibcodes']}\n"
         )
-        f.write(f"The number of mission callouts by human: {metrics_data['n_human_mission_callouts']}\n")
+        f.write(f"The number of callouts by human: {metrics_data['n_human_callouts']}\n")
         f.write(
-            f"The number of mission callouts by llm with the threshold value, {metrics_data['threshold']}: {metrics_data['n_llm_mission_callouts']}\n\n"
+            f"The number of callouts by llm with the threshold value, {metrics_data['threshold']}: {metrics_data['n_llm_callouts']}\n\n"
         )
         f.write(
-            f"The number of mission callouts by both human and llm: {metrics_data['n_human_llm_mission_callouts']}\n"
+            f"The number of callouts by both human and llm with given missions: {metrics_data['n_human_llm_mission_callouts']}\n"
         )
-        f.write(f"Missions called out by both human and llm: {', '.join(metrics_data['human_llm_missions'])}\n\n")
+        f.write(f"Mission(s) called out by both human and llm: {', '.join(metrics_data['human_llm_missions'])}\n\n")
 
-        f.write(f"The number of non-MAST mission callouts by llm: {metrics_data['n_non_mast_mission_callouts']}\n")
+        f.write(f"The number of non-MAST mission callouts by llm: {metrics_data['n_non_mast_callouts']}\n")
 
         f.write(
             f"The number of hallunications by both human and llm: {metrics_data['n_human_llm_hallucination']}\n Check out if the keyword search is failing\n\n"
@@ -545,10 +563,78 @@ def compute_and_save_metrics(
     logger.info(f"Metrics saved to {output_ascii_path}")
 
     # Save metrics_data and classlifcation report to a json file
-    filtered_metrics_data = {k: v for k, v in metrics_data.items() if k not in {"human_labels", "llm_labels"}}
+    filtered_metrics_data = {
+        k: v for k, v in metrics_data.items() if k not in {"human_labels", "llm_labels", "label_raws"}
+    }
+
+    # Collect bibcodes for TN/FP/FN/TP with raw labels.
+    label_raws = metrics_data.get("label_raws", [])
+    entries = collect_confusion_matrix_cell_entries(human_labels_encoded, llm_labels_encoded, label_raws, n_classes)
+
+    # append bibcode lists into the saved json
     save_json_file(
-        output_json_path, {**filtered_metrics_data, **confusion_matrix_metrics, **classification_performance_report}
+        output_json_path,
+        {
+            **filtered_metrics_data,
+            **confusion_matrix_metrics,
+            **classification_performance_report,
+            "fp_bibcodes": entries.get("fp", []),
+            "fn_bibcodes": entries.get("fn", []),
+            "tp_bibcodes": entries.get("tp", []),
+            "tn_bibcodes": entries.get("tn", []),
+        },
     )
+
+
+def collect_confusion_matrix_cell_entries(
+    human_labels_encoded: NDArray[np.int64],
+    llm_labels_encoded: NDArray[np.int64],
+    label_raws: list[dict],
+    n_classes: int,
+) -> dict:
+    """Collect bibcode + raw-label dicts for confusion matrix cells.
+
+    Parameters
+    ----------
+    human_labels_encoded: NDArray[np.int64]
+        encoded human labels
+    llm_labels_encoded: NDArray[np.int64]
+        encoded llm labels
+    label_raws: list[dict]
+        list of raw labels (before mapping): dict with keys `bibcode`, `mission`, `human_raw` and `llm_raw`
+    n_classes: int
+        number of classes
+
+    Returns
+    -------
+    entries: dict
+     a dict with keys 'tn','fp','fn','tp' each mapping to a list of entry dicts.
+    Each entry dict contains following variables:
+    bibcode: str
+        bibcode
+    human_raw: str
+        raw human label before mapping
+    llm_raw: str
+        raw llm label before mapping
+    """
+    # Default empty structure
+    entries = {"tn": [], "fp": [], "fn": [], "tp": []}
+
+    # currently only suporting binary classification and we could extend it to multi-class later
+    if not (n_classes == 2 and label_raws and len(label_raws) == len(human_labels_encoded)):
+        return entries
+
+    for t, p, raw in zip(human_labels_encoded, llm_labels_encoded, label_raws):
+        entry = raw
+        if t == 0 and p == 0:
+            entries["tn"].append(entry)
+        elif t == 0 and p == 1:
+            entries["fp"].append(entry)
+        elif t == 1 and p == 0:
+            entries["fn"].append(entry)
+        elif t == 1 and p == 1:
+            entries["tp"].append(entry)
+    return entries
 
 
 def extract_roc_data(data: dict[str, dict[str, Any]], missions: list[str]):
@@ -649,10 +735,10 @@ def extract_roc_data(data: dict[str, dict[str, Any]], missions: list[str]):
                 else:
                     human_labels.append(ignored_papertype)
                     llm_confidences.append([0.0, 1.0])
-            continue
 
         elif "No paper source found" in err:
-            continue  # should not count as missing llm output when paper source is not found
+            # should not count as missing llm output when paper source is not found
+            pass
 
         # assign the roc input values to NONSCIENCE and [0.0, 1.0] when there is no llm output
         elif "No mission output found" in err:

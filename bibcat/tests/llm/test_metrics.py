@@ -59,9 +59,9 @@ missions = ["HST", "JWST", "ROMAN"]
 sample_metrics_data = {
     "threshold": 0.7,
     "n_bibcodes": 3,
-    "n_human_mission_callouts": 4,
-    "n_llm_mission_callouts": 2,
-    "n_non_mast_mission_callouts": 1,
+    "n_human_callouts": 4,
+    "n_llm_callouts": 2,
+    "n_non_mast_callouts": 1,
     "n_human_llm_mission_callouts": 2,
     "n_human_llm_hallucination": 0,
     "n_missing_output_bibcodes": 1,
@@ -123,10 +123,14 @@ def test_extract_eval_data(mocker) -> None:
 
     expected_metrics_data = sample_metrics_data
     assert isinstance(metrics_data, dict), "metrics_data should be a dictionary"
-    assert set(metrics_data.keys()) == set(expected_metrics_data.keys()), "keys mismatch in metrics_data"
+    # Allow additional keys (like label_bibcodes / label_raws) to be present
+    assert set(expected_metrics_data.keys()).issubset(set(metrics_data.keys())), "missing expected keys in metrics_data"
 
     for key, value in expected_metrics_data.items():
         assert value == metrics_data[key], f"{key} mismatch"
+
+    # bibcodes, original papertypes in confusion matrix cells introduced by metrics: ensure they're present and of correct type
+    assert "label_raws" in metrics_data and isinstance(metrics_data["label_raws"], list)
 
     # Expected file path
     expected_json_path = str(Path("/mock/output") / "llms/openai_gpt-4o-mini/metrics_summary_t0.7.json")
@@ -148,6 +152,7 @@ def test_compute_and_save_metrics(mocker) -> None:
 
     compute_and_save_metrics(sample_metrics_data, output_ascii_filepath, output_json_filepath)
 
+    # The function opens the ascii output once for write ('w').
     mock_open.assert_called_with(output_ascii_filepath, "w")
     file_handle = mock_open.return_value.__enter__.return_value
     file_handle.write.assert_called()
@@ -157,6 +162,14 @@ def test_compute_and_save_metrics(mocker) -> None:
 
     assert json_data["n_bibcodes"] == 3
     assert json_data["SCIENCE"]["precision"] == 1.0
+
+    assert "tn" in json_data and isinstance(json_data.get("tn"), (int, np.integer))
+    assert "tp" in json_data and isinstance(json_data.get("tp"), (int, np.integer))
+
+    assert "tn_bibcodes" in json_data and isinstance(json_data["tn_bibcodes"], list)
+    assert "fp_bibcodes" in json_data and isinstance(json_data["fp_bibcodes"], list)
+    assert "fn_bibcodes" in json_data and isinstance(json_data["fn_bibcodes"], list)
+    assert "tp_bibcodes" in json_data and isinstance(json_data["tp_bibcodes"], list)
 
 
 def test_extract_roc_data():

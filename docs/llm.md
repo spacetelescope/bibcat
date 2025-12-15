@@ -753,6 +753,9 @@ bibcat llm plot -c -a
 In the example confusion matrix (CM) plot, we have both counts (left panel) and normalized counts (right panel). All counts were considered if the confidence value of each LLM classification is >= 0.5 (`threshold = 0.5`). We can see the distribution of true positives (top left quadrant), false positives (bottom left quadrant), true negatives (bottom right quadrant), and false negatives (top right quadrant) for the specified missions. This visualization helps in understanding the model's performance and identifying areas for improvement. Note that in this figure, all MAST missions were considered to create CM, but only a subset of the missions in the annotation, `Mission(s) found:` were actually called out by human and LLM as seen in. The missions not found in the sample only contribute to true negatives.
 
 These commands will also create metrics summary files ( `*metrics_summary_t0.5.txt` and `*metrics_summary_t0.5.json`).
+
+### Metrics Summary Output
+#### Text Output for Metrics Summary
 The outuput would look like
 
 ```text
@@ -781,28 +784,55 @@ weighted avg     0.9736    0.9721    0.9728      1648
 
 ```
 
+#### Jason Output for Metrics Summary
+The definitions of the JSON output columns are following.
+
+- **n_bibcodes**: The total number of bibcodes (papers) for confusion matrix evaluation per given mission(s)
+- **n_human_callouts**: The number of all callouts by human found in the source dataset
+- **n_llm_callouts**: The number of all callouts by llm with the threshold value in the llm output file
+- **n_missing_output_bibcodes**: The number of bibcodes missing from the llm output file
+- **n_non_mast_callouts**: The number of non-MAST mission callouts by llm from the llm output file
+- **non_mast_missions**: The list of non-MAST missions called out by llm from the llm output file
+- **human_llm_missions**: The list of missions called out by both human and llm for given mission(s)
+- **n_human_llm_mission_callouts**: The number of callouts by both human and llm for **human_llm_missions**
+- **n_human_llm_hallucination**: The number of hallucinated callouts by llm for **human_llm_missions**
+- **NONSCIENCE**: The classification report metrics for NONSCIENCE papertype
+- **SCIENCE**: The classification report metrics for SCIENCE papertype
+- **macro avg**: The macro average metrics across all papertypes
+- **weighted avg**: The weighted average metrics across all papertypes
+- **precision**: precision score
+- **recall**: recall score
+- **f1-score**: F1-score
+- **support**: Total number of occurrences across papertype(s)
+- **accuracy**: Overall accuracy of the classification
+- **fp_bibcodes**: The list of false positive bibcodes with details
+- **fn_bibcodes**: The list of false negative bibcodes with details
+- **tp_bibcodes**: The list of true positive bibcodes with details
+- **tn_bibcodes**: The list of true negative bibcodes with details
+- **bibcode**: The bibcode of the paper
+- **mision**: The mission name
+- **human_raw**: The original human classification for the mission before mapping to SCIENCE/NONSCIENCE
+  - *SCIENCE*, *MENTION*, *DATA_INFLUENCED*, *SUPERMENTION*, *ENGINEERING*, and *GREY* or *GRAY* are available
+  - *IGNORED* is introduced to tag mission with no classification by human for that mission in the source dataset
+- **llm_raw**: The original llm classification (*SCIENCE*, *MENTION*) for the mission before mapping to SCIENCE/NONSCIENCE
+  - *IGNORED* is introduced to tag mission with no classification by human for that mission
+
+An example output file would look like:
+
 ```json
 {
-  "threshold": 0.5,
   "n_bibcodes": 89,
-  "n_human_mission_callouts": 217,
-  "n_llm_mission_callouts": 222,
-  "n_non_mast_mission_callouts": 2,
-  "n_valid_mission_callouts": 149,
-  "valid_missions": [
-    "FUSE",
-    "GALEX",
-    "HUT",
-    "IUE",
-    "K2",
-    "KEPLER",
-    "TESS",
-    "WUPPE"
+  "n_human_callouts": 217,
+  "n_llm_callouts": 222,
+  "n_missing_output_bibcodes": 5,
+  "n_non_mast_callouts": 0,
+  "non_mast_missions": [],
+  "human_llm_missions": [
+    "HST",
+    "JWST",
   ],
-  "non_mast_missions": [
-    "EDEN",
-    "NUSTAR"
-  ],
+  "n_human_llm_mission_callouts": 80,
+  "n_human_llm_hallucination": 5,
   "NONSCIENCE": {
     "precision": 0.9901538461538462,
     "recall": 0.9834963325183375,
@@ -827,7 +857,57 @@ weighted avg     0.9736    0.9721    0.9728      1648
     "recall": 0.9745712596096984,
     "f1-score": 0.9756842233523534,
     "support": 1691.0
-  }
+  },
+  "fp_bibcodes": [
+    {
+      "bibcode": "bibcode1",
+      "mision": "HST",
+      "human_raw": "MENTION",
+      "llm_raw": "SCIENCE"
+    },
+    {
+      "bibcode": "bicode12",
+      "mision": "JWST",
+      "human_raw": "IGNORED",
+      "llm_raw": "SCIENCE"
+    }
+  ],
+  "fn_bibcodes": [
+    {
+      "bibcode": "bibcode2",
+      "mision": "HST",
+      "human_raw": "SCIENCE",
+      "llm_raw": "MENTION"
+    },
+    {
+      "bibcode": "bibcode2",
+      "mision": "HST",
+      "human_raw": "SCIENCE",
+      "llm_raw": "IGNORED"
+    },
+  ],
+  "tp_bibcodes": [
+    {
+      "bibcode": "bicode30",
+      "mision": "JWST",
+      "human_raw": "SCIENCE",
+      "llm_raw": "SCIENCE"
+    },
+  ],
+   "tn_bibcodes": [
+    {
+      "bibcode": "bicode30",
+      "mision": "HST",
+      "human_raw": "IGNORED",
+      "llm_raw": "MENTION"
+    },
+    {
+      "bibcode": "bicode35",
+      "mision": "HST",
+      "human_raw": "MENTION",
+      "llm_raw": "MENTION"
+    }
+  ]
 }
 ```
 
