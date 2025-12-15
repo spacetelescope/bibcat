@@ -5,7 +5,8 @@
 - [PR #92](https://github.com/spacetelescope/bibcat/pull/92)
     - Update bibcat llm metrics to collect bibcodes for confusion matrix cells
 ### Changed
--
+- [PR #80](https://github.com/spacetelescope/bibcat/pull/80)
+    - Refactored check_truematch for readability
 
 ### Fixed
 - Unpinned tensorflow-metal version.
