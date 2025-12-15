@@ -2,27 +2,33 @@
 
 ## [Unreleased]
 ### Added
--
 
 ### Changed
--
 
 ### Fixed
-- [PR #92](https://github.com/spacetelescope/bibcat/pull/92)
-    - Unpinned tensorflow-metal version.
+
+
 ### Deprecated
--
+
 
 ### Removed
--
+
 
 ### Security
--
 
----
-## ### Added
+
+## [0.2.4]- 2025-12-15
+### Added
+- [PR #92](https://github.com/spacetelescope/bibcat/pull/92)
+    - Update bibcat llm metrics to collect bibcodes for confusion matrix cells
 - [PR #86](https://github.com/spacetelescope/bibcat/pull/86)
     - github action for auto-release when git tag pushed and minor doc updates
+### Changed
+- [PR #80](https://github.com/spacetelescope/bibcat/pull/80)
+    - Refactored check_truematch for readability
+
+### Fixed
+- Unpinned tensorflow-metal version.
 
 ## [0.2.2] - 2025-09-29
 ### Added

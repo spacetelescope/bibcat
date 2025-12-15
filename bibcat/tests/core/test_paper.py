@@ -1,7 +1,7 @@
 """
 :title: test_paper.py
 
-Testing the Paper class and its methods.
+Testing the Paper class and its methods (excluding _check_truematch).
 """
 
 import unittest
@@ -131,7 +131,7 @@ class TestPaper(unittest.TestCase):
 
                 # Prepare and run test for bibcat class instance
                 testpaper = paper.Paper(text=curr_text, keyword_objs=test_list_lookup_kobj, do_check_truematch=True)
-                _ = testpaper.process_paragraphs(buffer=curr_buffer)
+                testpaper.process_paragraphs(buffer=curr_buffer)
                 test_res = testpaper.get_paragraphs()[curr_name]
 
                 # ambig_output = testpaper._get_info("_results_ambig")[curr_name]
@@ -215,76 +215,6 @@ class TestPaper(unittest.TestCase):
                     print("")
 
                     self.assertEqual(test_res, curr_answer)
-
-    # For tests of _check_truematch:
-    if True:
-        # Test verification of ambig. phrases for variety of phrases
-        def test_check_truematch__variety1(self):
-            # Prepare text and answers for test
-            dict_tests = {
-                "small Hubble constant": {"lookup": "Kepler", "bool": False},
-                "small Hubble's constant": {"lookup": "Kepler", "bool": False},
-                "Edwin Hubble's papers": {"lookup": "Hubble", "bool": False},
-                # "Hubble 1970": {"lookup": "Hubble", "bool": False}, - not realistic since would be cleaned beforehand normally
-                # "Hubble (2000)": {"lookup": "Hubble", "bool": False}, - not realistic since would be cleaned beforehand normally
-                "high S/N Hubble image": {"lookup": "Hubble", "bool": True},
-                "HST observatory": {"lookup": "Hubble", "bool": True},
-                "H.S.T. observatory": {"lookup": "Hubble", "bool": True},
-                "Hubble calibrated images": {"lookup": "Hubble", "bool": True},
-                "Hubble's calibrated data": {"lookup": "Hubble", "bool": True},
-                "Hubble's pretty spectra": {"lookup": "Hubble", "bool": True},
-                "Edwin Hubble's analysis": {"lookup": "Hubble", "bool": False},
-                "A Hubble constant data": {"lookup": "Hubble", "bool": False},
-                "Hubble et al. 2000": {"lookup": "Hubble", "bool": False},
-                "Hubbleetal 2000": {"lookup": "Hubble", "bool": False},
-                "Hubble and more data.": {"lookup": "Hubble", "bool": True},
-                "Kepler fields.": {"lookup": "Kepler", "bool": True},
-                "Kepler velocities.": {"lookup": "Kepler", "bool": False},
-                "Kepler velocity fields.": {"lookup": "Kepler", "bool": False},
-                "Kepler rotation velocity fields.": {"lookup": "Kepler", "bool": False},
-                "that Kepler data velocity.": {"lookup": "Kepler", "bool": True},
-                "true Kepler planets": {"lookup": "Kepler", "bool": False},
-                "those Kepler radii": {"lookup": "Kepler", "bool": False},
-                "Keplerian orbits": {"lookup": "Kepler", "bool": False},
-                "Kepler's law": {"lookup": "Kepler", "bool": False},
-                "Kepler observations": {"lookup": "Kepler", "bool": True},
-                "K2 database": {"lookup": "K2", "bool": True},
-                "K2-123 star": {"lookup": "K2", "bool": False},
-                "K2 stars": {"lookup": "K2", "bool": False},
-                "Copernicus satellite": {"lookup": "Copernicus", "bool": True},
-                "Copernicus model": {"lookup": "Copernicus", "bool": False},
-            }
-
-            # Prepare and run tests for bibcat class instance
-            testpaper = paper.Paper(text="", keyword_objs=[params.kobj_hubble], do_check_truematch=False)
-            dict_ambigs = testpaper._process_database_ambig(do_verbose=False, keyword_objs=test_list_lookup_kobj)
-
-            # Check answers
-            for key1 in dict_tests:
-                try:
-                    curr_phrase = key1
-                    curr_kobjs = [test_dict_lookup_kobj[dict_tests[key1]["lookup"]]]
-                    answer = dict_tests[key1]["bool"]
-                    test_res = testpaper._check_truematch(
-                        text=curr_phrase,
-                        keyword_objs=curr_kobjs,
-                        do_verbose=False,
-                        do_verbose_deep=False,
-                        dict_ambigs=dict_ambigs,
-                    )
-                    self.assertEqual(test_res["bool"], answer)
-                except AssertionError:
-                    print("")
-                    print(">")
-                    print(
-                        "{2}\nTest answer: {0}\nAct. answer: {1}\n{3}\n".format(
-                            test_res["bool"], answer, key1, test_res
-                        )
-                    )
-                    print("---")
-                    print("")
-
-                    self.assertEqual(test_res["bool"], answer)
 
     # For tests of _extract_core_from_phrase:
     if True:
