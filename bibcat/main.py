@@ -16,6 +16,7 @@ from bibcat.data.build_dataset import build_dataset
 from bibcat.llm.chunker import ChunkPlanner, SubmissionManager
 from bibcat.llm.evaluate import evaluate_output
 from bibcat.llm.io import adjust_model
+from bibcat.llm.llm_summary import evaluate_output_llm_only
 from bibcat.llm.openai import OpenAIHelper, classify_paper
 from bibcat.llm.plots import confusion_matrix_plot, roc_plot
 from bibcat.llm.stats import inconsistent_classifications, save_evaluation_stats, save_operation_stats
@@ -265,8 +266,16 @@ def run_gpt(filename, bibcode, index, model, num_runs, user_prompt_file, agent_p
     show_default=True,
     help="The threshold value to accept the llm papertype",
 )
+@click.option(
+    "-l",
+    "--llm-only",
+    default=False,
+    is_flag=True,
+    show_default=False,
+    help="Flag to process the llm output only when no human review is done",
+)
 @click.pass_context
-def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, threshold):
+def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, threshold, llm_only=False):
     """Evaluate the ouput JSON from a LLM model"""
     logger.debug("CLI option: 'llm evaluate' selected")
     # override the config model
@@ -284,7 +293,10 @@ def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, thre
         ctx.invoke(run_gpt, bibcode=bibcode, index=index, num_runs=num_runs)
 
     # evaluate the output
-    evaluate_output(bibcode=bibcode, index=index, write_file=write)
+    if not llm_only:
+        evaluate_output(bibcode=bibcode, index=index, write_file=write)
+    else:
+        evaluate_output_llm_only(bibcode=bibcode, write_file=write)
 
 
 @llmcli.command("plot", help="Create evaluation plots for llm performance")
@@ -529,8 +541,16 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
 @click.option("-m", "--model", default=None, type=str, show_default=True, help="The model type to use")
 @click.option("-s", "--submit", is_flag=True, show_default=True, help="Flag to submit the paper for classification")
 @click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
+@click.option(
+    "-l",
+    "--llm-only",
+    default=False,
+    is_flag=True,
+    show_default=False,
+    help="Flag to process the llm output only when no human review is done",
+)
 @click.pass_context
-def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
+def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs, llm_only):
     """Batch evaluate a list of papers"""
     start_time = time.time()
     logger.debug("CLI option: 'llm batch evaluate' selected")
@@ -540,6 +560,8 @@ def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
         config.llms.openai.model = model
 
     # get the list of files
+    if filename:
+        logger.info(f"batch filename: {filename.name}")
     files = files or filename.read().splitlines()
 
     # submit the paper for classification, if requested
@@ -549,10 +571,14 @@ def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
     for file in files:
         # check if file, bibcode, or index
         source = "file" if os.path.isfile(file) else "index" if file.isnumeric() else "bibcode"
-
-        evaluate_output(
-            bibcode=file if source == "bibcode" else None, index=file if source == "index" else None, write_file=True
-        )
+        if not llm_only:
+            evaluate_output(
+                bibcode=file if source == "bibcode" else None,
+                index=file if source == "index" else None,
+                write_file=True,
+            )
+        else:
+            evaluate_output_llm_only(bibcode=file if source == "bibcode" else None, write_file=True)
     elapsed_time = time.time() - start_time
     logger.info(f"Elapsed time for evaluate_llm_batch for {len(files)} papers: {elapsed_time} seconds.")
 
