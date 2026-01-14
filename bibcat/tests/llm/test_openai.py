@@ -151,13 +151,17 @@ def test_validate_batch(batchfile, nsamp, exp):
     assert valid == exp
 
 
-@pytest.mark.parametrize("bibcode, file, expected", [
-    ("BIBCODE123", None, "BIBCODE123"),
-    (None, "temp_ABC123.json", "ABC123"),
-    (None, "paper_file.json", "paper_file.json"),
-], ids=['bibcode', 'tempfile', 'paper_file'])
+@pytest.mark.parametrize(
+    "bibcode, file, expected",
+    [
+        ("BIBCODE123", None, "BIBCODE123"),
+        (None, "temp_ABC123.json", "ABC123"),
+        (None, "paper_file.json", "paper_file.json"),
+    ],
+    ids=["bibcode", "tempfile", "paper_file"],
+)
 def test_get_output_key_bibcode_and_tempfile(tmp_path, bibcode, file, expected):
-    """ test get output key"""
+    """test get output key"""
     oa = OpenAIHelper()
     oa.bibcode = bibcode
     oa.filename = file
@@ -168,12 +172,12 @@ def test_get_output_key_bibcode_and_tempfile(tmp_path, bibcode, file, expected):
 
 
 def test_submit_paper_with_paper_dict(mocker):
-    """ test we can submit a paper"""
+    """test we can submit a paper"""
     oa = OpenAIHelper()
 
     # stub populate_user_template and send_message to avoid heavy processing
-    mocker.patch('bibcat.llm.openai.get_source', return_value=paper)
-    mocker.patch('bibcat.llm.openai.identify_missions_in_text', return_value=[True]*len(config.missions))
+    mocker.patch("bibcat.llm.openai.get_source", return_value=paper)
+    mocker.patch("bibcat.llm.openai.identify_missions_in_text", return_value=[True] * len(config.missions))
     mocker.patch.object(OpenAIHelper, "send_message", return_value={"notes": "n", "missions": []})
 
     res = oa.submit_paper(bibcode=bibcodes[0])
@@ -182,20 +186,28 @@ def test_submit_paper_with_paper_dict(mocker):
 
 @pytest.mark.parametrize("mission", ["kepler", "Kepler", "KEPLER"])
 def test_missionenum(mission):
-    """test mission enum returns correctly """
+    """test mission enum returns correctly"""
     # follows mission capitalization in `config.missions`
     assert MissionEnum(mission) == "Kepler"
 
 
-response = {"notes": "I thought about it.",
-            "missions": [{"mission": "TESS",
-                          "papertype": "SCIENCE",
-                          'confidence': [1.0, 0.0],
-                          "quotes": ['I am a TESS paper'],
-                          "reason": "It said it was a TESS paper."}]
-            }
+response = {
+    "notes": "I thought about it.",
+    "missions": [
+        {
+            "mission": "TESS",
+            "papertype": "SCIENCE",
+            "confidence": [1.0, 0.0],
+            "quotes": ["I am a TESS paper"],
+            "reason": "It said it was a TESS paper.",
+        }
+    ],
+}
+
+
 class MockResponse:
-    """ mock response for openai response.parse """
+    """mock response for openai response.parse"""
+
     error = None
     output_parsed = InfoModel(**response)
 
