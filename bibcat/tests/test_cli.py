@@ -16,7 +16,6 @@ def test_bibcat_cli() -> None:
     assert result.exit_code == 0
     assert "Command-line tool for running the bibcat package" in result.output
     assert "LLM-based paper classification" in result.output
-    assert "Classical ML-based paper classification" in result.output
 
 
 def test_dataset() -> None:
@@ -25,35 +24,6 @@ def test_dataset() -> None:
     runner = CliRunner()
     result = runner.invoke(cli, ["dataset", "--help"])
     assert "Build a combined dataset" in result.output
-
-
-def test_ml() -> None:
-    """test the cli ml help command"""
-    runner = CliRunner()
-    result = runner.invoke(cli, ["ml", "--help"])
-    assert "ML-based paper classification using classical NLP models, e.g. BERT" in result.output
-    assert "Classify a paper using a trained model" in result.output
-
-
-def test_train() -> None:
-    """test the cli train help command"""
-    runner = CliRunner()
-    result = runner.invoke(cli, ["ml", "train", "--help"])
-    assert "Build or train a classical NLP ML model" in result.output
-
-
-def test_classify() -> None:
-    """test the cli classify help command"""
-    runner = CliRunner()
-    result = runner.invoke(cli, ["ml", "classify", "--help"])
-    assert "Classify a paper using a trained model" in result.output
-
-
-def test_evaluate() -> None:
-    """test the cli evaluate help command"""
-    runner = CliRunner()
-    result = runner.invoke(cli, ["ml", "evaluate", "--help"])
-    assert "Evaluate a trained model on efficacy and performance" in result.output
 
 
 def test_llm() -> None:
@@ -125,6 +95,7 @@ def test_batch_retrieve() -> None:
     runner = CliRunner()
     result = runner.invoke(cli, ["llm", "batch", "retrieve", "--help"])
     assert "Retrieve a batch run from the OpenAI Batch API" in result.output
+
 
 def test_batch_process() -> None:
     """test the cli batch process help command"""

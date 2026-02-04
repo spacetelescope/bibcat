@@ -130,6 +130,7 @@ class ChunkPlanner:
                 config.llms.openai.model = reqmodel
 
             # --- Token estimation helper ---
+
     def _estimate_tokens(self, text: str) -> int:
         """Estimate token count for a given text using tiktoken. Falls back gracefully."""
         if tiktoken is None:
