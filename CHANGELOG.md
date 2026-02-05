@@ -12,6 +12,8 @@
 
 
 ### Removed
+- [PR #93](https://github.com/spacetelescope/bibcat/pull/93)
+    - Removed ML/BERT code, documentation, and tests.
 
 
 ### Security
