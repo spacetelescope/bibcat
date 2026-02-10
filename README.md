@@ -48,7 +48,7 @@ spaCy is a Python library that provides efficient NLP tools for text preprocessi
 
 *Note: Some core tests that use spaCy may fail if the version is not 3.7.2. If this happens, you can reinstall it with pip install spacy==3.7.2. This is a temporary workaround until we have the capacity to update the tests.*
 
-This model is used for identifying the mission:
+This model is used for processing the input text, which is then analyzed further to identify the mission keywords:
 ```
 python -m spacy download en_core_web_sm
 ```
