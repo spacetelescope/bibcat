@@ -1,7 +1,7 @@
 Input text data
 ===============
 
-The ``bibcat/data/`` directory contains scripts for preparing input datasets. This includes building the initial dataset, cleaning and streamlining it, and splitting it into training, validation, and test sets for use with the `LLM-based method <https://bibcat.readthedocs.io/en/latest/llm.html>`_.
+The bibcat/data/ directory includes a script that prepares the input dataset for the `LLM-based method <https://bibcat.readthedocs.io/en/latest/llm.html>`_ This dataset combines the `papertext` (text) and `papertrack` (classification) data into a single input file.
 
 To construct the combined input dataset file (``combined_data*.json``), two JSON sources are required: full-text data and corresponding classified label data. We refer to these as:
 
