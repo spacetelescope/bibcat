@@ -44,7 +44,9 @@ pip install -e . # install editable mode
 
 
 ### Spacy model downloads
-*Note that some core tests using `spacy` could fail if the version number is not `3.7.2`. You could reinstall `pip install spacy==3.7.2` if that happens. This is a work-around solution until we have the capacity to update the tests.
+spaCy is a Python library that provides efficient NLP tools for text preprocessing, including tokenization, tagging, and named entity recognition.
+
+*Note: Some core tests that use spaCy may fail if the version is not 3.7.2. If this happens, you can reinstall it with pip install spacy==3.7.2. This is a temporary workaround until we have the capacity to update the tests.*
 
 This model is used for identifying the mission:
 ```
