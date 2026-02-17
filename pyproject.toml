@@ -37,7 +37,7 @@ bibcat = "bibcat.main:cli"
 
 [project.optional-dependencies]
 dev = [
-    "pre-commit == 6.0.0",
+    "pre-commit == 4.5.0",
     "ruff == 0.15.1",
 ]
 test = [
