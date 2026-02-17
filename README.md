@@ -121,10 +121,10 @@ export BIBCAT_OUTPUT_DIR=/my/local/path/to/bibcat/output
 
 All `bibcat` configuration is contained in a YAML configuration file, `bibcat_config.yaml` .  The default settings are located in `etc/bibcat_config.yaml`.  You don't modify this file directly.  To modify any of the settings, you do so through a custom user configuration file of the same name, placed in `$BIBCAT_CONFIG_DIR` or your home directory, mirroring the same default structure.  All user custom settings override the defaults.
 
-For example, to change the name of the output model saved, within your user `$BIBCAT_CONFIG_DIR/bibcat_config.yaml`, set
+For example, to turn on verbose logging, within your user `$BIBCAT_CONFIG_DIR/bibcat_config.yaml`, set
 ```yaml
-output:
-  name_model: my_new_model
+logging:
+  verbose: true
 ```
 
 ### When testing with pytest

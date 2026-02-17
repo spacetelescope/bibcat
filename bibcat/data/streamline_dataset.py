@@ -8,9 +8,6 @@ from bibcat.utils.logger_config import setup_logger
 logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
-# map model_settings back to settings
-settings = config.dataprep
-
 
 @lru_cache
 def load_source_dataset(do_verbose: bool):

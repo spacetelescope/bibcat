@@ -10,8 +10,6 @@ inputs:
 
 output:
   root_path: $BIBCAT_OUTPUT_DIR
-  name_model: llm_run
-  folders_TVT: {train: dir_train, validate: dir_validate, test: dir_test}
   path_not_in_papertext: $BIBCAT_DATA_DIR/bibcodes_notin_papertext.txt  # file for bibcodes not in papertrack
   path_not_in_papertrack: $BIBCAT_DATA_DIR/bibcodes_notin_papertrack.txt # file for bibcodes not in ADS papertext
   path_papertext_not_in_papertrack: $BIBCAT_DATA_DIR/papertext_notin_papertrack.json
@@ -25,11 +23,7 @@ paths:
   parent: null
   config: null
   docs: null
-  models: null
   output: null
-  partitioned: null
-  modiferrors: null
-  TVTinfo: null
 
 # Kepler: Use the same capitalization as phrase_ambig[0] if mission is found in config.textprocessing.phrase_ambig, since both `casesensitive` and caseinsensitive` are empty.
 missions: ["BEFS","Copernicus", "EUVE", "FIRST",  "FUSE",  "GALEX","HST", "HUT", "IMAPS", "IUE", "JWST", "K2",  "Kepler", "PanSTARRS", "Roman", "TESS", "TUES","UIT", "WUPPE"]
@@ -71,22 +65,10 @@ llms:
     inspection: 0.45
   ops: false # false if in evaluation, true if in operation
 
-dataprep:
-  do_reuse_run: true # whether or not to reuse saved data from previous model run
-  num_papers: 100  # the number of papers to use. Set to null to use all available papers in external dataset
-  fraction_TVT: [0.8, 0.1, 0.1]  # Partition fraction of training, validation, testing dataset
-  mode_TVT: uniform  # Mode for splits; "uniform" = all training datasets will have the same number of entries from fraction_TVT; "available" = all training datasets will use full fraction
-  seed_TVT: 10  # Random seed for generating train vs valid. vs test datasets
-
 textprocessing:
   do_verify_truematch: true  # used in Performance class
   do_raise_innererror: false  # do_raise_innererror: if True, will stop if exception encountered; # if False, will print error and continue
   do_verbose_text_summary: false  # print input text data summary
-  mode_modif: skim_anon  # Mode to use for text processing and generating possible modes: any combination from "skim", "trim", and "anon" or "none"
-  shuffle_seed: 10 # Random seed for shuffling text dataset
-  do_shuffle: true  # whether or not to shuffle the text dataset
-  do_real_testdata: true  # If True, will use real papers to test performance; if False, will use fake texts but we will implement the fake data if we need.
-  max_tests: 30  # Number of text entries to test the performance for; None for all tests
   lookup: HST  # Prepare some Keyword objects
   buffer: 0  # the number of sentences to include within paragraph around each sentence with target terms
   placeholder_anon: "OBJ" # For text that is anonymized against user's target missions, this is the text that the mission terms are replaced with.
@@ -290,23 +272,6 @@ textprocessing:
   - [AnyMission, AnyMission theory, 'FALSE']
   - [AnyMission, AnyMission timeseries, 'TRUE']
   - [AnyMission, AnyMission treasury, 'TRUE']
-
-results:
-  # Result file name root
-  fileroot_class_results: "classification_results_"
-  # Classification
-  # For custom classification verdicts
-  verdict_error: "z_error"
-  verdict_lowprob: "z_lowprob"
-  verdict_rejection: "z_notmatch"
-  verdict_donotclassify: "z_modifonly"
-  list_other_verdicts: [verdict_error, verdict_lowprob, verdict_rejection, verdict_donotclassify]
-
-  # For preset custom verdict outputs
-  dictverdict_lowprob: {"verdict": verdict_lowprob, "scores_comb": None, "scores_indiv": None, "uncertainty": None}
-  dictverdict_rejection: {"verdict": verdict_rejection, "scores_comb": None, "scores_indiv": None, "uncertainty": None}
-  dictverdict_error: {"verdict": verdict_error, "scores_comb": None, "scores_indiv": None, "uncertainty": None}
-  dictverdict_donotclassify: {"verdict": verdict_donotclassify, "scores_comb": None, "scores_indiv": None, "uncertainty": None}
 
 grammar:
   regex:
