@@ -224,7 +224,7 @@ class Keyword(Base):
         text_mod = text
         for curr_ban in banned_overlap_lowercase:
             # Below replaces banned phrases with mask '#' string of custom length
-            text_mod = re.sub(curr_ban, (lambda x: ("#" * len(x.group()))), text_mod, flags=re.IGNORECASE)
+            text_mod = re.sub(curr_ban, (lambda x: "#" * len(x.group())), text_mod, flags=re.IGNORECASE)
         #
 
         # Check if this text contains keywords
