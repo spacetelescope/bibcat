@@ -70,7 +70,7 @@ class Keyword(Base):
 
         # Cleanse keywords of extra whitespace, punctuation, etc.
         keywords_clean = sorted(
-            [self._cleanse_text(text=phrase, do_streamline_etal=True) for phrase in keywords], key=(lambda w: len(w))
+            [self._cleanse_text(text=phrase, do_streamline_etal=True) for phrase in keywords], key=(len)
         )[::-1]  # Sort by desc. length
         # Store keywords
         self._store_info(keywords_clean, key="keywords")
@@ -91,7 +91,7 @@ class Keyword(Base):
             ]
             # Remove all whitespace
             acronyms_mid = [re.sub(" ", "", item) for item in acronyms_mid]
-            acronyms_clean = sorted(acronyms_mid, key=(lambda w: len(w)))[::-1]  # Sort by desc. length
+            acronyms_clean = sorted(acronyms_mid, key=(len))[::-1]  # Sort by desc. length
             self._store_info(acronyms_clean, key="acronyms_caseinsensitive")
         else:
             self._store_info([], key="acronyms_caseinsensitive")
@@ -103,7 +103,7 @@ class Keyword(Base):
             ]
             # Remove all whitespace
             acronyms_mid = [re.sub(" ", "", item) for item in acronyms_mid]
-            acronyms_clean = sorted(acronyms_mid, key=(lambda w: len(w)))[::-1]  # Sort by desc. length
+            acronyms_clean = sorted(acronyms_mid, key=(len))[::-1]  # Sort by desc. length
             self._store_info(acronyms_clean, key="acronyms_casesensitive")
         else:
             self._store_info([], key="acronyms_casesensitive")
