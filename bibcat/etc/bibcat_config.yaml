@@ -1,6 +1,5 @@
 
 inputs:
-  path_ops_data: $BIBCAT_OPSDATA_DIR/fakedata.json # fake operational data to classify
   path_papertrack: $BIBCAT_DATA_DIR/papertrack_export_papertext_2025-07-08.json  # papertrack data
   path_papertext: $BIBCAT_DATA_DIR/ST_Request2023_cleaned_2025_03_10.json  # papertext corpus text
   path_source_data: $BIBCAT_DATA_DIR/combined_dataset_2025_07_08.json # combined JSON file for training
@@ -363,27 +362,3 @@ grammar:
   string_anymatch_ambig:  "anymission"  # Mission marker in ambig. phrase database to match to any mission
   string_numeral_ambig:  "000"  # String representation of given numeral word
   special_synsets_fig:  ["table.n.01", "tab.n.04", "figure.n.01", "section.n.01", "chapter.n.01", "appendix.n.01"]
-  rules:
-    # Set rule-based processing variables
-    # Rule-based thresholds
-    thres_category_fracdiff: 0.1
-    thres_verbsimilaritymain: 0.75  # 25 #Threshold of similarity to say two verbs are similar
-    thres_verbsimilarityhigh: 0.75  # Threshold of similarity to say two verbs are similar
-
-    # Grammar nest generation
-    # List of important booleans that get merged into main component from linked terms in a nest
-    nest_keys_matter: ["subjectmatter", "objectmatter"]  # List of matter keywords that define a nest
-    max_num_hypernyms: 3
-
-    # Verb synsets
-    synsets_verbs_be: ["be.v.01"]
-    synsets_verbs_has: ["have.v.01"]
-    synsets_verbs_science: ["use.v.01", "diagram.v.01", "get.v.01", "analyze.v.01", "detect.v.01", "determine.v.03", "classify.v.01", "correct.v.01", "target.v.01", "estimate.v.01"]
-    synsets_verbs_influenced: ["imitate.v.01", "model.v.05", "simulate.v.03", "compare.v.01", "discuss.v.01", "predict.v.01", "estimate.v.01"]
-    synsets_verbs_plot: ["plot.v.01", "show.v.01", "exemplify.v.02", "highlight.v.02", "correlate.v.01", "indicate.v.02", "choose.v.01", "represent.v.01"]
-    synsets_verbs_know: ["know.v.01", "understand.v.01", "want.v.02"]
-
-    # Verb categorization
-    list_category_names: ["science", "datainfluenced", "plot", "know"]
-    list_category_synsets: [synsets_verbs_science, synsets_verbs_influenced, synsets_verbs_plot, synsets_verbs_know]
-    list_category_threses: [thres_verbsimilaritymain, thres_verbsimilaritymain, thres_verbsimilaritymain, thres_verbsimilarityhigh]
