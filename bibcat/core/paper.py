@@ -500,9 +500,12 @@ class Paper(Base):
 
         # Print some notes
         logger.info(
-            ("\n> Running _check_truematch for text: '{0}'" + "\nOriginal text: {1}\nLookups: {2}").format(
-                text, text_orig, lookup_ambigs
-            )
+            "\n> Running `_check_truematch` for text: '%s'\n"
+            "Original text: '%s'\n"
+            "Available mission lookups for the ambiguous phrase database: %s",
+            text,
+            text_orig,
+            lookup_ambigs,
         )
 
         # Extract keyword objects that are potentially ambiguous
