@@ -20,12 +20,6 @@ This is the documentation for BibCat.
 
 .. toctree::
    :maxdepth: 3
-   :caption: Pretrained
-
-   pretrained
-
-.. toctree::
-   :maxdepth: 3
    :caption: LLM
 
    llm

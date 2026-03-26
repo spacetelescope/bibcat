@@ -37,8 +37,8 @@ bibcat = "bibcat.main:cli"
 
 [project.optional-dependencies]
 dev = [
-    "pre-commit ==4.2.0",
-    "ruff == 0.11.10",
+    "pre-commit == 4.5.0",
+    "ruff == 0.15.1",
 ]
 test = [
     "pytest==8.2.1",
@@ -61,15 +61,6 @@ docs = [
     "tomli; python_version <\"3.10\"",
 ]
 all = ["bibcat[dev, test, docs]"] # all related to LLM method
-cpu_ml = [
-  "tensorflow==2.15.0",
-  "tensorflow-text==2.15.0"] # CPU only computers
-gpu_ml = [
-  "tensorflow-macos==2.15.0", # only for Apple M1-M3 apple chip
-  "tensorflow-metal",  # only for Apple M1-M3 apple chip
-  "tensorflow==2.15.0",
-  # "tensorflow-text==2.15.0", # this needs to be installed manually; see the README.md
-] # only for Apple M1-M3 apple chip
 
 
 [tool.ruff]

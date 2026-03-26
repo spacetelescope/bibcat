@@ -11,7 +11,6 @@ There are two main branches for bibcat work:
 ## Installation
 ### Required packages and versions
 - See the required package dependencies found in the [pyproject.toml](https://github.com/spacetelescope/bibcat/blob/dev/pyproject.toml).
-- A few tensorflow packages required for Apple silicon chip computers should be installed manually; see below.
 
 ### Conda environment installation
 Change `env_name` below with your preferred name for the environment.
@@ -43,39 +42,16 @@ If you are interested in developing and contributing to **BibCAT**, you should i
 pip install -e . # install editable mode
 ```
 
-To install all dependencies for development except for the ML component, testing, and documentation, run `pip install -e ".[dev,test,docs]"` or `pip install -e .[all]`.
-
 
 ### Spacy model downloads
-*Note that some core tests using `spacy` could fail if the version number is not `3.7.2`. You could reinstall `pip install spacy==3.7.2` if that happens. This is a work-around solution until we have the capacity to update the tests.
+spaCy is a Python library that provides efficient NLP tools for text preprocessing, including tokenization, tagging, and named entity recognition.
 
-This model is used for the [Pretrained model method](https://bibcat.readthedocs.io/en/latest/pretrained.html)
+*Note: Some core tests that use spaCy may fail if the version is not 3.7.2. If this happens, you can reinstall it with pip install spacy==3.7.2. This is a temporary workaround until we have the capacity to update the tests.*
+
+This model is used for processing the input text, which is then analyzed further to identify the mission keywords:
 ```
 python -m spacy download en_core_web_sm
 ```
-
-### Tensorflow package installation for `Pretrained` method
-`tensorflow` packages are used for the [Pretrained model method](https://bibcat.readthedocs.io/en/latest/pretrained.html)
-
-#### For CPU computers (e.g., intel chips)
-To install the Tensorflow dependencies for use of the ML component of bibcat, run `pip install -e ".[cpu_ml]"`.
-
-#### For Apple silicon M1/M2/M3 chip computers
-- If you have an Apple Silicon chip computer and want to utilize your GPU, you run `pip install -e ".[gpu_ml]"` and follow the tensorflow instructions below. If not, skip this part.
-
- To verify if tensorflow is set up to utilize your GPU, do the following:
-
-  ```python
-  import tensorflow as tf
-  tf.config.list_physical_devices('GPU')
-  ```
-  You should see the following output: `[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]`.  If the output is an empty list, you are not setup for GPU use.
-
-##### Install `tensorflow-text`
-
-- For Apple silicon M1/M2/M3 chip, to install `tensorflow-text`, the command `pip install -U "tensorflow-text"` **does not work** due to some package version conflict (as of sometime 2024, need to revisit). You need to download the latest release library compatible with your system and the tensorflow version (2.15.0 in the example) from [the Tensorflow library link.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases); For instance, if you have MacOSX with python 3.10 and installed tensorflow==2.15.0, download [this library.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl)
-- Then `pip install /path-to-download/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl`
-
 
 ## pre-commit for development
 
@@ -145,10 +121,10 @@ export BIBCAT_OUTPUT_DIR=/my/local/path/to/bibcat/output
 
 All `bibcat` configuration is contained in a YAML configuration file, `bibcat_config.yaml` .  The default settings are located in `etc/bibcat_config.yaml`.  You don't modify this file directly.  To modify any of the settings, you do so through a custom user configuration file of the same name, placed in `$BIBCAT_CONFIG_DIR` or your home directory, mirroring the same default structure.  All user custom settings override the defaults.
 
-For example, to change the name of the output model saved, within your user `$BIBCAT_CONFIG_DIR/bibcat_config.yaml`, set
+For example, to turn on verbose logging, within your user `$BIBCAT_CONFIG_DIR/bibcat_config.yaml`, set
 ```yaml
-output:
-  name_model: my_new_model
+logging:
+  verbose: true
 ```
 
 ### When testing with pytest
@@ -194,18 +170,13 @@ make clean
 
 ## Quick start
 
-There is a CLI interface to bibcat.  After installation with `pip install .`, a `bibcat` cli will be available from the terminal.  Run `bibcat --help` from the terminal to display the available commands.  All commands also have their own help.  For example to see the options
-for classifying papers, run `bibcat train --help`.
+There is a CLI interface to bibcat.  After installation with `pip install .`, a `bibcat` cli will be available from the terminal.  Run `bibcat --help` from the terminal to display the available commands.  All commands also have their own help.  For example to see the options related to LLM, run `bibcat llm --help`.
 
 - First, set the three user BIBCAT_XXX_DIR environment variables specified above, in particular `BIBCAT_DATA_DIR` points to the location of your input JSON files.
 
 ### Build The Dataset
 
 - run `bibcat dataset`if you don't already have the source dataset combined from the papertrack data and the papertext data.
-
-### Using Pretrained Models (BERT flavors)
-
-You can classify papers using the pretrained models like `BERT` or `RoBERTa`. Please see the following [Quick Start Guide using Pretrained Models](https://bibcat.readthedocs.io/en/latest/pretrained.html) to get started.
 
 ### Using LLM Prompting Method
 

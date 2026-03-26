@@ -18,6 +18,7 @@ from bibcat.utils.logger_config import setup_logger
 logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
+
 class CaseInsensitiveEnum(str, Enum):
     """Case insensitive enum
 
