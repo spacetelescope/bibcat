@@ -8,7 +8,9 @@ Run example: bibcat train
 
 """
 
+import json
 import os
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -17,7 +19,9 @@ from bibcat import config
 from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import load_json_file, save_json_file
 
+# set up logger
 logger = setup_logger(__name__)
+logger.setLevel(config.logging.level)
 
 
 def file_exists(filelist: list) -> bool:
@@ -304,3 +308,17 @@ def build_dataset() -> None:
     save_text_files(bibcodes_notin_papertext, bibcodes_notin_papertrack)
 
     logger.info("Saved bibcodes_notin_papertext and bibcodes_notin_papertrack!")
+
+
+@lru_cache
+def load_source_dataset(do_verbose: bool):
+    """
+    Load the original source dataset that is a combined set of papertrack classification and ADS full text. Return a dictionary of the JSON content.
+    """
+    with open(config.inputs.path_source_data, "r") as openfile:
+        logger.info(f"Loading source dataset: {config.inputs.path_source_data}")
+        source_dataset = json.load(openfile)
+        if do_verbose:
+            logger.debug(f"{len(source_dataset)} papers have been loaded")
+
+    return source_dataset

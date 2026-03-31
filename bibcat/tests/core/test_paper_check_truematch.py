@@ -6,7 +6,6 @@ Testing the _check_truematch methods of the Paper class.
 
 import pytest
 import spacy
-from nltk.corpus import wordnet  # type: ignore
 
 from bibcat import config
 from bibcat.core import paper

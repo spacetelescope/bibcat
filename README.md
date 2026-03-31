@@ -11,7 +11,6 @@ There are two main branches for bibcat work:
 ## Installation
 ### Required packages and versions
 - See the required package dependencies found in the [pyproject.toml](https://github.com/spacetelescope/bibcat/blob/dev/pyproject.toml).
-- A few tensorflow packages required for Apple silicon chip computers should be installed manually; see below.
 
 ### Conda environment installation
 Change `env_name` below with your preferred name for the environment.
@@ -36,46 +35,24 @@ The `bibcat` directory contains the python package itself, installable via pip. 
 ```shell
 pip install .
 ```
-#### Installation for developers
-If you are interested in developing and contributing to **BibCAT**, you should install this package with `-e`, it allows you to work on the package's source code and see changes reflected immediately without needing to reinstall.
 
+>Note: **Installation for developers**
+If you are interested in developing and contributing to **BibCAT**, you should install this package in editable mode (`-e`) as follows. It allows you to work on the package's source code and see changes reflected immediately without needing to reinstall. ```pip install -e .[all]```
 ```shell
-pip install -e . # install editable mode
+pip install -e .[all] # install editable mode
 ```
 
-To install all dependencies for development except for the ML component, testing, and documentation, run `pip install -e ".[dev,test,docs]"` or `pip install -e .[all]`.
 
 
 ### Spacy model downloads
-*Note that some core tests using `spacy` could fail if the version number is not `3.7.2`. You could reinstall `pip install spacy==3.7.2` if that happens. This is a work-around solution until we have the capacity to update the tests.
+spaCy is a Python library that provides efficient NLP tools for text preprocessing, including tokenization, tagging, and named entity recognition.
 
-This model is used for the [Pretrained model method](https://bibcat.readthedocs.io/en/latest/pretrained.html)
+*Note: Some core tests that use spaCy may fail if the version is not 3.7.2. If this happens, you can reinstall it with pip install spacy==3.7.2. This is a temporary workaround until we have the capacity to update the tests.*
+
+This model is used for processing the input text, which is then analyzed further to identify the mission keywords:
 ```
 python -m spacy download en_core_web_sm
 ```
-
-### Tensorflow package installation for `Pretrained` method
-`tensorflow` packages are used for the [Pretrained model method](https://bibcat.readthedocs.io/en/latest/pretrained.html)
-
-#### For CPU computers (e.g., intel chips)
-To install the Tensorflow dependencies for use of the ML component of bibcat, run `pip install -e ".[cpu_ml]"`.
-
-#### For Apple silicon M1/M2/M3 chip computers
-- If you have an Apple Silicon chip computer and want to utilize your GPU, you run `pip install -e ".[gpu_ml]"` and follow the tensorflow instructions below. If not, skip this part.
-
- To verify if tensorflow is set up to utilize your GPU, do the following:
-
-  ```python
-  import tensorflow as tf
-  tf.config.list_physical_devices('GPU')
-  ```
-  You should see the following output: `[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]`.  If the output is an empty list, you are not setup for GPU use.
-
-##### Install `tensorflow-text`
-
-- For Apple silicon M1/M2/M3 chip, to install `tensorflow-text`, the command `pip install -U "tensorflow-text"` **does not work** due to some package version conflict (as of sometime 2024, need to revisit). You need to download the latest release library compatible with your system and the tensorflow version (2.15.0 in the example) from [the Tensorflow library link.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases); For instance, if you have MacOSX with python 3.10 and installed tensorflow==2.15.0, download [this library.](https://github.com/sun1638650145/Libraries-and-Extensions-for-TensorFlow-for-Apple-Silicon/releases/download/v2.15/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl)
-- Then `pip install /path-to-download/tensorflow_text-2.15.0-cp310-cp310-macosx_11_0_arm64.whl`
-
 
 ## pre-commit for development
 
@@ -103,9 +80,12 @@ For other configuration options and more detailed information, check out at the 
 
 
 ## Setup
-### Input JSON file
+### Input Data files
+#### Unauthorized users
+For details on the input files and how to use them to build your own datasets, see the [Input Data Readme](https://bibcat.readthedocs.io/en/latest/data_readme.html).
 
-To build training models or create a combined full-text dataset for input, you’ll need to download several data files: the ADS full-text file and the papertrack file. These files are accessible only to authorized users and require single sign-on (SSO) for download.
+#### MAST authorized users
+To run Bibcat or create a combined full-text dataset for input, you’ll need to download several data files: the ADS full-text file and the papertrack file. These files are accessible only to authorized users and require single sign-on (SSO) for download.
 
 > **Important:**
 Save these files **outside** the `bibcat` folder on your local machine. You will later configure file paths to point to them.
@@ -114,20 +94,19 @@ For more on this setup, see [**User Configuration and Data Filepaths**](https://
 We refer to the following files throughout this guide:
 
 - **Source data**:
-  [combined_dataset_2025_07_08.json](https://stsci.box.com/s/4xnzbgq9vw3lt34lyxumeo0nnil7x7lx) — a combined papers + classification JSON file.
+  [combined_dataset_2025_07_08.json](https://stsci.box.com/s/4xnzbgq9vw3lt34lyxumeo0nnil7x7lx) — a combined JSON data file of fulltexts + human classifications.
 
 - **Papertrack data**:
-  [papertrack_export_papertext_2025-07-08.json](https://stsci.box.com/s/4jdvotw1hdz6d9i1l7uvj1o2u2a3ddow) — export from papertrack.
+  [papertrack_export_papertext_2025-07-08.json](https://stsci.box.com/s/4jdvotw1hdz6d9i1l7uvj1o2u2a3ddow) — export from the papertrack database
   _(Extract the `.tar.gz` file to access the JSON.)_
 
 - **Papertext data**:
   [ST_Request2023_cleaned_2025_03_10.json](https://stsci.box.com/s/0a5uzmfsnokx1rth8m6wseybpz5bxne3) — full-text data from ADS.
 
-For details on the input files and how to use them to build your own datasets, see the [Input Data Readme](https://bibcat.readthedocs.io/en/latest/data_readme.html).
-
 
 ### User Configuration and Data Filepaths
 
+#### Filepath setup
 There are three user environment variables to set:
 
 - **BIBCAT_CONFIG_DIR**: a local path to your user configuration yaml file
@@ -143,14 +122,44 @@ export BIBCAT_OPSDATA_DIR=/my/local/path/to/operational/data/dir
 export BIBCAT_OUTPUT_DIR=/my/local/path/to/bibcat/output
 ```
 
+#### Other user configuration
 All `bibcat` configuration is contained in a YAML configuration file, `bibcat_config.yaml` .  The default settings are located in `etc/bibcat_config.yaml`.  You don't modify this file directly.  To modify any of the settings, you do so through a custom user configuration file of the same name, placed in `$BIBCAT_CONFIG_DIR` or your home directory, mirroring the same default structure.  All user custom settings override the defaults.
 
-For example, to change the name of the output model saved, within your user `$BIBCAT_CONFIG_DIR/bibcat_config.yaml`, set
+For example, to turn on verbose logging, within your user `$BIBCAT_CONFIG_DIR/bibcat_config.yaml`, set
 ```yaml
-output:
-  name_model: my_new_model
+logging:
+  verbose: true
 ```
+#### List of Missions
+You can configure the list of missions of interest in  `bibcat_config.yaml`, for instance,
 
+```yaml
+missions: ["FUSE",  "GALEX","HST", "TESS", "TUES"]
+```
+You will also need to update `core/parameters.py` to list mission name variants, instrument names, and acronyms to comprehensively search for mission names. You can see the docstrings of this file for more details.
+
+```python
+kobj_jwst = keyword.Keyword(
+    keywords=[
+        "James Webb Space Telescope",
+        "James Webb Telescope",
+        "Next Generation Space Telescope",
+        "Webb Space Telescope",
+        "Webb Telescope",
+        "Near Infrared Imager and Slitless Spectrograph",
+        "Near-Infrared Imager and Slitless Spectrograph",
+        "Near Infrared Spectrograph",
+        "Near-Infrared Spectrograph",
+        "Mid Infrared Instrument",
+        "Mid-Infrared Instrument",
+    ],
+    acronyms_casesensitive=[],
+    acronyms_caseinsensitive=["JWST", "NIRCam", "NIRSpec", "NIRISS", "MIRI", "NGST"],
+    do_not_classify=False,
+    banned_overlap=[],
+    ambig_words=[],
+)
+```
 ### When testing with pytest
 
 The test suite is located in `tests/`. We can recommend using `pytest` for running tests.  Navigate to `/tests/` and run `pytest`, or for extra verbosity run `pytest -vs`. `pytest` can find and run tests written with pytest or unittests.
@@ -194,18 +203,13 @@ make clean
 
 ## Quick start
 
-There is a CLI interface to bibcat.  After installation with `pip install .`, a `bibcat` cli will be available from the terminal.  Run `bibcat --help` from the terminal to display the available commands.  All commands also have their own help.  For example to see the options
-for classifying papers, run `bibcat train --help`.
+There is a Command line interface (CLI) to bibcat.  After installation with `pip install .`, a `bibcat` CLI options will be available from the terminal.  Run `bibcat --help` from the terminal to display the available commands.  All commands also have their own help.  For example to see the options related to LLM, run `bibcat llm --help`.
 
 - First, set the three user BIBCAT_XXX_DIR environment variables specified above, in particular `BIBCAT_DATA_DIR` points to the location of your input JSON files.
 
 ### Build The Dataset
 
 - run `bibcat dataset`if you don't already have the source dataset combined from the papertrack data and the papertext data.
-
-### Using Pretrained Models (BERT flavors)
-
-You can classify papers using the pretrained models like `BERT` or `RoBERTa`. Please see the following [Quick Start Guide using Pretrained Models](https://bibcat.readthedocs.io/en/latest/pretrained.html) to get started.
 
 ### Using LLM Prompting Method
 
