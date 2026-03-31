@@ -35,12 +35,13 @@ The `bibcat` directory contains the python package itself, installable via pip. 
 ```shell
 pip install .
 ```
-#### Installation for developers
-If you are interested in developing and contributing to **BibCAT**, you should install this package with `-e`, it allows you to work on the package's source code and see changes reflected immediately without needing to reinstall.
 
+>Note: **Installation for developers**
+If you are interested in developing and contributing to **BibCAT**, you should install this package in editable mode (`-e`) as follows. It allows you to work on the package's source code and see changes reflected immediately without needing to reinstall. ```pip install -e .[all]```
 ```shell
-pip install -e . # install editable mode
+pip install -e .[all] # install editable mode
 ```
+
 
 
 ### Spacy model downloads
@@ -79,9 +80,12 @@ For other configuration options and more detailed information, check out at the 
 
 
 ## Setup
-### Input JSON file
+### Input Data files
+#### Unauthorized users
+For details on the input files and how to use them to build your own datasets, see the [Input Data Readme](https://bibcat.readthedocs.io/en/latest/data_readme.html).
 
-To build training models or create a combined full-text dataset for input, you’ll need to download several data files: the ADS full-text file and the papertrack file. These files are accessible only to authorized users and require single sign-on (SSO) for download.
+#### MAST authorized users
+To run Bibcat or create a combined full-text dataset for input, you’ll need to download several data files: the ADS full-text file and the papertrack file. These files are accessible only to authorized users and require single sign-on (SSO) for download.
 
 > **Important:**
 Save these files **outside** the `bibcat` folder on your local machine. You will later configure file paths to point to them.
@@ -90,20 +94,19 @@ For more on this setup, see [**User Configuration and Data Filepaths**](https://
 We refer to the following files throughout this guide:
 
 - **Source data**:
-  [combined_dataset_2025_07_08.json](https://stsci.box.com/s/4xnzbgq9vw3lt34lyxumeo0nnil7x7lx) — a combined papers + classification JSON file.
+  [combined_dataset_2025_07_08.json](https://stsci.box.com/s/4xnzbgq9vw3lt34lyxumeo0nnil7x7lx) — a combined JSON data file of fulltexts + human classifications.
 
 - **Papertrack data**:
-  [papertrack_export_papertext_2025-07-08.json](https://stsci.box.com/s/4jdvotw1hdz6d9i1l7uvj1o2u2a3ddow) — export from papertrack.
+  [papertrack_export_papertext_2025-07-08.json](https://stsci.box.com/s/4jdvotw1hdz6d9i1l7uvj1o2u2a3ddow) — export from the papertrack database
   _(Extract the `.tar.gz` file to access the JSON.)_
 
 - **Papertext data**:
   [ST_Request2023_cleaned_2025_03_10.json](https://stsci.box.com/s/0a5uzmfsnokx1rth8m6wseybpz5bxne3) — full-text data from ADS.
 
-For details on the input files and how to use them to build your own datasets, see the [Input Data Readme](https://bibcat.readthedocs.io/en/latest/data_readme.html).
-
 
 ### User Configuration and Data Filepaths
 
+#### Filepath setup
 There are three user environment variables to set:
 
 - **BIBCAT_CONFIG_DIR**: a local path to your user configuration yaml file
@@ -119,6 +122,7 @@ export BIBCAT_OPSDATA_DIR=/my/local/path/to/operational/data/dir
 export BIBCAT_OUTPUT_DIR=/my/local/path/to/bibcat/output
 ```
 
+#### Other user configuration
 All `bibcat` configuration is contained in a YAML configuration file, `bibcat_config.yaml` .  The default settings are located in `etc/bibcat_config.yaml`.  You don't modify this file directly.  To modify any of the settings, you do so through a custom user configuration file of the same name, placed in `$BIBCAT_CONFIG_DIR` or your home directory, mirroring the same default structure.  All user custom settings override the defaults.
 
 For example, to turn on verbose logging, within your user `$BIBCAT_CONFIG_DIR/bibcat_config.yaml`, set
@@ -126,7 +130,36 @@ For example, to turn on verbose logging, within your user `$BIBCAT_CONFIG_DIR/bi
 logging:
   verbose: true
 ```
+#### List of Missions
+You can configure the list of missions of interest in  `bibcat_config.yaml`, for instance,
 
+```yaml
+missions: ["FUSE",  "GALEX","HST", "TESS", "TUES"]
+```
+You will also need to update `core/parameters.py` to list mission name variants, instrument names, and acronyms to comprehensively search for mission names. You can see the docstrings of this file for more details.
+
+```python
+kobj_jwst = keyword.Keyword(
+    keywords=[
+        "James Webb Space Telescope",
+        "James Webb Telescope",
+        "Next Generation Space Telescope",
+        "Webb Space Telescope",
+        "Webb Telescope",
+        "Near Infrared Imager and Slitless Spectrograph",
+        "Near-Infrared Imager and Slitless Spectrograph",
+        "Near Infrared Spectrograph",
+        "Near-Infrared Spectrograph",
+        "Mid Infrared Instrument",
+        "Mid-Infrared Instrument",
+    ],
+    acronyms_casesensitive=[],
+    acronyms_caseinsensitive=["JWST", "NIRCam", "NIRSpec", "NIRISS", "MIRI", "NGST"],
+    do_not_classify=False,
+    banned_overlap=[],
+    ambig_words=[],
+)
+```
 ### When testing with pytest
 
 The test suite is located in `tests/`. We can recommend using `pytest` for running tests.  Navigate to `/tests/` and run `pytest`, or for extra verbosity run `pytest -vs`. `pytest` can find and run tests written with pytest or unittests.
@@ -170,7 +203,7 @@ make clean
 
 ## Quick start
 
-There is a CLI interface to bibcat.  After installation with `pip install .`, a `bibcat` cli will be available from the terminal.  Run `bibcat --help` from the terminal to display the available commands.  All commands also have their own help.  For example to see the options related to LLM, run `bibcat llm --help`.
+There is a Command line interface (CLI) to bibcat.  After installation with `pip install .`, a `bibcat` CLI options will be available from the terminal.  Run `bibcat --help` from the terminal to display the available commands.  All commands also have their own help.  For example to see the options related to LLM, run `bibcat llm --help`.
 
 - First, set the three user BIBCAT_XXX_DIR environment variables specified above, in particular `BIBCAT_DATA_DIR` points to the location of your input JSON files.
 
