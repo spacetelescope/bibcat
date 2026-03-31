@@ -58,7 +58,7 @@ llms:
     "unresolved_gray": "nonscience",
     "engineering": "nonscience",
     "instrument": "nonscience",
-  }
+  } # map human's classfications into "science" and "nonscience"
   performance: # used for both evaluation and operation
     threshold: 0.5
     inspection: 0.45
