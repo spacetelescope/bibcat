@@ -12,14 +12,16 @@
 
 
 ### Removed
-- [PR #93](https://github.com/spacetelescope/bibcat/pull/93)
-    - Removed ML/BERT code, documentation, and tests.
 
 
 ### Security
 
+## [0.2.5] - 2026-3-31
+### Removed
+- [PR #93](https://github.com/spacetelescope/bibcat/pull/93)
+    - Removed ML/BERT code, documentation, and tests.
 
-## [0.2.4]- 2025-12-15
+## [0.2.4] - 2025-12-15
 ### Added
 - [PR #92](https://github.com/spacetelescope/bibcat/pull/92)
     - Update bibcat llm metrics to collect bibcodes for confusion matrix cells
