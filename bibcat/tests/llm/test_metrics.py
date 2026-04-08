@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import numpy as np
 
 from bibcat import config
@@ -12,6 +10,7 @@ from bibcat.llm.metrics import (
     get_roc_metrics,
     map_papertype,
     prepare_roc_inputs,
+    write_metrics_summary,
 )
 
 data = {
@@ -78,6 +77,21 @@ sample_metrics_data = {
     ],
 }
 
+sample_multi_run_data = {
+    "Bibcode2024_run_0": {
+        "human": {"HST": "SCIENCE"},
+        "llm": [{"HST": "SCIENCE"}],
+        "df": [{"llm_mission": "HST", "llm_papertype": "SCIENCE", "mission_in_text": True}],
+    },
+    "Bibcode2024_run_1": {
+        "human": {"HST": "SCIENCE"},
+        "llm": [{"HST": "NONSCIENCE"}],
+        "df": [{"llm_mission": "HST", "llm_papertype": "NONSCIENCE", "mission_in_text": True}],
+    },
+}
+
+multi_run_missions = ["HST"]
+
 
 def test_map_papertype() -> None:
     """Test map_papertype() function"""
@@ -108,7 +122,6 @@ def test_extract_eval_data(mocker) -> None:
     """Test extract_eval_data function"""
 
     # Mock dependencies
-    mock_compute_and_save_metrics = mocker.patch("bibcat.llm.metrics.compute_and_save_metrics")
     mocker.patch("bibcat.llm.metrics.logger")
 
     # Set mock specific config values only
@@ -132,10 +145,69 @@ def test_extract_eval_data(mocker) -> None:
     # bibcodes, original papertypes in confusion matrix cells introduced by metrics: ensure they're present and of correct type
     assert "label_raws" in metrics_data and isinstance(metrics_data["label_raws"], list)
 
-    # Expected file path
-    expected_json_path = str(Path("/mock/output") / "llms/openai_gpt-4o-mini/metrics_summary_t0.7.json")
-    expected_ascii_path = str(Path("/mock/output") / "llms/openai_gpt-4o-mini/metrics_summary_t0.7.txt")
-    mock_compute_and_save_metrics.assert_any_call(metrics_data, expected_ascii_path, expected_json_path)
+
+def test_extract_eval_data_with_selected_run(mocker) -> None:
+    """Test that selected_run returns a single run's metrics."""
+    mocker.patch("bibcat.llm.metrics.logger")
+    mocker.patch.object(config.llms.performance, "threshold", 0.7)
+
+    metrics_data = extract_eval_data(sample_multi_run_data, multi_run_missions, selected_run=0)
+
+    assert metrics_data["is_averaged"] is False
+    assert metrics_data["selected_run"] == 0
+    assert metrics_data["n_runs"] == 1
+    assert metrics_data["n_bibcodes"] == 1
+    assert metrics_data["human_labels"] == ["SCIENCE"]
+    assert metrics_data["llm_labels"] == ["SCIENCE"]
+
+
+def test_extract_eval_data_multi_run_averaging(mocker) -> None:
+    """Test multi-run average metrics extraction."""
+    mocker.patch("bibcat.llm.metrics.logger")
+    mocker.patch.object(config.llms.performance, "threshold", 0.7)
+
+    metrics_data = extract_eval_data(sample_multi_run_data, multi_run_missions)
+
+    assert metrics_data["is_averaged"] is True
+    assert metrics_data["n_runs"] == 2
+    assert metrics_data["selected_run"] is None
+    assert metrics_data["avg_tn"] == 0.0
+    assert metrics_data["avg_fp"] == 0.0
+    assert metrics_data["avg_fn"] == 0.5
+    assert metrics_data["avg_tp"] == 0.5
+    assert metrics_data["std_tn"] == 0.0
+    assert metrics_data["std_fp"] == 0.0
+    assert metrics_data["std_fn"] == 0.5
+    assert metrics_data["std_tp"] == 0.5
+    assert metrics_data["avg_accuracy"] == 0.5
+    assert metrics_data["std_accuracy"] == 0.5
+    assert metrics_data["avg_precision"] == 0.5
+    assert metrics_data["std_precision"] == 0.5
+    assert metrics_data["avg_recall"] == 0.5
+    assert metrics_data["std_recall"] == 0.5
+    assert metrics_data["avg_f1"] == 0.5
+    assert metrics_data["std_f1"] == 0.5
+
+
+def test_write_metrics_summary(mocker) -> None:
+    """Test write_metrics_summary function"""
+    # Mock dependencies
+    mock_compute_and_save_metrics = mocker.patch("bibcat.llm.metrics.compute_and_save_metrics")
+    mocker.patch("bibcat.llm.metrics.logger")
+
+    # Set mock specific config values only
+    mocker.patch.object(config.paths, "output", "/mock/output")
+    mocker.patch.object(config.llms.openai, "model", "gpt-4o-mini")
+    mocker.patch.object(config.llms, "metrics_file", "metrics_summary")
+
+    # Call the function
+    write_metrics_summary(sample_metrics_data)
+
+    # Verify the mock was called with expected paths
+    expected_json_path = "/mock/output/llms/openai_gpt-4o-mini/metrics_summary_t0.7.json"
+    expected_ascii_path = "/mock/output/llms/openai_gpt-4o-mini/metrics_summary_t0.7.txt"
+
+    mock_compute_and_save_metrics.assert_called_once_with(sample_metrics_data, expected_ascii_path, expected_json_path)
 
 
 def test_compute_and_save_metrics(mocker) -> None:
@@ -170,6 +242,59 @@ def test_compute_and_save_metrics(mocker) -> None:
     assert "fp_bibcodes" in json_data and isinstance(json_data["fp_bibcodes"], list)
     assert "fn_bibcodes" in json_data and isinstance(json_data["fn_bibcodes"], list)
     assert "tp_bibcodes" in json_data and isinstance(json_data["tp_bibcodes"], list)
+
+
+def test_compute_and_save_metrics_averaged(mocker) -> None:
+    """Test compute_and_save_metrics for multi-run averaged metrics."""
+    mock_open = mocker.patch("builtins.open", mocker.mock_open())
+    mock_save_json_file = mocker.patch("bibcat.llm.metrics.save_json_file")
+    mocker.patch("bibcat.llm.metrics.logger")
+
+    averaged_metrics_data = {
+        "threshold": 0.7,
+        "n_bibcodes": 1,
+        "human_labels": [],
+        "llm_labels": [],
+        "label_raws": [],
+        "n_runs": 2,
+        "is_averaged": True,
+        "selected_run": None,
+        "avg_tn": 0.5,
+        "avg_fp": 0.0,
+        "avg_fn": 0.5,
+        "avg_tp": 0.5,
+        "std_tn": 0.0,
+        "std_fp": 0.0,
+        "std_fn": 0.0,
+        "std_tp": 0.0,
+        "avg_accuracy": 0.5,
+        "std_accuracy": 0.0,
+        "avg_precision": 1.0,
+        "std_precision": 0.0,
+        "avg_recall": 0.5,
+        "std_recall": 0.0,
+        "avg_f1": 2 / 3,
+        "std_f1": 0.0,
+    }
+
+    output_ascii_filepath = "mock_output.ascii"
+    output_json_filepath = "mock_output.json"
+
+    compute_and_save_metrics(averaged_metrics_data, output_ascii_filepath, output_json_filepath)
+
+    mock_open.assert_called_with(output_ascii_filepath, "w")
+    mock_save_json_file.assert_called_once()
+    json_data = mock_save_json_file.call_args[0][1]
+
+    assert json_data["avg_tn"] == 0.5
+    assert json_data["avg_tp"] == 0.5
+    assert json_data["avg_accuracy"] == 0.5
+    assert json_data["avg_precision"] == 1.0
+    assert json_data["avg_f1"] == 0.6666666666666666
+    assert json_data["std_accuracy"] == 0.0
+    assert json_data["std_precision"] == 0.0
+    assert json_data["std_recall"] == 0.0
+    assert json_data["std_f1"] == 0.0
 
 
 def test_extract_roc_data():
