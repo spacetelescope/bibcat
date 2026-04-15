@@ -120,11 +120,11 @@ class Paper(Base):
 
         # Store information about this paper
         text_original = text
-        self._store_info(text_original, key="text_original")  # Original text
-        self._store_info(keyword_objs, key="keyword_objs")  # Keyword groups
-        self._store_info(do_verbose, "do_verbose")
-        self._store_info(do_verbose_deep, "do_verbose_deep")
-        self._store_info(do_check_truematch, key="do_check_truematch")
+        self._text_original = text_original  # Original text
+        self._keyword_objs = keyword_objs  # Keyword groups
+        self._do_verbose = do_verbose
+        self._do_verbose_deep = do_verbose_deep
+        self._do_check_truematch = do_check_truematch
 
         # Process ambig. phrase data, if not given
         if do_check_truematch:
@@ -132,8 +132,8 @@ class Paper(Base):
                 dict_ambigs = self._process_database_ambig()
 
             lookup_ambigs = dict_ambigs["lookup_ambigs"]
-            self._store_info(dict_ambigs, key="dict_ambigs")
-            self._store_info(lookup_ambigs, key="lookup_ambigs")
+            self._dict_ambigs = dict_ambigs
+            self._lookup_ambigs = lookup_ambigs
 
         # Preprocess the data
         # Cleanse extra whitespace, strange chars, etc.
@@ -142,7 +142,7 @@ class Paper(Base):
         text_clean_split = self._split_text(text=text_clean)
 
         # Store the preprocessed text
-        self._store_info(text_clean_split, key="text_clean_split")
+        self._text_clean_split = text_clean_split
 
         return
 
@@ -162,9 +162,9 @@ class Paper(Base):
 
         # Attempt to access previously extracted paragraphs
         try:
-            dict_paragraphs = self._get_info("_paragraphs")
+            dict_paragraphs = self._paragraphs
         # Throw an error if no paragraphs extracted yet
-        except KeyError:
+        except AttributeError:
             errstring = (
                 "Whoa there! Looks like you don't have any paragraphs "
                 + "stored in this class instance yet. Please run the method "
@@ -199,16 +199,16 @@ class Paper(Base):
         """
 
         # Extract clean, naively split paragraphs
-        keyword_objs = self._get_info("keyword_objs")
+        keyword_objs = self._keyword_objs
 
         # If overwrite not allowed, check if paragraphs already extracted+saved
         if not do_overwrite:
             is_exist = True
             # Check for previously stored paragraphs
             try:
-                self._get_info("_paragraphs")
+                self._paragraphs
             # Catch error raised if no paragraphs exist
-            except KeyError:
+            except AttributeError:
                 is_exist = False
 
             # Raise error if previously stored paragraphs after all
@@ -233,7 +233,7 @@ class Paper(Base):
             dict_paragraphs[keyword_objs[ii].get_name()] = paragraphs
 
         # Store the extracted paragraphs and setup information
-        self._store_info(dict_paragraphs, "_paragraphs")
+        self._paragraphs = dict_paragraphs
 
         return
 
@@ -514,7 +514,7 @@ class Paper(Base):
         ]
 
         # Extract keyword identification information for each keyword object
-        dict_kobjinfo = {item._get_info("name"): item.identify_keyword(text) for item in keyword_objs}
+        dict_kobjinfo = {item._name: item.identify_keyword(text) for item in keyword_objs}
 
         return TruematchSetup(
             text=text,
@@ -561,7 +561,7 @@ class Paper(Base):
         keyword_objs_non_ambigs = [
             item1 for item1 in setup_data.keyword_objs if item1 not in setup_data.keyword_objs_ambigs
         ]
-        if any([setup_data.dict_kobjinfo[item1._get_info("name")]["bool"] for item1 in keyword_objs_non_ambigs]):
+        if any([setup_data.dict_kobjinfo[item1._name]["bool"] for item1 in keyword_objs_non_ambigs]):
             # Print some notes
             logger.debug("Text matches unambiguous keyword. Returning true state.")
 
@@ -595,9 +595,7 @@ class Paper(Base):
         _build_single_info_entry : Return format used by `_check_truematch` and related
             helper functions.
         """
-        if not any(
-            [setup_data.dict_kobjinfo[item._get_info("name")]["bool"] for item in setup_data.keyword_objs_ambigs]
-        ):
+        if not any([setup_data.dict_kobjinfo[item._name]["bool"] for item in setup_data.keyword_objs_ambigs]):
             # Print some notes
             logger.debug("Text matches no keywords at all. Returning false state.")
 
@@ -631,12 +629,7 @@ class Paper(Base):
         _build_single_info_entry : Return format used by `_check_truematch` and related
             helper functions.
         """
-        if any(
-            [
-                setup_data.dict_kobjinfo[item._get_info("name")]["bool_acronym_only"]
-                for item in setup_data.keyword_objs_ambigs
-            ]
-        ):
+        if any([setup_data.dict_kobjinfo[item._name]["bool_acronym_only"] for item in setup_data.keyword_objs_ambigs]):
             # Print some notes
             logger.debug("Text matches acronym. Returning true state.")
 
@@ -672,8 +665,8 @@ class Paper(Base):
             helper functions.
         """
         for obj in setup_data.keyword_objs_ambigs:
-            for kw in obj._get_info("keywords"):
-                if kw in obj._get_info("ambig_words"):
+            for kw in obj._keywords:
+                if kw in obj._ambig_words:
                     continue
                 if re.search(rf"\b{re.escape(kw)}\b", setup_data.text, flags=re.IGNORECASE):
                     # Print some notes
@@ -875,11 +868,7 @@ class Paper(Base):
             [
                 (curr_chunk_text.lower().replace(".", "") == item2.lower())
                 for item1 in setup_data.keyword_objs
-                for item2 in (
-                    item1._get_info("keywords")
-                    + item1._get_info("acronyms_casesensitive")
-                    + item1._get_info("acronyms_caseinsensitive")
-                )
+                for item2 in (item1._keywords + item1._acronyms_casesensitive + item1._acronyms_caseinsensitive)
                 if (item2.lower() not in setup_data.lookup_ambigs_lower)
             ]
         )  # Check if wordchunk matches to any non-ambig terms
@@ -1054,12 +1043,12 @@ class Paper(Base):
         # Set global variables
         num_words = len(phrase_NLP)
         if do_verbose is None:
-            do_verbose = self._get_info("do_verbose")
+            do_verbose = self._do_verbose
         if keyword_objs is None:
             try:
-                keyword_objs = [self._get_info("keyword_obj", do_flag_hidden=True)]
-            except KeyError:
-                keyword_objs = self._get_info("keyword_objs", do_flag_hidden=True)
+                keyword_objs = [self._keyword_obj]
+            except AttributeError:
+                keyword_objs = self._keyword_objs
 
         # Print some notes
         if do_verbose:
@@ -1195,11 +1184,11 @@ class Paper(Base):
           - Buffer sentences if non-zero buffer given.
         """
         # Fetch global variables
-        do_verbose = self._get_info("do_verbose")
-        # do_verbose_deep = self._get_info("do_verbose_deep")
-        do_check_truematch = self._get_info("do_check_truematch")
-        sentences = np.asarray(self._get_info("text_clean_split"))
-        do_not_classify = keyword_obj._get_info("do_not_classify")
+        do_verbose = self._do_verbose
+        # do_verbose_deep = self._do_verbose_deep
+        do_check_truematch = self._do_check_truematch
+        sentences = np.asarray(self._text_clean_split)
+        do_not_classify = keyword_obj._do_not_classify
         num_sentences = len(sentences)
 
         # Load ambiguous phrases, if necessary
@@ -1209,7 +1198,7 @@ class Paper(Base):
                 logger.info("do_check_truematch=True, so will verify ambig. phrases.")
 
             # Load previously stored ambig. phrase data
-            dict_ambigs = self._get_info("dict_ambigs")
+            dict_ambigs = self._dict_ambigs
             lookup_ambigs = dict_ambigs["lookup_ambigs"]
 
         # Print some notes
@@ -1311,14 +1300,12 @@ class Paper(Base):
         # Load the keywords
         if keyword_objs is None:
             try:
-                keyword_objs = [self._get_info("keyword_obj", do_flag_hidden=True)]
-            except KeyError:
-                keyword_objs = self._get_info("keyword_objs", do_flag_hidden=True)
+                keyword_objs = [self._keyword_obj]
+            except AttributeError:
+                keyword_objs = self._keyword_objs
 
         # Load the ambig. lookup phrases
-        lookup_ambigs = [
-            item._get_info("name").lower() for item in keyword_objs if (len(item._get_info("ambig_words")) > 0)
-        ]
+        lookup_ambigs = [item._name.lower() for item in keyword_objs if (len(item._ambig_words) > 0)]
 
         # Load the ambig. phrase data
         data_ambigs = np.array(config.textprocessing.phrases_ambig)

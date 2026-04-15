@@ -134,14 +134,14 @@ class TestPaper(unittest.TestCase):
                 testpaper.process_paragraphs(buffer=curr_buffer)
                 test_res = testpaper.get_paragraphs()[curr_name]
 
-                # ambig_output = testpaper._get_info("_results_ambig")[curr_name]
+                # ambig_output = testpaper.__results_ambig[curr_name]
                 # test_ambig = [
                 #    (item2["text_wordchunk"], item2["bool"])
                 #    for item1 in ambig_output
                 #    for item2 in item1["info"]
                 #    if (item2["matcher"] is not None)
                 # ]
-                # test_acr_meanings = testpaper._get_info("_dict_acronym_meanings")
+                # test_acr_meanings = testpaper.__dict_acronym_meanings
 
                 # Check answer
                 try:

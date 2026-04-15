@@ -59,11 +59,11 @@ class Grammar(Base):
         # Initialize storage for this class instance
         self._storage = {}
         # Store inputs for this instance
-        self._store_info(text, key="text_original")
-        self._store_info(keyword_obj, key="keyword_obj")
-        self._store_info(buffer, key="buffer")
-        self._store_info(do_verbose, key="do_verbose")
-        self._store_info(do_verbose_deep, key="do_verbose_deep")
+        self._text_original = text
+        self._keyword_obj = keyword_obj
+        self._buffer = buffer
+        self._do_verbose = do_verbose
+        self._do_verbose_deep = do_verbose_deep
         # Print some notes
         if do_verbose:
             print("Initializing instance of Grammar class.")
@@ -95,7 +95,7 @@ class Grammar(Base):
             print("Processing text using the Paper class...")
 
         paper.process_paragraphs(buffer=buffer)
-        self._store_info(paper, "paper")
+        self._paper = paper
 
         # Close the method
         if do_verbose:
@@ -117,9 +117,9 @@ class Grammar(Base):
         """
 
         # Extract global variables
-        forest = self._get_info("forest")
-        dict_modifs_orig = self._get_info("modifs")
-        do_verbose = self._get_info("do_verbose")
+        forest = self._forest
+        dict_modifs_orig = self._modifs
+        do_verbose = self._do_verbose
         # Extract all computed modes, if none specified
         if which_modes is None:
             which_modes = [key for key in dict_modifs_orig]
@@ -150,11 +150,11 @@ class Grammar(Base):
         """
 
         # Extract global variables
-        do_verbose = self._get_info("do_verbose")
-        lookup_kobj = self._get_info("keyword_obj").get_name()
+        do_verbose = self._do_verbose
+        lookup_kobj = self._keyword_obj.get_name()
         if which_modes is None:
             which_modes = ["none"]
-        paragraphs = self._get_info("paper").get_paragraphs()[lookup_kobj]
+        paragraphs = self._paper.get_paragraphs()[lookup_kobj]
         # Print some notes
         if do_verbose:
             print("\n> Running run_modifications():")
@@ -173,11 +173,11 @@ class Grammar(Base):
         dict_modifs = {mode: None for mode in which_modes}
 
         # Store the info in this instance
-        self._store_info(clusters_NLP, "clusters_NLP")
-        self._store_info(num_clusters, "num_clusters")
-        self._store_info(forest, "forest")
-        self._store_info(dict_modifs, "modifs")
-        self._store_info(ids_wordchunks, "_ids_wordchunks")
+        self._clusters_NLP = clusters_NLP
+        self._num_clusters = num_clusters
+        self._forest = forest
+        self._modifs = dict_modifs
+        self._ids_wordchunks = ids_wordchunks
         # Print some notes
         if do_verbose:
             print("Internal storage for class instance initialized.\nClusters:")
@@ -284,7 +284,7 @@ class Grammar(Base):
         """
 
         # Extract global variables
-        do_verbose = self._get_info("do_verbose")
+        do_verbose = self._do_verbose
         type_verbs = storage_verbs["verbtype"]
         tenses_main = ["PAST", "PRESENT", "FUTURE"]
         word_tag = word.tag_
@@ -406,7 +406,7 @@ class Grammar(Base):
         """
 
         # Extract global variables
-        do_verbose = self._get_info("do_verbose")
+        do_verbose = self._do_verbose
         text_wordchunk = self._get_wordchunk(node.i, i_sentence=i_sentence, i_cluster=i_cluster, do_text=True)  # Text
         NLP_wordchunk = self._get_wordchunk(node.i, i_sentence=i_sentence, i_cluster=i_cluster, do_text=False)  # NLP
         i_wordchunk = np.array([word.i for word in NLP_wordchunk])  # Just ids
@@ -619,9 +619,9 @@ class Grammar(Base):
         """
 
         # Extract global variables
-        cluster_NLP = self._get_info("clusters_NLP")[i_cluster]
+        cluster_NLP = self._clusters_NLP[i_cluster]
         sentence_NLP = cluster_NLP[i_sentence]
-        id_wordchunks = self._get_info("_ids_wordchunks")[i_cluster][i_sentence]
+        id_wordchunks = self._ids_wordchunks[i_cluster][i_sentence]
         if i_sentence > 0:
             index_shifted = index - sum([len(cluster_NLP[ii]) for ii in range(0, (i_sentence - 1 + 1))])
         else:
@@ -649,9 +649,9 @@ class Grammar(Base):
         Purpose: Modify given grammar structure using the specifications of the given mode.
         """
         # Extract global variables
-        do_verbose = self._get_info("do_verbose")
-        keyword_obj = self._get_info("keyword_obj")
-        buffer = self._get_info("buffer")
+        do_verbose = self._do_verbose
+        keyword_obj = self._keyword_obj
+        buffer = self._buffer
         allowed_modifications = ["none", "skim", "trim", "anon"]  # Implemented
 
         # Initialize storage for modified versions of grammar structure
@@ -784,7 +784,7 @@ class Grammar(Base):
                 print("anon modifications complete.\nUpdated text:\n{0}\n".format(text_updated))
 
         # Cleanse the text to finalize it
-        paper = self._get_info("paper")
+        paper = self._paper
         text_updated = paper._streamline_phrase(text=text_updated, do_streamline_etal=True)
 
         # Build grammar structures using only kept words
@@ -832,7 +832,7 @@ class Grammar(Base):
         Purpose: Recursively examine and store information for each word within an NLP-sentence.
         """
         ##Extract global variables
-        do_verbose = self._get_info("do_verbose")
+        do_verbose = self._do_verbose
         wordchunk = self._get_wordchunk(index=node.i, i_cluster=i_cluster, i_sentence=i_sentence, do_text=False)
         # Print some notes
         if do_verbose:
@@ -1033,7 +1033,7 @@ class Grammar(Base):
         """
 
         # Extract global variables
-        do_verbose = self._get_info("do_verbose")
+        do_verbose = self._do_verbose
         num_sentences = len(cluster_NLP)
 
         # Initialize container to hold chunk ids for each word in sentence

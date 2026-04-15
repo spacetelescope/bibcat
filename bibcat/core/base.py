@@ -56,7 +56,7 @@ class Base:
 
     # Retrieve specified data via given key
     # TODO - do we really need this? no
-    def _get_info(self, key: str, do_flag_hidden=False):
+    def _get_info(self, key: str):
         """
         Method: _get_info
         WARNING! This method is *not* meant to be used directly by users.
@@ -68,7 +68,7 @@ class Base:
         # Throw helpful error if retrieval attempt failed
         except KeyError:
             # Return a specialized testing error, if likely hidden method called
-            if do_flag_hidden:
+            if False:
                 errstr = (
                     "Whoa there. This error likely happened because"
                     + " you are testing or exploring a hidden ('_') method."
@@ -96,6 +96,7 @@ class Base:
         Purpose: Stores values, etc., for this class instance in storage.
         """
         # Store the data into underlying dictionary
+        print("key = {0}, type = {1}, parent_type = {2}".format(key, type(data), type(self)))
         self._storage[key] = data
         return
 
@@ -364,9 +365,9 @@ class Base:
         # Extract keyword objects from storage, if not given
         if keyword_objs is None:
             try:
-                keyword_objs = [self._get_info("keyword_obj", do_flag_hidden=True)]
-            except KeyError:
-                keyword_objs = self._get_info("keyword_objs", do_flag_hidden=True)
+                keyword_objs = [self._keyword_obj]
+            except AttributeError:
+                keyword_objs = self._keyword_objs
 
         # Cleanse and streamline the given text
         text = self._cleanse_text(text, do_streamline_etal=True)
@@ -659,9 +660,9 @@ class Base:
             # Fetch keyword objects
             if keyword_objs is None:
                 try:
-                    keyword_objs = [self._get_info("keyword_obj")]
-                except KeyError:
-                    keyword_objs = self._get_info("keyword_objs", do_flag_hidden=True)
+                    keyword_objs = [self._keyword_obj]
+                except AttributeError:
+                    keyword_objs = self._keyword_objs
 
             # Check p.o.s. components
             check_tag = word_tag in config.grammar.speech.tag_useless
@@ -920,11 +921,11 @@ class Base:
         # Print some notes
         if do_verbose:
             # Extract global variables
-            keywords = [item2 for item1 in keyword_objs for item2 in item1._get_info("keywords")]
+            keywords = [item2 for item1 in keyword_objs for item2 in item1._keywords]
             acronyms = [
                 item2
                 for item1 in keyword_objs
-                for item2 in item1._get_info("acronyms_casesensitive") + item1._get_info("acronyms_caseinsensitive")
+                for item2 in item1._acronyms_casesensitive + item1._acronyms_caseinsensitive
             ]
 
             print("Completed _search_text().")
