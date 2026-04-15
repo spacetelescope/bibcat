@@ -1031,6 +1031,133 @@ class Paper(Base):
 
         return list_results
 
+    # Assemble wordchunks containing keywords from given text
+    def _assemble_keyword_wordchunks(
+        self, text, keyword_objs, do_include_verbs=False, do_include_brackets=False, do_verbose=False
+    ):  # noqa: C901
+        """
+        Method: _assemble_keyword_wordchunks
+        WARNING! This method is *not* meant to be used directly by users.
+        Purpose: Assembles noun chunks around any keyword terms within given text.
+        """
+
+        # Find indices of keywords within text
+        tmp_sents = list(nlp(str(text)).sents)
+        list_wordchunks = []
+        for curr_sent in tmp_sents:
+            # Check against all keyword objects
+            set_inds = [
+                ind
+                for ind in range(0, len(curr_sent))
+                if any([item.identify_keyword(curr_sent[ind].text)["bool"] for item in keyword_objs])
+            ]
+            # Print some notes
+            if do_verbose:
+                print("Current sentence: '{0}'".format(curr_sent))
+                print("Indices of lookups in sent.: '{0}'".format(set_inds))
+            # Build wordchunks from indices of current sentence
+            last_ind = -np.inf
+            for curr_start in set_inds:
+                # Print some notes
+                if do_verbose:
+                    print("\n-Building wordchunk from {0}: {1}:".format(curr_start, curr_sent[curr_start]))
+                # Skip if this index has already been surpassed
+                if curr_start <= last_ind:
+                    continue
+                curr_wordtext = [curr_sent[curr_start].text]
+
+                # Build wordchunk from accumulating nouns on the left
+                for ii in range(0, curr_start)[::-1]:  # Do not include start here
+                    # Store index if noun or numeral or adjective
+                    check_noun = self._is_pos_word(word=curr_sent[ii], pos="NOUN")
+                    check_adj = self._is_pos_word(word=curr_sent[ii], pos="ADJECTIVE")
+                    check_num = self._is_pos_word(word=curr_sent[ii], pos="NUMBER")
+                    check_pos = self._is_pos_word(word=curr_sent[ii], pos="POSSESSIVE")
+                    check_dash = curr_sent[ii].text == "-"
+                    check_imp = self._check_importance(
+                        curr_sent[ii].text, keyword_objs=keyword_objs, version_NLP=curr_sent[ii]
+                    )["bools"]["is_any"]
+                    # Include punctuation, if so requested
+                    if do_include_brackets:
+                        check_brackets = self._is_pos_word(word=curr_sent[ii], pos="BRACKET")
+                    else:
+                        check_brackets = False
+                    tmp_list = [check_noun, check_adj, check_num, check_dash, check_pos, check_imp, check_brackets]
+
+                    # Keep word if relevant p.o.s.
+                    if any(tmp_list):
+                        curr_wordtext.insert(0, curr_sent[ii].text)
+                    #
+                    # Otherwise, break and end this makeshift wordchunk
+                    else:
+                        break
+
+                # Build wordchunk from accumulating nouns on the right
+                for ii in range((curr_start + 1), len(curr_sent)):
+                    # Store index if noun or numeral or adjective, etc.
+                    check_noun = self._is_pos_word(word=curr_sent[ii], pos="NOUN")
+                    check_adj = self._is_pos_word(word=curr_sent[ii], pos="ADJECTIVE")
+                    check_num = self._is_pos_word(word=curr_sent[ii], pos="NUMBER")
+                    check_pos = self._is_pos_word(word=curr_sent[ii], pos="POSSESSIVE")
+                    check_imp = self._check_importance(
+                        curr_sent[ii].text, keyword_objs=keyword_objs, version_NLP=curr_sent[ii]
+                    )["bools"]["is_any"]
+                    check_dash = curr_sent[ii].text == "-"
+                    # Include brackets, if so requested
+                    if do_include_brackets:
+                        check_brackets = self._is_pos_word(word=curr_sent[ii], pos="BRACKET")
+                    else:
+                        check_brackets = False
+
+                    # Tack on verb check if requested (e.g., to cover noun-verbs)
+                    if do_include_verbs:  # E.g., ambig. 'Hubble-imaged data'
+                        check_verb = self._is_pos_word(word=curr_sent[ii], pos="VERB")
+                    else:
+                        check_verb = False
+                    #
+                    tmp_list = [
+                        check_noun,
+                        check_adj,
+                        check_num,
+                        check_brackets,
+                        check_verb,
+                        check_pos,
+                        check_imp,
+                        check_dash,
+                    ]
+
+                    # Keep word if relevant p.o.s.
+                    if any(tmp_list):
+                        curr_wordtext.append(curr_sent[ii].text)
+                        last_ind = ii  # Update latest index
+
+                    # Otherwise, break and end this makeshift wordchunk
+                    else:
+                        break
+
+                # Store the makeshift wordchunk
+                curr_str_fin = self._cleanse_text(" ".join(curr_wordtext), do_streamline_etal=False)
+                list_wordchunks.append(nlp(curr_str_fin))
+
+                # Print some notes
+                if do_verbose:
+                    print(
+                        "All wordchunks so far: {0}\nNewest wordchunk: {1}".format(list_wordchunks, list_wordchunks[-1])
+                    )
+                    print(
+                        "pos_ values: {0}\ndep_ values: {1}\ntag_ values: {2}".format(
+                            [item.pos_ for item in list_wordchunks[-1]],
+                            [item.dep_ for item in list_wordchunks[-1]],
+                            [item.tag_ for item in list_wordchunks[-1]],
+                        )
+                    )
+
+        # Return the assembled wordchunks
+        if do_verbose:
+            print("Assembled keyword wordchunks:\n{0}".format(list_wordchunks))
+
+        return list_wordchunks
+
     # Extract core meaning (e.g., synsets) from given phrase
     def _extract_core_from_phrase(self, phrase_NLP, do_skip_useless, do_verbose=None, keyword_objs=None):  # noqa: C901
         """
