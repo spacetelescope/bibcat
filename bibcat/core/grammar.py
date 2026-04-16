@@ -19,13 +19,13 @@ import numpy as np
 import spacy
 
 from bibcat import config
-from bibcat.core.base import Base
+from bibcat.core.core_utils import check_importance, is_pos_conjoined, is_pos_word
 from bibcat.core.paper import Paper
 
 nlp = spacy.load(config.grammar.spacy_language_model)
 
 
-class Grammar(Base):
+class Grammar:
     """
     Class: Grammar
     Purpose:
@@ -420,14 +420,16 @@ class Grammar(Base):
 
         # Characterize some traits of entire phrase
         # Characterize importance
-        res_importance = self._check_importance(text_wordchunk, version_NLP=NLP_wordchunk)["bools"]
+        res_importance = check_importance(text_wordchunk, version_NLP=NLP_wordchunk, keyword_objs=[self._keyword_obj])[
+            "bools"
+        ]
 
         # Determine part-of-speech (pos) of main (current) word in wordchunk
         pos_main = None
         for check_pos in all_pos_mains:
             # Keep this pos if valid
-            is_pos = self._is_pos_word(word=node, pos=check_pos)  # Check this pos
-            is_conj = self._is_pos_conjoined(word=node, pos=check_pos)  # Conjoined
+            is_pos = is_pos_word(word=node, pos=check_pos, keyword_objs=[self._keyword_obj])  # Check this pos
+            is_conj = is_pos_conjoined(word=node, pos=check_pos)  # Conjoined
             if is_pos or is_conj:
                 # Throw error if pos already identified; should just be 1 valid
                 if pos_main is not None:
@@ -467,7 +469,9 @@ class Grammar(Base):
                 pos_main = check_pos
 
         # Throw error if no pos found and not marked to ignore
-        if (pos_main is None) and (not any([(self._is_pos_word(word=node, pos=item)) for item in ignore_pos_main])):
+        if (pos_main is None) and (
+            not any([(is_pos_word(word=node, pos=item, keyword_objs=[self._keyword_obj])) for item in ignore_pos_main])
+        ):
             if do_verbose:
                 print(
                     (
@@ -514,7 +518,7 @@ class Grammar(Base):
                 dict_word["dict_importance"] = None
 
             # For uselessness
-            if self._is_pos_word(word, pos="USELESS"):
+            if is_pos_word(word, pos="USELESS", keyword_objs=[self._keyword_obj]):
                 dict_word["is_useless"] = True
             else:
                 dict_word["is_useless"] = False
@@ -887,8 +891,8 @@ class Grammar(Base):
 
         # Store characteristics of this word
         # For verbs vs. non-verbs
-        is_verb = self._is_pos_word(node, pos="VERB")
-        is_root = self._is_pos_word(node, pos="ROOT")
+        is_verb = is_pos_word(node, pos="VERB")
+        is_root = is_pos_word(node, pos="ROOT")
 
         # If verb or root, create new storage for this verb and its info
         if is_verb:
@@ -1069,7 +1073,7 @@ class Grammar(Base):
                 for word in nounchunk:
                     curr_loc = word.i - rshift  # Word index, shifted to sentence
                     # Skip words that are deemed useless
-                    is_useless = self._is_pos_word(word, pos="USELESS")
+                    is_useless = is_pos_word(word, pos="USELESS", keyword_objs=[self._keyword_obj])
                     if is_useless:
                         if do_verbose:
                             print("Skipping {0} because it seems useless....".format(word))

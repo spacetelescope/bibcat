@@ -20,7 +20,7 @@ import spacy
 from nltk.corpus import wordnet  # type: ignore
 
 from bibcat import config
-from bibcat.core.base import Base
+from bibcat.core.core_utils import check_importance, cleanse_text, is_pos_word
 from bibcat.core.keyword import Keyword
 from bibcat.utils.logger_config import setup_logger
 
@@ -82,7 +82,7 @@ class TruematchSetup:
     dict_kobjinfo: Dict[str, Dict[str, bool | List[List[int]]]]
 
 
-class Paper(Base):
+class Paper:
     """
     Class: Paper
     Purpose:
@@ -1069,17 +1069,17 @@ class Paper(Base):
                 # Build wordchunk from accumulating nouns on the left
                 for ii in range(0, curr_start)[::-1]:  # Do not include start here
                     # Store index if noun or numeral or adjective
-                    check_noun = self._is_pos_word(word=curr_sent[ii], pos="NOUN")
-                    check_adj = self._is_pos_word(word=curr_sent[ii], pos="ADJECTIVE")
-                    check_num = self._is_pos_word(word=curr_sent[ii], pos="NUMBER")
-                    check_pos = self._is_pos_word(word=curr_sent[ii], pos="POSSESSIVE")
+                    check_noun = is_pos_word(word=curr_sent[ii], pos="NOUN")
+                    check_adj = is_pos_word(word=curr_sent[ii], pos="ADJECTIVE")
+                    check_num = is_pos_word(word=curr_sent[ii], pos="NUMBER")
+                    check_pos = is_pos_word(word=curr_sent[ii], pos="POSSESSIVE")
                     check_dash = curr_sent[ii].text == "-"
-                    check_imp = self._check_importance(
+                    check_imp = check_importance(
                         curr_sent[ii].text, keyword_objs=keyword_objs, version_NLP=curr_sent[ii]
                     )["bools"]["is_any"]
                     # Include punctuation, if so requested
                     if do_include_brackets:
-                        check_brackets = self._is_pos_word(word=curr_sent[ii], pos="BRACKET")
+                        check_brackets = is_pos_word(word=curr_sent[ii], pos="BRACKET")
                     else:
                         check_brackets = False
                     tmp_list = [check_noun, check_adj, check_num, check_dash, check_pos, check_imp, check_brackets]
@@ -1095,23 +1095,23 @@ class Paper(Base):
                 # Build wordchunk from accumulating nouns on the right
                 for ii in range((curr_start + 1), len(curr_sent)):
                     # Store index if noun or numeral or adjective, etc.
-                    check_noun = self._is_pos_word(word=curr_sent[ii], pos="NOUN")
-                    check_adj = self._is_pos_word(word=curr_sent[ii], pos="ADJECTIVE")
-                    check_num = self._is_pos_word(word=curr_sent[ii], pos="NUMBER")
-                    check_pos = self._is_pos_word(word=curr_sent[ii], pos="POSSESSIVE")
-                    check_imp = self._check_importance(
+                    check_noun = is_pos_word(word=curr_sent[ii], pos="NOUN")
+                    check_adj = is_pos_word(word=curr_sent[ii], pos="ADJECTIVE")
+                    check_num = is_pos_word(word=curr_sent[ii], pos="NUMBER")
+                    check_pos = is_pos_word(word=curr_sent[ii], pos="POSSESSIVE")
+                    check_imp = check_importance(
                         curr_sent[ii].text, keyword_objs=keyword_objs, version_NLP=curr_sent[ii]
                     )["bools"]["is_any"]
                     check_dash = curr_sent[ii].text == "-"
                     # Include brackets, if so requested
                     if do_include_brackets:
-                        check_brackets = self._is_pos_word(word=curr_sent[ii], pos="BRACKET")
+                        check_brackets = is_pos_word(word=curr_sent[ii], pos="BRACKET")
                     else:
                         check_brackets = False
 
                     # Tack on verb check if requested (e.g., to cover noun-verbs)
                     if do_include_verbs:  # E.g., ambig. 'Hubble-imaged data'
-                        check_verb = self._is_pos_word(word=curr_sent[ii], pos="VERB")
+                        check_verb = is_pos_word(word=curr_sent[ii], pos="VERB")
                     else:
                         check_verb = False
                     #
@@ -1136,7 +1136,7 @@ class Paper(Base):
                         break
 
                 # Store the makeshift wordchunk
-                curr_str_fin = self._cleanse_text(" ".join(curr_wordtext), do_streamline_etal=False)
+                curr_str_fin = cleanse_text(" ".join(curr_wordtext), do_streamline_etal=False)
                 list_wordchunks.append(nlp(curr_str_fin))
 
                 # Print some notes
@@ -1195,9 +1195,7 @@ class Paper(Base):
                 logger.info("-Now considering word: {0}".format(curr_word))
 
             # Skip if this word is punctuation or possessive marker
-            if self._is_pos_word(word=curr_word, pos="PUNCTUATION") or self._is_pos_word(
-                word=curr_word, pos="POSSESSIVE"
-            ):
+            if is_pos_word(word=curr_word, pos="PUNCTUATION") or is_pos_word(word=curr_word, pos="POSSESSIVE"):
                 # Print some notes
                 if do_verbose:
                     logger.info("Word is punctuation or possessive. Skipping.")
@@ -1241,8 +1239,8 @@ class Paper(Base):
                 continue
 
             # Ignore this word if not a relevant p.o.s.
-            check_useless = self._is_pos_word(word=curr_word, pos="USELESS", keyword_objs=keyword_objs)
-            check_adj = self._is_pos_word(word=curr_word, pos="ADJECTIVE")
+            check_useless = is_pos_word(word=curr_word, pos="USELESS", keyword_objs=keyword_objs)
+            check_adj = is_pos_word(word=curr_word, pos="ADJECTIVE")
             if do_skip_useless and (check_useless and (not check_adj)):
                 # Print some notes
                 if do_verbose:
@@ -1539,7 +1537,7 @@ class Paper(Base):
         Method: _streamline_phrase
         WARNING! This method is *not* meant to be used directly by users.
         Purpose:
-         - Run _cleanse_text with citation streamlining.
+         - Run cleanse_text with citation streamlining.
          - Replace websites with uniform placeholder.
          - Replace some common science abbreviations that confuse external NLP package sentence parsing.
         """
@@ -1548,7 +1546,7 @@ class Paper(Base):
         dict_exp_abbrev = config.grammar.regex.dict_exp_abbrev
 
         # Remove any initial excessive whitespace
-        text = self._cleanse_text(text=text, do_streamline_etal=do_streamline_etal)
+        text = cleanse_text(text=text, do_streamline_etal=do_streamline_etal)
 
         # Replace annoying <> inserts (e.g. html)
         text = re.sub(r"<[A-Z|a-z|/]+>", "", text)
@@ -1558,7 +1556,7 @@ class Paper(Base):
             text = re.sub(key1, dict_exp_abbrev[key1], text)
 
         # Remove any new excessive whitespace and punctuation spaces
-        text = self._cleanse_text(text=text, do_streamline_etal=do_streamline_etal)
+        text = cleanse_text(text=text, do_streamline_etal=do_streamline_etal)
 
         # Return streamlined text
         return text
