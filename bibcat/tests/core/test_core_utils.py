@@ -1,7 +1,7 @@
 """
-:title: test_base.py
+:title: test_core_utils.py
 
-Testing the Base class and its methods.
+Testing the core_utils.py methods.
 """
 
 import unittest
@@ -11,7 +11,7 @@ import spacy
 
 from bibcat import config
 from bibcat.core import parameters as params
-from bibcat.core.base import Base
+from bibcat.core.core_utils import check_importance, cleanse_text, is_pos_word, search_text
 from bibcat.core.parameters import kobj_copernicus, kobj_hubble, kobj_k2, kobj_kepler
 
 nlp = spacy.load(config.grammar.spacy_language_model)
@@ -20,7 +20,7 @@ test_list_lookup_kobj = [kobj_hubble, kobj_kepler, kobj_k2, kobj_copernicus]
 
 
 class TestBase(unittest.TestCase):
-    # For tests of _check_importance:
+    # For tests of check_importance:
     if True:
         # Test determination of importance of given text with various terms
         def test__check_importance__variety(self):
@@ -46,9 +46,8 @@ class TestBase(unittest.TestCase):
             }
 
             # Prepare and run test for bibcat class instance
-            testbase = Base()
             for phrase in dict_acts:
-                test_res = testbase._check_importance(text=phrase, keyword_objs=[kobj])["bools"]
+                test_res = check_importance(text=phrase, keyword_objs=[kobj])["bools"]
                 list_res = [key for key in test_res if (test_res[key])]
 
                 # Check answer
@@ -63,9 +62,9 @@ class TestBase(unittest.TestCase):
 
                     self.assertEqual(sorted(list_res), sorted(dict_acts[phrase]))
 
-    # For tests of _cleanse_text:
+    # For tests of cleanse_text:
     if True:
-        # Test _cleanse_text for variety of text
+        # Test cleanse_text for variety of text
         def test__cleanse_text__variety(self):
             # Prepare text and answers for test
             # kobj = params.kobj_hubble
@@ -78,9 +77,8 @@ class TestBase(unittest.TestCase):
             #
 
             # Prepare and run test for bibcat class instance
-            testbase = Base()
             for phrase in dict_acts:
-                test_res = testbase._cleanse_text(text=phrase, do_streamline_etal=True)
+                test_res = cleanse_text(text=phrase, do_streamline_etal=True)
 
                 # Check answer
                 try:
@@ -94,7 +92,7 @@ class TestBase(unittest.TestCase):
 
                     self.assertEqual(test_res, dict_acts[phrase])
 
-    # For tests of _is_pos_word:
+    # For tests of is_pos_word:
     if True:
         # Test identification of adjectives in a sentence
         def test_is_pos_word__adjective(self):
@@ -110,9 +108,6 @@ class TestBase(unittest.TestCase):
                 "The observed spectra are quickly plotted in pretty figures.": ["observed", "pretty"],
             }
 
-            # Prepare and run tests for bibcat class instance
-            testbase = Base()
-
             # Check answers
             for key1 in dict_tests:
                 try:
@@ -120,10 +115,7 @@ class TestBase(unittest.TestCase):
                     curr_NLP = nlp(curr_phrase)
                     answer = dict_tests[key1]
                     test_bools = np.array(
-                        [
-                            testbase._is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos)
-                            for item in curr_NLP
-                        ]
+                        [is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos) for item in curr_NLP]
                     )
                     test_res = [item.text for item in np.asarray(curr_NLP)[test_bools]]
                     self.assertEqual(test_res, answer)
@@ -160,9 +152,6 @@ class TestBase(unittest.TestCase):
                 "They shall find the clue.": ["shall"],
             }
 
-            # Prepare and run tests for bibcat class instance
-            testbase = Base()
-
             # Check answers
             for key1 in dict_tests:
                 try:
@@ -170,10 +159,7 @@ class TestBase(unittest.TestCase):
                     curr_NLP = nlp(curr_phrase)
                     answer = dict_tests[key1]
                     test_bools = np.array(
-                        [
-                            testbase._is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos)
-                            for item in curr_NLP
-                        ]
+                        [is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos) for item in curr_NLP]
                     )
                     test_res = [item.text for item in np.asarray(curr_NLP)[test_bools]]
                     self.assertEqual(test_res, answer)
@@ -203,9 +189,6 @@ class TestBase(unittest.TestCase):
                 "That is a fantastic quote for this poster.": [],
             }
 
-            # Prepare and run tests for bibcat class instance
-            testbase = Base()
-
             # Check answers
             for key1 in dict_tests:
                 try:
@@ -214,9 +197,7 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array(
                         [
-                            testbase._is_pos_word(
-                                word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos, do_verbose=False
-                            )
+                            is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos, do_verbose=False)
                             for item in curr_NLP
                         ]
                     )
@@ -255,10 +236,6 @@ class TestBase(unittest.TestCase):
                 "She tried to take a picture.": ["picture"],
                 "She tried to send the picture to the agent.": ["picture"],
             }
-            #
-
-            # Prepare and run tests for bibcat class instance
-            testbase = Base()
 
             # Check answers
             for key1 in dict_tests:
@@ -267,10 +244,7 @@ class TestBase(unittest.TestCase):
                     curr_NLP = nlp(curr_phrase)
                     answer = dict_tests[key1]
                     test_bools = np.array(
-                        [
-                            testbase._is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos)
-                            for item in curr_NLP
-                        ]
+                        [is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos) for item in curr_NLP]
                     )
                     test_res = [item.text for item in np.asarray(curr_NLP)[test_bools]]
                     self.assertEqual(test_res, answer)
@@ -307,9 +281,6 @@ class TestBase(unittest.TestCase):
                 "The book was written by her.": ["by"],
             }
 
-            # Prepare and run tests for bibcat class instance
-            testbase = Base()
-
             # Check answers
             for key1 in dict_tests:
                 try:
@@ -317,10 +288,7 @@ class TestBase(unittest.TestCase):
                     curr_NLP = nlp(curr_phrase)
                     answer = dict_tests[key1]
                     test_bools = np.array(
-                        [
-                            testbase._is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos)
-                            for item in curr_NLP
-                        ]
+                        [is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos) for item in curr_NLP]
                     )
                     test_res = [item.text for item in np.asarray(curr_NLP)[test_bools]]
                     self.assertEqual(test_res, answer)
@@ -358,9 +326,6 @@ class TestBase(unittest.TestCase):
                 "She gave a treat to the cat and the dog.": ["cat", "dog"],
             }
 
-            # Prepare and run tests for bibcat class instance
-            testbase = Base()
-
             # Check answers
             for key1 in dict_tests:
                 try:
@@ -368,10 +333,7 @@ class TestBase(unittest.TestCase):
                     curr_NLP = nlp(curr_phrase)
                     answer = dict_tests[key1]
                     test_bools = np.array(
-                        [
-                            testbase._is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos)
-                            for item in curr_NLP
-                        ]
+                        [is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos) for item in curr_NLP]
                     )
                     test_res = [item.text for item in np.asarray(curr_NLP)[test_bools]]
                     self.assertEqual(test_res, answer)
@@ -404,9 +366,6 @@ class TestBase(unittest.TestCase):
                 "She took a turn on the road along the left lane.": [],
             }
 
-            # Prepare and run tests for bibcat class instance
-            testbase = Base()
-
             # Check answers
             for key1 in dict_tests:
                 try:
@@ -414,10 +373,7 @@ class TestBase(unittest.TestCase):
                     curr_NLP = nlp(curr_phrase)
                     answer = dict_tests[key1]
                     test_bools = np.array(
-                        [
-                            testbase._is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos)
-                            for item in curr_NLP
-                        ]
+                        [is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos) for item in curr_NLP]
                     )
                     test_res = [item.text for item in np.asarray(curr_NLP)[test_bools]]
                     self.assertEqual(test_res, answer)
@@ -456,9 +412,6 @@ class TestBase(unittest.TestCase):
                 "She, the bird, and the cat all bought the book.": ["She", "bird", "cat"],
             }
 
-            # Prepare and run tests for bibcat class instance
-            testbase = Base()
-
             # Check answers
             for key1 in dict_tests:
                 try:
@@ -467,9 +420,7 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array(
                         [
-                            testbase._is_pos_word(
-                                word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos, do_verbose=False
-                            )
+                            is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos, do_verbose=False)
                             for item in curr_NLP
                         ]
                     )
@@ -503,9 +454,6 @@ class TestBase(unittest.TestCase):
                 "That was not a cool cat.": ["cool"],
             }
 
-            # Prepare and run tests for bibcat class instance
-            testbase = Base()
-
             # Check answers
             for key1 in dict_tests:
                 try:
@@ -513,10 +461,7 @@ class TestBase(unittest.TestCase):
                     curr_NLP = nlp(curr_phrase)
                     answer = dict_tests[key1]
                     test_bools = np.array(
-                        [
-                            testbase._is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos)
-                            for item in curr_NLP
-                        ]
+                        [is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos) for item in curr_NLP]
                     )
                     test_res = [item.text for item in np.asarray(curr_NLP)[test_bools]]
                     self.assertEqual(test_res, answer)
@@ -559,9 +504,6 @@ class TestBase(unittest.TestCase):
                 "Follow me to the rendesvous.": ["Follow"],
             }
 
-            # Prepare and run tests for bibcat class instance
-            testbase = Base()
-
             # Check answers
             for key1 in dict_tests:
                 try:
@@ -570,9 +512,7 @@ class TestBase(unittest.TestCase):
                     answer = dict_tests[key1]
                     test_bools = np.array(
                         [
-                            testbase._is_pos_word(
-                                word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos, do_verbose=False
-                            )
+                            is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos, do_verbose=False)
                             for item in curr_NLP
                         ]
                     )
@@ -590,7 +530,7 @@ class TestBase(unittest.TestCase):
                     #
                     self.assertEqual(test_res, answer)
 
-    # For tests of _search_text:
+    # For tests of search_text:
     if True:
         # Test boolean search for keywords and acronyms within text
         def test_search_text__variety(self):
@@ -615,14 +555,11 @@ class TestBase(unittest.TestCase):
                 "an hst-roman project": True,
             }
 
-            # Prepare and run tests for bibcat class instance
-            testbase = Base()
-
             # Check answers
             for key1 in dict_tests:
                 try:
                     answer = dict_tests[key1]
-                    test_res = testbase._search_text(text=key1, keyword_objs=test_list_lookup_kobj)["bool"]
+                    test_res = search_text(text=key1, keyword_objs=test_list_lookup_kobj)["bool"]
                     self.assertEqual(test_res, answer)
                 except AssertionError:
                     print("")

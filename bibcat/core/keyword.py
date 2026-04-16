@@ -14,11 +14,11 @@ import re
 from typing import Any
 
 from bibcat import config
-from bibcat.core.base import Base
+from bibcat.core.core_utils import cleanse_text
 from bibcat.utils.logger_config import setup_logger
 
 
-class Keyword(Base):
+class Keyword:
     """
     A Keyword instance stores terms, e.g. titles and acronyms, that describe a mission (e.g., HST, JWST, TESS) for a user.  Methods of a Keyword instance can identify and/or replace snippets within texts that match to the mission.
     """
@@ -69,15 +69,15 @@ class Keyword(Base):
         self._do_not_classify = do_not_classify
 
         # Cleanse keywords of extra whitespace, punctuation, etc.
-        keywords_clean = sorted(
-            [self._cleanse_text(text=phrase, do_streamline_etal=True) for phrase in keywords], key=(len)
-        )[::-1]  # Sort by desc. length
+        keywords_clean = sorted([cleanse_text(text=phrase, do_streamline_etal=True) for phrase in keywords], key=(len))[
+            ::-1
+        ]  # Sort by desc. length
         # Store keywords
         self._keywords = keywords_clean
 
         # Cleanse banned overlap of extra whitespace, punctuation, etc.
         banned_overlap_lowercase = [
-            self._cleanse_text(text=phrase.lower(), do_streamline_etal=True) for phrase in banned_overlap
+            cleanse_text(text=phrase.lower(), do_streamline_etal=True) for phrase in banned_overlap
         ]
         # Store keywords
         self._banned_overlap_lowercase = banned_overlap_lowercase
