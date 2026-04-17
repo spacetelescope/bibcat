@@ -9,6 +9,7 @@ from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import NumpyEncoder
 
 logger = setup_logger(__name__)
+logger.setLevel(config.logging.level)
 
 
 def get_source(bibcode: str | None = None, index: int | None = None, body_only: bool = False) -> dict | str:
@@ -31,7 +32,7 @@ def get_source(bibcode: str | None = None, index: int | None = None, body_only: 
         a row from the source dataset
     """
     # load the source dataset
-    source_dataset = load_source_dataset(do_verbose=False)
+    source_dataset = load_source_dataset()
     n_sources = len(source_dataset)
 
     text = None

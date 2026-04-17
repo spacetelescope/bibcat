@@ -100,14 +100,14 @@ class Paper:
           - Target missions; terms will be used to search the text.
         - text [str]:
           - The text to search.
-        - do_verbose [bool (default=False)]:
-          - Whether or not to print surface-level log information and tests.
-        - do_verbose_deep [bool (default=False)]:
-          - Whether or not to print inner log information and tests.
     """
 
     def __init__(
-        self, text, keyword_objs, do_check_truematch, dict_ambigs=None, do_verbose=False, do_verbose_deep=False
+        self,
+        text,
+        keyword_objs,
+        do_check_truematch,
+        dict_ambigs=None,
     ):
         """
         Method: __init__
@@ -122,8 +122,6 @@ class Paper:
         text_original = text
         self._text_original = text_original  # Original text
         self._keyword_objs = keyword_objs  # Keyword groups
-        self._do_verbose = do_verbose
-        self._do_verbose_deep = do_verbose_deep
         self._do_check_truematch = do_check_truematch
 
         # Process ambig. phrase data, if not given
@@ -476,12 +474,9 @@ class Paper:
             An object containing all relevant variables for `_check_truematch`.
         """
 
-        # Get verbosity of logger
-        is_logger_verbose = logger.getEffectiveLevel() == logging.DEBUG
-
         # Process ambiguous phrase data, if not given
         if dict_ambigs is None:
-            dict_ambigs = self._process_database_ambig(do_verbose=is_logger_verbose, keyword_objs=keyword_objs)
+            dict_ambigs = self._process_database_ambig(keyword_objs=keyword_objs)
 
         # Extract info from ambiguous database
         list_kw_ambigs = dict_ambigs["all_kw_ambigs"]
@@ -907,7 +902,6 @@ class Paper:
             phrase_NLP=curr_chunk,
             keyword_objs=setup_data.keyword_objs_ambigs,
             do_skip_useless=False,
-            do_verbose=is_logger_verbose,
         )
         curr_meaning = tmp_res["str_meaning"]  # Str representation of meaning
         curr_inner_kw = tmp_res["keywords"]  # Matched keywords
@@ -1033,7 +1027,11 @@ class Paper:
 
     # Assemble wordchunks containing keywords from given text
     def _assemble_keyword_wordchunks(
-        self, text, keyword_objs, do_include_verbs=False, do_include_brackets=False, do_verbose=False
+        self,
+        text,
+        keyword_objs,
+        do_include_verbs=False,
+        do_include_brackets=False,
     ):  # noqa: C901
         """
         Method: _assemble_keyword_wordchunks
@@ -1052,15 +1050,13 @@ class Paper:
                 if any([item.identify_keyword(curr_sent[ind].text)["bool"] for item in keyword_objs])
             ]
             # Print some notes
-            if do_verbose:
-                print("Current sentence: '{0}'".format(curr_sent))
-                print("Indices of lookups in sent.: '{0}'".format(set_inds))
+            logger.info("Current sentence: '{0}'".format(curr_sent))
+            logger.info("Indices of lookups in sent.: '{0}'".format(set_inds))
             # Build wordchunks from indices of current sentence
             last_ind = -np.inf
             for curr_start in set_inds:
                 # Print some notes
-                if do_verbose:
-                    print("\n-Building wordchunk from {0}: {1}:".format(curr_start, curr_sent[curr_start]))
+                logger.info("\n-Building wordchunk from {0}: {1}:".format(curr_start, curr_sent[curr_start]))
                 # Skip if this index has already been surpassed
                 if curr_start <= last_ind:
                     continue
@@ -1140,26 +1136,24 @@ class Paper:
                 list_wordchunks.append(nlp(curr_str_fin))
 
                 # Print some notes
-                if do_verbose:
-                    print(
-                        "All wordchunks so far: {0}\nNewest wordchunk: {1}".format(list_wordchunks, list_wordchunks[-1])
+                logger.info(
+                    "All wordchunks so far: {0}\nNewest wordchunk: {1}".format(list_wordchunks, list_wordchunks[-1])
+                )
+                logger.info(
+                    "pos_ values: {0}\ndep_ values: {1}\ntag_ values: {2}".format(
+                        [item.pos_ for item in list_wordchunks[-1]],
+                        [item.dep_ for item in list_wordchunks[-1]],
+                        [item.tag_ for item in list_wordchunks[-1]],
                     )
-                    print(
-                        "pos_ values: {0}\ndep_ values: {1}\ntag_ values: {2}".format(
-                            [item.pos_ for item in list_wordchunks[-1]],
-                            [item.dep_ for item in list_wordchunks[-1]],
-                            [item.tag_ for item in list_wordchunks[-1]],
-                        )
-                    )
+                )
 
         # Return the assembled wordchunks
-        if do_verbose:
-            print("Assembled keyword wordchunks:\n{0}".format(list_wordchunks))
+        logger.info("Assembled keyword wordchunks:\n{0}".format(list_wordchunks))
 
         return list_wordchunks
 
     # Extract core meaning (e.g., synsets) from given phrase
-    def _extract_core_from_phrase(self, phrase_NLP, do_skip_useless, do_verbose=None, keyword_objs=None):  # noqa: C901
+    def _extract_core_from_phrase(self, phrase_NLP, do_skip_useless, keyword_objs=None):  # noqa: C901
         """
         Method: _extract_core_from_phrase
         WARNING! This method is *not* meant to be used directly by users.
@@ -1169,8 +1163,6 @@ class Paper:
 
         # Set global variables
         num_words = len(phrase_NLP)
-        if do_verbose is None:
-            do_verbose = self._do_verbose
         if keyword_objs is None:
             try:
                 keyword_objs = [self._keyword_obj]
@@ -1178,8 +1170,7 @@ class Paper:
                 keyword_objs = self._keyword_objs
 
         # Print some notes
-        if do_verbose:
-            logger.info("\n> Running _extract_core_from_phrase for phrase: {0}".format(phrase_NLP))
+        logger.info("\n> Running _extract_core_from_phrase for phrase: {0}".format(phrase_NLP))
 
         # Initialize containers of core information
         core_keywords = []
@@ -1189,16 +1180,14 @@ class Paper:
         for ii in range(0, num_words):
             curr_word = phrase_NLP[ii]
             # Print some notes
-            if do_verbose:
-                logger.info("-\nLatest keywords: {0}".format(core_keywords))
-                logger.info("Latest synsets: {0}".format(core_synsets))
-                logger.info("-Now considering word: {0}".format(curr_word))
+            logger.info("-\nLatest keywords: {0}".format(core_keywords))
+            logger.info("Latest synsets: {0}".format(core_synsets))
+            logger.info("-Now considering word: {0}".format(curr_word))
 
             # Skip if this word is punctuation or possessive marker
             if is_pos_word(word=curr_word, pos="PUNCTUATION") or is_pos_word(word=curr_word, pos="POSSESSIVE"):
                 # Print some notes
-                if do_verbose:
-                    logger.info("Word is punctuation or possessive. Skipping.")
+                logger.info("Word is punctuation or possessive. Skipping.")
 
                 continue
 
@@ -1212,8 +1201,7 @@ class Paper:
                     core_synsets.append([curr_word.text.lower()])
 
                     # Print some notes
-                    if do_verbose:
-                        logger.info("Word itself is keyword. Stored synset: {0}".format(core_synsets))
+                    logger.info("Word itself is keyword. Stored synset: {0}".format(core_synsets))
 
                     continue
                 # Otherwise, store keyword itself
@@ -1223,8 +1211,7 @@ class Paper:
                     core_synsets.append([name_kobj.lower()])
 
                     # Print some notes
-                    if do_verbose:
-                        logger.info("Word itself is keyword. Stored synset: {0}".format(core_synsets))
+                    logger.info("Word itself is keyword. Stored synset: {0}".format(core_synsets))
 
                     continue
 
@@ -1233,8 +1220,7 @@ class Paper:
                 tmp_rep = config.grammar.string_numeral_ambig
                 core_synsets.append([tmp_rep])
                 # Print some notes
-                if do_verbose:
-                    logger.info("Word itself is a numeral. Stored synset: {0}".format(core_synsets))
+                logger.info("Word itself is a numeral. Stored synset: {0}".format(core_synsets))
 
                 continue
 
@@ -1243,8 +1229,7 @@ class Paper:
             check_adj = is_pos_word(word=curr_word, pos="ADJECTIVE")
             if do_skip_useless and (check_useless and (not check_adj)):
                 # Print some notes
-                if do_verbose:
-                    logger.info("Word itself is useless. Skipping.")
+                logger.info("Word itself is useless. Skipping.")
 
                 continue
 
@@ -1261,10 +1246,9 @@ class Paper:
                 core_synsets += [curr_synsets_raw]
 
             # Print some notes
-            if do_verbose:
-                logger.info("-Done considering word: {0}".format(curr_word))
-                logger.info("Updated synsets: {0}".format(core_synsets))
-                logger.info("Updated keywords: {0}".format(core_keywords))
+            logger.info("-Done considering word: {0}".format(curr_word))
+            logger.info("Updated synsets: {0}".format(core_synsets))
+            logger.info("Updated keywords: {0}".format(core_keywords))
 
         # Throw an error if any empty strings passed as synsets
         if any([("" in item) for item in core_synsets]):
@@ -1283,12 +1267,11 @@ class Paper:
         str_meaning = " ".join([" ".join(item) for item in core_roots])  # Long spaced string
 
         # Return the core components
-        if do_verbose:
-            logger.info(
-                (
-                    "\n-\nPhrase '{0}':\nKeyword: {1}\nSynsets: {2}" + "\nRoots: {3}\nString representation: {4}\n-\n"
-                ).format(phrase_NLP, core_keywords, core_synsets, core_roots, str_meaning)
+        logger.info(
+            ("\n-\nPhrase '{0}':\nKeyword: {1}\nSynsets: {2}" + "\nRoots: {3}\nString representation: {4}\n-\n").format(
+                phrase_NLP, core_keywords, core_synsets, core_roots, str_meaning
             )
+        )
 
         return {
             "keywords": core_keywords,
@@ -1309,8 +1292,6 @@ class Paper:
           - Buffer sentences if non-zero buffer given.
         """
         # Fetch global variables
-        do_verbose = self._do_verbose
-        # do_verbose_deep = self._do_verbose_deep
         do_check_truematch = self._do_check_truematch
         sentences = np.asarray(self._text_clean_split)
         do_not_classify = keyword_obj._do_not_classify
@@ -1319,16 +1300,14 @@ class Paper:
         # Load ambiguous phrases, if necessary
         if do_check_truematch:
             # Print some notes
-            if do_verbose:
-                logger.info("do_check_truematch=True, so will verify ambig. phrases.")
+            logger.info("do_check_truematch=True, so will verify ambig. phrases.")
 
             # Load previously stored ambig. phrase data
             dict_ambigs = self._dict_ambigs
             lookup_ambigs = dict_ambigs["lookup_ambigs"]
 
         # Print some notes
-        if do_verbose:
-            logger.info("Fetching inds of target sentences...")
+        logger.info("Fetching inds of target sentences...")
 
         # Get indices of sentences that contain any target mission terms
         # For keyword terms
@@ -1342,12 +1321,11 @@ class Paper:
         ]
 
         # Print some notes
-        if do_verbose:
-            logger.info(
-                ("Found:\n# of keyword sentences: {0}\n" + "# of acronym sentences: {1}...").format(
-                    len(inds_with_keywords_init), len(inds_with_acronyms)
-                )
+        logger.info(
+            ("Found:\n# of keyword sentences: {0}\n" + "# of acronym sentences: {1}...").format(
+                len(inds_with_keywords_init), len(inds_with_acronyms)
             )
+        )
 
         # If requested, run a check for ambiguous phrases if any ambig. keywords
         if (
@@ -1356,8 +1334,7 @@ class Paper:
             and any([keyword_obj.identify_keyword(item)["bool"] for item in lookup_ambigs])
         ):
             # Print some notes
-            if do_verbose:
-                logger.info("Verifying ambiguous phrases...")
+            logger.info("Verifying ambiguous phrases...")
 
             # Run ambiguous phrase check on all sentences with keyword terms
             output_truematch = [
@@ -1374,11 +1351,10 @@ class Paper:
             inds_with_keywords_truematch = [item["ind"] for item in output_truematch if (item["result"]["bool"])]
 
             # Print some notes
-            if do_verbose:
-                logger.info("Done verifying ambiguous phrases.")
-                logger.info("Match output:\n{0}".format(output_truematch))
-                logger.info("Indices with true matches:\n{0}".format(inds_with_keywords_truematch))
-                logger.info("Keyword sentences with true matches:\n{0}".format(sentences[inds_with_keywords_truematch]))
+            logger.info("Done verifying ambiguous phrases.")
+            logger.info("Match output:\n{0}".format(output_truematch))
+            logger.info("Indices with true matches:\n{0}".format(inds_with_keywords_truematch))
+            logger.info("Keyword sentences with true matches:\n{0}".format(sentences[inds_with_keywords_truematch]))
 
         # Otherwise, set empty
         else:
@@ -1391,9 +1367,8 @@ class Paper:
         # Determine buffered sentences, if requested
         if buffer > 0:
             # Print some notes
-            if do_verbose:
-                logger.info("Buffering sentences with buffer={0}...".format(buffer))
-            #
+            logger.info("Buffering sentences with buffer={0}...".format(buffer))
+
             ranges_buffered = self._buffer_indices(
                 indices=inds_with_terms, buffer=buffer, max_index=(num_sentences - 1)
             )
@@ -1401,8 +1376,7 @@ class Paper:
                 " ".join(sentences[item[0] : item[1] + 1]) for item in ranges_buffered
             ]  # Combined sentences
             # Print some notes
-            if do_verbose:
-                logger.info("Done buffering sentences.\nRanges = {0}.".format(ranges_buffered))
+            logger.info("Done buffering sentences.\nRanges = {0}.".format(ranges_buffered))
 
         # Otherwise, just copy over previous indices
         else:
@@ -1414,7 +1388,10 @@ class Paper:
         }
 
     # Process database of ambig. phrases into lookups and dictionary
-    def _process_database_ambig(self, keyword_objs=None, do_verbose=False):
+    def _process_database_ambig(
+        self,
+        keyword_objs=None,
+    ):
         """
         Method: _process_database_ambig
         WARNING! This method is *not* meant to be used directly by users.
@@ -1467,7 +1444,7 @@ class Paper:
 
             # Formulate current regular expression
             curr_extraction = self._extract_core_from_phrase(
-                phrase_NLP=curr_NLP, do_verbose=do_verbose, do_skip_useless=False, keyword_objs=keyword_objs
+                phrase_NLP=curr_NLP, do_skip_useless=False, keyword_objs=keyword_objs
             )
             curr_roots = curr_extraction["roots"]
             curr_exp_exact = r"\b(" + re.escape(curr_text) + r")\b"
