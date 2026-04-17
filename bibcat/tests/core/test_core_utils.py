@@ -196,10 +196,7 @@ class TestBase(unittest.TestCase):
                     curr_NLP = nlp(curr_phrase)
                     answer = dict_tests[key1]
                     test_bools = np.array(
-                        [
-                            is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos, do_verbose=False)
-                            for item in curr_NLP
-                        ]
+                        [is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos) for item in curr_NLP]
                     )
                     test_res = [item.text for item in np.asarray(curr_NLP)[test_bools]]
                     self.assertEqual(test_res, answer)
@@ -419,10 +416,7 @@ class TestBase(unittest.TestCase):
                     curr_NLP = nlp(curr_phrase)
                     answer = dict_tests[key1]
                     test_bools = np.array(
-                        [
-                            is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos, do_verbose=False)
-                            for item in curr_NLP
-                        ]
+                        [is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos) for item in curr_NLP]
                     )
                     test_res = [item.text for item in np.asarray(curr_NLP)[test_bools]]
                     self.assertEqual(test_res, answer)
@@ -511,10 +505,7 @@ class TestBase(unittest.TestCase):
                     curr_NLP = nlp(curr_phrase)
                     answer = dict_tests[key1]
                     test_bools = np.array(
-                        [
-                            is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos, do_verbose=False)
-                            for item in curr_NLP
-                        ]
+                        [is_pos_word(word=item, keyword_objs=test_list_lookup_kobj, pos=test_pos) for item in curr_NLP]
                     )
                     test_res = [item.text for item in np.asarray(curr_NLP)[test_bools]]
                     self.assertEqual(test_res, answer)

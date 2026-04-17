@@ -20,8 +20,12 @@ import spacy
 from nltk.corpus import wordnet  # type: ignore
 
 from bibcat import config
+from bibcat.utils.logger_config import setup_logger
 
 nlp = spacy.load(config.grammar.spacy_language_model)
+
+logger = setup_logger(__name__)
+logger.setLevel(config.logging.level)
 
 
 # Determine if given text is important (e.g., is a keyword)
@@ -253,7 +257,7 @@ def is_pos_conjoined(word, pos):
 
 
 # Return boolean for if given word (NLP type word) is of given part of speech
-def is_pos_word(word, pos, keyword_objs=None, do_verbose=False):  # noqa: C901
+def is_pos_word(word, pos, keyword_objs=None):  # noqa: C901
     """
     Method: is_pos_word
     WARNING! This method is *not* meant to be used directly by users.
@@ -271,11 +275,10 @@ def is_pos_word(word, pos, keyword_objs=None, do_verbose=False):  # noqa: C901
     word_ancestors = list(word.ancestors)  # All previous nodes leading to word
 
     # Print some notes
-    if do_verbose:
-        print("Running is_pos_word for: {0}".format(word))
-        print("dep_: {0}\npos_: {1}\ntag_: {2}".format(word_dep, word_pos, word_tag))
-        print("Node head: {0}\nSentence: {1}".format(word.head, word.sent))
-        print("Node lefts: {0}\nNode rights: {1}".format(list(word.lefts), list(word.rights)))
+    logger.info("Running is_pos_word for: {0}".format(word))
+    logger.info("dep_: {0}\npos_: {1}\ntag_: {2}".format(word_dep, word_pos, word_tag))
+    logger.info("Node head: {0}\nSentence: {1}".format(word.head, word.sent))
+    logger.info("Node lefts: {0}\nNode rights: {1}".format(list(word.lefts), list(word.rights)))
 
     # Check if given word is of given part-of-speech
     # Identify roots
@@ -564,14 +567,13 @@ def is_pos_word(word, pos, keyword_objs=None, do_verbose=False):  # noqa: C901
         raise ValueError("Err: {0} is not a recognized part of speech.".format(pos))
 
     # Print some notes
-    if do_verbose:
-        print("Is pos={0}? {1}\n-".format(pos, check_all))
+    logger.info("Is pos={0}? {1}\n-".format(pos, check_all))
     # Return the final verdict
     return check_all
 
 
 # Search text for given keywords and acronyms and return metric
-def search_text(text, keyword_objs, do_verbose=False):
+def search_text(text, keyword_objs):
     """
     Method: search_text
     WARNING! This method is *not* meant to be used directly by users.
@@ -585,17 +587,16 @@ def search_text(text, keyword_objs, do_verbose=False):
         charspans_keywords += tmp_res[ii]["charspans"]
 
     # Print some notes
-    if do_verbose:
-        # Extract global variables
-        keywords = [item2 for item1 in keyword_objs for item2 in item1._keywords]
-        acronyms = [
-            item2 for item1 in keyword_objs for item2 in item1._acronyms_casesensitive + item1._acronyms_caseinsensitive
-        ]
+    # Extract global variables
+    keywords = [item2 for item1 in keyword_objs for item2 in item1._keywords]
+    acronyms = [
+        item2 for item1 in keyword_objs for item2 in item1._acronyms_casesensitive + item1._acronyms_caseinsensitive
+    ]
 
-        print("Completed search_text().")
-        print("Keywords={0}\nAcronyms={1}".format(keywords, acronyms))
-        print("Boolean: {0}".format(check_keywords))
-        print("Char. Spans: {0}".format(charspans_keywords))
+    logger.info("Completed search_text().")
+    logger.info("Keywords={0}\nAcronyms={1}".format(keywords, acronyms))
+    logger.info("Boolean: {0}".format(check_keywords))
+    logger.info("Char. Spans: {0}".format(charspans_keywords))
 
     # Return boolean result
     return {"bool": check_keywords, "charspans": charspans_keywords}

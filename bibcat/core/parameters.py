@@ -17,8 +17,6 @@ banned_overlap : {empty list, list of strings}
     Phrases that overlap with the target mission keywords but should not be treated as the same mission.  E.g., "Hubble Legacy Archive" can be a distinct mission from "Hubble"; therefore "Hubble Legacy Archive" is banned overlap for the Hubble mission, to avoid matching "Hubble Legacy Archive" to a Keyword instance for HST.
 do_not_classify : bool
     If True, text for the mission will be processed, extracted, and presented to the user, but not classified.  This can be useful for missions for which only human classification is desired.  This can also be useful for missions for which false positives are too difficult to automatically screen out (e.g., "K2", which can be a mission and also a stellar spectral type).
-do_verbose : bool = False
-    If True, will print statements and internal reports within applicable methods while the code is running.
 keywords : {empty list, list of strings}
     List of full phrases that name the mission (e.g., "Hubble Space Telescope").  Not case-sensitive.
 """

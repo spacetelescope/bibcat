@@ -17,6 +17,9 @@ from bibcat import config
 from bibcat.core.core_utils import cleanse_text
 from bibcat.utils.logger_config import setup_logger
 
+logger = setup_logger(__name__)
+logger.setLevel(config.logging.level)
+
 
 class Keyword:
     """
@@ -31,7 +34,6 @@ class Keyword:
         banned_overlap,
         ambig_words,
         do_not_classify,
-        do_verbose=False,
     ):
         """
         Initialize an instance of the Keyword class, which stores terms, e.g. titles and acronyms, that describe a mission (e.g., HST, JWST, TESS) for a user.
@@ -54,8 +56,6 @@ class Keyword:
             Phrases for which the user requests false positive checks to be done against the internal database of false positives.  E.g., "Hubble" can be found in the mission phrase "Hubble Telescope" and also in the false positive (i.e., non-mission) phrase "Hubble constant".  By specifying "Hubble" as a false positive phrase for the Hubble mission, the code knows to internally check phrases in the text associated with Hubble against the internal false positive database and procedure.
         do_not_classify : bool
             If True, text for the mission will be processed, extracted, and presented to the user, but not classified.  This can be useful for missions for which only human classification is desired.  This can also be useful for missions for which false positives are too difficult to automatically screen out (e.g., "K2", which can be a mission and also a stellar spectral type).
-        do_verbose : bool = False
-            If True, will print statements and internal reports within applicable methods while the code is running.
 
         Returns
         -------
@@ -63,7 +63,6 @@ class Keyword:
         """
         # Initialize storage
         self._storage = {}
-        self._do_verbose = do_verbose
         self._banned_overlap = banned_overlap
         self._ambig_words = ambig_words
         self._do_not_classify = do_not_classify
@@ -211,7 +210,6 @@ class Keyword:
         acronyms_casesensitive = self._acronyms_casesensitive
         acronyms_caseinsensitive = self._acronyms_caseinsensitive
         banned_overlap_lowercase = self._banned_overlap_lowercase
-        do_verbose = self._do_verbose
         allowed_modes = [None, "keyword", "acronym"]
 
         # Throw error is specified mode not recognized
@@ -259,16 +257,15 @@ class Keyword:
         charspans_acronyms_all = charspans_acronyms_nocase + charspans_acronyms_yescase
 
         # Print some notes
-        if do_verbose:
-            print("Keywords: {0}\nKeyword regex:\n{1}".format(keywords, exps_k))
-            print("Acronyms (Case-Sensitive): {0}\nAcronym regex:\n{1}".format(acronyms_casesensitive, exp_a_yescase))
-            print(
-                "Acronyms (Case-Insensitive): {0}\nAcronym regex:\n{1}".format(acronyms_caseinsensitive, exp_a_nocase)
-            )
-            print("Keyword bool: {0}\nAcronym bool: {1}".format(check_keywords, check_acronyms_all))
-            print(
-                "Keyword char. spans: {0}\nAcronym char. spans: {1}".format(charspans_keywords, charspans_acronyms_all)
-            )
+        logger.info("Keywords: {0}\nKeyword regex:\n{1}".format(keywords, exps_k))
+        logger.info("Acronyms (Case-Sensitive): {0}\nAcronym regex:\n{1}".format(acronyms_casesensitive, exp_a_yescase))
+        logger.info(
+            "Acronyms (Case-Insensitive): {0}\nAcronym regex:\n{1}".format(acronyms_caseinsensitive, exp_a_nocase)
+        )
+        logger.info("Keyword bool: {0}\nAcronym bool: {1}".format(check_keywords, check_acronyms_all))
+        logger.info(
+            "Keyword char. spans: {0}\nAcronym char. spans: {1}".format(charspans_keywords, charspans_acronyms_all)
+        )
 
         # Return booleans
         return {
@@ -307,7 +304,6 @@ class Keyword:
         else:
             exps_a_nocase = []
         #
-        do_verbose = self._do_verbose
         text_new = text
         #
 
@@ -328,11 +324,10 @@ class Keyword:
             text_new = re.sub(curr_exp, (r"\1" + placeholder + ("\\" + str_tot)), text_new, flags=re.IGNORECASE)
 
         # Print some notes
-        if do_verbose:
-            print("Keyword regex:\n{0}".format(exps_k))
-            print("Acronyms (Case-Sensitive) regex: {0}".format(exp_a_yescase))
-            print("Acronyms (Case-Insensitive) regex: {0}".format(exp_a_nocase))
-            print("Updated text: {0}".format(text_new))
+        logger.info("Keyword regex:\n{0}".format(exps_k))
+        logger.info("Acronyms (Case-Sensitive) regex: {0}".format(exp_a_yescase))
+        logger.info("Acronyms (Case-Insensitive) regex: {0}".format(exp_a_nocase))
+        logger.info("Updated text: {0}".format(text_new))
 
         # Return updated text
         return text_new

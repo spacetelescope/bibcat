@@ -265,7 +265,6 @@ class TestPaper(unittest.TestCase):
                 test_res = testpaper._extract_core_from_phrase(
                     phrase_NLP=nlp(key1),
                     do_skip_useless=False,
-                    do_verbose=False,
                     keyword_objs=test_list_lookup_kobj,
                 )
 
@@ -439,7 +438,7 @@ class TestPaper(unittest.TestCase):
             # For tests where verbs are not included
             for phrase in dict_acts_noverbs:
                 test_res = testpaper._assemble_keyword_wordchunks(
-                    text=phrase, keyword_objs=test_list_lookup_kobj, do_include_verbs=False, do_verbose=False
+                    text=phrase, keyword_objs=test_list_lookup_kobj, do_include_verbs=False
                 )
                 test_res = [item.text for item in test_res]
 
@@ -462,7 +461,7 @@ class TestPaper(unittest.TestCase):
             # For tests where verbs are indeed included
             for phrase in dict_acts_yesverbs:
                 test_res = testpaper._assemble_keyword_wordchunks(
-                    text=phrase, keyword_objs=test_list_lookup_kobj, do_include_verbs=True, do_verbose=False
+                    text=phrase, keyword_objs=test_list_lookup_kobj, do_include_verbs=True
                 )
                 test_res = [item.text for item in test_res]
 
