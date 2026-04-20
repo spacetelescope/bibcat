@@ -15,13 +15,22 @@ There are different modes for modifying a given paragraph (thus producing differ
 
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional, Union
+
 import numpy as np
+import numpy.typing as npt
 import spacy
+import spacy.tokens
 
 from bibcat import config
 from bibcat.core.core_utils import check_importance, is_pos_conjoined, is_pos_word
 from bibcat.core.paper import Paper
 from bibcat.utils.logger_config import setup_logger
+
+if TYPE_CHECKING:
+    from bibcat.core.keyword import Keyword
 
 nlp = spacy.load(config.grammar.spacy_language_model)
 
@@ -57,7 +66,14 @@ class Grammar:
         The input text to process for target terms.
     """
 
-    def __init__(self, text, keyword_obj, do_check_truematch, buffer=0, dict_ambigs=None):
+    def __init__(
+        self,
+        text: str,
+        keyword_obj: Keyword,
+        do_check_truematch: bool,
+        buffer: int = 0,
+        dict_ambigs: Optional[dict] = None,
+    ) -> None:
         """
         Initialize an instance of the Grammar class.
 
@@ -118,7 +134,7 @@ class Grammar:
         logger.info("Initialization of this Grammar class instance complete.")
         return
 
-    def get_modifs(self, which_modes=None):
+    def get_modifs(self, which_modes: Optional[list[str]] = None) -> dict:
         """
         Fetch previously assembled modified paragraphs for specified modes.
 
@@ -166,7 +182,7 @@ class Grammar:
 
         return dict_results
 
-    def run_modifications(self, which_modes=None):  # noqa: C901
+    def run_modifications(self, which_modes: Optional[list[str]] = None) -> None:  # noqa: C901
         """
         Parse paragraphs into grammar trees and apply modification schemes.
 
@@ -320,7 +336,7 @@ class Grammar:
 
         return
 
-    def _add_aux(self, word, storage_verbs):  # noqa: C901
+    def _add_aux(self, word: spacy.tokens.Token, storage_verbs: dict) -> None:  # noqa: C901
         """
         Characterize an auxiliary word and update the verb grammar structure.
 
@@ -332,9 +348,6 @@ class Grammar:
         - PAST supercedes PRESENT.
         - PURPOSE is stored independently alongside the main tense.
         - PASSIVE is appended if not already present.
-
-        .. warning::
-            This method is *not* meant to be used directly by users.
 
         Parameters
         ----------
@@ -430,7 +443,7 @@ class Grammar:
 
         return
 
-    def _add_verb(self, word):
+    def _add_verb(self, word: spacy.tokens.Token) -> dict:
         """
         Characterize a verb token and return its initialized grammar structure.
 
@@ -438,9 +451,6 @@ class Grammar:
         from its POS tag and returns a dictionary pre-populated with the verb's
         index, text, tense, and empty containers for downstream grammar
         processing.
-
-        .. warning::
-            This method is *not* meant to be used directly by users.
 
         Parameters
         ----------
@@ -501,7 +511,16 @@ class Grammar:
         # Return initialized verb dictionary
         return dict_verb
 
-    def _add_word(self, node, i_verb, i_cluster, i_sentence, storage_verbs, storage_words, i_headoftrail):  # noqa: C901
+    def _add_word(  # noqa: C901
+        self,
+        node: spacy.tokens.Token,
+        i_verb: int,
+        i_cluster: int,
+        i_sentence: int,
+        storage_verbs: dict,
+        storage_words: dict,
+        i_headoftrail: Optional[int],
+    ) -> dict:
         """
         Characterize a word token and store it in the grammar structure.
 
@@ -510,9 +529,6 @@ class Grammar:
         each token in the chunk. Also manages clause trail tracking so that
         unimportant inner clauses can be identified and trimmed in later
         processing stages.
-
-        .. warning::
-            This method is *not* meant to be used directly by users.
 
         Parameters
         ----------
@@ -745,16 +761,19 @@ class Grammar:
 
         return {"dict_words": list_dict_words, "i_headoftrail": new_headoftrail}
 
-    def _get_wordchunk(self, index, i_sentence, i_cluster, do_text):
+    def _get_wordchunk(
+        self,
+        index: int,
+        i_sentence: int,
+        i_cluster: int,
+        do_text: bool,
+    ) -> Union[str, npt.NDArray]:
         """
         Fetch the word chunk assigned to the token at the given index.
 
         Looks up the word chunk containing the token at ``index`` within the
         specified sentence and cluster. If no chunk is assigned to that token,
         the token itself is returned as a single-element phrase.
-
-        .. warning::
-            This method is *not* meant to be used directly by users.
 
         Parameters
         ----------
@@ -798,7 +817,7 @@ class Grammar:
         else:  # Return NLP-word form
             return phrase
 
-    def _modify_structure(self, struct_verbs, struct_words, mode):  # noqa: C901
+    def _modify_structure(self, struct_verbs: dict, struct_words: dict, mode: str) -> dict:  # noqa: C901
         """
         Modify a grammar structure according to the specifications of a given mode.
 
@@ -814,9 +833,6 @@ class Grammar:
         placeholder.
 
         The final text is cleansed before being returned.
-
-        .. warning::
-            This method is *not* meant to be used directly by users.
 
         Parameters
         ----------
@@ -1007,19 +1023,19 @@ class Grammar:
             "arr_is_keep": arr_is_keep,
         }
 
-    def _recurse_NLP_categorization(
+    def _recurse_NLP_categorization(  # noqa: C901
         self,
-        node,
-        storage_verbs,
-        storage_words,
-        is_checked,
-        i_cluster,
-        i_sentence,
-        i_verb,
-        chain_i_verbs,
-        verb_side,
-        i_headoftrail,
-    ):  # noqa: C901
+        node: spacy.tokens.Token,
+        storage_verbs: dict,
+        storage_words: dict,
+        is_checked: npt.NDArray[np.bool_],
+        i_cluster: int,
+        i_sentence: int,
+        i_verb: int,
+        chain_i_verbs: list[int],
+        verb_side: Optional[str],
+        i_headoftrail: Optional[int],
+    ) -> None:
         """
         Recursively traverse and categorize each token in an NLP dependency tree.
 
@@ -1037,9 +1053,6 @@ class Grammar:
         sentence), a minimal verb-like entry is created for it.
         - Otherwise, the token is registered as a branch word under the
         current governing verb.
-
-        .. warning::
-            This method is *not* meant to be used directly by users.
 
         Parameters
         ----------
@@ -1247,16 +1260,13 @@ class Grammar:
 
         return
 
-    def _run_NLP(self, text):
+    def _run_NLP(self, text: Union[str, list[str]]) -> list[list[spacy.tokens.Span]]:
         """
         Run the external NLP package on the given text and return sentence clusters.
 
         Accepts either a single string or a list of strings. Each input string
         is processed into a list of spaCy sentence objects, producing one
         cluster per input string.
-
-        .. warning::
-            This method is *not* meant to be used directly by users.
 
         Parameters
         ----------
@@ -1284,7 +1294,7 @@ class Grammar:
         # Return NLP clusters
         return clusters_NLP
 
-    def _set_wordchunks(self, cluster_NLP):
+    def _set_wordchunks(self, cluster_NLP: list[spacy.tokens.Span]) -> list[npt.NDArray]:
         """
         Assign noun chunk IDs to tokens within a sentence cluster.
 
@@ -1293,9 +1303,6 @@ class Grammar:
         chunk. The sentence root is always assigned its own ID to avoid
         conflicts with noun-root edge cases. Tokens identified as useless
         are skipped and left unassigned (``None``).
-
-        .. warning::
-            This method is *not* meant to be used directly by users.
 
         Parameters
         ----------

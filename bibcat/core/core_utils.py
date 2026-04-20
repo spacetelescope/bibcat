@@ -16,13 +16,20 @@ The primary methods and use cases of core_utils include:
    (e.g., search for "HST").
 """
 
+from __future__ import annotations
+
 import re
+from typing import TYPE_CHECKING, Optional, Union
 
 import spacy
+import spacy.tokens
 from nltk.corpus import wordnet  # type: ignore
 
 from bibcat import config
 from bibcat.utils.logger_config import setup_logger
+
+if TYPE_CHECKING:
+    from bibcat.core.keyword import Keyword
 
 nlp = spacy.load(config.grammar.spacy_language_model)
 
@@ -31,8 +38,13 @@ logger.setLevel(config.logging.level)
 
 
 def check_importance(
-    text, keyword_objs, include_Ipronouns=True, include_terms=True, include_etal=True, version_NLP=None
-):
+    text: str,
+    keyword_objs: list[Keyword],
+    include_Ipronouns: bool = True,
+    include_terms: bool = True,
+    include_etal: bool = True,
+    version_NLP: Optional[Union[spacy.tokens.Doc, list]] = None,
+) -> dict:
     """
     Check if given text contains any important terms.
 
@@ -156,7 +168,7 @@ def check_importance(
     return {"bools": dict_results, "charspans_keyword": charspans_keyword}
 
 
-def cleanse_text(text, do_streamline_etal):
+def cleanse_text(text: str, do_streamline_etal: bool) -> str:
     """
     Cleanse a string of extra whitespace, punctuation, and citation expressions.
 
@@ -270,7 +282,7 @@ def cleanse_text(text, do_streamline_etal):
     return text
 
 
-def is_pos_conjoined(word, pos):
+def is_pos_conjoined(word: spacy.tokens.Token, pos: str) -> bool:
     """
     Determine if a conjoined word's original part of speech matches a given POS tag.
 
@@ -328,7 +340,7 @@ def is_pos_conjoined(word, pos):
     raise ValueError("Err: No original p.o.s. for conjoined word {0}!\n{1}".format(word, word_ancestors))
 
 
-def is_pos_word(word, pos, keyword_objs=None):  # noqa: C901
+def is_pos_word(word: spacy.tokens.Token, pos: str, keyword_objs: Optional[list[Keyword]] = None) -> bool:  # noqa: C901, E501
     """
     Determine if a spaCy token belongs to a given part-of-speech category.
 
@@ -693,7 +705,7 @@ def is_pos_word(word, pos, keyword_objs=None):  # noqa: C901
     return check_all
 
 
-def search_text(text, keyword_objs):
+def search_text(text: str, keyword_objs: list[Keyword]) -> dict:
     """
     Search text for keywords and acronyms from a collection of keyword objects.
 
