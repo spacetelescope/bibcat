@@ -964,9 +964,6 @@ class Paper:
             The string representation of the core meaning of the current wordchunk, and
             any matched keywords.
         """
-        # Get verbosity of logger
-        is_logger_verbose = logger.getEffectiveLevel() == logging.DEBUG
-
         # Extract representation of core meaning of current wordchunk
         tmp_res = self._extract_core_from_phrase(
             phrase_NLP=curr_chunk,
