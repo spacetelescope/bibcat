@@ -10,13 +10,16 @@ the rest of the text.
 
 """
 
+from __future__ import annotations
+
 import logging
 import re
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import spacy
+import spacy.tokens
 from nltk.corpus import wordnet  # type: ignore
 
 from bibcat import config
@@ -109,20 +112,17 @@ class Paper:
 
     def __init__(
         self,
-        text,
-        keyword_objs,
-        do_check_truematch,
-        dict_ambigs=None,
-    ):
+        text: str,
+        keyword_objs: list[Keyword],
+        do_check_truematch: bool,
+        dict_ambigs: Optional[dict] = None,
+    ) -> None:
         """
         Initialize an instance of the Paper class.
 
         Stores the input text and keyword objects, optionally loads the
         ambiguous phrase database, cleanses the text, and splits it into
         sentences for downstream paragraph extraction.
-
-        .. warning::
-            This method is *not* meant to be used directly by users.
 
         Parameters
         ----------
@@ -170,7 +170,7 @@ class Paper:
 
         return
 
-    def get_paragraphs(self, keyword_objs=None):
+    def get_paragraphs(self, keyword_objs: Optional[list[Keyword]] = None) -> dict:
         """
         Fetch paragraphs previously assembled for the given keyword instances.
 
@@ -218,7 +218,7 @@ class Paper:
 
         return paragraphs
 
-    def process_paragraphs(self, buffer=0, do_overwrite=False):
+    def process_paragraphs(self, buffer: int = 0, do_overwrite: bool = False) -> None:
         """
         Assemble sentences containing target mission keywords into paragraphs.
 
@@ -288,16 +288,13 @@ class Paper:
 
         return
 
-    def _buffer_indices(self, indices, buffer, max_index):
+    def _buffer_indices(self, indices: list[int], buffer: int, max_index: int) -> list[list[int]]:
         """
         Expand a set of indices by a buffer and merge any overlapping spans.
 
         For each index, creates a span of ``[index - buffer, index + buffer]``,
         then merges spans that overlap and clamps the result to the range
         ``[0, max_index]``.
-
-        .. warning::
-            This method is *not* meant to be used directly by users.
 
         Parameters
         ----------
@@ -353,8 +350,8 @@ class Paper:
     def _check_truematch(
         self,
         text: str,
-        keyword_objs: list,
-        dict_ambigs: dict | None,
+        keyword_objs: list[Keyword],
+        dict_ambigs: Optional[dict],
     ) -> dict:  # noqa: C901
         """Determine if `text` contains a true or false match to the given keywords.
 
@@ -524,8 +521,8 @@ class Paper:
     def _setup_check_truematch_vars(
         self,
         text: str,
-        dict_ambigs: dict | None,
-        keyword_objs: list,
+        dict_ambigs: Optional[dict],
+        keyword_objs: list[Keyword],
     ) -> TruematchSetup:
         """Sets up variables and data structures required by `_check_truematch`.
 
@@ -949,7 +946,9 @@ class Paper:
             # Skip ahead
             return list_results
 
-    def _setup_consider_wordchunk(self, curr_chunk: spacy.tokens.Doc, setup_data: TruematchSetup) -> tuple:
+    def _setup_consider_wordchunk(
+        self, curr_chunk: spacy.tokens.Doc, setup_data: TruematchSetup
+    ) -> tuple[str, list[str]]:
         """Returns setup variables for use by _extract_ambig_phrases_substrings.
 
         Parameters
@@ -1096,13 +1095,13 @@ class Paper:
 
         return list_results
 
-    def _assemble_keyword_wordchunks(
+    def _assemble_keyword_wordchunks(  # noqa: C901
         self,
-        text,
-        keyword_objs,
-        do_include_verbs=False,
-        do_include_brackets=False,
-    ):  # noqa: C901
+        text: str,
+        keyword_objs: list[Keyword],
+        do_include_verbs: bool = False,
+        do_include_brackets: bool = False,
+    ) -> list[spacy.tokens.Doc]:
         """
         Assemble noun chunks around keyword terms found in the given text.
 
@@ -1111,9 +1110,6 @@ class Paper:
         nouns, adjectives, numerals, possessives, dashes, and important terms
         into a single word chunk. Expansion stops at the first token that does
         not meet any inclusion criterion.
-
-        .. warning::
-            This method is *not* meant to be used directly by users.
 
         Parameters
         ----------
@@ -1249,7 +1245,12 @@ class Paper:
 
         return list_wordchunks
 
-    def _extract_core_from_phrase(self, phrase_NLP, do_skip_useless, keyword_objs=None):  # noqa: C901
+    def _extract_core_from_phrase(  # noqa: C901
+        self,
+        phrase_NLP: spacy.tokens.Doc,
+        do_skip_useless: bool,
+        keyword_objs: Optional[list[Keyword]] = None,
+    ) -> dict:
         """
         Extract the representative meaning of a phrase as synsets and root terms.
 
@@ -1263,9 +1264,6 @@ class Paper:
 
         Synset names are reduced to their root form (the portion before the
         first ``.``) and joined into a single string representation.
-
-        .. warning::
-            This method is *not* meant to be used directly by users.
 
         Parameters
         ----------
@@ -1420,7 +1418,7 @@ class Paper:
             "str_meaning": str_meaning,
         }
 
-    def _extract_paragraph(self, keyword_obj, buffer):
+    def _extract_paragraph(self, keyword_obj: Keyword, buffer: int) -> dict:
         """
         Extract sentences containing target mission terms from the stored text.
 
@@ -1429,9 +1427,6 @@ class Paper:
         ambiguous phrase database, then applies a sentence buffer to include
         surrounding context. Matching sentences are returned as a list of
         strings.
-
-        .. warning::
-            This method is *not* meant to be used directly by users.
 
         Parameters
         ----------
@@ -1547,7 +1542,7 @@ class Paper:
             "paragraph": sentences_buffered,
         }
 
-    def _process_database_ambig(self, keyword_objs=None):
+    def _process_database_ambig(self, keyword_objs: Optional[list[Keyword]] = None) -> dict:
         """
         Process the ambiguous phrase database into lookup structures.
 
@@ -1556,9 +1551,6 @@ class Paper:
         synset root extraction, resolves boolean true/false match verdicts,
         and returns all components as a dictionary for use in false-positive
         filtering.
-
-        .. warning::
-            This method is *not* meant to be used directly by users.
 
         Parameters
         ----------
@@ -1678,16 +1670,13 @@ class Paper:
         # Return the processed results
         return dict_ambigs
 
-    def _split_text(self, text):
+    def _split_text(self, text: str) -> list[str]:
         """
         Split text into sentences based on assumed sentence boundaries.
 
         Applies splitting in three sequential passes: line breaks, bracket-
         delimited boundaries (both opening and closing), and general sentence
         structure patterns defined in the grammar configuration.
-
-        .. warning::
-            This method is *not* meant to be used directly by users.
 
         Parameters
         ----------
@@ -1714,7 +1703,7 @@ class Paper:
         # Return the split text
         return text_flat
 
-    def _streamline_phrase(self, text, do_streamline_etal):
+    def _streamline_phrase(self, text: str, do_streamline_etal: bool) -> str:
         """
         Cleanse and streamline a phrase for downstream NLP processing.
 
@@ -1722,9 +1711,6 @@ class Paper:
         removes HTML-style tags, replaces common science abbreviations that
         confuse the NLP sentence parser, then applies ``cleanse_text`` once
         more to catch any newly introduced whitespace issues.
-
-        .. warning::
-            This method is *not* meant to be used directly by users.
 
         Parameters
         ----------
