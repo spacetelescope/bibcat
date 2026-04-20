@@ -31,31 +31,60 @@ logger.setLevel(config.logging.level)
 
 class Grammar:
     """
-    Class: Grammar
-    Purpose:
-        - Load in text.
-        - Extract 'paragraph' from text using Paper class and Keyword instance.
-        - Convert paragraph into grammar tree structure.
-        - Use grammar tree structure to simplify, streamline, and/or anonymize paragraph as directed by user.
-    Initialization Arguments:
-        - buffer [int (default=0)]:
-          - Number of +/- sentences around a sentence containing a target mission to include in the paragraph.
-        - dict_ambigs [None or dict (default=None)]:
-          - If None, will load and process external database of ambiguous mission phrases. If given, will use what is given.
-        - do_check_truematch [bool]:
-          - Whether or not to check that mission phrases found in text are known true vs. false matches. (E.g., 'Edwin Hubble' as false match for the Hubble Space Telescope).
-        - keyword_obj [Keyword instance]:
-          - Target mission; terms will be used to search the text.
-        - text [str]:
-          - Text to process for target terms.
+    Load text and extract, simplify, and anonymize paragraphs via a grammar tree.
+
+    Identifies paragraphs containing target mission keywords, converts them
+    into a grammar tree structure, and applies simplification, streamlining,
+    or anonymization operations as directed by the user.
+
+    Parameters
+    ----------
+    buffer : int, optional
+        Number of sentences before and after a sentence containing a target
+        keyword to include in the extracted paragraph. Default is 0.
+    dict_ambigs : dict or None, optional
+        Dictionary of ambiguous mission phrases used to distinguish true from
+        false keyword matches. If None, the external ambiguity database is
+        loaded and processed automatically. Default is None.
+    do_check_truematch : bool
+        If True, verifies that mission phrases found in the text are known
+        true matches rather than false positives (e.g., "Edwin Hubble" as a
+        false match for the Hubble Space Telescope).
+    keyword_obj : Keyword
+        Target mission keyword instance whose terms are used to search the
+        text.
+    text : str
+        The input text to process for target terms.
     """
 
     def __init__(self, text, keyword_obj, do_check_truematch, buffer=0, dict_ambigs=None):
         """
-        Method: __init__
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Initialize instance of Grammar class.
+        Initialize an instance of the Grammar class.
+
+        Creates a `Paper` instance from the input text, optionally processes the
+        ambiguous phrase database, and extracts keyword-containing paragraphs
+        using the configured buffer size.
+
+        Parameters
+        ----------
+        text : str
+            The input text to process for target terms.
+        keyword_obj : Keyword
+            Target mission keyword instance whose terms are used to search
+            the text.
+        do_check_truematch : bool
+            If True, verifies that mission phrases found in the text are known
+            true matches rather than false positives. Triggers automatic loading
+            of the ambiguous phrase database when ``dict_ambigs`` is None.
+        buffer : int, optional
+            Number of sentences before and after a keyword-containing sentence
+            to include in the extracted paragraph. Default is 0.
+        dict_ambigs : dict or None, optional
+            Pre-loaded dictionary of ambiguous mission phrases. If None and
+            ``do_check_truematch`` is True, the database is loaded and processed
+            automatically. Default is None.
         """
+
         # Initialize storage for this class instance
         self._storage = {}
         # Store inputs for this instance
@@ -89,17 +118,31 @@ class Grammar:
         logger.info("Initialization of this Grammar class instance complete.")
         return
 
-    # Return modifs (modified paragraphs), modified to specified modes
     def get_modifs(self, which_modes=None):
         """
-        Method: get_modifs
-        Purpose: Fetch the modified paragraphs ('modifs') previously assembled and stored within this instance.
-        Arguments:
-          - "which_modes" [list of str, or None (default=None)]: List of modes for which modifs will be extracted. If None, then all previously assembled and stored modifs will be returned.
-        Returns:
-          - dict:
-            - keys = Names of the modes.
-            - values = The modif (the modified paragraph) for each mode.
+        Fetch previously assembled modified paragraphs for specified modes.
+
+        Retrieves the stored modified paragraphs ("modifs") from this instance,
+        filtered to the requested modes. If no modes are specified, all stored
+        modifs are returned. The result also includes the grammar forest
+        structure used to produce them.
+
+        Parameters
+        ----------
+        which_modes : list of str or None, optional
+            Names of the modes for which modifs should be retrieved. If None,
+            all previously assembled and stored modifs are returned.
+            Default is None.
+
+        Returns
+        -------
+        dict
+            A dictionary with the following keys:
+
+            - ``"modifs"`` : dict -- Mapping of mode name to its modified
+            paragraph string, filtered to ``which_modes``.
+            - ``"_forest"`` : object -- The grammar forest structure associated
+            with the stored modifs.
         """
 
         # Extract global variables
@@ -123,13 +166,42 @@ class Grammar:
 
         return dict_results
 
-    # Run submethods to convert paragraphs into custom grammar trees
     def run_modifications(self, which_modes=None):  # noqa: C901
         """
-        Method: run_modifications
-        Purpose: Parse paragraphs and process them into grammar structures using various modification schemes.
-        Arguments: None
-        Returns: None (internal storage updated)
+        Parse paragraphs into grammar trees and apply modification schemes.
+
+        Processes the stored paragraphs through NLP, builds a grammar tree for
+        each sentence cluster by recursively categorizing words from the
+        dependency tree root, and applies each requested modification mode to
+        produce a modified paragraph ("modif"). Results are stored internally
+        and can be retrieved with `get_modifs`.
+
+        The method proceeds in three stages:
+
+        1. **NLP processing** -- raw paragraph text is converted into spaCy
+        sentence clusters via `_run_NLP`.
+        2. **Structure building** -- for each cluster, word chunks are
+        identified and the dependency tree is recursively traversed to
+        populate verb and word structure dictionaries.
+        3. **Modification** -- each mode's grammar structure is finalized via
+        `_modify_structure` and joined into a single modif string per mode.
+
+        Parameters
+        ----------
+        which_modes : list of str or None, optional
+            Modification modes to apply (e.g., ``"none"``, ``"trim"``,
+            ``"anon"``). If None, defaults to ``["none"]``. Default is None.
+
+        Returns
+        -------
+        None
+            Results are stored in the following instance attributes:
+
+            - ``_clusters_NLP`` -- NLP-processed sentence clusters.
+            - ``_num_clusters`` -- number of sentence clusters.
+            - ``_forest`` -- grammar tree structures keyed by mode and cluster index.
+            - ``_modifs`` -- final modified paragraph strings keyed by mode.
+            - ``_ids_wordchunks`` -- word chunk indices per cluster.
         """
 
         # Extract global variables
@@ -248,12 +320,41 @@ class Grammar:
 
         return
 
-    # Add aux to grammar structure
     def _add_aux(self, word, storage_verbs):  # noqa: C901
         """
-        Method: _add_aux
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Characterize and store an aux word within grammar structure.
+        Characterize an auxiliary word and update the verb grammar structure.
+
+        Determines the tense (PAST, PRESENT, FUTURE, PURPOSE) and passivity of
+        the given auxiliary token, then updates ``storage_verbs["verbtype"]``
+        in place. Tense precedence rules are applied as follows:
+
+        - FUTURE supercedes PAST and PRESENT.
+        - PAST supercedes PRESENT.
+        - PURPOSE is stored independently alongside the main tense.
+        - PASSIVE is appended if not already present.
+
+        .. warning::
+            This method is *not* meant to be used directly by users.
+
+        Parameters
+        ----------
+        word : spacy.tokens.Token
+            The auxiliary token to characterize.
+        storage_verbs : dict
+            Mutable grammar structure for the current verb. Must contain a
+            ``"verbtype"`` key holding a list of tense and voice strings.
+            Updated in place.
+
+        Returns
+        -------
+        None
+            ``storage_verbs["verbtype"]`` is modified directly.
+
+        Raises
+        ------
+        ValueError
+            If the auxiliary token's POS tag does not match any recognized
+            tense category (PAST, PRESENT, FUTURE, or PURPOSE).
         """
 
         # Extract global variables
@@ -329,12 +430,45 @@ class Grammar:
 
         return
 
-    # Add verb to grammar structure
     def _add_verb(self, word):
         """
-        Method: __init__
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Characterize and store a verb within grammar structure.
+        Characterize a verb token and return its initialized grammar structure.
+
+        Determines the tense (PAST, PRESENT, or FUTURE) of the given verb token
+        from its POS tag and returns a dictionary pre-populated with the verb's
+        index, text, tense, and empty containers for downstream grammar
+        processing.
+
+        .. warning::
+            This method is *not* meant to be used directly by users.
+
+        Parameters
+        ----------
+        word : spacy.tokens.Token
+            The verb token to characterize.
+
+        Returns
+        -------
+        dict
+            An initialized verb structure with the following keys:
+
+            - ``"i_verb"`` : int -- Token index of the verb.
+            - ``"verb"`` : str -- Text of the verb.
+            - ``"is_important"`` : bool -- Whether the verb is marked as
+            important. Initialized to False.
+            - ``"i_postverbs"`` : list -- Indices of post-verb tokens.
+            Initialized as empty.
+            - ``"i_branchwords_all"`` : list -- Indices of all branch words
+            associated with this verb. Initialized as empty.
+            - ``"verbtype"`` : list of str -- Tense and voice labels
+            (e.g., ``"PAST"``, ``"PRESENT"``, ``"FUTURE"``). Initialized
+            with the detected tense.
+
+        Raises
+        ------
+        ValueError
+            If the verb token's POS tag does not match any recognized tense
+            category (PAST, PRESENT, or FUTURE).
         """
 
         # Extract global variables
@@ -367,12 +501,50 @@ class Grammar:
         # Return initialized verb dictionary
         return dict_verb
 
-    # Add general word to grammar structure
     def _add_word(self, node, i_verb, i_cluster, i_sentence, storage_verbs, storage_words, i_headoftrail):  # noqa: C901
         """
-        Method: _add_word
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Characterize and store a word within grammar structure.
+        Characterize a word token and store it in the grammar structure.
+
+        Resolves the word chunk containing ``node``, determines its primary
+        part of speech and importance, and builds a per-word dictionary for
+        each token in the chunk. Also manages clause trail tracking so that
+        unimportant inner clauses can be identified and trimmed in later
+        processing stages.
+
+        .. warning::
+            This method is *not* meant to be used directly by users.
+
+        Parameters
+        ----------
+        node : spacy.tokens.Token
+            The main token to characterize.
+        i_verb : int
+            Token index of the governing verb for this word.
+        i_cluster : int
+            Index of the current sentence cluster being processed.
+        i_sentence : int
+            Index of the current sentence within the cluster.
+        storage_verbs : dict
+            Mutable grammar structure for the governing verb. Updated in place
+            when ``node`` is marked as important or is an auxiliary.
+        storage_words : dict
+            Mutable mapping of token indices to their word dictionaries.
+            Updated in place with the newly characterized words.
+        i_headoftrail : int or None
+            Token index of the current clause-trail head, used to append this
+            word chunk to an existing trail. None if no trail is active.
+
+        Returns
+        -------
+        dict
+            A dictionary with the following keys:
+
+            - ``"dict_words"`` : list of dict -- One dictionary per token in
+            the word chunk, each containing characterization fields such as
+            ``"word"``, ``"index"``, ``"pos_main"``, ``"is_important"``,
+            ``"is_useless"``, ``"i_clausetrail"``, and ``"i_clausechain"``.
+            - ``"i_headoftrail"`` : int or None -- Updated clause-trail head
+            index after processing this word chunk.
         """
 
         # Extract global variables
@@ -573,12 +745,34 @@ class Grammar:
 
         return {"dict_words": list_dict_words, "i_headoftrail": new_headoftrail}
 
-    # Purpose: Retrieve word chunk assigned the given id (index)
     def _get_wordchunk(self, index, i_sentence, i_cluster, do_text):
         """
-        Method: _get_wordchunk
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Fetch the word chunk assigned to word at given index.
+        Fetch the word chunk assigned to the token at the given index.
+
+        Looks up the word chunk containing the token at ``index`` within the
+        specified sentence and cluster. If no chunk is assigned to that token,
+        the token itself is returned as a single-element phrase.
+
+        .. warning::
+            This method is *not* meant to be used directly by users.
+
+        Parameters
+        ----------
+        index : int
+            Token index of the word whose chunk should be retrieved.
+        i_sentence : int
+            Index of the sentence within the cluster.
+        i_cluster : int
+            Index of the sentence cluster.
+        do_text : bool
+            If True, returns the chunk as a joined string. If False, returns
+            the chunk as an array of spaCy tokens.
+
+        Returns
+        -------
+        str or numpy.ndarray
+            The word chunk as a whitespace-joined string if ``do_text`` is
+            True, or as an array of spaCy tokens if ``do_text`` is False.
         """
 
         # Extract global variables
@@ -604,13 +798,62 @@ class Grammar:
         else:  # Return NLP-word form
             return phrase
 
-    # Modify given grammar structure, following specifications of the given mode
     def _modify_structure(self, struct_verbs, struct_words, mode):  # noqa: C901
         """
-        Method: _modify_structure
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Modify given grammar structure using the specifications of the given mode.
+        Modify a grammar structure according to the specifications of a given mode.
+
+        Parses ``mode`` into a combination of modification steps joined by
+        underscores (e.g., ``"skim_trim_anon"``), then applies each step in
+        sequence. The following modifications are supported:
+
+        - **none** -- no modification; text is returned as-is.
+        - **skim** -- removes useless words (e.g., adjectives).
+        - **trim** -- removes clauses that contain no important terms.
+        Incompatible with a non-zero buffer.
+        - **anon** -- replaces mission-specific keywords with an anonymous
+        placeholder.
+
+        The final text is cleansed before being returned.
+
+        .. warning::
+            This method is *not* meant to be used directly by users.
+
+        Parameters
+        ----------
+        struct_verbs : dict
+            Grammar structure mapping verb indices to their verb dictionaries,
+            as produced by `_add_verb`.
+        struct_words : dict
+            Grammar structure mapping token indices to their word dictionaries,
+            as produced by `_add_word`.
+        mode : str
+            Modification mode string. Must be one or more of ``"none"``,
+            ``"skim"``, ``"trim"``, ``"anon"``, joined by underscores
+            (e.g., ``"skim_anon"``).
+
+        Returns
+        -------
+        dict
+            A dictionary with the following keys:
+
+            - ``"mode"`` : str -- The mode string that was applied.
+            - ``"struct_verbs_updated"`` : dict -- Verb structure filtered to
+            kept words only.
+            - ``"struct_words_updated"`` : dict -- Word structure filtered to
+            kept words only.
+            - ``"text_updated"`` : str -- The final modified and cleansed text.
+            - ``"arr_is_keep"`` : numpy.ndarray of bool -- Boolean mask
+            indicating which words were retained.
+
+        Raises
+        ------
+        ValueError
+            If ``mode`` contains an unrecognized modification step.
+        ValueError
+            If ``mode`` includes ``"trim"`` and the instance buffer is
+            greater than zero.
         """
+
         # Extract global variables
         keyword_obj = self._keyword_obj
         buffer = self._buffer
@@ -764,7 +1007,6 @@ class Grammar:
             "arr_is_keep": arr_is_keep,
         }
 
-    # Recursively explore each word of NLP-sentence and categorize
     def _recurse_NLP_categorization(
         self,
         node,
@@ -779,11 +1021,64 @@ class Grammar:
         i_headoftrail,
     ):  # noqa: C901
         """
-        Method: _recurse_NLP_categorization
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Recursively examine and store information for each word within an NLP-sentence.
+        Recursively traverse and categorize each token in an NLP dependency tree.
+
+        Starting from ``node``, characterizes the token as a verb, root, or
+        general word, updates the grammar structures accordingly, then recurses
+        into left and right child nodes. Already-visited tokens (tracked via
+        ``is_checked``) are skipped but still recursed through to ensure full
+        tree coverage.
+
+        Verb handling follows these rules:
+
+        - If ``node`` is a verb, a new verb entry is created and appended to
+        ``chain_i_verbs``.
+        - If ``node`` is a non-verb root (e.g., a noun heading an incomplete
+        sentence), a minimal verb-like entry is created for it.
+        - Otherwise, the token is registered as a branch word under the
+        current governing verb.
+
+        .. warning::
+            This method is *not* meant to be used directly by users.
+
+        Parameters
+        ----------
+        node : spacy.tokens.Token
+            The current token being processed.
+        storage_verbs : dict
+            Mutable mapping of verb token indices to their verb dictionaries.
+            Updated in place as verbs and roots are encountered.
+        storage_words : dict
+            Mutable mapping of token indices to their word dictionaries.
+            Updated in place via `_add_word`.
+        is_checked : numpy.ndarray of bool
+            Boolean array tracking which token indices have already been
+            processed. Updated in place for each token in the word chunk.
+        i_cluster : int
+            Index of the current sentence cluster.
+        i_sentence : int
+            Index of the current sentence within the cluster.
+        i_verb : int
+            Token index of the current governing verb.
+        chain_i_verbs : list of int
+            Ordered list of verb token indices encountered along the current
+            path from the root. A copy is passed to each recursive call.
+        verb_side : str or None
+            Tracks whether the current node is to the ``"left"`` or
+            ``"right"`` of its governing verb. None if the side has not yet
+            been determined.
+        i_headoftrail : int or None
+            Token index of the current clause-trail head, passed through to
+            `_add_word`. None if no trail is active.
+
+        Returns
+        -------
+        None
+            All results are stored in place via ``storage_verbs``,
+            ``storage_words``, and ``is_checked``.
         """
-        ##Extract global variables
+
+        # Extract global variables
         wordchunk = self._get_wordchunk(index=node.i, i_cluster=i_cluster, i_sentence=i_sentence, do_text=False)
         # Print some notes
         logger.info(("-" * 60) + "\nCURRENT NODE ({1}): {0}".format(node, node.i))
@@ -952,12 +1247,28 @@ class Grammar:
 
         return
 
-    # Run natural language processing (NLP) on text using external package
     def _run_NLP(self, text):
         """
-        Method: _run_NLP
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Run external natural language processing NLP package on given text.
+        Run the external NLP package on the given text and return sentence clusters.
+
+        Accepts either a single string or a list of strings. Each input string
+        is processed into a list of spaCy sentence objects, producing one
+        cluster per input string.
+
+        .. warning::
+            This method is *not* meant to be used directly by users.
+
+        Parameters
+        ----------
+        text : str or list of str
+            The text to process. A single string produces one cluster; a list
+            of strings produces one cluster per element.
+
+        Returns
+        -------
+        list of list of spacy.tokens.Span
+            NLP-processed sentence clusters. Each inner list contains the
+            spaCy sentence spans parsed from one input string.
         """
 
         # Convert text (or clusters of sentences) into clusters of NLP objects
@@ -973,12 +1284,32 @@ class Grammar:
         # Return NLP clusters
         return clusters_NLP
 
-    # Group nouns into chunks as applicable (e.g., proper nouns)
     def _set_wordchunks(self, cluster_NLP):
         """
-        Method: _set_wordchunks
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Assign words to noun chunks, as applicable.
+        Assign noun chunk IDs to tokens within a sentence cluster.
+
+        Iterates over each sentence in the cluster, uses spaCy's noun chunk
+        detection to group tokens, and assigns a unique integer ID to each
+        chunk. The sentence root is always assigned its own ID to avoid
+        conflicts with noun-root edge cases. Tokens identified as useless
+        are skipped and left unassigned (``None``).
+
+        .. warning::
+            This method is *not* meant to be used directly by users.
+
+        Parameters
+        ----------
+        cluster_NLP : list of spacy.tokens.Span
+            A list of spaCy sentence spans forming one sentence cluster,
+            as produced by `_run_NLP`.
+
+        Returns
+        -------
+        list of numpy.ndarray
+            One array per sentence in ``cluster_NLP``. Each array has length
+            equal to the number of tokens in that sentence, where each element
+            is either an integer chunk ID or ``None`` if the token was not
+            assigned to any chunk.
         """
 
         # Extract global variables
