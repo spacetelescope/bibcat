@@ -9,6 +9,8 @@ The primary methods and use cases of core_utils include:
    a paper citation, etc.).
 * `cleanse_text`: Cleanse some given text, e.g., excessive whitespace and punctuation.
    Can also, e.g., replace citations with an 'Authoretal' placeholder of sorts.
+* `is_pos_conjoined`: Check if a conjoined word's original part of speech matches
+   a given POS tag by traversing the dependency tree to the root of the conjunction chain.
 * `is_pos_word`: Check if some given word (of the NLP type) has a particular part of speech.
 * `search_text`: Search some given text for mission keywords/acronyms
    (e.g., search for "HST").
@@ -28,17 +30,50 @@ logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
 
-# Determine if given text is important (e.g., is a keyword)
 def check_importance(
     text, keyword_objs, include_Ipronouns=True, include_terms=True, include_etal=True, version_NLP=None
 ):
     """
-    Method: check_importance
-    WARNING! This method is *not* meant to be used directly by users.
-    Purpose:
-        - Checks if given text contains any important terms.
-        - Important terms includes keywords, 1st,3rd person pronouns, etc.
-        - Returns dictionary of bools for presence/absence of important terms.
+    Check if given text contains any important terms.
+
+    Evaluates the presence of keywords, acronyms, first- and third-person
+    pronouns, figure-related terms, and "et al." expressions. Returns a
+    dictionary of boolean flags for each category.
+
+    Parameters
+    ----------
+    text : str
+        The input text to evaluate.
+    keyword_objs : list
+        Collection of keyword objects used to search for keywords and acronyms.
+    include_Ipronouns : bool, optional
+        Whether to check for first-person pronouns. Default is True.
+    include_terms : bool, optional
+        Whether to check for third-person pronouns and figure-related terms.
+        Default is True.
+    include_etal : bool, optional
+        Whether to check for "et al." expressions. Default is True.
+    version_NLP : spacy.tokens.Doc or iterable, optional
+        Pre-computed NLP representation of ``text``. If None, it is computed
+        internally. Default is None.
+
+    Returns
+    -------
+    dict
+        A dictionary with the following keys:
+
+        - ``"bools"`` : dict of bool
+            Boolean flags for each importance category:
+
+            - ``"is_keyword"`` -- text matches a keyword or acronym.
+            - ``"is_pron_1st"`` -- text contains a first-person pronoun.
+            - ``"is_pron_3rd"`` -- text contains a third-person pronoun.
+            - ``"is_term_fig"`` -- text contains a figure-related term.
+            - ``"is_etal"`` -- text contains an "et al." expression.
+            - ``"is_any"`` -- any of the above flags is True.
+
+        - ``"charspans_keyword"`` : list
+            Character spans of matched keywords within the text.
     """
 
     # Extract the NLP version of this text, if not given
@@ -121,14 +156,29 @@ def check_importance(
     return {"bools": dict_results, "charspans_keyword": charspans_keyword}
 
 
-# Cleanse given (any length) string of extra whitespace, dashes, etc.
 def cleanse_text(text, do_streamline_etal):
     """
-    Method: cleanse_text
-    WARNING! This method is *not* meant to be used directly by users.
-    Purpose:
-        - Cleanse text of extra whitespace, punctuation, etc.
-        - Replace paper citations (e.g. 'et al.') with uniform placeholder.
+    Cleanse a string of extra whitespace, punctuation, and citation expressions.
+
+    Removes leading punctuation, normalizes whitespace, strips empty brackets
+    and doubled punctuation, and optionally replaces author citation patterns
+    (e.g., "Smith et al. (2020)") with a uniform placeholder string.
+
+    Parameters
+    ----------
+    text : str
+        The input text to cleanse.
+    do_streamline_etal : bool
+        If True, detect and replace author citation patterns such as
+        "Author (year)", "Author & Author (year)", and "Author et al."
+        with a configured placeholder. Bracketed citations are removed
+        entirely; unbracketed citations are replaced with the placeholder.
+
+    Returns
+    -------
+    str
+        The cleansed text with normalized whitespace, punctuation, and
+        (optionally) citation expressions replaced or removed.
     """
 
     # Extract global punctuation expressions
@@ -220,13 +270,35 @@ def cleanse_text(text, do_streamline_etal):
     return text
 
 
-# Return boolean for if given word (NLP type word) is of conjoined given part of speech
 def is_pos_conjoined(word, pos):
     """
-    Method: is_pos_conjoined
-    WARNING! This method is *not* meant to be used directly by users.
-    Purpose:
-        - Determine if original part-of-speech (p.o.s.) for given word (if conjoined) matches given p.o.s.
+    Determine if a conjoined word's original part of speech matches a given POS tag.
+
+    Traverses the dependency tree upward from a conjoined word to find the
+    root of the conjunction chain, then checks whether that root's part of
+    speech matches ``pos``. Returns False immediately if the word is not
+    conjoined, has no ancestors, or if ``pos`` is an auxiliary POS tag.
+
+    Parameters
+    ----------
+    word : spacy.tokens.Token
+        The NLP token to evaluate.
+    pos : str
+        The part-of-speech tag to match against (e.g., ``"NOUN"``,
+        ``"VERB"``). Auxiliary POS tags (as defined in
+        ``config.grammar.speech.pos_aux``) always return False.
+
+    Returns
+    -------
+    bool
+        True if the root of the conjunction chain has a POS tag matching
+        ``pos``, False otherwise.
+
+    Raises
+    ------
+    ValueError
+        If ``word`` is conjoined but no non-conjoined ancestor can be found
+        in the dependency tree.
     """
 
     # Return False if pos is aux (which may not be conjoined)
@@ -256,17 +328,66 @@ def is_pos_conjoined(word, pos):
     raise ValueError("Err: No original p.o.s. for conjoined word {0}!\n{1}".format(word, word_ancestors))
 
 
-# Return boolean for if given word (NLP type word) is of given part of speech
 def is_pos_word(word, pos, keyword_objs=None):  # noqa: C901
     """
-    Method: is_pos_word
-    WARNING! This method is *not* meant to be used directly by users.
-    Purpose:
-        - Return if the given word (of NLP type) is of the given part-of-speech.
-    Note: keyword_objs is only required if pos='USELESS'.
+    Determine if a spaCy token belongs to a given part-of-speech category.
+
+    Evaluates a token against a named POS category using a combination of
+    spaCy attributes (``dep_``, ``pos_``, ``tag_``), dependency tree
+    traversal, and grammar configuration rules. Supports a broad set of
+    custom POS labels beyond standard spaCy tags, including structural roles
+    such as subjects, objects, and conjunctions.
+
+    Parameters
+    ----------
+    word : spacy.tokens.Token
+        The NLP token to evaluate.
+    pos : str
+        The part-of-speech category to check. Must be one of:
+
+        - ``"ROOT"`` -- syntactic root of the sentence.
+        - ``"VERB"`` -- main verb, including adjectival modifier verbs.
+        - ``"USELESS"`` -- non-informative word (not a keyword, subject, or negation).
+        - ``"SUBJECT"`` -- grammatical subject.
+        - ``"PREPOSITION"`` -- preposition or mishandled auxiliary "to".
+        - ``"BASE_OBJECT"`` -- direct or prepositional object (noun).
+        - ``"DIRECT_OBJECT"`` -- object directly following a verb.
+        - ``"PREPOSITION_OBJECT"`` -- object following a preposition.
+        - ``"PREPOSITION_SUBJECT"`` -- subject following a preposition.
+        - ``"MARKER"`` -- subordinating conjunction or subject marker.
+        - ``"X"`` -- improper or foreign word.
+        - ``"CONJOINED"`` -- word joined via conjunction or apposition.
+        - ``"DETERMINANT"`` -- determiner (e.g., "the", "a").
+        - ``"AUX"`` -- auxiliary verb.
+        - ``"NOUN"`` -- noun (excluding determiners).
+        - ``"PRONOUN"`` -- pronoun.
+        - ``"ADJECTIVE"`` -- adjective or adjectival verb.
+        - ``"CONJUNCTION"`` -- coordinating conjunction.
+        - ``"PASSIVE"`` -- passive verb or auxiliary.
+        - ``"NEGATIVE"`` -- negation word.
+        - ``"PUNCTUATION"`` -- punctuation mark (non-alphanumeric).
+        - ``"BRACKET"`` -- bracket character.
+        - ``"POSSESSIVE"`` -- possessive marker.
+        - ``"NUMBER"`` -- numeric token.
+
+    keyword_objs : list, optional
+        Collection of keyword objects required when ``pos="USELESS"``.
+        Ignored for all other POS categories. Default is None.
+
+    Returns
+    -------
+    bool
+        True if ``word`` belongs to the specified POS category, False otherwise.
+
+    Raises
+    ------
+    ValueError
+        If ``pos="USELESS"`` and ``keyword_objs`` is None.
+    ValueError
+        If ``pos`` is not one of the recognized category strings listed above.
     """
 
-    ##Load global variables
+    # Load global variables
     # word_i = word.i  # Index
     word_dep = word.dep_  # dep label
     word_pos = word.pos_  # p.o.s. label
@@ -572,13 +693,32 @@ def is_pos_word(word, pos, keyword_objs=None):  # noqa: C901
     return check_all
 
 
-# Search text for given keywords and acronyms and return metric
 def search_text(text, keyword_objs):
     """
-    Method: search_text
-    WARNING! This method is *not* meant to be used directly by users.
-    Purpose: Return boolean for whether or not given text contains keywords/acronyms from given keyword objects.
+    Search text for keywords and acronyms from a collection of keyword objects.
+
+    Iterates over each keyword object, calling its ``identify_keyword`` method,
+    and aggregates the results into a single boolean match flag and a combined
+    list of character spans for all matches found.
+
+    Parameters
+    ----------
+    text : str
+        The input text to search.
+    keyword_objs : list
+        Collection of keyword objects, each exposing an ``identify_keyword``
+        method that returns a dict with keys ``"bool"`` and ``"charspans"``.
+
+    Returns
+    -------
+    dict
+        A dictionary with the following keys:
+
+        - ``"bool"`` : bool -- True if any keyword or acronym was found in ``text``.
+        - ``"charspans"`` : list of tuple -- Character spans ``(start, end)``
+          for every match across all keyword objects.
     """
+
     # Check if keywords and/or acronyms present in given text
     tmp_res = [item.identify_keyword(text) for item in keyword_objs]
     check_keywords = any([item["bool"] for item in tmp_res])

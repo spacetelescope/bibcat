@@ -84,22 +84,27 @@ class TruematchSetup:
 
 class Paper:
     """
-    Class: Paper
-    Purpose:
-        - Load in text.
-        - Split text into sentences containing target terms, if any found.
-        - Gather sentences into 'paragraph'.
-    Initialization Arguments:
-        - dict_ambigs [None or dict (default=None)]:
-          - If None, will load and process external database of ambiguous mission phrases.
-            If given, will use what is given.
-        - do_check_truematch [bool]:
-          - Whether or not to check that mission phrases found in text are known true
-             vs. false matches. (E.g., 'Edwin Hubble' as false match for the Hubble Space Telescope).
-        - keyword_objs [list of Keyword instances]:
-          - Target missions; terms will be used to search the text.
-        - text [str]:
-          - The text to search.
+    Load text and extract sentences containing target mission keywords.
+
+    Splits the input text into sentences, identifies those containing
+    target terms from the provided keyword objects, and gathers matching
+    sentences into a paragraph for downstream processing.
+
+    Parameters
+    ----------
+    text : str
+        The text to search.
+    keyword_objs : list of Keyword
+        Target mission keyword instances whose terms are used to search
+        the text.
+    do_check_truematch : bool
+        If True, verifies that mission phrases found in the text are known
+        true matches rather than false positives (e.g., "Edwin Hubble" as
+        a false match for the Hubble Space Telescope).
+    dict_ambigs : dict or None, optional
+        Dictionary of ambiguous mission phrases. If None, the external
+        ambiguity database is loaded and processed automatically.
+        Default is None.
     """
 
     def __init__(
@@ -110,9 +115,30 @@ class Paper:
         dict_ambigs=None,
     ):
         """
-        Method: __init__
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Initialize instance of Paper class.
+        Initialize an instance of the Paper class.
+
+        Stores the input text and keyword objects, optionally loads the
+        ambiguous phrase database, cleanses the text, and splits it into
+        sentences for downstream paragraph extraction.
+
+        .. warning::
+            This method is *not* meant to be used directly by users.
+
+        Parameters
+        ----------
+        text : str
+            The text to search.
+        keyword_objs : list of Keyword
+            Target mission keyword instances whose terms are used to search
+            the text.
+        do_check_truematch : bool
+            If True, verifies that mission phrases found in the text are known
+            true matches rather than false positives. Triggers automatic loading
+            of the ambiguous phrase database when ``dict_ambigs`` is None.
+        dict_ambigs : dict or None, optional
+            Pre-loaded dictionary of ambiguous mission phrases. If None and
+            ``do_check_truematch`` is True, the database is loaded and processed
+            automatically. Default is None.
         """
 
         # Initialize global storage variable
@@ -144,18 +170,30 @@ class Paper:
 
         return
 
-    # Purpose: Fetch paragraphs for given Keyword instances that were previously stored in this instance
     def get_paragraphs(self, keyword_objs=None):
         """
-        Method: get_paragraphs
-        Purpose: Fetch and return paragraphs previously assembled for given Keyword instances.
-        Arguments:
-          - "keyword_objs" [list of Keyword instances, or None (default=None)]:
-             List of Keyword instances for which previously constructed paragraphs will be extracted.
-        Returns:
-          - dict:
-            - keys = Representative names of the Keyword instances.
-            - values = The paragraphs corresponding to the Keyword instances.
+        Fetch paragraphs previously assembled for the given keyword instances.
+
+        Retrieves stored paragraphs from this instance, optionally filtered to
+        the provided keyword objects. If no keyword objects are given, all
+        stored paragraphs are returned.
+
+        Parameters
+        ----------
+        keyword_objs : list of Keyword or None, optional
+            Keyword instances for which to retrieve paragraphs. If None, all
+            previously assembled paragraphs are returned. Default is None.
+
+        Returns
+        -------
+        dict
+            Mapping of keyword name strings to their corresponding paragraph
+            strings.
+
+        Raises
+        ------
+        ValueError
+            If ``process_paragraphs`` has not been called yet on this instance.
         """
 
         # Attempt to access previously extracted paragraphs
@@ -180,20 +218,35 @@ class Paper:
 
         return paragraphs
 
-    #
-
-    # Process paragraph that contains given keywords/verified acronyms
     def process_paragraphs(self, buffer=0, do_overwrite=False):
         """
-        Method: process_paragraphs
-        Purpose: Assemble collection of sentences (a 'paragraph') that contain references
-                 to target missions (as indicated by stored keyword objects).
-        Arguments:
-          - "buffer" [int (default=0)]: Number of +/- sentences around a sentence containing
-             a target mission to include in the paragraph.
-          - "do_overwrite" [bool (default=False)]: Whether or not to overwrite
-             any previously extracted and stored paragraphs.
-        Returns: None
+        Assemble sentences containing target mission keywords into paragraphs.
+
+        Iterates over the stored keyword objects, extracts sentences from the
+        preprocessed text that contain matching terms, and stores the resulting
+        paragraphs in the instance. By default, raises an error if paragraphs
+        have already been extracted to prevent accidental overwrites.
+
+        Parameters
+        ----------
+        buffer : int, optional
+            Number of sentences before and after each keyword-containing
+            sentence to include in the paragraph. Default is 0.
+        do_overwrite : bool, optional
+            If True, allows previously stored paragraphs to be overwritten.
+            Default is False.
+
+        Returns
+        -------
+        None
+            Results are stored in the instance attribute ``_paragraphs``,
+            retrievable via `get_paragraphs`.
+
+        Raises
+        ------
+        ValueError
+            If paragraphs have already been extracted and ``do_overwrite``
+            is False.
         """
 
         # Extract clean, naively split paragraphs
@@ -235,14 +288,32 @@ class Paper:
 
         return
 
-    # Apply +/- buffer to given list of indices
     def _buffer_indices(self, indices, buffer, max_index):
         """
-        Method: _buffer_indices
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-          - Add a +/- buffer to each index in a set of indices.
-          - Merge buffered indices that have overlapping buffers.
+        Expand a set of indices by a buffer and merge any overlapping spans.
+
+        For each index, creates a span of ``[index - buffer, index + buffer]``,
+        then merges spans that overlap and clamps the result to the range
+        ``[0, max_index]``.
+
+        .. warning::
+            This method is *not* meant to be used directly by users.
+
+        Parameters
+        ----------
+        indices : list of int
+            The indices to expand.
+        buffer : int
+            Number of positions to extend each index in both directions.
+        max_index : int
+            Upper bound for the resulting spans. Spans are truncated at this
+            value and iteration stops early if it is reached.
+
+        Returns
+        -------
+        list of list of int
+            Merged and clamped spans, where each element is a two-element
+            list ``[start, end]``.
         """
 
         # Build spans for extent of each buffered index
@@ -1025,7 +1096,6 @@ class Paper:
 
         return list_results
 
-    # Assemble wordchunks containing keywords from given text
     def _assemble_keyword_wordchunks(
         self,
         text,
@@ -1034,9 +1104,36 @@ class Paper:
         do_include_brackets=False,
     ):  # noqa: C901
         """
-        Method: _assemble_keyword_wordchunks
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Assembles noun chunks around any keyword terms within given text.
+        Assemble noun chunks around keyword terms found in the given text.
+
+        For each sentence in ``text``, locates tokens that match any keyword
+        object, then expands outward in both directions to accumulate adjacent
+        nouns, adjectives, numerals, possessives, dashes, and important terms
+        into a single word chunk. Expansion stops at the first token that does
+        not meet any inclusion criterion.
+
+        .. warning::
+            This method is *not* meant to be used directly by users.
+
+        Parameters
+        ----------
+        text : str
+            The input text to search for keyword-containing word chunks.
+        keyword_objs : list of Keyword
+            Keyword instances used to identify matching tokens.
+        do_include_verbs : bool, optional
+            If True, verbs are also included during rightward expansion.
+            Useful for cases such as hyphenated noun-verbs (e.g.,
+            "Hubble-imaged"). Default is False.
+        do_include_brackets : bool, optional
+            If True, bracket tokens are included during both leftward and
+            rightward expansion. Default is False.
+
+        Returns
+        -------
+        list of spacy.tokens.Doc
+            One NLP-processed Doc per assembled word chunk, in order of
+            appearance across all sentences in ``text``.
         """
 
         # Find indices of keywords within text
@@ -1152,13 +1249,55 @@ class Paper:
 
         return list_wordchunks
 
-    # Extract core meaning (e.g., synsets) from given phrase
     def _extract_core_from_phrase(self, phrase_NLP, do_skip_useless, keyword_objs=None):  # noqa: C901
         """
-        Method: _extract_core_from_phrase
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-         - Extract representative "meaning" (i.e., synsets) of given phrase.
+        Extract the representative meaning of a phrase as synsets and root terms.
+
+        Iterates over each token in ``phrase_NLP``, skipping punctuation,
+        possessives, and optionally useless words, then resolves each remaining
+        token to one of the following:
+
+        - A keyword name, if the token matches a keyword object.
+        - A numeral placeholder, if the token is a number.
+        - WordNet noun synsets, or the token text itself if no synsets are found.
+
+        Synset names are reduced to their root form (the portion before the
+        first ``.``) and joined into a single string representation.
+
+        .. warning::
+            This method is *not* meant to be used directly by users.
+
+        Parameters
+        ----------
+        phrase_NLP : spacy.tokens.Doc
+            The NLP-processed phrase to extract meaning from.
+        do_skip_useless : bool
+            If True, tokens classified as useless (excluding adjectives) are
+            skipped during processing.
+        keyword_objs : list of Keyword or None, optional
+            Keyword instances used to identify matching tokens. If None,
+            falls back to the instance's stored keyword object(s).
+            Default is None.
+
+        Returns
+        -------
+        dict
+            A dictionary with the following keys:
+
+            - ``"keywords"`` : list of str -- Lowercase keyword names matched
+            within the phrase.
+            - ``"synsets"`` : list of list of str -- Raw synset names (or
+            token text) for each processed token.
+            - ``"roots"`` : list of list of str -- Unique root terms extracted
+            from ``"synsets"``.
+            - ``"text"`` : str -- Original text of ``phrase_NLP``.
+            - ``"str_meaning"`` : str -- Space-joined string of all root terms,
+            representing the core meaning of the phrase.
+
+        Raises
+        ------
+        ValueError
+            If any empty string is found among the assembled synsets.
         """
 
         # Set global variables
@@ -1281,16 +1420,37 @@ class Paper:
             "str_meaning": str_meaning,
         }
 
-    # Search for paragraphs that contain target mission terms
     def _extract_paragraph(self, keyword_obj, buffer):
         """
-        Method: _extract_paragraph
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-          - Extract sentences from stored text that contain target terms (based on Keyword instance).
-          - Keep sentences that do not have false-matches to external ambiguous phrase database.
-          - Buffer sentences if non-zero buffer given.
+        Extract sentences containing target mission terms from the stored text.
+
+        Identifies sentences matching keyword or acronym terms from
+        ``keyword_obj``, optionally filters out false positives against the
+        ambiguous phrase database, then applies a sentence buffer to include
+        surrounding context. Matching sentences are returned as a list of
+        strings.
+
+        .. warning::
+            This method is *not* meant to be used directly by users.
+
+        Parameters
+        ----------
+        keyword_obj : Keyword
+            The keyword instance whose terms are used to identify matching
+            sentences.
+        buffer : int
+            Number of sentences before and after each matching sentence to
+            include. If 0, only the matching sentences themselves are returned.
+
+        Returns
+        -------
+        dict
+            A dictionary with the following key:
+
+            - ``"paragraph"`` : list of str -- Extracted sentences, with
+            buffered sentences joined into single strings where applicable.
         """
+
         # Fetch global variables
         do_check_truematch = self._do_check_truematch
         sentences = np.asarray(self._text_clean_split)
@@ -1387,16 +1547,49 @@ class Paper:
             "paragraph": sentences_buffered,
         }
 
-    # Process database of ambig. phrases into lookups and dictionary
-    def _process_database_ambig(
-        self,
-        keyword_objs=None,
-    ):
+    def _process_database_ambig(self, keyword_objs=None):
         """
-        Method: _process_database_ambig
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-         - Process database of ambiguous keyword phrases into dictionary of keywords, regular expressions, boolean verdicts, etc.
+        Process the ambiguous phrase database into lookup structures.
+
+        Loads the configured database of ambiguous keyword phrases, converts
+        each entry into exact and meaning-based regular expressions using
+        synset root extraction, resolves boolean true/false match verdicts,
+        and returns all components as a dictionary for use in false-positive
+        filtering.
+
+        .. warning::
+            This method is *not* meant to be used directly by users.
+
+        Parameters
+        ----------
+        keyword_objs : list of Keyword or None, optional
+            Keyword instances used to resolve wildcard keyword entries in the
+            database. If None, falls back to the instance's stored keyword
+            object(s). Default is None.
+
+        Returns
+        -------
+        dict
+            A dictionary with the following keys:
+
+            - ``"lookup_ambigs"`` : list of str -- Lowercase keyword names
+            that have associated ambiguous phrases.
+            - ``"all_kw_ambigs"`` : list of str -- Keyword name for each
+            processed database entry.
+            - ``"all_exp_exact_ambigs"`` : list of str -- Exact-match regular
+            expressions for each entry.
+            - ``"all_exp_meaning_ambigs"`` : list of str -- Meaning-based
+            regular expressions derived from synset roots for each entry.
+            - ``"all_bool_ambigs"`` : list of bool -- True/false match verdict
+            for each entry.
+            - ``"all_text_ambigs"`` : list of str -- Original phrase text for
+            each entry.
+
+        Raises
+        ------
+        ValueError
+            If a boolean verdict field in the database cannot be parsed as
+            True or False.
         """
 
         # Load the keywords
@@ -1485,12 +1678,26 @@ class Paper:
         # Return the processed results
         return dict_ambigs
 
-    # Split text into sentences at assumed sentence breaks
     def _split_text(self, text):
         """
-        Method: _split_text
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose: Split given text into sentences based on assumed sentence boundaries.
+        Split text into sentences based on assumed sentence boundaries.
+
+        Applies splitting in three sequential passes: line breaks, bracket-
+        delimited boundaries (both opening and closing), and general sentence
+        structure patterns defined in the grammar configuration.
+
+        .. warning::
+            This method is *not* meant to be used directly by users.
+
+        Parameters
+        ----------
+        text : str
+            The input text to split.
+
+        Returns
+        -------
+        list of str
+            The text split into individual sentences.
         """
         # Split by line breaks first
         text_lines = text.split("\n")
@@ -1507,16 +1714,30 @@ class Paper:
         # Return the split text
         return text_flat
 
-    # Cleanse given (short) string of extra whitespace, dashes, etc,
-    # with uniform placeholders.
     def _streamline_phrase(self, text, do_streamline_etal):
         """
-        Method: _streamline_phrase
-        WARNING! This method is *not* meant to be used directly by users.
-        Purpose:
-         - Run cleanse_text with citation streamlining.
-         - Replace websites with uniform placeholder.
-         - Replace some common science abbreviations that confuse external NLP package sentence parsing.
+        Cleanse and streamline a phrase for downstream NLP processing.
+
+        Applies ``cleanse_text`` to normalize whitespace and punctuation,
+        removes HTML-style tags, replaces common science abbreviations that
+        confuse the NLP sentence parser, then applies ``cleanse_text`` once
+        more to catch any newly introduced whitespace issues.
+
+        .. warning::
+            This method is *not* meant to be used directly by users.
+
+        Parameters
+        ----------
+        text : str
+            The input text to streamline.
+        do_streamline_etal : bool
+            Passed directly to ``cleanse_text``. If True, author citation
+            patterns are replaced with a uniform placeholder.
+
+        Returns
+        -------
+        str
+            The cleansed and streamlined text.
         """
 
         # Extract global variables
