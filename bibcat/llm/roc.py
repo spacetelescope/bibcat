@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from statistics import mean, pstdev
 from typing import Any
 

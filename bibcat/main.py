@@ -711,15 +711,3 @@ def process(filename, batch_file, model, test, retrieve_batch, check, eval_batch
 
 if __name__ == "__main__":
     cli()
-
-if __name__ == "__main__":
-    cli()
-
-if __name__ == "__main__":
-    cli()
-
-if __name__ == "__main__":
-    cli()
-
-if __name__ == "__main__":
-    cli()

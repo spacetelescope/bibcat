@@ -9,25 +9,23 @@
         - get_roc_metrics
         - evaluate_multiple_llm_runs_with_roc
     - Added bibcat/tests/llm/test_roc.py for ROC unit tests (single-run + multi-run ROC).
-
     - CLI additions and path cleanup
-    - bibcat/main.py now includes:
-        - llm cm-metrics
-        - llm roc-metrics
-    - Added internal output path helper functions to remove repeated path construction.
+        - bibcat/main.py now includes:
+            - llm cm-metrics
+            - llm roc-metrics
+        - bibcat/tests/test_cli.py includes CLI help coverage for ROC metrics command.
+        - Added internal output path helper functions to remove repeated path construction.
     - bibcat/etc/bibcat_config.yaml adds:
         - llms.roc_metrics_file
-
-    - bibcat/tests/conftest.py now has shared fixtures for single-run and multi-run eval datasets.
-    - bibcat/tests/llm/test_metrics.py updated for current single-run + multi-run confusion-matrix coverage.
-    - bibcat/tests/test_cli.py includes CLI help coverage for ROC metrics command.
 
 
 ### Changed
 - [PR #98](https://github.com/spacetelescope/bibcat/pull/98)
-    - New ROC module split out from metrics.py to roc.py to separate concerns and clarify responsibilities.
     - bibcat/llm/metrics.py heavily refactored toward confusion-matrix + run-aggregation responsibilities.
-    - Compatibility kept for extract_eval_data() output used by plotting and tests.
+        - Compatibility kept for extract_eval_data() output used by plotting and tests.
+        - bibcat/tests/conftest.py now has shared fixtures for single-run and multi-run eval datasets.
+        - bibcat/tests/llm/test_metrics.py updated for current single-run + multi-run confusion-matrix coverage.
+    - New ROC module split out from metrics.py to roc.py to separate concerns and clarify responsibilities.
     - bibcat/llm/plots.py now imports ROC helpers from bibcat.llm.roc.
     - ROC plotting path simplified to binary-only behavior (no multiclass branch).
     - docs/llm.md updated to match new commands and architecture:
