@@ -15,13 +15,31 @@ from bibcat import config
 from bibcat.data.build_dataset import build_dataset
 from bibcat.llm.chunker import ChunkPlanner, SubmissionManager
 from bibcat.llm.evaluate import evaluate_output
-from bibcat.llm.io import adjust_model
+from bibcat.llm.io import adjust_model, read_output
+from bibcat.llm.metrics import evaluate_multiple_llm_runs, extract_eval_data
 from bibcat.llm.openai import OpenAIHelper, classify_paper
 from bibcat.llm.plots import confusion_matrix_plot, roc_plot
+from bibcat.llm.roc import evaluate_multiple_llm_runs_with_roc, extract_roc_data, get_roc_metrics, prepare_roc_inputs
 from bibcat.llm.stats import inconsistent_classifications, save_evaluation_stats, save_operation_stats
 from bibcat.utils.logger_config import setup_logger
+from bibcat.utils.utils import save_json_file
 
 logger = setup_logger(__name__)
+
+
+def _llm_output_dir() -> Path:
+    """Return the model-specific llm output directory."""
+    return Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}"
+
+
+def _summary_output_path() -> Path:
+    """Return the thresholded summary output path."""
+    return _llm_output_dir() / f"{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
+
+
+def _prompt_output_path() -> Path:
+    """Return the raw llm prompt output path."""
+    return _llm_output_dir() / config.llms.prompt_output_file
 
 
 @click.group("bibcat")
@@ -233,10 +251,7 @@ def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, thre
 def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
     """Create the evaluation plots from a LLM model"""
     logger.debug("CLI option: 'llm plot' selected")
-    summary_output_path = (
-        Path(config.paths.output)
-        / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
-    )
+    summary_output_path = _summary_output_path()
 
     if cm and all_missions:
         missions = config.missions
@@ -251,6 +266,120 @@ def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
 
     elif roc and missions:
         roc_plot(summary_output_path=summary_output_path, missions=list(missions))
+
+
+@llmcli.command("cm-metrics", help="Save Confusion Matrix metrics for llm performance")
+@click.option("-a", "--aggregate", is_flag=True, show_default=False, help="Calculate aggregate metrics across missions")
+@click.option(
+    "-m",
+    "--missions",
+    type=str,
+    multiple=True,
+    default=None,
+    show_default=True,
+    help="List mission names; this flag works with the '-m' flag, for instance, 'bibcat llm cm-metrics -m JWST -m HST -m TESS'; if not provided, the metrics will be extracted for all missions by default.",
+)
+def cm_metrics(missions: str, aggregate: bool):
+    """Extract evaluation metrics from a LLM model and save to a JSON file"""
+    logger.debug("CLI option: 'llm cm-metrics' selected")
+
+    if missions:
+        missions = list(missions)
+    else:
+        missions = config.missions
+
+    summary_output_path = _summary_output_path()
+    llm_output_path = _prompt_output_path()
+    eval_data = read_output(filename=summary_output_path)
+
+    if aggregate:
+        logger.info("Calculating aggregate metrics across mutiple runs.")
+        metrics_type = "aggregate"
+        llm_multi_runs_data = read_output(filename=llm_output_path)
+        metrics_data = evaluate_multiple_llm_runs(
+            eval_data=eval_data, llm_runs_data=llm_multi_runs_data, missions=missions
+        )
+        metrics_data_to_save = metrics_data
+
+    else:
+        logger.info("Calculating metrics for a single run.")
+        metrics_data = extract_eval_data(data=eval_data, missions=missions)
+        metrics_type = "single"
+        metrics_data_to_save = {k: v for k, v in metrics_data.items() if k not in {"human_labels", "llm_labels"}}
+
+    output_path = (
+        _llm_output_dir() / f"{config.llms.cm_metrics_file}_{metrics_type}_t{config.llms.performance.threshold}.json"
+    )
+
+    save_json_file(
+        path=output_path,
+        dataset=metrics_data_to_save,
+    )
+    logger.info(f"Evaluation metrics saved to {output_path}")
+
+
+@llmcli.command("roc-metrics", help="Save ROC metrics for llm performance")
+@click.option(
+    "-a", "--aggregate", is_flag=True, show_default=False, help="Calculate aggregate ROC metrics across missions"
+)
+@click.option(
+    "-m",
+    "--missions",
+    type=str,
+    multiple=True,
+    default=None,
+    show_default=True,
+    help="List mission names; for instance, 'bibcat llm roc-metrics -m JWST -m HST -m TESS'; if not provided, metrics are extracted for all missions by default.",
+)
+def roc_metrics(missions: str, aggregate: bool):
+    """Extract ROC metrics from a LLM model and save to a JSON file"""
+    logger.debug("CLI option: 'llm roc-metrics' selected")
+
+    if missions:
+        missions = [mission.upper() for mission in missions]
+    else:
+        missions = [mission.upper() for mission in config.missions]
+
+    summary_output_path = _summary_output_path()
+    llm_output_path = _prompt_output_path()
+    eval_data = read_output(filename=summary_output_path)
+
+    if aggregate:
+        logger.info("Calculating aggregate ROC metrics across multiple runs.")
+        metrics_type = "aggregate"
+        llm_multi_runs_data = read_output(filename=llm_output_path)
+        roc_data = evaluate_multiple_llm_runs_with_roc(
+            eval_data=eval_data,
+            llm_runs_data=llm_multi_runs_data,
+            missions=missions,
+        )
+    else:
+        logger.info("Calculating ROC metrics for a single run.")
+        metrics_type = "single"
+        human_labels, llm_confidences, human_llm_missions = extract_roc_data(data=eval_data, missions=missions)
+        y_true, llm_confidences, n_verdicts = prepare_roc_inputs(human_labels, llm_confidences)
+        fpr, tpr, thresholds, roc_auc = get_roc_metrics(llm_confidences, y_true)
+
+        roc_data = {
+            "threshold": config.llms.performance.threshold,
+            "missions": missions,
+            "human_llm_missions": human_llm_missions,
+            "n_verdicts": n_verdicts,
+            "fpr": fpr,
+            "tpr": tpr,
+            "thresholds": thresholds,
+            "roc_auc": roc_auc,
+        }
+
+    output_path = (
+        _llm_output_dir() / f"{config.llms.roc_metrics_file}_{metrics_type}_t{config.llms.performance.threshold}.json"
+    )
+
+    save_json_file(
+        path=output_path,
+        dataset=roc_data,
+    )
+    logger.info(f"ROC metrics saved to {output_path}")
 
 
 @llmcli.command("stats", help="Create a statisics table for classification")
@@ -288,29 +417,18 @@ def stats_llm(evaluation: bool, ops: bool, threshold: float):
 
     if evaluation:
         # read the evaluation summary output file
-        input_filepath = (
-            Path(config.paths.output)
-            / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
-        )
+        input_filepath = _summary_output_path()
 
-        output_filepath = (
-            Path(config.paths.output)
-            / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_stats_file}_t{config.llms.performance.threshold}.json"
-        )
+        output_filepath = _llm_output_dir() / f"{config.llms.eval_stats_file}_t{config.llms.performance.threshold}.json"
         save_evaluation_stats(input_filepath, output_filepath, threshold_acceptance, threshold_inspection)
 
     # override the config ops to True
     if ops:
         config.llms.ops = ops
         # read the operational paper_output file
-        input_filepath = (
-            Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
-        )
+        input_filepath = _prompt_output_path()
 
-        output_filepath = (
-            Path(config.paths.output)
-            / f"llms/openai_{config.llms.openai.model}/{config.llms.ops_stats_file}_t{config.llms.performance.threshold}.json"
-        )
+        output_filepath = _llm_output_dir() / f"{config.llms.ops_stats_file}_t{config.llms.performance.threshold}.json"
         save_operation_stats(input_filepath, output_filepath, threshold_acceptance, threshold_inspection)
 
 
@@ -319,14 +437,10 @@ def audit_llms():
     """Create a JSON file of misclassified papers by LLM for auditing"""
     logger.debug("CLI option: 'llm audit' selected")
 
-    input_filepath = (
-        Path(config.paths.output)
-        / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
-    )
+    input_filepath = _summary_output_path()
 
     output_filepath = (
-        Path(config.paths.output)
-        / f"llms/openai_{config.llms.openai.model}/{config.llms.inconsistent_classifications_file}_t{config.llms.performance.threshold}.json"
+        _llm_output_dir() / f"{config.llms.inconsistent_classifications_file}_t{config.llms.performance.threshold}.json"
     )
     inconsistent_classifications(input_filepath, output_filepath)
 
@@ -594,6 +708,18 @@ def process(filename, batch_file, model, test, retrieve_batch, check, eval_batch
         sm.merge_outputs(kind="llm")
         sm.merge_outputs(kind="eval")
 
+
+if __name__ == "__main__":
+    cli()
+
+if __name__ == "__main__":
+    cli()
+
+if __name__ == "__main__":
+    cli()
+
+if __name__ == "__main__":
+    cli()
 
 if __name__ == "__main__":
     cli()

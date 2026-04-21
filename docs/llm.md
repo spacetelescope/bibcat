@@ -299,6 +299,9 @@ llms:
   user_prompt: null
   agent_prompt: null
   prompt_output_file: paper_output.json # llm classification primary output
+  eval_output_file: summary_output # llm evaluation summary output
+  metrics_file: metrics_summary # confusion-matrix metrics summary output
+  roc_metrics_file: roc_metrics_summary # ROC metrics summary output
   batch_file: batch_file.jsonl # llm batch jsonl file
   llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
   llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
@@ -752,171 +755,123 @@ bibcat llm plot -c -a
 
 In the example confusion matrix (CM) plot, we have both counts (left panel) and normalized counts (right panel). All counts were considered if the confidence value of each LLM classification is >= 0.5 (`threshold = 0.5`). We can see the distribution of true positives (top left quadrant), false positives (bottom left quadrant), true negatives (bottom right quadrant), and false negatives (top right quadrant) for the specified missions. This visualization helps in understanding the model's performance and identifying areas for improvement. Note that in this figure, all MAST missions were considered to create CM, but only a subset of the missions in the annotation, `Mission(s) found:` were actually called out by human and LLM as seen in. The missions not found in the sample only contribute to true negatives.
 
-These commands will also create metrics summary files ( `*metrics_summary_t0.5.txt` and `*metrics_summary_t0.5.json`).
+Plot commands only generate image files. To save JSON summaries, use `llm cm-metrics` (confusion-matrix metrics) and `llm roc-metrics` (ROC metrics).
 
-### Metrics Summary Output
-#### Text Output for Metrics Summary
-The outuput would look like
+## Metrics Output
+There are two sets of metrics output: confusion matrix metrics and ROC metrics. Both can be saved as JSON files for single runs or aggregate runs across multiple papers.
+
+### Confusion Matrix Metrics JSON
+
+Save single-run confusion-matrix metrics:
+
+```bash
+bibcat llm cm-metrics -m HST -m JWST
+```
+
+Save aggregate metrics across multiple runs:
+
+```bash
+bibcat llm cm-metrics -a -m HST -m JWST
+```
+
+Output filename pattern:
 
 ```text
-The number of bibcodes (papers) for evaluation metrics: 89
-The number of mission callouts by human: 217
-The number of mission callouts by llm with the threshold value, 0.5: 222
-
-The number of mission callouts by both human and llm: 132
-Missions called out by both human and llm: FUSE, GALEX, HUT, IUE, K2, KEPLER, PANSTARRS, TESS, WUPPE
-
-The number of non-MAST mission callouts by llm: 2
-Non-MAST missions called out by llm: EDEN, NUSTAR
-
-2 papertypes: NONSCIENCE, SCIENCE are labeled
-True Negative = 1569, False Positive = 26, False Negative = 20, True Positive = 33
-
-classification report
-               precision    recall  f1-score   support
-
-  NONSCIENCE     0.9874    0.9837    0.9856      1595
-     SCIENCE     0.5593    0.6226    0.5893        53
-
-    accuracy                         0.9721      1648
-   macro avg     0.7734    0.8032    0.7874      1648
-weighted avg     0.9736    0.9721    0.9728      1648
-
+{config.llms.metrics_file}_{single|aggregate}_t{threshold}.json
 ```
 
-#### Jason Output for Metrics Summary
-The definitions of the JSON output columns are following.
+#### Confusion Matrix JSON Output Columns
 
-- **n_bibcodes**: The total number of bibcodes (papers) for confusion matrix evaluation per given mission(s)
-- **n_human_callouts**: The number of all callouts by human found in the source dataset
-- **n_llm_callouts**: The number of all callouts by llm with the threshold value in the llm output file
-- **n_missing_output_bibcodes**: The number of bibcodes missing from the llm output file
-- **n_non_mast_callouts**: The number of non-MAST mission callouts by llm from the llm output file
-- **non_mast_missions**: The list of non-MAST missions called out by llm from the llm output file
-- **human_llm_missions**: The list of missions called out by both human and llm for given mission(s)
-- **n_human_llm_mission_callouts**: The number of callouts by both human and llm for **human_llm_missions**
-- **n_human_llm_hallucination**: The number of hallucinated callouts by llm for **human_llm_missions**
-- **NONSCIENCE**: The classification report metrics for NONSCIENCE papertype
-- **SCIENCE**: The classification report metrics for SCIENCE papertype
-- **macro avg**: The macro average metrics across all papertypes
-- **weighted avg**: The weighted average metrics across all papertypes
-- **precision**: precision score
-- **recall**: recall score
-- **f1-score**: F1-score
-- **support**: Total number of occurrences across papertype(s)
-- **accuracy**: Overall accuracy of the classification
-- **fp_bibcodes**: The list of false positive bibcodes with details
-- **fn_bibcodes**: The list of false negative bibcodes with details
-- **tp_bibcodes**: The list of true positive bibcodes with details
-- **tn_bibcodes**: The list of true negative bibcodes with details
-- **bibcode**: The bibcode of the paper
-- **mision**: The mission name
-- **human_raw**: The original human classification for the mission before mapping to SCIENCE/NONSCIENCE
-  - *SCIENCE*, *MENTION*, *DATA_INFLUENCED*, *SUPERMENTION*, *ENGINEERING*, and *GREY* or *GRAY* are available
-  - *IGNORED* is introduced to tag mission with no classification by human for that mission in the source dataset
-- **llm_raw**: The original llm classification (*SCIENCE*, *MENTION*) for the mission before mapping to SCIENCE/NONSCIENCE
-  - *IGNORED* is introduced to tag mission with no classification by human for that mission
+Single-run (`cm-metrics` without `-a`) column definitions:
 
-An example output file would look like:
+- **threshold**: Confidence threshold used to accept LLM papertype classification.
+- **n_bibcodes**: Number of bibcodes evaluated (including items with missing-output conditions tracked below).
+- **n_human_callouts**: Number of human mission callouts.
+- **n_llm_callouts**: Number of LLM mission callouts.
+- **n_missing_paper_sources**: Number of bibcodes skipped due to missing paper source.
+- **n_missing_output_bibcodes**: Number of bibcodes with no LLM mission output.
+- **human_llm_missions**: Missions called out by both human and LLM in the evaluated sample.
+- **n_human_llm_mission_callouts**: Count of mission callouts in **human_llm_missions**.
+- **n_human_llm_hallucination**: Count of hallucinations by both human and LLM for missions in scope.
+- **human_labels**: Flattened binary ground-truth labels (`SCIENCE`/`NONSCIENCE`) across mission-by-paper samples.
+- **llm_labels**: Flattened binary LLM labels aligned with **human_labels**.
+- **label_raws**: Raw per-sample records before binary mapping. Each item has **bibcode**, **mission**, **human_raw**, **llm_raw**.
+- **metrics**: Confusion-matrix metric summary dictionary.
+- **fp_bibcodes**: False-positive sample records (`llm=SCIENCE`, `human=NONSCIENCE`).
+- **fn_bibcodes**: False-negative sample records (`llm=NONSCIENCE`, `human=SCIENCE`).
+- **tp_bibcodes**: True-positive sample records (`llm=SCIENCE`, `human=SCIENCE`).
+- **tn_bibcodes**: True-negative sample records (`llm=NONSCIENCE`, `human=NONSCIENCE`).
 
-```json
-{
-  "n_bibcodes": 89,
-  "n_human_callouts": 217,
-  "n_llm_callouts": 222,
-  "n_missing_output_bibcodes": 5,
-  "n_non_mast_callouts": 0,
-  "non_mast_missions": [],
-  "human_llm_missions": [
-    "HST",
-    "JWST",
-  ],
-  "n_human_llm_mission_callouts": 80,
-  "n_human_llm_hallucination": 5,
-  "NONSCIENCE": {
-    "precision": 0.9901538461538462,
-    "recall": 0.9834963325183375,
-    "f1-score": 0.9868138607789022,
-    "support": 1636.0
-  },
-  "SCIENCE": {
-    "precision": 0.5909090909090909,
-    "recall": 0.7090909090909091,
-    "f1-score": 0.6446280991735537,
-    "support": 55.0
-  },
-  "accuracy": 0.9745712596096984,
-  "macro avg": {
-    "precision": 0.7905314685314686,
-    "recall": 0.8462936208046232,
-    "f1-score": 0.815720979976228,
-    "support": 1691.0
-  },
-  "weighted avg": {
-    "precision": 0.9771683573670563,
-    "recall": 0.9745712596096984,
-    "f1-score": 0.9756842233523534,
-    "support": 1691.0
-  },
-  "fp_bibcodes": [
-    {
-      "bibcode": "bibcode1",
-      "mision": "HST",
-      "human_raw": "MENTION",
-      "llm_raw": "SCIENCE"
-    },
-    {
-      "bibcode": "bicode12",
-      "mision": "JWST",
-      "human_raw": "IGNORED",
-      "llm_raw": "SCIENCE"
-    }
-  ],
-  "fn_bibcodes": [
-    {
-      "bibcode": "bibcode2",
-      "mision": "HST",
-      "human_raw": "SCIENCE",
-      "llm_raw": "MENTION"
-    },
-    {
-      "bibcode": "bibcode2",
-      "mision": "HST",
-      "human_raw": "SCIENCE",
-      "llm_raw": "IGNORED"
-    },
-  ],
-  "tp_bibcodes": [
-    {
-      "bibcode": "bicode30",
-      "mision": "JWST",
-      "human_raw": "SCIENCE",
-      "llm_raw": "SCIENCE"
-    },
-  ],
-   "tn_bibcodes": [
-    {
-      "bibcode": "bicode30",
-      "mision": "HST",
-      "human_raw": "IGNORED",
-      "llm_raw": "MENTION"
-    },
-    {
-      "bibcode": "bicode35",
-      "mision": "HST",
-      "human_raw": "MENTION",
-      "llm_raw": "MENTION"
-    }
-  ]
-}
+Nested **metrics** column definitions:
+
+- **tn**, **fp**, **fn**, **tp**: Confusion-matrix counts.
+- **tnr**: True negative rate (`tn / (tn + fp)`), alias of **specificity**.
+- **fpr**: False positive rate (`fp / (fp + tn)`).
+- **fnr**: False negative rate (`fn / (fn + tp)`).
+- **tpr**: True positive rate (same as **recall**).
+- **precision**: Positive predictive value (`tp / (tp + fp)`).
+- **recall**: Sensitivity (`tp / (tp + fn)`).
+- **f1**: Harmonic mean of precision and recall.
+- **accuracy**: Overall accuracy (`(tp + tn) / (tp + tn + fp + fn)`).
+
+Aggregate (`cm-metrics -a`) column definitions:
+
+- **n_runs**: Number of run indices found across the multi-run output.
+- **run_coverage**: Fraction of bibcode-run slots with available LLM run data.
+- **aggregate_metrics**: Mean and population standard deviation for each per-run metric (`{"mean": ..., "std": ...}`).
+- **per_run_metrics**: List of per-run **metrics** dictionaries (same metric keys as above).
+
+### ROC Metrics JSON
+
+Save single-run ROC metrics:
+
+```bash
+bibcat llm roc-metrics -m HST -m JWST
 ```
+
+Save aggregate ROC metrics across multiple runs:
+
+```bash
+bibcat llm roc-metrics -a -m HST -m JWST
+```
+
+Output filename pattern:
+
+```text
+{config.llms.roc_metrics_file}_{single|aggregate}_t{threshold}.json
+```
+
+#### ROC JSON Output Columns
+
+Single-run (`roc-metrics` without `-a`) column definitions:
+
+- **threshold**: Confidence threshold from config used for the evaluation context.
+- **missions**: Mission list requested by CLI (normalized to uppercase).
+- **human_llm_missions**: Missions called out by both human and LLM in ROC extraction.
+- **n_verdicts**: Number of binary mission verdicts used to compute ROC.
+- **fpr**: False positive rate curve values.
+- **tpr**: True positive rate curve values.
+- **thresholds**: ROC decision thresholds corresponding to **fpr**/**tpr** points.
+- **roc_auc**: Area under ROC curve.
+
+Aggregate (`roc-metrics -a`) column definitions:
+
+- **n_runs**: Number of run indices found across the multi-run output.
+- **run_coverage**: Fraction of bibcode-run slots with available LLM run data.
+- **per_run_roc**: ROC summary for each run. Each item contains:
+  - **run_index**: Zero-based run index.
+  - **fpr**: False positive rate curve.
+  - **tpr**: True positive rate curve.
+  - **thresholds**: ROC thresholds.
+  - **roc_auc**: Run-level AUC.
+- **aggregate_auc**: Mean and population standard deviation of per-run AUC values (`{"mean": ..., "std": ...}`).
 
 ### Receiver Operating Characteristic (ROC) Plot
-To plot a confusion matrix for specific missions, run:
+To plot ROC for specific missions, run:
 ```bash
 bibcat llm plot -r -m HST -m JWST
 ```
-To plot a confusion matrix for all missions, run:
+To plot ROC for all missions, run:
 ```bash
 bibcat llm plot -r -a
 ```

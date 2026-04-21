@@ -69,6 +69,13 @@ def test_eval_plot() -> None:
     assert "Create evaluation plots" in result.output
 
 
+def test_roc_metrics() -> None:
+    """test the cli roc-metrics help command"""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["llm", "roc-metrics", "--help"])
+    assert "Save ROC metrics for llm performance" in result.output
+
+
 def test_stats() -> None:
     """test the cli stats help command"""
     runner = CliRunner()

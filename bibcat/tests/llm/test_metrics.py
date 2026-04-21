@@ -1,329 +1,70 @@
-import numpy as np
-
 from bibcat import config
-from bibcat.llm.metrics import (
-    append_human_labels_with_mapped_papertype,
-    append_llm_labels_with_mapped_papertype,
-    compute_and_save_metrics,
-    extract_eval_data,
-    extract_roc_data,
-    get_roc_metrics,
-    map_papertype,
-    prepare_roc_inputs,
-    write_metrics_summary,
-)
-
-data = {
-    "Bibcode2024": {
-        "human": {"JWST": "SCIENCE", "ROMAN": "SCIENCE", "TESS": "SUPERMENTION"},
-        "llm": [{"JWST": "SCIENCE"}, {"ROMAN": "SUPERMENTION"}, {"LAMOST": "SCIENCE"}],
-        "threshold_acceptance": 0.7,
-        "df": [
-            {
-                "llm_mission": "JWST",
-                "llm_papertype": "MENTION",
-                "mission_in_text": True,
-            },
-            {
-                "llm_mission": "ROMAN",
-                "llm_papertype": "MENTION",
-                "mission_in_text": True,
-            },
-            {
-                "llm_mission": "HST",
-                "llm_papertype": "SCIENCE",
-                "mission_in_text": False,
-            },
-            {
-                "llm_mission": "LAMOST",
-                "llm_papertype": "MENTION",
-                "mission_in_text": True,
-            },
-        ],
-        "mission_conf": [
-            {"llm_mission": "JWST", "prob_papertype": [0.8, 0.2]},
-            {"llm_mission": "ROMAN", "prob_papertype": [0.3, 0.7]},
-            {"llm_mission": "HST", "prob_papertype": [0.55, 0.45]},
-            {"llm_mission": "LAMOST", "prob_papertype": [0.4, 0.6]},
-        ],
-    },
-    "2024Sci...377.1211L": {"error": "No mission output found for 2024Sci...377.1211L.", "human": {"HST": "SCIENCE"}},
-    "2019arXiv190205569A": {"error": "No paper source found"},
-}
+from bibcat.llm.metrics import evaluate_multiple_llm_runs, extract_eval_data, map_papertype
 
 
-missions = ["HST", "JWST", "ROMAN"]
+def test_map_papertype(single_run_eval_data) -> None:
+    mapped_papertype = map_papertype(single_run_eval_data["Bibcode2024"]["human"]["TESS"])
+    assert mapped_papertype == "NONSCIENCE"
 
 
-sample_metrics_data = {
-    "threshold": 0.7,
-    "n_bibcodes": 3,
-    "n_human_callouts": 4,
-    "n_llm_callouts": 2,
-    "n_non_mast_callouts": 1,
-    "n_human_llm_mission_callouts": 2,
-    "n_human_llm_hallucination": 0,
-    "n_missing_output_bibcodes": 1,
-    "human_llm_missions": ["JWST", "ROMAN"],
-    "non_mast_missions": ["LAMOST"],
-    "human_labels": ["NONSCIENCE", "SCIENCE", "SCIENCE", "SCIENCE", "NONSCIENCE", "NONSCIENCE"],
-    "llm_labels": [
+def test_extract_eval_data_single_run(mocker, single_run_eval_data, single_run_missions) -> None:
+    mocker.patch("bibcat.llm.metrics.logger")
+    mocker.patch.object(config.llms.performance, "threshold", 0.7)
+
+    metrics_data = extract_eval_data(single_run_eval_data, single_run_missions)
+
+    assert metrics_data["threshold"] == 0.7
+    assert metrics_data["n_bibcodes"] == 3
+    assert metrics_data["n_human_callouts"] == 3
+    assert metrics_data["n_llm_callouts"] == 2
+    assert metrics_data["n_missing_paper_sources"] == 1
+    assert metrics_data["n_missing_output_bibcodes"] == 1
+    assert metrics_data["human_llm_missions"] == ["JWST", "ROMAN"]
+    assert metrics_data["n_human_llm_mission_callouts"] == 2
+    assert metrics_data["n_human_llm_hallucination"] == 0
+
+    assert metrics_data["human_labels"] == ["NONSCIENCE", "SCIENCE", "SCIENCE", "SCIENCE", "NONSCIENCE", "NONSCIENCE"]
+    assert metrics_data["llm_labels"] == [
         "NONSCIENCE",
         "SCIENCE",
         "NONSCIENCE",
         "NONSCIENCE",
         "NONSCIENCE",
         "NONSCIENCE",
-    ],
-}
+    ]
 
-sample_multi_run_data = {
-    "Bibcode2024_run_0": {
-        "human": {"HST": "SCIENCE"},
-        "llm": [{"HST": "SCIENCE"}],
-        "df": [{"llm_mission": "HST", "llm_papertype": "SCIENCE", "mission_in_text": True}],
-    },
-    "Bibcode2024_run_1": {
-        "human": {"HST": "SCIENCE"},
-        "llm": [{"HST": "NONSCIENCE"}],
-        "df": [{"llm_mission": "HST", "llm_papertype": "NONSCIENCE", "mission_in_text": True}],
-    },
-}
+    assert len(metrics_data["tn_bibcodes"]) == 3
+    assert len(metrics_data["tp_bibcodes"]) == 1
+    assert len(metrics_data["fn_bibcodes"]) == 2
+    assert len(metrics_data["fp_bibcodes"]) == 0
 
-multi_run_missions = ["HST"]
+    assert metrics_data["metrics"]["tn"] == 3
+    assert metrics_data["metrics"]["tp"] == 1
+    assert metrics_data["metrics"]["fn"] == 2
+    assert metrics_data["metrics"]["fp"] == 0
+    assert metrics_data["metrics"]["precision"] == 1.0
+    assert metrics_data["metrics"]["recall"] == 1 / 3
+    assert metrics_data["metrics"]["f1"] == 0.5
+    assert metrics_data["metrics"]["accuracy"] == 4 / 6
 
 
-def test_map_papertype() -> None:
-    """Test map_papertype() function"""
-    mapped_papertype = map_papertype(data["Bibcode2024"]["human"]["TESS"])
-    assert mapped_papertype == "NONSCIENCE", "wrong papertype mapping"
-
-
-def test_append_human_labels_with_mapped_papertype():
-    """Test append_human_labels_with_mapped_apertype"""
-
-    human_labels = append_human_labels_with_mapped_papertype(
-        human_data=data["Bibcode2024"]["human"], mission="TESS", human_labels=["SCIENCE"]
-    )
-    expected_labels = ["SCIENCE", "NONSCIENCE"]
-    assert human_labels == expected_labels
-
-
-def test_append_llm_labels_with_mapped_papertype():
-    """Test append_llm_labels_with_mapped_apertype"""
-    llm_labels = append_llm_labels_with_mapped_papertype(
-        llm_data=data["Bibcode2024"]["llm"], mission="ROMAN", llm_labels=["SCIENCE"]
-    )
-    expected_labels = ["SCIENCE", "NONSCIENCE"]
-    assert llm_labels == expected_labels
-
-
-def test_extract_eval_data(mocker) -> None:
-    """Test extract_eval_data function"""
-
-    # Mock dependencies
-    mocker.patch("bibcat.llm.metrics.logger")
-
-    # Set mock specific config values only
-    mocker.patch.object(config.paths, "output", "/mock/output")
-    mocker.patch.object(config.llms.openai, "model", "gpt-4o-mini")
-    mocker.patch.object(config.llms, "metrics_file", "metrics_summary")
-    mocker.patch.object(config.llms.performance, "threshold", 0.7)
-
-    # Call function using fixture
-    metrics_data = extract_eval_data(data, missions)
-    # Expected results
-
-    expected_metrics_data = sample_metrics_data
-    assert isinstance(metrics_data, dict), "metrics_data should be a dictionary"
-    # Allow additional keys (like label_bibcodes / label_raws) to be present
-    assert set(expected_metrics_data.keys()).issubset(set(metrics_data.keys())), "missing expected keys in metrics_data"
-
-    for key, value in expected_metrics_data.items():
-        assert value == metrics_data[key], f"{key} mismatch"
-
-    # bibcodes, original papertypes in confusion matrix cells introduced by metrics: ensure they're present and of correct type
-    assert "label_raws" in metrics_data and isinstance(metrics_data["label_raws"], list)
-
-
-def test_extract_eval_data_with_selected_run(mocker) -> None:
-    """Test that selected_run returns a single run's metrics."""
-    mocker.patch("bibcat.llm.metrics.logger")
-    mocker.patch.object(config.llms.performance, "threshold", 0.7)
-
-    metrics_data = extract_eval_data(sample_multi_run_data, multi_run_missions, selected_run=0)
-
-    assert metrics_data["is_averaged"] is False
-    assert metrics_data["selected_run"] == 0
-    assert metrics_data["n_runs"] == 1
-    assert metrics_data["n_bibcodes"] == 1
-    assert metrics_data["human_labels"] == ["SCIENCE"]
-    assert metrics_data["llm_labels"] == ["SCIENCE"]
-
-
-def test_extract_eval_data_multi_run_averaging(mocker) -> None:
-    """Test multi-run average metrics extraction."""
-    mocker.patch("bibcat.llm.metrics.logger")
-    mocker.patch.object(config.llms.performance, "threshold", 0.7)
-
-    metrics_data = extract_eval_data(sample_multi_run_data, multi_run_missions)
-
-    assert metrics_data["is_averaged"] is True
-    assert metrics_data["n_runs"] == 2
-    assert metrics_data["selected_run"] is None
-    assert metrics_data["avg_tn"] == 0.0
-    assert metrics_data["avg_fp"] == 0.0
-    assert metrics_data["avg_fn"] == 0.5
-    assert metrics_data["avg_tp"] == 0.5
-    assert metrics_data["std_tn"] == 0.0
-    assert metrics_data["std_fp"] == 0.0
-    assert metrics_data["std_fn"] == 0.5
-    assert metrics_data["std_tp"] == 0.5
-    assert metrics_data["avg_accuracy"] == 0.5
-    assert metrics_data["std_accuracy"] == 0.5
-    assert metrics_data["avg_precision"] == 0.5
-    assert metrics_data["std_precision"] == 0.5
-    assert metrics_data["avg_recall"] == 0.5
-    assert metrics_data["std_recall"] == 0.5
-    assert metrics_data["avg_f1"] == 0.5
-    assert metrics_data["std_f1"] == 0.5
-
-
-def test_write_metrics_summary(mocker) -> None:
-    """Test write_metrics_summary function"""
-    # Mock dependencies
-    mock_compute_and_save_metrics = mocker.patch("bibcat.llm.metrics.compute_and_save_metrics")
-    mocker.patch("bibcat.llm.metrics.logger")
-
-    # Set mock specific config values only
-    mocker.patch.object(config.paths, "output", "/mock/output")
-    mocker.patch.object(config.llms.openai, "model", "gpt-4o-mini")
-    mocker.patch.object(config.llms, "metrics_file", "metrics_summary")
-
-    # Call the function
-    write_metrics_summary(sample_metrics_data)
-
-    # Verify the mock was called with expected paths
-    expected_json_path = "/mock/output/llms/openai_gpt-4o-mini/metrics_summary_t0.7.json"
-    expected_ascii_path = "/mock/output/llms/openai_gpt-4o-mini/metrics_summary_t0.7.txt"
-
-    mock_compute_and_save_metrics.assert_called_once_with(sample_metrics_data, expected_ascii_path, expected_json_path)
-
-
-def test_compute_and_save_metrics(mocker) -> None:
-    """Test test_compute_and_save_metrics function"""
-
-    # Mock dependencies
-    mock_open = mocker.patch("builtins.open", mocker.mock_open())
-    mocker.patch("bibcat.llm.metrics.config.llms.papertypes", ["SCIENCE", "NONSCIENCE"])
-    mock_save_json_file = mocker.patch("bibcat.llm.metrics.save_json_file")
-    mocker.patch("bibcat.llm.metrics.logger")
-
-    output_ascii_filepath = "mock_output.ascii"
-    output_json_filepath = "mock_output.json"
-
-    compute_and_save_metrics(sample_metrics_data, output_ascii_filepath, output_json_filepath)
-
-    # The function opens the ascii output once for write ('w').
-    mock_open.assert_called_with(output_ascii_filepath, "w")
-    file_handle = mock_open.return_value.__enter__.return_value
-    file_handle.write.assert_called()
-
-    mock_save_json_file.assert_called_once()
-    json_data = mock_save_json_file.call_args[0][1]
-
-    assert json_data["n_bibcodes"] == 3
-    assert json_data["SCIENCE"]["precision"] == 1.0
-
-    assert "tn" in json_data and isinstance(json_data.get("tn"), (int, np.integer))
-    assert "tp" in json_data and isinstance(json_data.get("tp"), (int, np.integer))
-
-    assert "tn_bibcodes" in json_data and isinstance(json_data["tn_bibcodes"], list)
-    assert "fp_bibcodes" in json_data and isinstance(json_data["fp_bibcodes"], list)
-    assert "fn_bibcodes" in json_data and isinstance(json_data["fn_bibcodes"], list)
-    assert "tp_bibcodes" in json_data and isinstance(json_data["tp_bibcodes"], list)
-
-
-def test_compute_and_save_metrics_averaged(mocker) -> None:
-    """Test compute_and_save_metrics for multi-run averaged metrics."""
-    mock_open = mocker.patch("builtins.open", mocker.mock_open())
-    mock_save_json_file = mocker.patch("bibcat.llm.metrics.save_json_file")
-    mocker.patch("bibcat.llm.metrics.logger")
-
-    averaged_metrics_data = {
-        "threshold": 0.7,
-        "n_bibcodes": 1,
-        "human_labels": [],
-        "llm_labels": [],
-        "label_raws": [],
-        "n_runs": 2,
-        "is_averaged": True,
-        "selected_run": None,
-        "avg_tn": 0.5,
-        "avg_fp": 0.0,
-        "avg_fn": 0.5,
-        "avg_tp": 0.5,
-        "std_tn": 0.0,
-        "std_fp": 0.0,
-        "std_fn": 0.0,
-        "std_tp": 0.0,
-        "avg_accuracy": 0.5,
-        "std_accuracy": 0.0,
-        "avg_precision": 1.0,
-        "std_precision": 0.0,
-        "avg_recall": 0.5,
-        "std_recall": 0.0,
-        "avg_f1": 2 / 3,
-        "std_f1": 0.0,
-    }
-
-    output_ascii_filepath = "mock_output.ascii"
-    output_json_filepath = "mock_output.json"
-
-    compute_and_save_metrics(averaged_metrics_data, output_ascii_filepath, output_json_filepath)
-
-    mock_open.assert_called_with(output_ascii_filepath, "w")
-    mock_save_json_file.assert_called_once()
-    json_data = mock_save_json_file.call_args[0][1]
-
-    assert json_data["avg_tn"] == 0.5
-    assert json_data["avg_tp"] == 0.5
-    assert json_data["avg_accuracy"] == 0.5
-    assert json_data["avg_precision"] == 1.0
-    assert json_data["avg_f1"] == 0.6666666666666666
-    assert json_data["std_accuracy"] == 0.0
-    assert json_data["std_precision"] == 0.0
-    assert json_data["std_recall"] == 0.0
-    assert json_data["std_f1"] == 0.0
-
-
-def test_extract_roc_data():
-    human_labels, llm_confidences, human_llm_missions = extract_roc_data(data, missions)
-    assert human_labels == sample_metrics_data["human_labels"]
-    assert llm_confidences == [[0.0, 1.0], [0.8, 0.2], [0.3, 0.7], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0]]
-
-
-def test_prepare_roc_inputs() -> None:
-    human_labels = ["SCIENCE", "NONSCIENCE", "NONSCIENCE"]
-    llm_confidences = [[0.8, 0.2], [0.3, 0.7], [0.25, 0.75]]
-    binarized_human_labels, llm_confidences_array, n_papertypes, n_verdicts = prepare_roc_inputs(
-        human_labels, llm_confidences
+def test_evaluate_multiple_llm_runs(multi_run_eval_data, multi_run_llm_runs_data, multi_run_missions) -> None:
+    summary = evaluate_multiple_llm_runs(
+        eval_data=multi_run_eval_data,
+        llm_runs_data=multi_run_llm_runs_data,
+        missions=multi_run_missions,
     )
 
-    assert np.array_equal(llm_confidences_array, np.array([[0.8, 0.2], [0.3, 0.7], [0.25, 0.75]]))
-    assert np.array_equal(binarized_human_labels, np.array([[1], [0], [0]]))
-    assert n_papertypes == 2
-    assert n_verdicts == 3
+    assert summary["n_runs"] == 2
+    assert summary["run_coverage"] == 0.75
+    assert len(summary["per_run_metrics"]) == 2
+    assert summary["per_run_metrics"][0]["accuracy"] == 1.0
+    assert summary["per_run_metrics"][1]["accuracy"] == 0.5
 
-
-def test_get_roc_metrics() -> None:
-    llm_confidences = np.array([[0.8, 0.2], [0.6, 0.4], [0.1, 0.9], [0.7, 0.3], [0.9, 0.1]])
-    binarized_labels = [[1], [0], [0], [1], [1]]
-    n_classes = 2
-    fpr, tpr, thresholds, roc_auc = get_roc_metrics(llm_confidences, binarized_labels, n_classes)
-
-    assert np.array_equal(fpr, np.array([0.0, 0.0, 0.0, 1.0]), "wrong false positive rate")
-    assert np.array_equal(np.round(tpr, decimals=3), np.array([0.0, 0.333, 1.0, 1.0]), "wrong true positive rate")
-    assert np.array_equal(np.round(thresholds), np.array([np.inf, 1.0, 1.0, 0.0]), "wrong thresholds")
-
-    assert roc_auc == 1, "wrong auc value"
+    aggregate = summary["aggregate_metrics"]
+    assert aggregate["accuracy"]["mean"] == 0.75
+    assert aggregate["accuracy"]["std"] == 0.25
+    assert aggregate["precision"]["mean"] == 0.5
+    assert aggregate["recall"]["mean"] == 0.5
+    assert aggregate["recall"]["mean"] == 0.5
+    assert aggregate["recall"]["mean"] == 0.5

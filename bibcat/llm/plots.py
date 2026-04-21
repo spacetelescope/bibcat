@@ -6,7 +6,8 @@ from sklearn.metrics import ConfusionMatrixDisplay
 
 from bibcat import config
 from bibcat.llm.io import read_output
-from bibcat.llm.metrics import extract_eval_data, extract_roc_data, get_roc_metrics, prepare_roc_inputs
+from bibcat.llm.metrics import extract_eval_data
+from bibcat.llm.roc import extract_roc_data, get_roc_metrics, prepare_roc_inputs
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
@@ -131,52 +132,23 @@ def roc_plot(summary_output_path: str | pathlib.Path, missions: list[str]) -> No
 
     human_labels, llm_confidences, human_llm_missions = extract_roc_data(missions=missions, data=data)
 
-    binarized_human_labels, llm_confidences, n_papertypes, n_verdicts = prepare_roc_inputs(
-        human_labels, llm_confidences
-    )
+    binarized_human_labels, llm_confidences, n_verdicts = prepare_roc_inputs(human_labels, llm_confidences)
 
-    # compute ROC curve and ROC AUC (area under curve) for each class
-    if n_papertypes > 2:
-        fpr, tpr, thresholds, roc_auc, macro_roc_auc_ovr, micro_roc_auc_ovr = get_roc_metrics(
-            llm_confidences, binarized_human_labels, n_papertypes
-        )
-    else:
-        fpr, tpr, thresholds, roc_auc = get_roc_metrics(llm_confidences, binarized_human_labels, n_papertypes)
+    # compute binary ROC curve and ROC AUC (area under curve)
+    fpr, tpr, thresholds, roc_auc = get_roc_metrics(llm_confidences, binarized_human_labels)
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     bbox_args = dict(boxstyle="round", fc="0.8")
 
-    if n_papertypes > 2:
-        colors = plt.cm.viridis(np.linspace(0, 1, n_papertypes))
-
-        for i in range(n_papertypes):
-            ax.plot(
-                fpr[i],
-                tpr[i],
-                color=colors[i],
-                lw=2,
-                label=f"{config.llms.papertypes[i]} (AUC = {roc_auc[i]:.2f})",
-            )
-        ax.annotate(
-            f" : macro_roc_auc_ovr = {macro_roc_auc_ovr}\n micro_roc_auc_ovr = {micro_roc_auc_ovr}",
-            xy=(1, 0.35),
-            xycoords="axes fraction",
-            xytext=(-10, -10),
-            textcoords="offset points",
-            ha="right",
-            va="top",
-            bbox=bbox_args,
-        )
-
-    else:
-        ax.plot(fpr, tpr, color="b", lw=2, label=f"SCIENCE (AUC={roc_auc:.2f})")
+    ax.plot(fpr, tpr, color="b", lw=2, label=f"SCIENCE (AUC={roc_auc:.2f})")
 
     # Define the target threshold values to mark
     target_thresholds = np.arange(0.1, 1.0, 0.1)
+    thresholds_arr = np.array(thresholds)
 
     # For each target threshold, find the index of the closest threshold in the computed array
     for p in target_thresholds:
-        idx = np.abs(thresholds - p).argmin()
+        idx = np.abs(thresholds_arr - p).argmin()
         ax.scatter(fpr[idx], tpr[idx], marker="o", color="r")
         ax.annotate(
             f"{thresholds[idx]:.1f}",
