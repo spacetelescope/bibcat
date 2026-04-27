@@ -4,7 +4,7 @@ from typing import Any
 import pandas as pd
 
 from bibcat import config
-from bibcat.llm.io import read_output
+from bibcat.llm.llm_io import read_output
 from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import save_json_file
 

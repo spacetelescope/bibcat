@@ -15,7 +15,7 @@ from bibcat import config
 from bibcat.data.build_dataset import build_dataset
 from bibcat.llm.chunker import ChunkPlanner, SubmissionManager
 from bibcat.llm.evaluate import evaluate_output
-from bibcat.llm.io import adjust_model, read_output
+from bibcat.llm.llm_io import adjust_model, read_output
 from bibcat.llm.metrics import evaluate_multiple_llm_runs, extract_eval_data
 from bibcat.llm.openai import OpenAIHelper, classify_paper
 from bibcat.llm.plots import confusion_matrix_plot, roc_plot

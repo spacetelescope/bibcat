@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 from statistics import mean, pstdev
 from typing import Any
@@ -296,16 +294,24 @@ def build_samples_for_run(
 ) -> list[MissionSample]:
     normalized_missions = normalize_missions(missions)
     samples: list[MissionSample] = []
+
     for bibcode, item in eval_data.items():
         if has_no_paper_source(item):
             continue
+
         human = normalize_human_labels(item.get("human"))
-        llm_runs = llm_runs_data.get(bibcode, [])
-        run_item = get_llm_run_or_empty(llm_runs, run_index)
-        llm_predictions = extract_llm_run_predictions(run_item)
+
+        if has_no_mission_output(item):
+            llm_predictions: dict[str, LlmRunPrediction] = {}
+        else:
+            llm_runs = llm_runs_data.get(bibcode, [])
+            run_item = get_llm_run_or_empty(llm_runs, run_index)
+            llm_predictions = extract_llm_run_predictions(run_item)
+
         for mission in normalized_missions:
             human_raw = human.get(mission, IGNORED_RAW_LABEL)
             llm_raw = llm_predictions[mission].papertype if mission in llm_predictions else IGNORED_RAW_LABEL
+
             samples.append(
                 MissionSample(
                     bibcode=bibcode,
@@ -317,6 +323,7 @@ def build_samples_for_run(
                     mission_in_text=False,
                 )
             )
+
     return samples
 
 

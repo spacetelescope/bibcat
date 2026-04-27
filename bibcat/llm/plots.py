@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.metrics import ConfusionMatrixDisplay
 
 from bibcat import config
-from bibcat.llm.io import read_output
+from bibcat.llm.llm_io import read_output
 from bibcat.llm.metrics import extract_eval_data
 from bibcat.llm.roc import extract_roc_data, get_roc_metrics, prepare_roc_inputs
 from bibcat.utils.logger_config import setup_logger

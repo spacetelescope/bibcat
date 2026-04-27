@@ -7,7 +7,7 @@ from bibcat import config
 from bibcat.core import parameters as params
 from bibcat.core.keyword import Keyword
 from bibcat.core.paper import Paper
-from bibcat.llm.io import get_source, read_output, write_summary
+from bibcat.llm.llm_io import get_source, read_output, write_summary
 from bibcat.utils.logger_config import setup_logger
 
 # set up logger
