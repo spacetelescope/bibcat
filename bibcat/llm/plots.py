@@ -104,7 +104,7 @@ def confusion_matrix_plot(summary_output_path: str | pathlib.Path, missions: lis
         pathlib.Path(config.paths.output)
         / f"llms/openai_{config.llms.openai.model}/{config.llms.cm_plot}_t{config.llms.performance.threshold}.png"
     )
-    plt.savefig(cm_plot)
+    plt.savefig(cm_plot, dpi=300, bbox_inches="tight")
     logger.info(f"The confusion matrix plot is saved on {cm_plot}!")
 
 
@@ -209,6 +209,6 @@ def roc_plot(summary_output_path: str | pathlib.Path, missions: list[str]) -> No
 
     # Saving the figure
     roc = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.roc_plot}"
-    plt.savefig(roc)
+    plt.savefig(roc, dpi=300, bbox_inches="tight")
 
     logger.info(f"The roc plot is saved on {roc}!")
