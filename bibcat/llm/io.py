@@ -256,9 +256,11 @@ def write_summary(output: dict, output_path: str = None):
             json.dump(output, f, indent=2, sort_keys=False, cls=NumpyEncoder)
     else:
         # append to an existing file
-        with open(filename, "r") as f:
-            data = json.load(f)
-
+        try:
+            with open(filename, "r") as f:
+                data = json.load(f)
+        except json.JSONDecodeError:
+            data = {}
         # update response to an existing bibcode, or add a new one
         data.update(output)
 
