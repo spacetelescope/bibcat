@@ -289,7 +289,7 @@ class OpenAIHelper:
 
         Returns
         -------
-        dict | str
+        dict or str
             the output response from the model
 
         Raises
@@ -361,7 +361,7 @@ class OpenAIHelper:
 
         Returns
         -------
-        dict | str
+        dict or str
             The output response from the model for the given paper
 
         Raises

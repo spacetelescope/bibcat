@@ -27,7 +27,7 @@ def get_source(bibcode: str | None = None, index: int | None = None, body_only: 
 
     Returns
     -------
-    dict | str
+    dict or str
         a row from the source dataset
     """
     # load the source dataset

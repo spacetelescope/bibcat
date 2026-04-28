@@ -20,7 +20,6 @@ from bibcat.llm.metrics import evaluate_multiple_llm_runs, extract_eval_data
 from bibcat.llm.openai import OpenAIHelper, classify_paper
 from bibcat.llm.plots import confusion_matrix_plot, roc_plot
 from bibcat.llm.roc import evaluate_multiple_llm_runs_with_roc, extract_roc_data, get_roc_metrics, prepare_roc_inputs
-from bibcat.llm.stats import inconsistent_classifications, save_evaluation_stats, save_operation_stats
 from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import save_json_file
 
@@ -380,69 +379,6 @@ def roc_metrics(missions: str, aggregate: bool):
         dataset=roc_data,
     )
     logger.info(f"ROC metrics saved to {output_path}")
-
-
-@llmcli.command("stats", help="Create a statisics table for classification")
-@click.option(
-    "-o",
-    "--ops",
-    is_flag=True,
-    show_default=False,
-    help="Create a OPS statistics table for llm mission-papertype pairs. This flag works with the '-o' flag. e.g., 'bibcat llm stat -o'",
-)
-@click.option(
-    "-e",
-    "--evaluation",
-    is_flag=True,
-    show_default=False,
-    help="Create an Evaluation statistics table for llm and human mission-papertype pairs. This flag works with the '-e' flag. e.g., 'bibcat llm stat -e'",
-)
-@click.option(
-    "-t",
-    "--threshold",
-    type=float,
-    show_default=True,
-    help="The threshold value to accept the llm papertype",
-)
-def stats_llm(evaluation: bool, ops: bool, threshold: float):
-    # override config threshold value
-    logger.debug("CLI option: 'llm stats' selected")
-    if threshold:
-        config.llms.performance.threshold = threshold
-
-    threshold_inspection = config.llms.performance.inspection
-    threshold_acceptance = config.llms.performance.threshold
-    logger.info(f"threshold for accepting llm classification: {threshold_acceptance} ")
-    logger.info(f"threshold for inspecting llm classification: {threshold_inspection} ")
-
-    if evaluation:
-        # read the evaluation summary output file
-        input_filepath = _summary_output_path()
-
-        output_filepath = _llm_output_dir() / f"{config.llms.eval_stats_file}_t{config.llms.performance.threshold}.json"
-        save_evaluation_stats(input_filepath, output_filepath, threshold_acceptance, threshold_inspection)
-
-    # override the config ops to True
-    if ops:
-        config.llms.ops = ops
-        # read the operational paper_output file
-        input_filepath = _prompt_output_path()
-
-        output_filepath = _llm_output_dir() / f"{config.llms.ops_stats_file}_t{config.llms.performance.threshold}.json"
-        save_operation_stats(input_filepath, output_filepath, threshold_acceptance, threshold_inspection)
-
-
-@llmcli.command("audit", help="Create a JSON file to audit LLM classification")
-def audit_llms():
-    """Create a JSON file of misclassified papers by LLM for auditing"""
-    logger.debug("CLI option: 'llm audit' selected")
-
-    input_filepath = _summary_output_path()
-
-    output_filepath = (
-        _llm_output_dir() / f"{config.llms.inconsistent_classifications_file}_t{config.llms.performance.threshold}.json"
-    )
-    inconsistent_classifications(input_filepath, output_filepath)
 
 
 # Batch LLM command group

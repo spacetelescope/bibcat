@@ -48,7 +48,20 @@ def test_extract_eval_data_single_run(mocker, single_run_eval_data, single_run_m
     assert metrics_data["metrics"]["accuracy"] == 4 / 6
 
 
-def test_evaluate_multiple_llm_runs(multi_run_eval_data, multi_run_llm_runs_data, multi_run_missions) -> None:
+def test_evaluate_multiple_llm_runs(mocker, multi_run_eval_data, multi_run_llm_runs_data, multi_run_missions) -> None:
+    per_run_eval_data = [
+        {
+            "B1": {"human": {"HST": "SCIENCE"}, "llm": [{"HST": "SCIENCE"}]},
+            "B2": {"human": {"HST": "MENTION"}, "llm": [{"HST": "MENTION"}]},
+        },
+        {
+            "B1": {"human": {"HST": "SCIENCE"}, "llm": [{"HST": "MENTION"}]},
+            "B2": {"error": "No mission output found for B2.", "human": {"HST": "MENTION"}},
+        },
+    ]
+
+    mocker.patch("bibcat.llm.metrics.build_eval_data_for_run", side_effect=per_run_eval_data)
+
     summary = evaluate_multiple_llm_runs(
         eval_data=multi_run_eval_data,
         llm_runs_data=multi_run_llm_runs_data,

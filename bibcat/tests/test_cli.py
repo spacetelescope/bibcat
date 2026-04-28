@@ -76,20 +76,6 @@ def test_roc_metrics() -> None:
     assert "Save ROC metrics for llm performance" in result.output
 
 
-def test_stats() -> None:
-    """test the cli stats help command"""
-    runner = CliRunner()
-    result = runner.invoke(cli, ["llm", "stats", "--help"])
-    assert "Create a statisics table for classification" in result.output
-
-
-def test_audit() -> None:
-    """test the cli audit help command"""
-    runner = CliRunner()
-    result = runner.invoke(cli, ["llm", "audit", "--help"])
-    assert "Create a JSON file to audit LLM classification" in result.output
-
-
 def test_batch_submit() -> None:
     """test the cli batch submit help command"""
     runner = CliRunner()

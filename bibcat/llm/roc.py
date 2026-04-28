@@ -3,14 +3,13 @@ from typing import Any
 
 from sklearn.metrics import auc, roc_curve
 
+from bibcat.llm.evaluate import build_eval_data_for_run
 from bibcat.llm.metrics import (
     IGNORED_RAW_LABEL,
     POSITIVE_LABEL,
     compute_run_coverage,
     extract_llm_labels,
-    extract_llm_run_predictions,
     extract_mission_confidence_map,
-    get_llm_run_or_empty,
     has_no_mission_output,
     has_no_paper_source,
     normalize_human_labels,
@@ -147,23 +146,17 @@ def get_roc_metrics(
 
 def build_roc_inputs_for_run(
     eval_data: dict[str, dict[str, Any]],
-    llm_runs_data: dict[str, list[dict[str, Any]]],
     missions: list[str],
-    run_index: int,
 ) -> tuple[list[int], list[list[float]]]:
-    """Build binary ROC inputs for one LLM run.
+    """Build binary ROC inputs for one run-specific evaluation snapshot.
 
     Parameters
     ----------
     eval_data : dict
-        Existing evaluation data keyed by bibcode. The ``human`` field is used
+        Run-specific evaluation data keyed by bibcode. The ``human`` field is used
         as the ground truth.
-    llm_runs_data : dict
-        Multi-run LLM results keyed by bibcode.
     missions : list of str
         Missions to evaluate.
-    run_index : int
-        Zero-based run index.
 
     Returns
     -------
@@ -174,28 +167,32 @@ def build_roc_inputs_for_run(
 
     Notes
     -----
-    Missing runs and missing mission predictions default to ``[0.0, 1.0]``.
+    Missing mission predictions default to ``[0.0, 1.0]``.
     """
     normalized_missions = normalize_missions(missions)
     y_true: list[int] = []
     confidences: list[list[float]] = []
 
-    for bibcode, item in eval_data.items():
+    for item in eval_data.values():
         if has_no_paper_source(item):
             continue
 
         human = normalize_human_labels(item.get("human"))
-        llm_runs = llm_runs_data.get(bibcode, [])
-        run_item = get_llm_run_or_empty(llm_runs, run_index)
-        llm_predictions = extract_llm_run_predictions(run_item)
+
+        if has_no_mission_output(item):
+            llm_labels = {}
+            mission_conf_map = {}
+        else:
+            llm_labels = extract_llm_labels(item.get("llm"))
+            mission_conf_map = extract_mission_confidence_map(item.get("mission_conf"))
 
         for mission in normalized_missions:
             human_raw = human.get(mission, IGNORED_RAW_LABEL)
             human_label = to_binary_from_raw(human_raw)
             y_true.append(1 if human_label == POSITIVE_LABEL else 0)
 
-            if mission in llm_predictions and llm_predictions[mission].confidence is not None:
-                confidences.append(llm_predictions[mission].confidence or [0.0, 1.0])
+            if mission in llm_labels and mission in mission_conf_map:
+                confidences.append(mission_conf_map[mission])
             else:
                 confidences.append([0.0, 1.0])
 
@@ -209,10 +206,14 @@ def evaluate_multiple_llm_runs_with_roc(
 ) -> dict[str, Any]:
     """Evaluate multiple LLM runs and compute ROC/AUC per run.
 
+    For each run index, this function builds an in-memory run-specific
+    evaluation snapshot and computes ROC/AUC from that run only.
+
     Parameters
     ----------
     eval_data : dict
-        Existing evaluation data keyed by bibcode.
+        Existing evaluation data keyed by bibcode. This is used to define the
+        bibcode set for evaluation and run-coverage calculation.
     llm_runs_data : dict
         Multi-run LLM results keyed by bibcode.
     missions : list of str
@@ -230,16 +231,20 @@ def evaluate_multiple_llm_runs_with_roc(
     aggregate payload fields are intentionally excluded from this return value.
     """
     n_runs = max((len(runs) for runs in llm_runs_data.values()), default=0)
+    eval_bibcodes = list(eval_data.keys())
 
     per_run_roc: list[dict[str, Any]] = []
     auc_values: list[float] = []
 
     for run_index in range(n_runs):
-        y_true, confidences = build_roc_inputs_for_run(
-            eval_data=eval_data,
+        eval_data_for_run = build_eval_data_for_run(
             llm_runs_data=llm_runs_data,
-            missions=missions,
             run_index=run_index,
+            bibcodes=eval_bibcodes,
+        )
+        y_true, confidences = build_roc_inputs_for_run(
+            eval_data=eval_data_for_run,
+            missions=missions,
         )
         fpr, tpr, thresholds, roc_auc = get_roc_metrics(
             llm_confidences=confidences,

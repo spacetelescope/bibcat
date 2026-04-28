@@ -22,7 +22,7 @@ def confusion_matrix_plot(summary_output_path: str | pathlib.Path, missions: lis
 
     Parameters
     ----------
-    summary_output_path: str | pathlib.Path
+    summary_output_path: str or pathlib.Path
         the filepath of the evaluation *summary_output.json
     missions: list[str]
         list of the mission names to extract the classification labels.
@@ -114,7 +114,7 @@ def roc_plot(summary_output_path: str | pathlib.Path, missions: list[str]) -> No
 
     Parameters
     ----------
-    summary_output_path: str | pathlib.Path
+    summary_output_path: str or pathlib.Path
         the filepath of the evaluation *summary_output.json
     missions: list[str]
         list of the mission names to extract the classification labels.

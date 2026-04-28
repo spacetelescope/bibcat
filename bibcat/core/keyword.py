@@ -356,7 +356,7 @@ class Keyword(Base):
 
         Returns
         -------
-        Any | None
+        Any or None
             the matching Keyword instance
 
         Raises

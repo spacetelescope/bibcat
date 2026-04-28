@@ -795,7 +795,6 @@ Single-run (`cm-metrics` without `-a`) column definitions:
 - **n_human_llm_hallucination**: Count of hallucinations by both human and LLM for missions in scope.
 - **human_labels**: Flattened binary ground-truth labels (`SCIENCE`/`NONSCIENCE`) across mission-by-paper samples.
 - **llm_labels**: Flattened binary LLM labels aligned with **human_labels**.
-- **label_raws**: Raw per-sample records before binary mapping. Each item has **bibcode**, **mission**, **human_raw**, **llm_raw**.
 - **metrics**: Confusion-matrix metric summary dictionary.
 - **fp_bibcodes**: False-positive sample records (`llm=SCIENCE`, `human=NONSCIENCE`).
 - **fn_bibcodes**: False-negative sample records (`llm=NONSCIENCE`, `human=SCIENCE`).
@@ -820,6 +819,10 @@ Aggregate (`cm-metrics -a`) column definitions:
 - **run_coverage**: Fraction of bibcode-run slots with available LLM run data.
 - **aggregate_metrics**: Mean and population standard deviation for each per-run metric (`{"mean": ..., "std": ...}`).
 - **per_run_metrics**: List of per-run **metrics** dictionaries (same metric keys as above).
+
+**How aggregate CM metrics are computed**
+
+For `cm-metrics -a`, bibcat computes metrics per run index using a run-specific in-memory evaluation snapshot rebuilt from multi-run LLM output. This means each run is evaluated against its own run-level mission/papertype predictions (including missing-output and missing-source conditions), rather than reusing a combined thresholded summary across runs.
 
 ### ROC Metrics JSON
 
@@ -866,6 +869,10 @@ Aggregate (`roc-metrics -a`) column definitions:
   - **roc_auc**: Run-level AUC.
 - **aggregate_auc**: Mean and population standard deviation of per-run AUC values (`{"mean": ..., "std": ...}`).
 
+**How aggregate ROC metrics are computed**
+
+For `roc-metrics -a`, bibcat computes ROC/AUC per run index from a run-specific in-memory evaluation snapshot rebuilt from multi-run LLM output. This keeps each run's ROC inputs (human labels and LLM confidence vectors) isolated to that run and avoids cross-run mixing from combined summaries.
+
 ### Receiver Operating Characteristic (ROC) Plot
 To plot ROC for specific missions, run:
 ```bash
@@ -876,157 +883,4 @@ To plot ROC for all missions, run:
 bibcat llm plot -r -a
 ```
 
-## Statistics output
-After running bibcat GPT classification using bibcat llm run, bibcat llm batch run, or bibcat llm evaluate to generate classifications for papers, you may want to review various statistics. These statistics can include the number of papers per mission and papertype, the count of accepted papertypes, and the number of papers that require human inspection due to low confidence scores.
-
-From the evaluation summary output file, you may want to see the list of the papers where human classifications are not consistent with llm classifications. The next command line will also create this file.
-
-The filenames are defined in `bibcat_config.yaml`: `eval_output_file`, `ops_output_file`, and `inconsistent_classification_file`.
-To create a statistics JSON file, use the command line options listed below.
-
-### Evaluation summary statistics for mission+papertype pairs
-
-To create a statisitics output from the *e*valuation summary output, e.g., `summary_output_t0.7.json`, run:
-```bash
-bibcat llm stats -e
-```
-The output file name will be something like `evaluation_stats_t0.7.json` where `t0.7` refers to the threshold value, `0.7` to accept the llm's papertype.
-
-This command line will also create a file for the list of the papers where human classifications are not consistent with llm classifications.
-
-### Operation classification statistics for mission+papertype pairs
-This output will provide various number counts including the number of papers with accepted papertype which meets this condition `threshold_acceptance >= confidence` and the number of papers required for human inspection (`threshold_inspection <= confidence < threshold_acceptance`) for final papertype assignment. It also includes the lists of bibcodes of accepted papertypes and inspection required for human inspection.
-
-To create statisitics output files,`operation_stats_t0.7.json` and `operation_stats_t0.7.txt` from the llm classification output for *o*peration, `paper_output.json`, run:
-```bash
-bibcat llm stats -o
-```
-```bash
-INFO - reading /Users/jyoon/GitHub/bibcat/output/output/llms/openai_gpt-4o-mini/paper_output.json
-INFO - threshold for accepting llm classification: 0.7
-INFO - threshold for inspecting llm classification: 0.4
-INFO - Production counts by LLM Mission and Paper Type:
-   mission papertype  total_count  accepted_count  inspection_count
-     GALEX   MENTION            4               4                 0
-     GALEX   SCIENCE            2               2                 0
-       HST   MENTION           22              21                 1
-       HST   SCIENCE            4               4                 0
-      JWST   MENTION            8               8                 0
-      JWST   SCIENCE           17              17                 0
-
-```
-### Statistics Output columns
-Both the evaluation and operation statistics files share the same column names.
-
-
-#### Statistics Output
-The definitions of the JSON output columns are following.
-
-- **threshold_acceptance**: The threshold value to accept the LLM papertype classification
-- **threshold_inspection**: The threshold value to require human inspection
-- **mission**: MAST mission
-- **papertype**: papertype classified by LLM
-- **total_count**: The total number of papers
-- **accepted_count**: The count of papers with accepted llm papertype
-- **accepted_bibcodes**: The bibcode list of the papers with accepted llm papertype
-- **inspection_count**: The count of papers required for human inspection
-- **inspection_bibcodes**: The bibcode list of the papers for papertype required human inspection
-
-The statistics `.txt`output file shows the table view of mission, papertype, total_count  accepted_count, and inspection_count.
-```bash
-   mission papertype  total_count  accepted_count  inspection_count
-     GALEX   MENTION            4               4                 0
-     GALEX   SCIENCE            2               2                 0
-       HST   MENTION           22              21                 1
-       HST   SCIENCE            4               4                 0
-      JWST   MENTION            8               8                 0
-      JWST   SCIENCE           17              17                 0
-```
-
-### Audit inconsistent classifications
-The command line command, `bibcat llm audit`, will create a json file (`config.llms.inconsistent_classifications_file`) of failure bibcode + mission classifications and its summary counts. To create an audit summary and inconsistent classification breakdown, run this command:
-
-```bash
-bibcat llm audit
-```
-
-#### File output for the inconsistent classifications
-
-The command line command, `bibcat llm audit`, will create a json file (`config.llms.inconsistent_classifications_file`) of failure bibcode + mission classifications and its summary counts. It also create a json file (`llm_only_classified_list_for_audit.json`) which collects the bibcode items that human didn't classify any misisons but LLM classifies missions. You can use this list to further investigate if LLM hallucinates or human mistakenly missed classifications.
-
-The definitions of the JSON output columns are following.
-- **summary_counts** : stats summary of inconsistent classifications
-- **n_llm_only_classified_bibcodes** : the number of bibcodes that human didn't classify any missions but LLM classifies missions
-- **n_total_bibcodes**: the number of total bibcodes
-- **n_matched_classifications**: the number of matched classifications
-- **n_mismatched_bibcodes**: the number of mismatched (failure) bibcode
-- **n_mismatched_classifications**: the number of mismatched (failure) classifications
-- **false_positive**: false positive classification (e.g., human: MENTION and llm: SCIENCE)
-- **false_negative**: false negative classification (e.g., human: SCIENCE and llm: MENTION)
-- **false_negative_because_ignored**: false negative classification due to LLM ignored the paper(e.g., human: SCIENCE and llm: [])
-- **ignored**: LLM ignored the paper but human papertype is other than SCIENCE
-- The rest shows the breakdown of each failure bibcode
-
-The output example is as follows:
-
-```json
-{
-  "summary_counts": {
-    "n_total_bibcodes": 89,
-    "n_llm_only_classified_bibcodes": 1,
-    "n_matched_classifications": 81,
-    "n_mismatched_bibcodes": 65,
-    "n_mismatched_classifications": 134,
-    "false_positive": 32,
-    "false_negative": 6,
-    "false_negative_because_ignored": 20,
-    "ignored": 76
-  },
-  "bibcodes": {
-    "2018A&A...610A..11I": {
-      "failures": {
-        "GALEX": "false_positive"
-      },
-      "human": {
-        "GALEX": "MENTION",
-        "PANSTARRS": "SCIENCE"
-      },
-      "llm": [
-        {
-          "GALEX": "SCIENCE",
-          "confidence": [
-            1.0,
-            0.0
-          ],
-          "mission_probability": 0.5
-        },
-        {
-          "PANSTARRS": "SCIENCE",
-          "confidence": [
-            1.0,
-            0.0
-          ],
-          "mission_probability": 0.5
-        }
-      ],
-      "missions_not_in_text": []
-    },
-    "2020A&A...633A..48F": {
-      "failures": {
-        "flag": "llm_only_classified"
-      },
-      "human": {},
-      "llm": [
-        {
-          "HST": "MENTION",
-          "confidence": [
-            0.2,
-            0.8
-          ],
-          "mission_probability": 0.25
-        },
-      ]
-    }
-}
-
-```
+`bibcat llm stats` and `bibcat llm audit` were removed. Use `bibcat llm cm-metrics` and `bibcat llm roc-metrics` for JSON metric outputs.

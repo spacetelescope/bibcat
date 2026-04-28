@@ -30,7 +30,36 @@ def test_get_roc_metrics() -> None:
     assert roc_auc == 1.0
 
 
-def test_evaluate_multiple_llm_runs_with_roc(multi_run_eval_data, multi_run_llm_runs_data, multi_run_missions) -> None:
+def test_evaluate_multiple_llm_runs_with_roc(
+    mocker, multi_run_eval_data, multi_run_llm_runs_data, multi_run_missions
+) -> None:
+    per_run_eval_data = [
+        {
+            "B1": {
+                "human": {"HST": "SCIENCE"},
+                "llm": [{"HST": "SCIENCE"}],
+                "mission_conf": [{"llm_mission": "HST", "prob_papertype": [0.9, 0.1]}],
+            },
+            "B2": {
+                "human": {"HST": "MENTION"},
+                "llm": [{"HST": "MENTION"}],
+                "mission_conf": [{"llm_mission": "HST", "prob_papertype": [0.1, 0.9]}],
+            },
+        },
+        {
+            "B1": {
+                "human": {"HST": "SCIENCE"},
+                "llm": [{"HST": "MENTION"}],
+                "mission_conf": [{"llm_mission": "HST", "prob_papertype": [0.2, 0.8]}],
+            },
+            "B2": {
+                "error": "No mission output found for B2.",
+                "human": {"HST": "MENTION"},
+            },
+        },
+    ]
+    mocker.patch("bibcat.llm.roc.build_eval_data_for_run", side_effect=per_run_eval_data)
+
     summary = evaluate_multiple_llm_runs_with_roc(
         eval_data=multi_run_eval_data,
         llm_runs_data=multi_run_llm_runs_data,
