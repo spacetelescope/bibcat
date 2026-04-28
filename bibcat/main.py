@@ -588,7 +588,7 @@ def retrieve(batchid, verbose):
 )
 @click.option("-e", "--eval-batch", is_flag=True, show_default=True, help="Evaulate individual chunk results")
 @click.option("-g", "--merge", is_flag=True, show_default=True, help="Merge chunks into final single output file")
-def process(filename, batch_file, model, test, retrieve_batch, check, eval_batch, merge):
+def process(filename, batch_file, model, test, retrieve_batch, check, eval_batch, merge):  # noqa: C901
     """Process a batch of papers using the OpenAI Batch API
 
     Process a large batch of papers, with proper file chunking, for

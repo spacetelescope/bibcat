@@ -201,7 +201,10 @@ def test_build_eval_data_for_run_in_memory(mocker):
         SOURCE_PAPER_WITHOUT_MISSIONS["bibcode"]: SOURCE_PAPER_WITHOUT_MISSIONS,
     }
 
-    mocker.patch("bibcat.llm.evaluate.get_source", side_effect=lambda bibcode: source_papers_by_bibcode.get(bibcode))
+    def get_source_for_bibcode(*, bibcode, **kwargs):
+        return source_papers_by_bibcode.get(bibcode)
+
+    mocker.patch("bibcat.llm.evaluate.get_source", side_effect=get_source_for_bibcode)
     mocker.patch("bibcat.llm.evaluate.identify_missions_in_text", return_value=[True])
 
     eval_data = build_eval_data_for_run(
