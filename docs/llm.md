@@ -762,12 +762,16 @@ There are two sets of metrics output: confusion matrix metrics and ROC metrics. 
 
 ### Confusion Matrix Metrics JSON
 
-Save single-run confusion-matrix metrics:
+Save single-run confusion-matrix metrics for specific missions (default threshold probability = 0.5):
 
 ```bash
 bibcat llm cm-metrics -m HST -m JWST
 ```
+You can save single-run confusion-matrix metrics for all missions without `-m` flag:
 
+```bash
+bibcat llm cm-metrics
+```
 Save aggregate metrics across multiple runs:
 
 ```bash
@@ -830,6 +834,11 @@ Save single-run ROC metrics:
 
 ```bash
 bibcat llm roc-metrics -m HST -m JWST
+```
+Save single-run ROC metrics for all missions without `-m` flag:
+
+```bash
+bibcat llm roc-metrics
 ```
 
 Save aggregate ROC metrics across multiple runs:
