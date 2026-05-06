@@ -1,3 +1,4 @@
+import logging
 import pathlib
 from typing import Any
 
@@ -36,7 +37,7 @@ def _filter_valid_responses(response_runs: list[dict[str, Any]] | None) -> list[
 
 
 def evaluate_output_from_runs(
-    paper: dict[str, Any], response_runs: list[dict[str, Any]] | None
+    paper: dict[str, Any], response_runs: list[dict[str, Any]] | None, summary_log_level: int = logging.INFO
 ) -> tuple[pd.DataFrame | None, dict]:
     """Evaluate in-memory LLM run outputs for a paper.
 
@@ -49,6 +50,12 @@ def evaluate_output_from_runs(
         Source paper record, including ``bibcode`` and ``class_missions``.
     response_runs : list[dict[str, Any]] or None
         Run-level LLM outputs associated with ``paper``.
+    summary_log_level : int, optional
+        Logging level used for evaluation summary messages emitted by this
+        function and :func:`get_human_classification`. Defaults to
+        ``logging.INFO`` so direct :func:`evaluate_output` calls keep their
+        current verbosity, while aggregate callers can demote per-bibcode
+        summaries to ``logging.DEBUG``.
 
     Returns
     -------
@@ -70,7 +77,7 @@ def evaluate_output_from_runs(
 
     if not valid_responses:
         logger.warning(f"No mission output found for {bibcode}")
-        human_classes = get_human_classification(paper)
+        human_classes = get_human_classification(paper, summary_log_level=summary_log_level)
         return None, {
             "error": f"No mission output found for {bibcode}.",
             "human": {k: v["papertype"] for k, v in human_classes.items()},
@@ -78,8 +85,8 @@ def evaluate_output_from_runs(
 
     n_runs = len(valid_responses)
 
-    logger.info(f"Evaluating output for {bibcode}")
-    logger.info(f"Number of runs: {n_runs}")
+    logger.log(summary_log_level, "Evaluating output for %s", bibcode)
+    logger.log(summary_log_level, "Number of runs: %s", n_runs)
 
     df = pd.DataFrame([j | {"notes": i["notes"]} for i in valid_responses for j in i["missions"]])
     df = df.rename(columns={"confidence": "llm_confidences"})
@@ -95,14 +102,18 @@ def evaluate_output_from_runs(
     )
 
     mission_group = group_by_mission(grouped_df)
-    human_classes = get_human_classification(paper)
+    human_classes = get_human_classification(paper, summary_log_level=summary_log_level)
     missing_by_human, missing_by_llm = compute_consistency(paper, grouped_df, human_classes)
     hallucinated_missions = check_hallucination(grouped_df)
 
-    logger.info("Output Stats by LLM Mission and Paper Type:\n" + grouped_df.to_string(index=False))
-    logger.info("Missing missions by humans: " + ", ".join(missing_by_human))
-    logger.info("Missing missions by LLM: " + ", ".join(missing_by_llm))
-    logger.info("Hallucination by LLM: " + ", ".join(set(hallucinated_missions)))
+    # Skip building the dataframe summary string when this log level is disabled.
+    if logger.isEnabledFor(summary_log_level):
+        logger.log(
+            summary_log_level, "Output Stats by LLM Mission and Paper Type:\n%s", grouped_df.to_string(index=False)
+        )
+    logger.log(summary_log_level, "Missing missions by humans: %s", ", ".join(missing_by_human))
+    logger.log(summary_log_level, "Missing missions by LLM: %s", ", ".join(missing_by_llm))
+    logger.log(summary_log_level, "Hallucination by LLM: %s", ", ".join(set(hallucinated_missions)))
 
     output = prepare_output(
         bibcode,
@@ -157,7 +168,7 @@ def build_eval_data_for_run(
 
         llm_runs = llm_runs_data.get(bibcode, [])
         run_item = llm_runs[run_index] if run_index < len(llm_runs) else {"missions": []}
-        _, output_item = evaluate_output_from_runs(paper, [run_item])
+        _, output_item = evaluate_output_from_runs(paper, [run_item], summary_log_level=logging.DEBUG)
         eval_data[bibcode] = output_item
 
     return eval_data
@@ -293,13 +304,15 @@ def group_by_mission(grouped_df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def get_human_classification(paper: dict | str):
+def get_human_classification(paper: dict | str, summary_log_level: int = logging.INFO):
     """Get human's mission and paper types
 
     Parameters
     ----------
     paper: dict or str
         dictionary or text (a row from the source dataset)
+    summary_log_level : int, optional
+        Logging level used for the human-classification summary message.
 
     Returns
     -------
@@ -307,8 +320,10 @@ def get_human_classification(paper: dict | str):
         human's mission and paper type
     """
     human_classes = {key.upper(): value for key, value in paper.get("class_missions", {}).items()}
-    formatted_output = "\n".join([f"{mission}: {info['papertype']}" for mission, info in human_classes.items()])
-    logger.info(f"Human Classifications:\n{formatted_output}")
+    # Skip formatting the human classification summary when this log level is disabled.
+    if logger.isEnabledFor(summary_log_level):
+        formatted_output = "\n".join([f"{mission}: {info['papertype']}" for mission, info in human_classes.items()])
+        logger.log(summary_log_level, "Human Classifications:\n%s", formatted_output)
     return human_classes
 
 

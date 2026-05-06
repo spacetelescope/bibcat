@@ -828,6 +828,8 @@ Aggregate (`cm-metrics -a`) column definitions:
 
 For `cm-metrics -a`, bibcat computes metrics per run index using a run-specific in-memory evaluation snapshot rebuilt from multi-run LLM output. This means each run is evaluated against its own run-level mission/papertype predictions (including missing-output and missing-source conditions), rather than reusing a combined thresholded summary across runs.
 
+During aggregate CM evaluation, the per-bibcode evaluation summaries rebuilt for each run are logged at `DEBUG` rather than `INFO`. High-level aggregate progress messages still appear at `INFO`.
+
 ### ROC Metrics JSON
 
 Save single-run ROC metrics:
@@ -881,6 +883,8 @@ Aggregate (`roc-metrics -a`) column definitions:
 **How aggregate ROC metrics are computed**
 
 For `roc-metrics -a`, bibcat computes ROC/AUC per run index from a run-specific in-memory evaluation snapshot rebuilt from multi-run LLM output. This keeps each run's ROC inputs (human labels and LLM confidence vectors) isolated to that run and avoids cross-run mixing from combined summaries.
+
+Like aggregate CM evaluation, aggregate ROC evaluation demotes the per-bibcode in-memory evaluation summaries to `DEBUG`, leaving only the top-level aggregate progress logs at `INFO`.
 
 ### Receiver Operating Characteristic (ROC) Plot
 To plot ROC for specific missions, run:

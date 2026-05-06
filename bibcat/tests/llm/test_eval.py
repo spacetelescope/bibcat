@@ -1,6 +1,8 @@
+import logging
+
 import pytest  # noqa: F401
 
-from bibcat.llm.evaluate import build_eval_data_for_run, evaluate_output, group_by_mission
+from bibcat.llm.evaluate import build_eval_data_for_run, evaluate_output, evaluate_output_from_runs, group_by_mission
 
 SOURCE_PAPER_WITH_MISSIONS = {
     "bibcode": "2022Sci...377.1211L",
@@ -229,3 +231,50 @@ def test_build_eval_data_for_run_in_memory(mocker):
     assert "No mission output found" in eval_data[SOURCE_PAPER_WITHOUT_MISSIONS["bibcode"]]["error"]
     assert eval_data[SOURCE_PAPER_WITHOUT_MISSIONS["bibcode"]]["human"] == {}
     assert eval_data["2019arXiv190205569A"]["error"] == "No paper source found"
+
+
+def test_build_eval_data_for_run_uses_debug_summary_level(mocker):
+    mocker.patch("bibcat.llm.evaluate.get_source", return_value=SOURCE_PAPER_WITH_MISSIONS)
+    evaluate_mock = mocker.patch(
+        "bibcat.llm.evaluate.evaluate_output_from_runs",
+        return_value=(None, {"human": {"TESS": "SCIENCE"}, "llm": []}),
+    )
+
+    build_eval_data_for_run(
+        llm_runs_data={
+            SOURCE_PAPER_WITH_MISSIONS["bibcode"]: LLM_RUN_OUTPUTS_BY_BIBCODE[SOURCE_PAPER_WITH_MISSIONS["bibcode"]]
+        },
+        run_index=0,
+        bibcodes=[SOURCE_PAPER_WITH_MISSIONS["bibcode"]],
+    )
+
+    assert evaluate_mock.call_args.kwargs["summary_log_level"] == logging.DEBUG
+
+
+def test_evaluate_output_from_runs_skips_to_string_when_summary_level_disabled(mocker):
+    mocker.patch("bibcat.llm.evaluate.identify_missions_in_text", return_value=[True])
+    mocker.patch("bibcat.llm.evaluate.logger.isEnabledFor", return_value=False)
+    to_string_mock = mocker.patch("pandas.DataFrame.to_string", autospec=True)
+
+    grouped_df, output_item = evaluate_output_from_runs(
+        SOURCE_PAPER_WITH_MISSIONS,
+        [
+            {
+                "notes": "",
+                "missions": [
+                    {
+                        "mission": "TESS",
+                        "papertype": "SCIENCE",
+                        "confidence": [0.9, 0.1],
+                        "reason": "They use TESS data",
+                        "quotes": ["We use TESS data."],
+                    }
+                ],
+            }
+        ],
+        summary_log_level=logging.DEBUG,
+    )
+
+    assert grouped_df is not None
+    assert output_item["human"] == {"TESS": "SCIENCE"}
+    to_string_mock.assert_not_called()

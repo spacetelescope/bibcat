@@ -13,6 +13,7 @@
   - Refactored `metrics.py` and `evaluate.py` for per-run aggregation correctness.
   - Renamed `bibcat/llm/io.py` to `bibcat/llm/llm_io.py`.
   - Updated plots/docs/tests to align with `cm-metrics` and `roc-metrics` outputs.
+  - Reduced aggregate CM/ROC evaluation log verbosity by demoting per-bibcode evaluation summaries to `DEBUG` while preserving direct `evaluate_output` summary logs at `INFO`.
 
 ### Fixed
 - [PR #98](https://github.com/spacetelescope/bibcat/pull/98)
@@ -20,6 +21,7 @@
   - Fixed circular import issues around `llm_io`.
   - Fixed aggregate handling when LLM mission output is missing.
   - Increased plot output resolution.
+  - Guarded dataframe-to-string evaluation summary formatting so aggregate runs skip that work when the chosen summary log level is disabled.
 
 
 ### Deprecated

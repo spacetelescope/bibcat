@@ -661,6 +661,7 @@ def evaluate_multiple_llm_runs(
     eval_bibcodes = list(eval_data.keys())
 
     for run_index in range(n_runs):
+        logger.info(f"Compute confusion matrix metrics for run {run_index + 1}/{n_runs}...")
         eval_data_for_run = build_eval_data_for_run(
             llm_runs_data=llm_runs_data,
             run_index=run_index,

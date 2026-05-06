@@ -499,7 +499,7 @@ class Paper(Base):
         text = re.sub(r"-\b[0-9]+\b", ("-" + placeholder_number), text_orig)
 
         # Print some notes
-        logger.info(
+        logger.debug(
             "\n> Running `_check_truematch` for text: '%s'\n"
             "Original text: '%s'\n"
             "Available mission lookups for the ambiguous phrase database: %s",
