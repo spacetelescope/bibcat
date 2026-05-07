@@ -3,6 +3,7 @@ from statistics import mean, pstdev
 from typing import Any
 
 from bibcat import config
+from bibcat.data.build_dataset import load_source_dataset
 from bibcat.llm.evaluate import build_eval_data_for_run
 from bibcat.utils.logger_config import setup_logger
 
@@ -474,6 +475,38 @@ def extract_eval_data(data: dict[str, dict[str, Any]], missions: list[str]) -> d
     }
 
 
+def extract_eval_data_for_run(
+    llm_runs_data: dict[str, list[dict[str, Any]]],
+    missions: list[str],
+    bibcodes: list[str],
+    run_index: int = 0,
+) -> dict[str, Any]:
+    """Extract confusion-matrix metrics for one run from raw LLM output.
+
+    Parameters
+    ----------
+    llm_runs_data : dict[str, list[dict[str, Any]]]
+        Multi-run LLM output data keyed by bibcode.
+    missions : list[str]
+        Missions to evaluate.
+    bibcodes : list[str]
+        Explicit bibcode roster to evaluate.
+    run_index : int, optional
+        Zero-based run index to evaluate, by default 0.
+
+    Returns
+    -------
+    dict[str, Any]
+        Single-run confusion-matrix payload matching ``extract_eval_data``.
+    """
+    eval_data = build_eval_data_for_run(
+        llm_runs_data=llm_runs_data,
+        run_index=run_index,
+        bibcodes=bibcodes,
+    )
+    return extract_eval_data(data=eval_data, missions=missions)
+
+
 def get_llm_run_or_empty(llm_runs: list[dict[str, Any]], run_index: int) -> dict[str, Any]:
     """Get one run item or an empty default payload.
 
@@ -596,7 +629,7 @@ def aggregate_metrics_across_runs(per_run_metrics: list[dict[str, float | int]])
 
 
 def compute_run_coverage(
-    eval_data: dict[str, dict[str, Any]],
+    bibcodes: list[str],
     llm_runs_data: dict[str, list[dict[str, Any]]],
     n_runs: int,
 ) -> float:
@@ -604,8 +637,8 @@ def compute_run_coverage(
 
     Parameters
     ----------
-    eval_data : dict[str, dict[str, Any]]
-        Evaluation data keyed by bibcode.
+    bibcodes : list[str]
+        Bibcode roster to evaluate.
     llm_runs_data : dict[str, list[dict[str, Any]]]
         Multi-run LLM output data keyed by bibcode.
     n_runs : int
@@ -617,10 +650,11 @@ def compute_run_coverage(
         Ratio of present run outputs to expected run outputs for bibcodes with
         available source papers.
     """
+    source_bibcodes = {item["bibcode"] for item in load_source_dataset(do_verbose=False)}
     total = 0
     present = 0
-    for bibcode, item in eval_data.items():
-        if has_no_paper_source(item):
+    for bibcode in bibcodes:
+        if bibcode not in source_bibcodes:
             continue
         llm_runs = llm_runs_data.get(bibcode, [])
         for run_index in range(n_runs):
@@ -631,9 +665,9 @@ def compute_run_coverage(
 
 
 def evaluate_multiple_llm_runs(
-    eval_data: dict[str, dict[str, Any]],
     llm_runs_data: dict[str, list[dict[str, Any]]],
     missions: list[str],
+    bibcodes: list[str],
 ) -> dict[str, Any]:
     """Evaluate aggregate confusion-matrix metrics across LLM runs.
 
@@ -642,13 +676,12 @@ def evaluate_multiple_llm_runs(
 
     Parameters
     ----------
-    eval_data : dict[str, dict[str, Any]]
-        Existing evaluation data keyed by bibcode. This is used to define the
-        bibcode set for evaluation and run-coverage calculation.
     llm_runs_data : dict[str, list[dict[str, Any]]]
         Multi-run LLM output data keyed by bibcode.
     missions : list[str]
         Missions to evaluate.
+    bibcodes : list[str]
+        Explicit bibcode roster to evaluate.
 
     Returns
     -------
@@ -658,14 +691,13 @@ def evaluate_multiple_llm_runs(
     """
     n_runs = max((len(runs) for runs in llm_runs_data.values()), default=0)
     per_run_metrics: list[dict[str, float | int]] = []
-    eval_bibcodes = list(eval_data.keys())
 
     for run_index in range(n_runs):
         logger.info(f"Compute confusion matrix metrics for run {run_index + 1}/{n_runs}...")
         eval_data_for_run = build_eval_data_for_run(
             llm_runs_data=llm_runs_data,
             run_index=run_index,
-            bibcodes=eval_bibcodes,
+            bibcodes=bibcodes,
         )
         samples = build_samples_for_run(
             eval_data=eval_data_for_run,
@@ -677,7 +709,7 @@ def evaluate_multiple_llm_runs(
 
     return {
         "n_runs": n_runs,
-        "run_coverage": compute_run_coverage(eval_data, llm_runs_data, n_runs),
+        "run_coverage": compute_run_coverage(bibcodes, llm_runs_data, n_runs),
         "aggregate_metrics": aggregate_metrics_across_runs(per_run_metrics),
         "per_run_metrics": per_run_metrics,
     }

@@ -1,5 +1,5 @@
 from bibcat import config
-from bibcat.llm.metrics import evaluate_multiple_llm_runs, extract_eval_data, map_papertype
+from bibcat.llm.metrics import evaluate_multiple_llm_runs, extract_eval_data, extract_eval_data_for_run, map_papertype
 
 
 def test_map_papertype(single_run_eval_data) -> None:
@@ -48,6 +48,24 @@ def test_extract_eval_data_single_run(mocker, single_run_eval_data, single_run_m
     assert metrics_data["metrics"]["accuracy"] == 4 / 6
 
 
+def test_extract_eval_data_for_run(mocker, single_run_eval_data, single_run_missions, multi_run_llm_runs_data) -> None:
+    build_mock = mocker.patch(
+        "bibcat.llm.metrics.build_eval_data_for_run",
+        return_value=single_run_eval_data,
+    )
+
+    metrics_data = extract_eval_data_for_run(
+        llm_runs_data=multi_run_llm_runs_data,
+        missions=single_run_missions,
+        run_index=1,
+        bibcodes=["Bibcode2024"],
+    )
+
+    assert metrics_data == extract_eval_data(single_run_eval_data, single_run_missions)
+    assert build_mock.call_args.kwargs["run_index"] == 1
+    assert build_mock.call_args.kwargs["bibcodes"] == ["Bibcode2024"]
+
+
 def test_evaluate_multiple_llm_runs(mocker, multi_run_eval_data, multi_run_llm_runs_data, multi_run_missions) -> None:
     per_run_eval_data = [
         {
@@ -61,11 +79,15 @@ def test_evaluate_multiple_llm_runs(mocker, multi_run_eval_data, multi_run_llm_r
     ]
 
     mocker.patch("bibcat.llm.metrics.build_eval_data_for_run", side_effect=per_run_eval_data)
+    mocker.patch(
+        "bibcat.llm.metrics.load_source_dataset",
+        return_value=[{"bibcode": "B1"}, {"bibcode": "B2"}],
+    )
 
     summary = evaluate_multiple_llm_runs(
-        eval_data=multi_run_eval_data,
         llm_runs_data=multi_run_llm_runs_data,
         missions=multi_run_missions,
+        bibcodes=list(multi_run_eval_data.keys()),
     )
 
     assert summary["n_runs"] == 2

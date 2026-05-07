@@ -69,11 +69,60 @@ def test_eval_plot() -> None:
     assert "Create evaluation plots" in result.output
 
 
+def test_cm_metrics() -> None:
+    """test the cli cm-metrics help command"""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["llm", "cm-metrics", "--help"])
+    assert "Save Confusion Matrix metrics for llm performance" in result.output
+    assert "-f, --filename" in result.output
+    assert "-r, --run-index" in result.output
+
+
 def test_roc_metrics() -> None:
     """test the cli roc-metrics help command"""
     runner = CliRunner()
     result = runner.invoke(cli, ["llm", "roc-metrics", "--help"])
     assert "Save ROC metrics for llm performance" in result.output
+    assert "-f, --filename" in result.output
+    assert "-r, --run-index" in result.output
+
+
+def test_cm_metrics_requires_filename() -> None:
+    """test cm-metrics requires a bibcode file"""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["llm", "cm-metrics"])
+    assert result.exit_code != 0
+    assert "Missing option '-f'" in result.output
+
+
+def test_roc_metrics_requires_filename() -> None:
+    """test roc-metrics requires a bibcode file"""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["llm", "roc-metrics"])
+    assert result.exit_code != 0
+    assert "Missing option '-f'" in result.output
+
+
+def test_cm_metrics_rejects_run_index_with_aggregate(tmp_path) -> None:
+    """test cm-metrics rejects run-index in aggregate mode"""
+    bibcodes = tmp_path / "bibcodes.txt"
+    bibcodes.write_text("B1\n", encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["llm", "cm-metrics", "-a", "-r", "0", "-f", str(bibcodes)])
+    assert result.exit_code != 0
+    assert "--run-index cannot be used with -a/--aggregate." in result.output
+
+
+def test_roc_metrics_rejects_run_index_with_aggregate(tmp_path) -> None:
+    """test roc-metrics rejects run-index in aggregate mode"""
+    bibcodes = tmp_path / "bibcodes.txt"
+    bibcodes.write_text("B1\n", encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["llm", "roc-metrics", "-a", "-r", "0", "-f", str(bibcodes)])
+    assert result.exit_code != 0
+    assert "--run-index cannot be used with -a/--aggregate." in result.output
 
 
 def test_batch_submit() -> None:

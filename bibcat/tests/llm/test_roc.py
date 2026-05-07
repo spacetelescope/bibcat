@@ -1,4 +1,10 @@
-from bibcat.llm.roc import evaluate_multiple_llm_runs_with_roc, extract_roc_data, get_roc_metrics, prepare_roc_inputs
+from bibcat.llm.roc import (
+    evaluate_multiple_llm_runs_with_roc,
+    extract_roc_data,
+    extract_roc_metrics_for_run,
+    get_roc_metrics,
+    prepare_roc_inputs,
+)
 
 
 def test_extract_roc_data(single_run_eval_data, single_run_missions) -> None:
@@ -30,6 +36,28 @@ def test_get_roc_metrics() -> None:
     assert roc_auc == 1.0
 
 
+def test_extract_roc_metrics_for_run(
+    mocker, single_run_eval_data, single_run_missions, multi_run_llm_runs_data
+) -> None:
+    build_mock = mocker.patch(
+        "bibcat.llm.roc.build_eval_data_for_run",
+        return_value=single_run_eval_data,
+    )
+
+    roc_data = extract_roc_metrics_for_run(
+        llm_runs_data=multi_run_llm_runs_data,
+        missions=single_run_missions,
+        run_index=1,
+        bibcodes=["Bibcode2024"],
+    )
+
+    assert roc_data["missions"] == single_run_missions
+    assert roc_data["n_verdicts"] == 6
+    assert 0.0 <= roc_data["roc_auc"] <= 1.0
+    assert build_mock.call_args.kwargs["run_index"] == 1
+    assert build_mock.call_args.kwargs["bibcodes"] == ["Bibcode2024"]
+
+
 def test_evaluate_multiple_llm_runs_with_roc(
     mocker, multi_run_eval_data, multi_run_llm_runs_data, multi_run_missions
 ) -> None:
@@ -59,11 +87,15 @@ def test_evaluate_multiple_llm_runs_with_roc(
         },
     ]
     mocker.patch("bibcat.llm.roc.build_eval_data_for_run", side_effect=per_run_eval_data)
+    mocker.patch(
+        "bibcat.llm.metrics.load_source_dataset",
+        return_value=[{"bibcode": "B1"}, {"bibcode": "B2"}],
+    )
 
     summary = evaluate_multiple_llm_runs_with_roc(
-        eval_data=multi_run_eval_data,
         llm_runs_data=multi_run_llm_runs_data,
         missions=multi_run_missions,
+        bibcodes=list(multi_run_eval_data.keys()),
     )
 
     assert summary["n_runs"] == 2

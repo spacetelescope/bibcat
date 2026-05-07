@@ -16,10 +16,10 @@ from bibcat.data.build_dataset import build_dataset
 from bibcat.llm.chunker import ChunkPlanner, SubmissionManager
 from bibcat.llm.evaluate import evaluate_output
 from bibcat.llm.llm_io import adjust_model, read_output
-from bibcat.llm.metrics import evaluate_multiple_llm_runs, extract_eval_data
+from bibcat.llm.metrics import evaluate_multiple_llm_runs, extract_eval_data_for_run
 from bibcat.llm.openai import OpenAIHelper, classify_paper
 from bibcat.llm.plots import confusion_matrix_plot, roc_plot
-from bibcat.llm.roc import evaluate_multiple_llm_runs_with_roc, extract_roc_data, get_roc_metrics, prepare_roc_inputs
+from bibcat.llm.roc import evaluate_multiple_llm_runs_with_roc, extract_roc_metrics_for_run
 from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import save_json_file
 
@@ -39,6 +39,14 @@ def _summary_output_path() -> Path:
 def _prompt_output_path() -> Path:
     """Return the raw llm prompt output path."""
     return _llm_output_dir() / config.llms.prompt_output_file
+
+
+def _read_bibcodes_file(filename) -> list[str]:
+    """Read non-empty bibcodes from a CLI file option."""
+    bibcodes = [line.strip() for line in filename.read().splitlines() if line.strip()]
+    if not bibcodes:
+        raise click.UsageError("Bibcode file is empty.")
+    return bibcodes
 
 
 @click.group("bibcat")
@@ -270,6 +278,21 @@ def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
 @llmcli.command("cm-metrics", help="Save Confusion Matrix metrics for llm performance")
 @click.option("-a", "--aggregate", is_flag=True, show_default=False, help="Calculate aggregate metrics across missions")
 @click.option(
+    "-f",
+    "--filename",
+    required=True,
+    type=click.File("r"),
+    help="A file containing bibcodes to evaluate, one per line.",
+)
+@click.option(
+    "-r",
+    "--run-index",
+    default=None,
+    type=click.IntRange(min=0),
+    show_default=True,
+    help="Run index to evaluate in non-aggregate mode. Defaults to 0.",
+)
+@click.option(
     "-m",
     "--missions",
     type=str,
@@ -278,33 +301,42 @@ def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
     show_default=True,
     help="List mission names; this flag works with the '-m' flag, for instance, 'bibcat llm cm-metrics -m JWST -m HST -m TESS'; if not provided, the metrics will be extracted for all missions by default.",
 )
-def cm_metrics(missions: str, aggregate: bool):
+def cm_metrics(filename, run_index, missions: str, aggregate: bool):
     """Extract evaluation metrics from a LLM model and save to a JSON file"""
     logger.debug("CLI option: 'llm cm-metrics' selected")
+
+    if aggregate and run_index is not None:
+        raise click.UsageError("--run-index cannot be used with -a/--aggregate.")
 
     if missions:
         missions = list(missions)
     else:
         missions = config.missions
 
-    summary_output_path = _summary_output_path()
     llm_output_path = _prompt_output_path()
-    eval_data = read_output(filename=summary_output_path)
+    bibcodes = _read_bibcodes_file(filename)
+    llm_multi_runs_data = read_output(filename=llm_output_path)
 
     if aggregate:
         logger.info("Calculating aggregate metrics across mutiple runs.")
         metrics_type = "aggregate"
-        llm_multi_runs_data = read_output(filename=llm_output_path)
         metrics_data = evaluate_multiple_llm_runs(
-            eval_data=eval_data, llm_runs_data=llm_multi_runs_data, missions=missions
+            llm_runs_data=llm_multi_runs_data,
+            missions=missions,
+            bibcodes=bibcodes,
         )
         metrics_data_to_save = metrics_data
 
     else:
-        logger.info("Calculating metrics for a single run.")
-        metrics_data = extract_eval_data(data=eval_data, missions=missions)
-        metrics_type = "single"
-        metrics_data_to_save = {k: v for k, v in metrics_data.items() if k not in {"human_labels", "llm_labels"}}
+        selected_run_index = 0 if run_index is None else run_index
+        logger.info(f"Calculating metrics for run index {selected_run_index}.")
+        metrics_data_to_save = extract_eval_data_for_run(
+            llm_runs_data=llm_multi_runs_data,
+            missions=missions,
+            run_index=selected_run_index,
+            bibcodes=bibcodes,
+        )
+        metrics_type = f"single_r{selected_run_index}"
 
     output_path = (
         _llm_output_dir() / f"{config.llms.cm_metrics_file}_{metrics_type}_t{config.llms.performance.threshold}.json"
@@ -322,6 +354,21 @@ def cm_metrics(missions: str, aggregate: bool):
     "-a", "--aggregate", is_flag=True, show_default=False, help="Calculate aggregate ROC metrics across missions"
 )
 @click.option(
+    "-f",
+    "--filename",
+    required=True,
+    type=click.File("r"),
+    help="A file containing bibcodes to evaluate, one per line.",
+)
+@click.option(
+    "-r",
+    "--run-index",
+    default=None,
+    type=click.IntRange(min=0),
+    show_default=True,
+    help="Run index to evaluate in non-aggregate mode. Defaults to 0.",
+)
+@click.option(
     "-m",
     "--missions",
     type=str,
@@ -330,45 +377,40 @@ def cm_metrics(missions: str, aggregate: bool):
     show_default=True,
     help="List mission names; for instance, 'bibcat llm roc-metrics -m JWST -m HST -m TESS'; if not provided, metrics are extracted for all missions by default.",
 )
-def roc_metrics(missions: str, aggregate: bool):
+def roc_metrics(filename, run_index, missions: str, aggregate: bool):
     """Extract ROC metrics from a LLM model and save to a JSON file"""
     logger.debug("CLI option: 'llm roc-metrics' selected")
+
+    if aggregate and run_index is not None:
+        raise click.UsageError("--run-index cannot be used with -a/--aggregate.")
 
     if missions:
         missions = [mission.upper() for mission in missions]
     else:
         missions = [mission.upper() for mission in config.missions]
 
-    summary_output_path = _summary_output_path()
     llm_output_path = _prompt_output_path()
-    eval_data = read_output(filename=summary_output_path)
+    bibcodes = _read_bibcodes_file(filename)
+    llm_multi_runs_data = read_output(filename=llm_output_path)
 
     if aggregate:
         logger.info("Calculating aggregate ROC metrics across multiple runs.")
         metrics_type = "aggregate"
-        llm_multi_runs_data = read_output(filename=llm_output_path)
         roc_data = evaluate_multiple_llm_runs_with_roc(
-            eval_data=eval_data,
             llm_runs_data=llm_multi_runs_data,
             missions=missions,
+            bibcodes=bibcodes,
         )
     else:
-        logger.info("Calculating ROC metrics for a single run.")
-        metrics_type = "single"
-        human_labels, llm_confidences, human_llm_missions = extract_roc_data(data=eval_data, missions=missions)
-        y_true, llm_confidences, n_verdicts = prepare_roc_inputs(human_labels, llm_confidences)
-        fpr, tpr, thresholds, roc_auc = get_roc_metrics(llm_confidences, y_true)
-
-        roc_data = {
-            "threshold": config.llms.performance.threshold,
-            "missions": missions,
-            "human_llm_missions": human_llm_missions,
-            "n_verdicts": n_verdicts,
-            "fpr": fpr,
-            "tpr": tpr,
-            "thresholds": thresholds,
-            "roc_auc": roc_auc,
-        }
+        selected_run_index = 0 if run_index is None else run_index
+        logger.info(f"Calculating ROC metrics for run index {selected_run_index}.")
+        metrics_type = f"single_r{selected_run_index}"
+        roc_data = extract_roc_metrics_for_run(
+            llm_runs_data=llm_multi_runs_data,
+            missions=missions,
+            run_index=selected_run_index,
+            bibcodes=bibcodes,
+        )
 
     output_path = (
         _llm_output_dir() / f"{config.llms.roc_metrics_file}_{metrics_type}_t{config.llms.performance.threshold}.json"

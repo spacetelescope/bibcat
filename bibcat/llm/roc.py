@@ -3,6 +3,7 @@ from typing import Any
 
 from sklearn.metrics import auc, roc_curve
 
+from bibcat import config
 from bibcat.llm.evaluate import build_eval_data_for_run
 from bibcat.llm.metrics import (
     IGNORED_RAW_LABEL,
@@ -199,10 +200,58 @@ def build_roc_inputs_for_run(
     return y_true, confidences
 
 
-def evaluate_multiple_llm_runs_with_roc(
-    eval_data: dict[str, dict[str, Any]],
+def extract_roc_metrics_for_run(
     llm_runs_data: dict[str, list[dict[str, Any]]],
     missions: list[str],
+    bibcodes: list[str],
+    run_index: int = 0,
+) -> dict[str, Any]:
+    """Extract ROC metrics for one run from raw LLM output.
+
+    Parameters
+    ----------
+    llm_runs_data : dict[str, list[dict[str, Any]]]
+        Multi-run LLM output data keyed by bibcode.
+    missions : list[str]
+        Missions to evaluate.
+    bibcodes : list[str]
+        Explicit bibcode roster to evaluate.
+    run_index : int, optional
+        Zero-based run index to evaluate, by default 0.
+
+    Returns
+    -------
+    dict[str, Any]
+        Compact ROC payload for the selected run.
+    """
+    eval_data = build_eval_data_for_run(
+        llm_runs_data=llm_runs_data,
+        run_index=run_index,
+        bibcodes=bibcodes,
+    )
+    human_labels, llm_confidences, human_llm_missions = extract_roc_data(
+        data=eval_data,
+        missions=missions,
+    )
+    y_true, llm_confidences, n_verdicts = prepare_roc_inputs(human_labels, llm_confidences)
+    fpr, tpr, thresholds, roc_auc = get_roc_metrics(llm_confidences, y_true)
+
+    return {
+        "threshold": config.llms.performance.threshold,
+        "missions": normalize_missions(missions),
+        "human_llm_missions": human_llm_missions,
+        "n_verdicts": n_verdicts,
+        "fpr": fpr,
+        "tpr": tpr,
+        "thresholds": thresholds,
+        "roc_auc": roc_auc,
+    }
+
+
+def evaluate_multiple_llm_runs_with_roc(
+    llm_runs_data: dict[str, list[dict[str, Any]]],
+    missions: list[str],
+    bibcodes: list[str],
 ) -> dict[str, Any]:
     """Evaluate multiple LLM runs and compute ROC/AUC per run.
 
@@ -211,13 +260,12 @@ def evaluate_multiple_llm_runs_with_roc(
 
     Parameters
     ----------
-    eval_data : dict
-        Existing evaluation data keyed by bibcode. This is used to define the
-        bibcode set for evaluation and run-coverage calculation.
     llm_runs_data : dict
         Multi-run LLM results keyed by bibcode.
     missions : list of str
         Missions to evaluate.
+    bibcodes : list[str]
+        Explicit bibcode roster to evaluate.
 
     Returns
     -------
@@ -231,7 +279,6 @@ def evaluate_multiple_llm_runs_with_roc(
     aggregate payload fields are intentionally excluded from this return value.
     """
     n_runs = max((len(runs) for runs in llm_runs_data.values()), default=0)
-    eval_bibcodes = list(eval_data.keys())
 
     per_run_roc: list[dict[str, Any]] = []
     auc_values: list[float] = []
@@ -240,7 +287,7 @@ def evaluate_multiple_llm_runs_with_roc(
         eval_data_for_run = build_eval_data_for_run(
             llm_runs_data=llm_runs_data,
             run_index=run_index,
-            bibcodes=eval_bibcodes,
+            bibcodes=bibcodes,
         )
         y_true, confidences = build_roc_inputs_for_run(
             eval_data=eval_data_for_run,
@@ -263,7 +310,7 @@ def evaluate_multiple_llm_runs_with_roc(
 
     return {
         "n_runs": n_runs,
-        "run_coverage": compute_run_coverage(eval_data, llm_runs_data, n_runs),
+        "run_coverage": compute_run_coverage(bibcodes, llm_runs_data, n_runs),
         "aggregate_auc": {
             "mean": float(mean(auc_values)) if auc_values else 0.0,
             "std": float(pstdev(auc_values)) if auc_values else 0.0,

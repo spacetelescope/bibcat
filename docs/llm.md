@@ -762,26 +762,36 @@ There are two sets of metrics output: confusion matrix metrics and ROC metrics. 
 
 ### Confusion Matrix Metrics JSON
 
+`cm-metrics` builds metrics directly from raw `llm_output` plus an explicit bibcode roster file.
+
 Save single-run confusion-matrix metrics for specific missions (default threshold probability = 0.5):
 
 ```bash
-bibcat llm cm-metrics -m HST -m JWST
+bibcat llm cm-metrics -f bibcodes.txt -m HST -m JWST
 ```
 You can save single-run confusion-matrix metrics for all missions without `-m` flag:
 
 ```bash
-bibcat llm cm-metrics
+bibcat llm cm-metrics -f bibcodes.txt
 ```
+To select a non-default run in non-aggregate mode, use `--run-index`:
+
+```bash
+bibcat llm cm-metrics -f bibcodes.txt -r 3 -m HST -m JWST
+```
+
 Save aggregate metrics across multiple runs:
 
 ```bash
-bibcat llm cm-metrics -a -m HST -m JWST
+bibcat llm cm-metrics -a -f bibcodes.txt -m HST -m JWST
 ```
+
+`--run-index` is only valid without `-a`. If omitted in non-aggregate mode, bibcat evaluates run `0`.
 
 Output filename pattern:
 
 ```text
-{config.llms.metrics_file}_{single|aggregate}_t{threshold}.json
+{config.llms.cm_metrics_file}_{single_r{run_index}|aggregate}_t{threshold}.json
 ```
 
 #### Confusion Matrix JSON Output Columns
@@ -805,6 +815,7 @@ Single-run (`cm-metrics` without `-a`) column definitions:
 - **tp_bibcodes**: True-positive sample records (`llm=SCIENCE`, `human=SCIENCE`).
 - **tn_bibcodes**: True-negative sample records (`llm=NONSCIENCE`, `human=NONSCIENCE`).
 
+
 Nested **metrics** column definitions:
 
 - **tn**, **fp**, **fn**, **tp**: Confusion-matrix counts.
@@ -824,35 +835,47 @@ Aggregate (`cm-metrics -a`) column definitions:
 - **aggregate_metrics**: Mean and population standard deviation for each per-run metric (`{"mean": ..., "std": ...}`).
 - **per_run_metrics**: List of per-run **metrics** dictionaries (same metric keys as above).
 
+Aggregate CM output remains compact and does not include the single-run label arrays or TP/TN/FP/FN bibcode lists.
+
 **How aggregate CM metrics are computed**
 
-For `cm-metrics -a`, bibcat computes metrics per run index using a run-specific in-memory evaluation snapshot rebuilt from multi-run LLM output. This means each run is evaluated against its own run-level mission/papertype predictions (including missing-output and missing-source conditions), rather than reusing a combined thresholded summary across runs.
+For both single-run and aggregate `cm-metrics`, bibcat builds evaluation data from raw multi-run `llm_output` for the requested bibcodes and compares it against the current source dataset at `config.inputs.path_source_data`. In aggregate mode, bibcat computes metrics per run index using a run-specific in-memory evaluation snapshot built from that raw output.
 
-During aggregate CM evaluation, the per-bibcode evaluation summaries rebuilt for each run are logged at `DEBUG` rather than `INFO`. High-level aggregate progress messages still appear at `INFO`.
+During aggregate CM evaluation, the per-bibcode evaluation summaries built for each run are logged at `DEBUG` rather than `INFO`. High-level aggregate progress messages still appear at `INFO`.
 
 ### ROC Metrics JSON
+
+`roc-metrics` follows the same input contract as `cm-metrics`: it builds metrics directly from raw `llm_output` plus a required bibcode roster file, and does not use the saved `summary_output` file.
 
 Save single-run ROC metrics:
 
 ```bash
-bibcat llm roc-metrics -m HST -m JWST
+bibcat llm roc-metrics -f bibcodes.txt -m HST -m JWST
 ```
 Save single-run ROC metrics for all missions without `-m` flag:
 
 ```bash
-bibcat llm roc-metrics
+bibcat llm roc-metrics -f bibcodes.txt
+```
+
+To select a non-default run in non-aggregate mode, use `--run-index`:
+
+```bash
+bibcat llm roc-metrics -f bibcodes.txt -r 3 -m HST -m JWST
 ```
 
 Save aggregate ROC metrics across multiple runs:
 
 ```bash
-bibcat llm roc-metrics -a -m HST -m JWST
+bibcat llm roc-metrics -a -f bibcodes.txt -m HST -m JWST
 ```
+
+`--run-index` is only valid without `-a`. If omitted in non-aggregate mode, bibcat evaluates run `0`.
 
 Output filename pattern:
 
 ```text
-{config.llms.roc_metrics_file}_{single|aggregate}_t{threshold}.json
+{config.llms.roc_metrics_file}_{single_r{run_index}|aggregate}_t{threshold}.json
 ```
 
 #### ROC JSON Output Columns
@@ -880,9 +903,11 @@ Aggregate (`roc-metrics -a`) column definitions:
   - **roc_auc**: Run-level AUC.
 - **aggregate_auc**: Mean and population standard deviation of per-run AUC values (`{"mean": ..., "std": ...}`).
 
+Both single-run and aggregate ROC outputs remain compact. ROC output does not include CM-style label arrays or TP/TN/FP/FN bibcode lists.
+
 **How aggregate ROC metrics are computed**
 
-For `roc-metrics -a`, bibcat computes ROC/AUC per run index from a run-specific in-memory evaluation snapshot rebuilt from multi-run LLM output. This keeps each run's ROC inputs (human labels and LLM confidence vectors) isolated to that run and avoids cross-run mixing from combined summaries.
+For both single-run and aggregate `roc-metrics`, bibcat builds ROC inputs from raw multi-run `llm_output` for the requested bibcodes and compares them against the current source dataset at `config.inputs.path_source_data`. In aggregate mode, bibcat computes ROC/AUC per run index from isolated run-specific in-memory evaluation snapshots.
 
 Like aggregate CM evaluation, aggregate ROC evaluation demotes the per-bibcode in-memory evaluation summaries to `DEBUG`, leaving only the top-level aggregate progress logs at `INFO`.
 

@@ -10,10 +10,12 @@
 ### Changed
 - [PR #98](https://github.com/spacetelescope/bibcat/pull/98)
   - Refactored multi-run CM/ROC evaluation to compute from run-specific in-memory evaluation snapshots.
-  - Refactored `metrics.py` and `evaluate.py` for per-run aggregation correctness.
-  - Renamed `bibcat/llm/io.py` to `bibcat/llm/llm_io.py`.
+    - Updated `cm-metrics` and `roc-metrics` to compute exclusively from raw `llm_output`, require a bibcode roster file via `-f`, and support non-aggregate `--run-index` selection without relying on saved `summary_output` for metrics calculations.
+    - Refactored `metrics.py` and `evaluate.py` for per-run aggregation correctness.
   - Updated plots/docs/tests to align with `cm-metrics` and `roc-metrics` outputs.
   - Reduced aggregate CM/ROC evaluation log verbosity by demoting per-bibcode evaluation summaries to `DEBUG` while preserving direct `evaluate_output` summary logs at `INFO`.
+  - Renamed `bibcat/llm/io.py` to `bibcat/llm/llm_io.py` to avoid circular import errors.
+
 
 ### Fixed
 - [PR #98](https://github.com/spacetelescope/bibcat/pull/98)
