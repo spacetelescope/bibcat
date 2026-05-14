@@ -28,8 +28,7 @@ from bibcat.core.keyword import Keyword
 from bibcat.utils.logger_config import setup_logger
 
 # set up logger
-logger = setup_logger(__name__)
-logger.setLevel(config.logging.level)
+logger = setup_logger(__name__, level=config.logging.level)
 
 nlp = spacy.load(config.grammar.spacy_language_model)
 
@@ -1140,13 +1139,13 @@ class Paper:
                 if any([item.identify_keyword(curr_sent[ind].text)["bool"] for item in keyword_objs])
             ]
             # Print some notes
-            logger.info("Current sentence: '{0}'".format(curr_sent))
-            logger.info("Indices of lookups in sent.: '{0}'".format(set_inds))
+            logger.debug("Current sentence: '{0}'".format(curr_sent))
+            logger.debug("Indices of lookups in sent.: '{0}'".format(set_inds))
             # Build wordchunks from indices of current sentence
             last_ind = -np.inf
             for curr_start in set_inds:
                 # Print some notes
-                logger.info("\n-Building wordchunk from {0}: {1}:".format(curr_start, curr_sent[curr_start]))
+                logger.debug("\n-Building wordchunk from {0}: {1}:".format(curr_start, curr_sent[curr_start]))
                 # Skip if this index has already been surpassed
                 if curr_start <= last_ind:
                     continue
@@ -1226,10 +1225,10 @@ class Paper:
                 list_wordchunks.append(nlp(curr_str_fin))
 
                 # Print some notes
-                logger.info(
+                logger.debug(
                     "All wordchunks so far: {0}\nNewest wordchunk: {1}".format(list_wordchunks, list_wordchunks[-1])
                 )
-                logger.info(
+                logger.debug(
                     "pos_ values: {0}\ndep_ values: {1}\ntag_ values: {2}".format(
                         [item.pos_ for item in list_wordchunks[-1]],
                         [item.dep_ for item in list_wordchunks[-1]],
@@ -1238,7 +1237,7 @@ class Paper:
                 )
 
         # Return the assembled wordchunks
-        logger.info("Assembled keyword wordchunks:\n{0}".format(list_wordchunks))
+        logger.debug("Assembled keyword wordchunks:\n{0}".format(list_wordchunks))
 
         return list_wordchunks
 
@@ -1304,7 +1303,7 @@ class Paper:
                 keyword_objs = self._keyword_objs
 
         # Print some notes
-        logger.info("\n> Running _extract_core_from_phrase for phrase: {0}".format(phrase_NLP))
+        logger.debug("\n> Running _extract_core_from_phrase for phrase: {0}".format(phrase_NLP))
 
         # Initialize containers of core information
         core_keywords = []
@@ -1314,14 +1313,14 @@ class Paper:
         for ii in range(0, num_words):
             curr_word = phrase_NLP[ii]
             # Print some notes
-            logger.info("-\nLatest keywords: {0}".format(core_keywords))
-            logger.info("Latest synsets: {0}".format(core_synsets))
-            logger.info("-Now considering word: {0}".format(curr_word))
+            logger.debug("-\nLatest keywords: {0}".format(core_keywords))
+            logger.debug("Latest synsets: {0}".format(core_synsets))
+            logger.debug("-Now considering word: {0}".format(curr_word))
 
             # Skip if this word is punctuation or possessive marker
             if is_pos_word(word=curr_word, pos="PUNCTUATION") or is_pos_word(word=curr_word, pos="POSSESSIVE"):
                 # Print some notes
-                logger.info("Word is punctuation or possessive. Skipping.")
+                logger.debug("Word is punctuation or possessive. Skipping.")
 
                 continue
 
@@ -1335,7 +1334,7 @@ class Paper:
                     core_synsets.append([curr_word.text.lower()])
 
                     # Print some notes
-                    logger.info("Word itself is keyword. Stored synset: {0}".format(core_synsets))
+                    logger.debug("Word itself is keyword. Stored synset: {0}".format(core_synsets))
 
                     continue
                 # Otherwise, store keyword itself
@@ -1345,7 +1344,7 @@ class Paper:
                     core_synsets.append([name_kobj.lower()])
 
                     # Print some notes
-                    logger.info("Word itself is keyword. Stored synset: {0}".format(core_synsets))
+                    logger.debug("Word itself is keyword. Stored synset: {0}".format(core_synsets))
 
                     continue
 
@@ -1354,7 +1353,7 @@ class Paper:
                 tmp_rep = config.grammar.string_numeral_ambig
                 core_synsets.append([tmp_rep])
                 # Print some notes
-                logger.info("Word itself is a numeral. Stored synset: {0}".format(core_synsets))
+                logger.debug("Word itself is a numeral. Stored synset: {0}".format(core_synsets))
 
                 continue
 
@@ -1363,7 +1362,7 @@ class Paper:
             check_adj = is_pos_word(word=curr_word, pos="ADJECTIVE")
             if do_skip_useless and (check_useless and (not check_adj)):
                 # Print some notes
-                logger.info("Word itself is useless. Skipping.")
+                logger.debug("Word itself is useless. Skipping.")
 
                 continue
 
@@ -1380,9 +1379,9 @@ class Paper:
                 core_synsets += [curr_synsets_raw]
 
             # Print some notes
-            logger.info("-Done considering word: {0}".format(curr_word))
-            logger.info("Updated synsets: {0}".format(core_synsets))
-            logger.info("Updated keywords: {0}".format(core_keywords))
+            logger.debug("-Done considering word: {0}".format(curr_word))
+            logger.debug("Updated synsets: {0}".format(core_synsets))
+            logger.debug("Updated keywords: {0}".format(core_keywords))
 
         # Throw an error if any empty strings passed as synsets
         if any([("" in item) for item in core_synsets]):
@@ -1401,7 +1400,7 @@ class Paper:
         str_meaning = " ".join([" ".join(item) for item in core_roots])  # Long spaced string
 
         # Return the core components
-        logger.info(
+        logger.debug(
             ("\n-\nPhrase '{0}':\nKeyword: {1}\nSynsets: {2}" + "\nRoots: {3}\nString representation: {4}\n-\n").format(
                 phrase_NLP, core_keywords, core_synsets, core_roots, str_meaning
             )
@@ -1452,14 +1451,14 @@ class Paper:
         # Load ambiguous phrases, if necessary
         if do_check_truematch:
             # Print some notes
-            logger.info("do_check_truematch=True, so will verify ambig. phrases.")
+            logger.debug("do_check_truematch=True, so will verify ambig. phrases.")
 
             # Load previously stored ambig. phrase data
             dict_ambigs = self._dict_ambigs
             lookup_ambigs = dict_ambigs["lookup_ambigs"]
 
         # Print some notes
-        logger.info("Fetching inds of target sentences...")
+        logger.debug("Fetching inds of target sentences...")
 
         # Get indices of sentences that contain any target mission terms
         # For keyword terms
@@ -1473,7 +1472,7 @@ class Paper:
         ]
 
         # Print some notes
-        logger.info(
+        logger.debug(
             ("Found:\n# of keyword sentences: {0}\n" + "# of acronym sentences: {1}...").format(
                 len(inds_with_keywords_init), len(inds_with_acronyms)
             )
@@ -1486,7 +1485,7 @@ class Paper:
             and any([keyword_obj.identify_keyword(item)["bool"] for item in lookup_ambigs])
         ):
             # Print some notes
-            logger.info("Verifying ambiguous phrases...")
+            logger.debug("Verifying ambiguous phrases...")
 
             # Run ambiguous phrase check on all sentences with keyword terms
             output_truematch = [
@@ -1503,10 +1502,10 @@ class Paper:
             inds_with_keywords_truematch = [item["ind"] for item in output_truematch if (item["result"]["bool"])]
 
             # Print some notes
-            logger.info("Done verifying ambiguous phrases.")
-            logger.info("Match output:\n{0}".format(output_truematch))
-            logger.info("Indices with true matches:\n{0}".format(inds_with_keywords_truematch))
-            logger.info("Keyword sentences with true matches:\n{0}".format(sentences[inds_with_keywords_truematch]))
+            logger.debug("Done verifying ambiguous phrases.")
+            logger.debug("Match output:\n{0}".format(output_truematch))
+            logger.debug("Indices with true matches:\n{0}".format(inds_with_keywords_truematch))
+            logger.debug("Keyword sentences with true matches:\n{0}".format(sentences[inds_with_keywords_truematch]))
 
         # Otherwise, set empty
         else:
@@ -1519,7 +1518,7 @@ class Paper:
         # Determine buffered sentences, if requested
         if buffer > 0:
             # Print some notes
-            logger.info("Buffering sentences with buffer={0}...".format(buffer))
+            logger.debug("Buffering sentences with buffer={0}...".format(buffer))
 
             ranges_buffered = self._buffer_indices(
                 indices=inds_with_terms, buffer=buffer, max_index=(num_sentences - 1)
@@ -1528,7 +1527,7 @@ class Paper:
                 " ".join(sentences[item[0] : item[1] + 1]) for item in ranges_buffered
             ]  # Combined sentences
             # Print some notes
-            logger.info("Done buffering sentences.\nRanges = {0}.".format(ranges_buffered))
+            logger.debug("Done buffering sentences.\nRanges = {0}.".format(ranges_buffered))
 
         # Otherwise, just copy over previous indices
         else:

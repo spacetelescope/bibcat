@@ -428,7 +428,7 @@ def identify_missions_in_text(missions: list, text: str) -> list:
 
         # get the relevant mission keyword
         try:
-            keyword = Keyword._fetch_keyword_object(params.all_kobjs, mission, verbose=config.logging.verbose)
+            keyword = Keyword._fetch_keyword_object(params.all_kobjs, mission)
         except ValueError:
             # if the keyword doesn't exist, just use the provided mission name
             keywd = mission

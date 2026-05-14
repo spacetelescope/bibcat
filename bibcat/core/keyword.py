@@ -256,13 +256,15 @@ class Keyword:
         charspans_acronyms_all = charspans_acronyms_nocase + charspans_acronyms_yescase
 
         # Print some notes
-        logger.info("Keywords: {0}\nKeyword regex:\n{1}".format(keywords, exps_k))
-        logger.info("Acronyms (Case-Sensitive): {0}\nAcronym regex:\n{1}".format(acronyms_casesensitive, exp_a_yescase))
-        logger.info(
+        logger.debug("Keywords: {0}\nKeyword regex:\n{1}".format(keywords, exps_k))
+        logger.debug(
+            "Acronyms (Case-Sensitive): {0}\nAcronym regex:\n{1}".format(acronyms_casesensitive, exp_a_yescase)
+        )
+        logger.debug(
             "Acronyms (Case-Insensitive): {0}\nAcronym regex:\n{1}".format(acronyms_caseinsensitive, exp_a_nocase)
         )
-        logger.info("Keyword bool: {0}\nAcronym bool: {1}".format(check_keywords, check_acronyms_all))
-        logger.info(
+        logger.debug("Keyword bool: {0}\nAcronym bool: {1}".format(check_keywords, check_acronyms_all))
+        logger.debug(
             "Keyword char. spans: {0}\nAcronym char. spans: {1}".format(charspans_keywords, charspans_acronyms_all)
         )
 
@@ -323,18 +325,16 @@ class Keyword:
             text_new = re.sub(curr_exp, (r"\1" + placeholder + ("\\" + str_tot)), text_new, flags=re.IGNORECASE)
 
         # Print some notes
-        logger.info("Keyword regex:\n{0}".format(exps_k))
-        logger.info("Acronyms (Case-Sensitive) regex: {0}".format(exp_a_yescase))
-        logger.info("Acronyms (Case-Insensitive) regex: {0}".format(exp_a_nocase))
-        logger.info("Updated text: {0}".format(text_new))
+        logger.debug("Keyword regex:\n{0}".format(exps_k))
+        logger.debug("Acronyms (Case-Sensitive) regex: {0}".format(exp_a_yescase))
+        logger.debug("Acronyms (Case-Insensitive) regex: {0}".format(exp_a_nocase))
+        logger.debug("Updated text: {0}".format(text_new))
 
         # Return updated text
         return text_new
 
     # Fetch a keyword object that matches the given lookup
-    def _fetch_keyword_object(
-        keyword_objs, lookup: str, do_raise_emptyerror: bool = True, verbose: bool = False
-    ) -> Any | None:
+    def _fetch_keyword_object(self, keyword_objs, lookup: str, do_raise_emptyerror: bool = True) -> Any | None:
         """Fetch a keyword object
 
         Given an input lookup string, tries to match it to a stored Keyword instance.
@@ -358,9 +358,7 @@ class Keyword:
         """
 
         # Print some notes
-        if verbose:
-            logger = setup_logger(__name__)
-            logger.info(f"> Running _fetch_keyword_object() for lookup term {lookup}.")
+        logger.info(f"> Running _fetch_keyword_object() for lookup term {lookup}.")
 
         # Find keyword object that matches to given lookup term
         match = None
