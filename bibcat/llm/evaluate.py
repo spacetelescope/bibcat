@@ -13,8 +13,7 @@ from bibcat.llm.llm_io import get_source, read_output, write_summary
 from bibcat.utils.logger_config import setup_logger
 
 # set up logger
-logger = setup_logger(__name__)
-logger.setLevel(config.logging.level)
+logger = setup_logger(__name__, level=config.logging.level)
 
 
 def _filter_valid_responses(response_runs: list[dict[str, Any]] | None) -> list[dict[str, Any]]:

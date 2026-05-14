@@ -15,8 +15,7 @@ from bibcat.llm.evaluate import identify_missions_in_text
 from bibcat.llm.llm_io import get_file, get_llm_prompt, get_source, write_output
 from bibcat.utils.logger_config import setup_logger
 
-logger = setup_logger(__name__)
-logger.setLevel(config.logging.level)
+logger = setup_logger(__name__, level=config.logging.level)
 
 
 class CaseInsensitiveEnum(str, Enum):

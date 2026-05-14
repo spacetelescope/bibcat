@@ -8,8 +8,7 @@ from sklearn.metrics import ConfusionMatrixDisplay
 from bibcat import config
 from bibcat.utils.logger_config import setup_logger
 
-logger = setup_logger(__name__)
-logger.setLevel(config.logging.level)
+logger = setup_logger(__name__, level=config.logging.level)
 
 
 def _plot_output_path(plot_name: str, metrics_type: str, threshold: float | None = None) -> pathlib.Path:
