@@ -334,7 +334,7 @@ class Keyword:
         return text_new
 
     # Fetch a keyword object that matches the given lookup
-    def _fetch_keyword_object(self, keyword_objs, lookup: str, do_raise_emptyerror: bool = True) -> Any | None:
+    def _fetch_keyword_object(keyword_objs, lookup: str, do_raise_emptyerror: bool = True) -> Any | None:
         """Fetch a keyword object
 
         Given an input lookup string, tries to match it to a stored Keyword instance.
