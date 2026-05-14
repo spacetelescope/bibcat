@@ -33,8 +33,7 @@ if TYPE_CHECKING:
 
 nlp = spacy.load(config.grammar.spacy_language_model)
 
-logger = setup_logger(__name__)
-logger.setLevel(config.logging.level)
+logger = setup_logger(__name__, level=config.logging.level)
 
 
 def check_importance(

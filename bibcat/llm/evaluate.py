@@ -11,8 +11,7 @@ from bibcat.llm.io import get_source, read_output, write_summary
 from bibcat.utils.logger_config import setup_logger
 
 # set up logger
-logger = setup_logger(__name__)
-logger.setLevel(config.logging.level)
+logger = setup_logger(__name__, level=config.logging.level)
 
 
 def evaluate_output(

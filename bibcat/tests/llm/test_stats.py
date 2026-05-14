@@ -14,8 +14,7 @@ from bibcat.llm.stats import (
 from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import load_json_file, save_json_file
 
-logger = setup_logger(__name__)
-logger.setLevel(config.logging.level)
+logger = setup_logger(__name__, level=config.logging.level)
 
 
 eval_data: Dict[str, Any] = {

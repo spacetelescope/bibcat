@@ -20,8 +20,7 @@ from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import load_json_file, save_json_file
 
 # set up logger
-logger = setup_logger(__name__)
-logger.setLevel(config.logging.level)
+logger = setup_logger(__name__, level=config.logging.level)
 
 
 def file_exists(filelist: list) -> bool:

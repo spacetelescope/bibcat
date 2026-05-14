@@ -10,8 +10,7 @@ from bibcat import config
 from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import save_json_file
 
-logger = setup_logger(__name__)
-logger.setLevel(config.logging.level)
+logger = setup_logger(__name__, level=config.logging.level)
 
 
 def extract_eval_data(data: dict, missions: list[str]) -> dict[str, Any]:
