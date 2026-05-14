@@ -407,10 +407,10 @@ def is_pos_word(word: spacy.tokens.Token, pos: str, keyword_objs: Optional[list[
     word_ancestors = list(word.ancestors)  # All previous nodes leading to word
 
     # Print some notes
-    logger.info("Running is_pos_word for: {0}".format(word))
-    logger.info("dep_: {0}\npos_: {1}\ntag_: {2}".format(word_dep, word_pos, word_tag))
-    logger.info("Node head: {0}\nSentence: {1}".format(word.head, word.sent))
-    logger.info("Node lefts: {0}\nNode rights: {1}".format(list(word.lefts), list(word.rights)))
+    logger.debug("Running is_pos_word for: {0}".format(word))
+    logger.debug("dep_: {0}\npos_: {1}\ntag_: {2}".format(word_dep, word_pos, word_tag))
+    logger.debug("Node head: {0}\nSentence: {1}".format(word.head, word.sent))
+    logger.debug("Node lefts: {0}\nNode rights: {1}".format(list(word.lefts), list(word.rights)))
 
     # Check if given word is of given part-of-speech
     # Identify roots
@@ -699,7 +699,7 @@ def is_pos_word(word: spacy.tokens.Token, pos: str, keyword_objs: Optional[list[
         raise ValueError("Err: {0} is not a recognized part of speech.".format(pos))
 
     # Print some notes
-    logger.info("Is pos={0}? {1}\n-".format(pos, check_all))
+    logger.debug("Is pos={0}? {1}\n-".format(pos, check_all))
     # Return the final verdict
     return check_all
 
@@ -744,10 +744,10 @@ def search_text(text: str, keyword_objs: list[Keyword]) -> dict:
         item2 for item1 in keyword_objs for item2 in item1._acronyms_casesensitive + item1._acronyms_caseinsensitive
     ]
 
-    logger.info("Completed search_text().")
-    logger.info("Keywords={0}\nAcronyms={1}".format(keywords, acronyms))
-    logger.info("Boolean: {0}".format(check_keywords))
-    logger.info("Char. Spans: {0}".format(charspans_keywords))
+    logger.debug("Completed search_text().")
+    logger.debug("Keywords={0}\nAcronyms={1}".format(keywords, acronyms))
+    logger.debug("Boolean: {0}".format(check_keywords))
+    logger.debug("Char. Spans: {0}".format(charspans_keywords))
 
     # Return boolean result
     return {"bool": check_keywords, "charspans": charspans_keywords}
