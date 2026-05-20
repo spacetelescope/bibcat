@@ -14,11 +14,13 @@ import re
 from typing import Any
 
 from bibcat import config
-from bibcat.core.base import Base
+from bibcat.core.core_utils import cleanse_text
 from bibcat.utils.logger_config import setup_logger
 
+logger = setup_logger(__name__, level=config.logging.level)
 
-class Keyword(Base):
+
+class Keyword:
     """
     A Keyword instance stores terms, e.g. titles and acronyms, that describe a mission (e.g., HST, JWST, TESS) for a user.  Methods of a Keyword instance can identify and/or replace snippets within texts that match to the mission.
     """
@@ -31,7 +33,6 @@ class Keyword(Base):
         banned_overlap,
         ambig_words,
         do_not_classify,
-        do_verbose=False,
     ):
         """
         Initialize an instance of the Keyword class, which stores terms, e.g. titles and acronyms, that describe a mission (e.g., HST, JWST, TESS) for a user.
@@ -54,8 +55,6 @@ class Keyword(Base):
             Phrases for which the user requests false positive checks to be done against the internal database of false positives.  E.g., "Hubble" can be found in the mission phrase "Hubble Telescope" and also in the false positive (i.e., non-mission) phrase "Hubble constant".  By specifying "Hubble" as a false positive phrase for the Hubble mission, the code knows to internally check phrases in the text associated with Hubble against the internal false positive database and procedure.
         do_not_classify : bool
             If True, text for the mission will be processed, extracted, and presented to the user, but not classified.  This can be useful for missions for which only human classification is desired.  This can also be useful for missions for which false positives are too difficult to automatically screen out (e.g., "K2", which can be a mission and also a stellar spectral type).
-        do_verbose : bool = False
-            If True, will print statements and internal reports within applicable methods while the code is running.
 
         Returns
         -------
@@ -63,24 +62,23 @@ class Keyword(Base):
         """
         # Initialize storage
         self._storage = {}
-        self._store_info(do_verbose, "do_verbose")
-        self._store_info(banned_overlap, "banned_overlap")
-        self._store_info(ambig_words, "ambig_words")
-        self._store_info(do_not_classify, "do_not_classify")
+        self._banned_overlap = banned_overlap
+        self._ambig_words = ambig_words
+        self._do_not_classify = do_not_classify
 
         # Cleanse keywords of extra whitespace, punctuation, etc.
-        keywords_clean = sorted(
-            [self._cleanse_text(text=phrase, do_streamline_etal=True) for phrase in keywords], key=(len)
-        )[::-1]  # Sort by desc. length
+        keywords_clean = sorted([cleanse_text(text=phrase, do_streamline_etal=True) for phrase in keywords], key=(len))[
+            ::-1
+        ]  # Sort by desc. length
         # Store keywords
-        self._store_info(keywords_clean, key="keywords")
+        self._keywords = keywords_clean
 
         # Cleanse banned overlap of extra whitespace, punctuation, etc.
         banned_overlap_lowercase = [
-            self._cleanse_text(text=phrase.lower(), do_streamline_etal=True) for phrase in banned_overlap
+            cleanse_text(text=phrase.lower(), do_streamline_etal=True) for phrase in banned_overlap
         ]
         # Store keywords
-        self._store_info(banned_overlap_lowercase, key="banned_overlap_lowercase")
+        self._banned_overlap_lowercase = banned_overlap_lowercase
 
         # Also cleanse+store acronyms, if given
         # For case-insensitive acronyms
@@ -92,9 +90,9 @@ class Keyword(Base):
             # Remove all whitespace
             acronyms_mid = [re.sub(" ", "", item) for item in acronyms_mid]
             acronyms_clean = sorted(acronyms_mid, key=(len))[::-1]  # Sort by desc. length
-            self._store_info(acronyms_clean, key="acronyms_caseinsensitive")
+            self._acronyms_caseinsensitive = acronyms_clean
         else:
-            self._store_info([], key="acronyms_caseinsensitive")
+            self._acronyms_caseinsensitive = []
         # For case-sensitive acronyms
         if acronyms_casesensitive is not None:
             acronyms_mid = [
@@ -104,25 +102,23 @@ class Keyword(Base):
             # Remove all whitespace
             acronyms_mid = [re.sub(" ", "", item) for item in acronyms_mid]
             acronyms_clean = sorted(acronyms_mid, key=(len))[::-1]  # Sort by desc. length
-            self._store_info(acronyms_clean, key="acronyms_casesensitive")
+            self._acronyms_casesensitive = acronyms_clean
         else:
-            self._store_info([], key="acronyms_casesensitive")
+            self._acronyms_casesensitive = []
 
         # Store representative name for this keyword object
-        repr_name = (
-            self._get_info("keywords")[::-1]
-            + self._get_info("acronyms_casesensitive")
-            + self._get_info("acronyms_caseinsensitive")
-        )[0]  # Take shortest keyword or longest acronym as repr. name
-        self._store_info(repr_name, key="name")
+        repr_name = (self._keywords[::-1] + self._acronyms_casesensitive + self._acronyms_caseinsensitive)[
+            0
+        ]  # Take shortest keyword or longest acronym as repr. name
+        self._name = repr_name
 
         # Store regular expression for keywords
-        exps_k = [(r"\b" + phrase + r"\b") for phrase in self._get_info("keywords")]
+        exps_k = [(r"\b" + phrase + r"\b") for phrase in self._keywords]
 
         # Store regular expression for case-insensitive acronyms
         if (acronyms_caseinsensitive is not None) and (len(acronyms_caseinsensitive) > 0):
             # Update acronyms to allow optional spaces and puncuations `.` and `-`
-            acronyms_upd = [(r"(\.?)( ?)(-?)".join(item)) for item in self._get_info("acronyms_caseinsensitive")]
+            acronyms_upd = [(r"(\.?)( ?)(-?)".join(item)) for item in self._acronyms_caseinsensitive]
             # Build regular expression to recognize acronyms
             exp_a_caseinsensitive = (
                 r"(^|[^\.])((\b" + r"\b)|(\b".join([phrase for phrase in acronyms_upd]) + r"\b)(\.?))($|[^A-Z|a-z])"
@@ -133,7 +129,7 @@ class Keyword(Base):
         # Store regular expression for case-sensitive acronyms
         if (acronyms_casesensitive is not None) and (len(acronyms_casesensitive) > 0):
             # Update acronyms to allow optional spaces and puncuations `.` and `-`
-            acronyms_upd = [(r"(\.?)( ?)(-?)".join(item)) for item in self._get_info("acronyms_casesensitive")]
+            acronyms_upd = [(r"(\.?)( ?)(-?)".join(item)) for item in self._acronyms_casesensitive]
             # Build regular expression to recognize acronyms
             exp_a_casesensitive = (
                 r"(^|[^\.])((\b" + r"\b)|(\b".join([phrase for phrase in acronyms_upd]) + r"\b)(\.?))($|[^A-Z|a-z])"
@@ -141,9 +137,9 @@ class Keyword(Base):
         else:
             exp_a_casesensitive = None
 
-        self._store_info(exps_k, key="exps_keywords")
-        self._store_info(exp_a_caseinsensitive, key="exp_acronyms_caseinsensitive")
-        self._store_info(exp_a_casesensitive, key="exp_acronyms_casesensitive")
+        self._exps_keywords = exps_k
+        self._exp_acronyms_caseinsensitive = exp_a_caseinsensitive
+        self._exp_acronyms_casesensitive = exp_a_casesensitive
 
         return
 
@@ -156,10 +152,10 @@ class Keyword(Base):
         print_str = (
             "Keyword Object:\n"
             + f"Name: {self.get_name()}\n"
-            + f"Keywords: {self._get_info('keywords')}\n"
-            + f"Acronyms (Case-Insensitive): {self._get_info('acronyms_caseinsensitive')}\n"
-            + f"Acronyms (Case-Sensitive): {self._get_info('acronyms_casesensitive')}\n"
-            + f"Banned Overlap: {self._get_info('banned_overlap')}\n"
+            + f"Keywords: {self._keywords}\n"
+            + f"Acronyms (Case-Insensitive): {self._acronyms_caseinsensitive}\n"
+            + f"Acronyms (Case-Sensitive): {self._acronyms_casesensitive}\n"
+            + f"Banned Overlap: {self._banned_overlap}\n"
         )
 
         # Return the completed string for printing
@@ -180,7 +176,7 @@ class Keyword(Base):
             The representative name for this Keyword instance.
         """
         # Fetch and return representative name
-        return self._get_info("name")
+        return self._name
 
     # Purpose: Check if text matches to this keyword object; return match inds
     def identify_keyword(self, text: str, mode: str | None = None):
@@ -206,14 +202,13 @@ class Keyword(Base):
                     True if any acronym matches exist.
         """
         # Fetch global variables
-        exps_k = self._get_info("exps_keywords")
-        keywords = self._get_info("keywords")
-        exp_a_yescase = self._get_info("exp_acronyms_casesensitive")
-        exp_a_nocase = self._get_info("exp_acronyms_caseinsensitive")
-        acronyms_casesensitive = self._get_info("acronyms_casesensitive")
-        acronyms_caseinsensitive = self._get_info("acronyms_caseinsensitive")
-        banned_overlap_lowercase = self._get_info("banned_overlap_lowercase")
-        do_verbose = self._get_info("do_verbose")
+        exps_k = self._exps_keywords
+        keywords = self._keywords
+        exp_a_yescase = self._exp_acronyms_casesensitive
+        exp_a_nocase = self._exp_acronyms_caseinsensitive
+        acronyms_casesensitive = self._acronyms_casesensitive
+        acronyms_caseinsensitive = self._acronyms_caseinsensitive
+        banned_overlap_lowercase = self._banned_overlap_lowercase
         allowed_modes = [None, "keyword", "acronym"]
 
         # Throw error is specified mode not recognized
@@ -261,16 +256,17 @@ class Keyword(Base):
         charspans_acronyms_all = charspans_acronyms_nocase + charspans_acronyms_yescase
 
         # Print some notes
-        if do_verbose:
-            print("Keywords: {0}\nKeyword regex:\n{1}".format(keywords, exps_k))
-            print("Acronyms (Case-Sensitive): {0}\nAcronym regex:\n{1}".format(acronyms_casesensitive, exp_a_yescase))
-            print(
-                "Acronyms (Case-Insensitive): {0}\nAcronym regex:\n{1}".format(acronyms_caseinsensitive, exp_a_nocase)
-            )
-            print("Keyword bool: {0}\nAcronym bool: {1}".format(check_keywords, check_acronyms_all))
-            print(
-                "Keyword char. spans: {0}\nAcronym char. spans: {1}".format(charspans_keywords, charspans_acronyms_all)
-            )
+        logger.debug("Keywords: {0}\nKeyword regex:\n{1}".format(keywords, exps_k))
+        logger.debug(
+            "Acronyms (Case-Sensitive): {0}\nAcronym regex:\n{1}".format(acronyms_casesensitive, exp_a_yescase)
+        )
+        logger.debug(
+            "Acronyms (Case-Insensitive): {0}\nAcronym regex:\n{1}".format(acronyms_caseinsensitive, exp_a_nocase)
+        )
+        logger.debug("Keyword bool: {0}\nAcronym bool: {1}".format(check_keywords, check_acronyms_all))
+        logger.debug(
+            "Keyword char. spans: {0}\nAcronym char. spans: {1}".format(charspans_keywords, charspans_acronyms_all)
+        )
 
         # Return booleans
         return {
@@ -297,9 +293,9 @@ class Keyword(Base):
             The updated text; in the updated text, any keywords/acronyms that matched to this Keyword instance will have been replaced with `placeholder`.
         """
         # Fetch global variables
-        exps_k = self._get_info("exps_keywords")
-        exp_a_yescase = self._get_info("exp_acronyms_casesensitive")
-        exp_a_nocase = self._get_info("exp_acronyms_caseinsensitive")
+        exps_k = self._exps_keywords
+        exp_a_yescase = self._exp_acronyms_casesensitive
+        exp_a_nocase = self._exp_acronyms_caseinsensitive
         if exp_a_yescase is not None:
             exps_a_yescase = [exp_a_yescase]
         else:
@@ -309,7 +305,6 @@ class Keyword(Base):
         else:
             exps_a_nocase = []
         #
-        do_verbose = self._get_info("do_verbose")
         text_new = text
         #
 
@@ -330,19 +325,16 @@ class Keyword(Base):
             text_new = re.sub(curr_exp, (r"\1" + placeholder + ("\\" + str_tot)), text_new, flags=re.IGNORECASE)
 
         # Print some notes
-        if do_verbose:
-            print("Keyword regex:\n{0}".format(exps_k))
-            print("Acronyms (Case-Sensitive) regex: {0}".format(exp_a_yescase))
-            print("Acronyms (Case-Insensitive) regex: {0}".format(exp_a_nocase))
-            print("Updated text: {0}".format(text_new))
+        logger.debug("Keyword regex:\n{0}".format(exps_k))
+        logger.debug("Acronyms (Case-Sensitive) regex: {0}".format(exp_a_yescase))
+        logger.debug("Acronyms (Case-Insensitive) regex: {0}".format(exp_a_nocase))
+        logger.debug("Updated text: {0}".format(text_new))
 
         # Return updated text
         return text_new
 
     # Fetch a keyword object that matches the given lookup
-    def _fetch_keyword_object(
-        keyword_objs, lookup: str, do_raise_emptyerror: bool = True, verbose: bool = False
-    ) -> Any | None:
+    def _fetch_keyword_object(keyword_objs, lookup: str, do_raise_emptyerror: bool = True) -> Any | None:
         """Fetch a keyword object
 
         Given an input lookup string, tries to match it to a stored Keyword instance.
@@ -366,9 +358,7 @@ class Keyword(Base):
         """
 
         # Print some notes
-        if verbose:
-            logger = setup_logger(__name__)
-            logger.info(f"> Running _fetch_keyword_object() for lookup term {lookup}.")
+        logger.info(f"> Running _fetch_keyword_object() for lookup term {lookup}.")
 
         # Find keyword object that matches to given lookup term
         match = None
@@ -383,7 +373,7 @@ class Keyword(Base):
             errstr = f"No matching keyword object for {lookup}.\n"
             errstr += "Available keyword objects are:\n"
             # just use the names of the keywords
-            names = ", ".join(a._get_info("name") for a in keyword_objs)
+            names = ", ".join(a._name for a in keyword_objs)
             errstr += f"{names}\n"
 
             # Raise error if so requested

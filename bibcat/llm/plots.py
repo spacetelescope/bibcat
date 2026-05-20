@@ -9,8 +9,7 @@ from bibcat.llm.io import read_output
 from bibcat.llm.metrics import extract_eval_data, extract_roc_data, get_roc_metrics, prepare_roc_inputs
 from bibcat.utils.logger_config import setup_logger
 
-logger = setup_logger(__name__)
-logger.setLevel(config.logging.level)
+logger = setup_logger(__name__, level=config.logging.level)
 
 
 # create a confusion matrix plot

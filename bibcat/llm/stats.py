@@ -8,8 +8,7 @@ from bibcat.llm.io import read_output
 from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import save_json_file
 
-logger = setup_logger(__name__)
-logger.setLevel(config.logging.level)
+logger = setup_logger(__name__, level=config.logging.level)
 
 
 def inconsistent_classifications(input_path: str | pathlib.Path, output_path: str | pathlib.Path):

@@ -67,7 +67,6 @@ llms:
 textprocessing:
   do_verify_truematch: true  # used in Performance class
   do_raise_innererror: false  # do_raise_innererror: if True, will stop if exception encountered; # if False, will print error and continue
-  do_verbose_text_summary: false  # print input text data summary
   lookup: HST  # Prepare some Keyword objects
   buffer: 0  # the number of sentences to include within paragraph around each sentence with target terms
   placeholder_anon: "OBJ" # For text that is anonymized against user's target missions, this is the text that the mission terms are replaced with.

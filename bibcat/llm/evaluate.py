@@ -11,8 +11,7 @@ from bibcat.llm.io import get_source, read_output, write_summary
 from bibcat.utils.logger_config import setup_logger
 
 # set up logger
-logger = setup_logger(__name__)
-logger.setLevel(config.logging.level)
+logger = setup_logger(__name__, level=config.logging.level)
 
 
 def evaluate_output(
@@ -429,7 +428,7 @@ def identify_missions_in_text(missions: list, text: str) -> list:
 
         # get the relevant mission keyword
         try:
-            keyword = Keyword._fetch_keyword_object(params.all_kobjs, mission, verbose=config.logging.verbose)
+            keyword = Keyword._fetch_keyword_object(params.all_kobjs, mission)
         except ValueError:
             # if the keyword doesn't exist, just use the provided mission name
             keywd = mission

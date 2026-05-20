@@ -38,7 +38,7 @@ class TestKeyword(unittest.TestCase):
                 # Otherwise, check generated modif
                 curr_lookup = key1
                 test_res = keyword.Keyword._fetch_keyword_object(
-                    tmp_kobj_list, lookup=curr_lookup, do_raise_emptyerror=True, verbose=False
+                    tmp_kobj_list, lookup=curr_lookup, do_raise_emptyerror=True
                 )
                 curr_answer = test_dict_lookup_kobj[dict_acts[key1]]
 
