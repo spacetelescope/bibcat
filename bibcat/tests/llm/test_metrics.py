@@ -67,27 +67,16 @@ def test_extract_eval_data_for_run(mocker, single_run_eval_data, single_run_miss
 
 
 def test_evaluate_multiple_llm_runs(mocker, multi_run_eval_data, multi_run_llm_runs_data, multi_run_missions) -> None:
-    per_run_eval_data = [
-        {
-            "B1": {"human": {"HST": "SCIENCE"}, "llm": [{"HST": "SCIENCE"}]},
-            "B2": {"human": {"HST": "MENTION"}, "llm": [{"HST": "MENTION"}]},
-        },
-        {
-            "B1": {"human": {"HST": "SCIENCE"}, "llm": [{"HST": "MENTION"}]},
-            "B2": {"error": "No mission output found for B2.", "human": {"HST": "MENTION"}},
-        },
-    ]
-
-    mocker.patch("bibcat.llm.metrics.build_eval_data_for_run", side_effect=per_run_eval_data)
-    mocker.patch(
-        "bibcat.llm.metrics.load_source_dataset",
-        return_value=[{"bibcode": "B1"}, {"bibcode": "B2"}],
-    )
+    source_lookup = {
+        "B1": {"bibcode": "B1", "class_missions": {"HST": {"papertype": "SCIENCE"}}},
+        "B2": {"bibcode": "B2", "class_missions": {"HST": {"papertype": "MENTION"}}},
+    }
 
     summary = evaluate_multiple_llm_runs(
         llm_runs_data=multi_run_llm_runs_data,
         missions=multi_run_missions,
         bibcodes=list(multi_run_eval_data.keys()),
+        source_lookup=source_lookup,
     )
 
     assert summary["n_runs"] == 2

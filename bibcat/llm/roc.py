@@ -4,107 +4,16 @@ from typing import Any
 from sklearn.metrics import auc, roc_curve
 
 from bibcat import config
-from bibcat.llm.evaluate import build_eval_data_for_run
-from bibcat.llm.metrics import (
+from bibcat.data.build_dataset import load_source_dataset
+from bibcat.llm.run_eval import (
     IGNORED_RAW_LABEL,
     POSITIVE_LABEL,
+    build_run_paper_evaluations,
+    build_source_lookup,
     compute_run_coverage,
-    extract_llm_labels,
-    extract_mission_confidence_map,
-    has_no_mission_output,
-    has_no_paper_source,
-    normalize_human_labels,
     normalize_missions,
     to_binary_from_raw,
 )
-
-
-def extract_roc_data(
-    data: dict[str, dict[str, Any]],
-    missions: list[str],
-) -> tuple[list[str], list[list[float]], list[str]]:
-    """Extract binary labels and confidence vectors for ROC/AUC analysis.
-
-    Parameters
-    ----------
-    data : dict
-        Evaluation data keyed by bibcode.
-    missions : list of str
-        Missions to evaluate.
-
-    Returns
-    -------
-    human_labels : list of str
-        Binary human labels for ROC evaluation.
-    llm_confidences : list of list of float
-        Probability vectors aligned with ``human_labels``.
-    human_llm_missions : list of str
-        Sorted missions called out by both human and LLM.
-
-    Notes
-    -----
-    For missing LLM output, the confidence vector defaults to ``[0.0, 1.0]``.
-    """
-    normalized_missions = normalize_missions(missions)
-
-    human_labels: list[str] = []
-    llm_confidences: list[list[float]] = []
-    human_llm_missions_seen: set[str] = set()
-
-    for item in data.values():
-        if has_no_paper_source(item):
-            continue
-
-        human = normalize_human_labels(item.get("human"))
-
-        if has_no_mission_output(item):
-            llm = {}
-            mission_conf_map = {}
-        else:
-            llm = extract_llm_labels(item.get("llm"))
-            mission_conf_map = extract_mission_confidence_map(item.get("mission_conf"))
-
-        for mission in normalized_missions:
-            if mission in human and mission in llm:
-                human_llm_missions_seen.add(mission)
-
-            human_raw = human.get(mission, IGNORED_RAW_LABEL)
-            human_labels.append(to_binary_from_raw(human_raw))
-
-            if mission in mission_conf_map:
-                llm_confidences.append(mission_conf_map[mission])
-            else:
-                llm_confidences.append([0.0, 1.0])
-
-    return human_labels, llm_confidences, sorted(human_llm_missions_seen)
-
-
-def prepare_roc_inputs(
-    human_labels: list[str],
-    llm_confidences: list[list[float]],
-) -> tuple[list[int], list[list[float]], int]:
-    """Prepare ROC inputs for binary evaluation.
-
-    Parameters
-    ----------
-    human_labels : list of str
-        Binary human labels.
-    llm_confidences : list of list of float
-        Confidence vectors aligned with ``human_labels``.
-
-    Returns
-    -------
-    y_true : list of int
-        Binary ground-truth vector where ``SCIENCE`` is 1 and
-        ``NONSCIENCE`` is 0.
-    llm_confidences : list of list of float
-        Unmodified confidence vectors.
-    n_samples : int
-        Number of ROC samples.
-    """
-    y_true = [1 if label == POSITIVE_LABEL else 0 for label in human_labels]
-    n_samples = len(y_true)
-    return y_true, llm_confidences, n_samples
 
 
 def get_roc_metrics(
@@ -145,59 +54,51 @@ def get_roc_metrics(
     return fpr.tolist(), tpr.tolist(), thresholds.tolist(), float(roc_auc)
 
 
-def build_roc_inputs_for_run(
-    eval_data: dict[str, dict[str, Any]],
+def build_roc_inputs_for_run_evaluations(
+    run_evaluations: list[Any],
     missions: list[str],
-) -> tuple[list[int], list[list[float]]]:
-    """Build binary ROC inputs for one run-specific evaluation snapshot.
+) -> tuple[list[int], list[list[float]], list[str]]:
+    """Build ROC inputs from raw run-evaluation inputs.
 
     Parameters
     ----------
-    eval_data : dict
-        Run-specific evaluation data keyed by bibcode. The ``human`` field is used
-        as the ground truth.
-    missions : list of str
+    run_evaluations : list[Any]
+        Run-specific evaluation inputs for the selected bibcodes.
+    missions : list[str]
         Missions to evaluate.
 
     Returns
     -------
-    y_true : list of int
-        Binary ground-truth vector where science is 1 and nonscience is 0.
-    confidences : list of list of float
-        Confidence vectors ordered as ``[p_science, p_nonscience]``.
-
-    Notes
-    -----
-    Missing mission predictions default to ``[0.0, 1.0]``.
+    tuple[list[int], list[list[float]], list[str]]
+        Binary ground truth, confidence vectors, and missions called out by both
+        human and LLM in the selected run.
     """
     normalized_missions = normalize_missions(missions)
     y_true: list[int] = []
     confidences: list[list[float]] = []
+    human_llm_missions_seen: set[str] = set()
 
-    for item in eval_data.values():
-        if has_no_paper_source(item):
+    for evaluation in run_evaluations:
+        if not evaluation.has_source:
             continue
 
-        human = normalize_human_labels(item.get("human"))
-
-        if has_no_mission_output(item):
-            llm_labels = {}
-            mission_conf_map = {}
-        else:
-            llm_labels = extract_llm_labels(item.get("llm"))
-            mission_conf_map = extract_mission_confidence_map(item.get("mission_conf"))
+        human = evaluation.human_labels
 
         for mission in normalized_missions:
+            prediction = evaluation.llm_predictions.get(mission)
+            if mission in human and prediction is not None:
+                human_llm_missions_seen.add(mission)
+
             human_raw = human.get(mission, IGNORED_RAW_LABEL)
             human_label = to_binary_from_raw(human_raw)
             y_true.append(1 if human_label == POSITIVE_LABEL else 0)
 
-            if mission in llm_labels and mission in mission_conf_map:
-                confidences.append(mission_conf_map[mission])
+            if prediction is not None and prediction.confidence is not None and len(prediction.confidence) == 2:
+                confidences.append(list(prediction.confidence))
             else:
                 confidences.append([0.0, 1.0])
 
-    return y_true, confidences
+    return y_true, confidences, sorted(human_llm_missions_seen)
 
 
 def extract_roc_metrics_for_run(
@@ -205,6 +106,7 @@ def extract_roc_metrics_for_run(
     missions: list[str],
     bibcodes: list[str],
     run_index: int = 0,
+    source_lookup: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Extract ROC metrics for one run from raw LLM output.
 
@@ -224,16 +126,20 @@ def extract_roc_metrics_for_run(
     dict[str, Any]
         Compact ROC payload for the selected run.
     """
-    eval_data = build_eval_data_for_run(
+    if source_lookup is None:
+        source_lookup = build_source_lookup(load_source_dataset(do_verbose=False))
+
+    run_evaluations = build_run_paper_evaluations(
         llm_runs_data=llm_runs_data,
-        run_index=run_index,
         bibcodes=bibcodes,
+        run_index=run_index,
+        source_lookup=source_lookup,
     )
-    human_labels, llm_confidences, human_llm_missions = extract_roc_data(
-        data=eval_data,
+    y_true, llm_confidences, human_llm_missions = build_roc_inputs_for_run_evaluations(
+        run_evaluations=run_evaluations,
         missions=missions,
     )
-    y_true, llm_confidences, n_verdicts = prepare_roc_inputs(human_labels, llm_confidences)
+    n_verdicts = len(y_true)
     fpr, tpr, thresholds, roc_auc = get_roc_metrics(llm_confidences, y_true)
 
     return {
@@ -252,6 +158,7 @@ def evaluate_multiple_llm_runs_with_roc(
     llm_runs_data: dict[str, list[dict[str, Any]]],
     missions: list[str],
     bibcodes: list[str],
+    source_lookup: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Evaluate multiple LLM runs and compute ROC/AUC per run.
 
@@ -278,19 +185,23 @@ def evaluate_multiple_llm_runs_with_roc(
     This function returns ROC-focused aggregate output only. Confusion-matrix
     aggregate payload fields are intentionally excluded from this return value.
     """
+    if source_lookup is None:
+        source_lookup = build_source_lookup(load_source_dataset(do_verbose=False))
+
     n_runs = max((len(runs) for runs in llm_runs_data.values()), default=0)
 
     per_run_roc: list[dict[str, Any]] = []
     auc_values: list[float] = []
 
     for run_index in range(n_runs):
-        eval_data_for_run = build_eval_data_for_run(
+        run_evaluations = build_run_paper_evaluations(
             llm_runs_data=llm_runs_data,
-            run_index=run_index,
             bibcodes=bibcodes,
+            run_index=run_index,
+            source_lookup=source_lookup,
         )
-        y_true, confidences = build_roc_inputs_for_run(
-            eval_data=eval_data_for_run,
+        y_true, confidences, _ = build_roc_inputs_for_run_evaluations(
+            run_evaluations=run_evaluations,
             missions=missions,
         )
         fpr, tpr, thresholds, roc_auc = get_roc_metrics(
@@ -310,7 +221,7 @@ def evaluate_multiple_llm_runs_with_roc(
 
     return {
         "n_runs": n_runs,
-        "run_coverage": compute_run_coverage(bibcodes, llm_runs_data, n_runs),
+        "run_coverage": compute_run_coverage(bibcodes, llm_runs_data, n_runs, set(source_lookup)),
         "aggregate_auc": {
             "mean": float(mean(auc_values)) if auc_values else 0.0,
             "std": float(pstdev(auc_values)) if auc_values else 0.0,

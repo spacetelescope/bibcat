@@ -1,11 +1,12 @@
+import json
+
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-
 # pylint: disable=all
-
 from click.testing import CliRunner
 
+import bibcat.main as main
 from bibcat.main import cli
 
 
@@ -67,6 +68,7 @@ def test_eval_plot() -> None:
     runner = CliRunner()
     result = runner.invoke(cli, ["llm", "plot", "--help"])
     assert "Create evaluation plots" in result.output
+    assert "--run-index" in result.output
 
 
 def test_cm_metrics() -> None:
@@ -123,6 +125,65 @@ def test_roc_metrics_rejects_run_index_with_aggregate(tmp_path) -> None:
     result = runner.invoke(cli, ["llm", "roc-metrics", "-a", "-r", "0", "-f", str(bibcodes)])
     assert result.exit_code != 0
     assert "--run-index cannot be used with -a/--aggregate." in result.output
+
+
+def test_plot_cm_requires_saved_metrics_file(tmp_path, mocker) -> None:
+    runner = CliRunner()
+    mocker.patch.object(main.config.paths, "output", str(tmp_path))
+
+    result = runner.invoke(cli, ["llm", "plot", "--cm", "-m", "JWST"])
+
+    assert result.exit_code != 0
+    assert "Confusion matrix metrics file not found" in result.output
+
+
+def test_plot_cm_reads_saved_metrics_data(tmp_path, mocker) -> None:
+    runner = CliRunner()
+    mocker.patch.object(main.config.paths, "output", str(tmp_path))
+    plot_mock = mocker.patch("bibcat.main.confusion_matrix_plot")
+
+    output_dir = tmp_path / f"llms/openai_{main.config.llms.openai.model}"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    metrics_path = main._cm_metrics_output_path("single_r2")
+    metrics_path.parent.mkdir(parents=True, exist_ok=True)
+    data = {
+        "human_labels": ["SCIENCE"],
+        "llm_labels": ["SCIENCE"],
+        "threshold": 0.5,
+        "human_llm_missions": ["JWST"],
+    }
+    metrics_path.write_text(json.dumps(data), encoding="utf-8")
+
+    result = runner.invoke(cli, ["llm", "plot", "--cm", "--run-index", "2", "-m", "JWST"])
+
+    assert result.exit_code == 0
+    plot_mock.assert_called_once_with(metrics_data=data, missions=["JWST"], metrics_type="single_r2")
+
+
+def test_plot_roc_reads_saved_metrics_data(tmp_path, mocker) -> None:
+    runner = CliRunner()
+    mocker.patch.object(main.config.paths, "output", str(tmp_path))
+    plot_mock = mocker.patch("bibcat.main.roc_plot")
+
+    output_dir = tmp_path / f"llms/openai_{main.config.llms.openai.model}"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    metrics_path = main._roc_metrics_output_path("single_r1")
+    metrics_path.parent.mkdir(parents=True, exist_ok=True)
+    data = {
+        "fpr": [0.0, 1.0],
+        "tpr": [0.0, 1.0],
+        "thresholds": [1.0, 0.0],
+        "roc_auc": 0.5,
+        "n_verdicts": 2,
+        "human_llm_missions": ["JWST"],
+        "missions": ["JWST"],
+    }
+    metrics_path.write_text(json.dumps(data), encoding="utf-8")
+
+    result = runner.invoke(cli, ["llm", "plot", "--roc", "--run-index", "1", "-m", "JWST"])
+
+    assert result.exit_code == 0
+    plot_mock.assert_called_once_with(roc_data=data, missions=["JWST"], metrics_type="single_r1")
 
 
 def test_batch_submit() -> None:

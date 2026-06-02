@@ -5,6 +5,19 @@ from typing import Any
 from bibcat import config
 from bibcat.data.build_dataset import load_source_dataset
 from bibcat.llm.evaluate import build_eval_data_for_run
+from bibcat.llm.run_eval import (
+    IGNORED_RAW_LABEL,
+    build_run_paper_evaluations,
+    build_source_lookup,
+    compute_run_coverage,
+    extract_llm_labels,
+    has_no_mission_output,
+    has_no_paper_source,
+    normalize_human_labels,
+    normalize_mission,
+    normalize_missions,
+    to_binary_from_raw,
+)
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
@@ -12,8 +25,6 @@ logger.setLevel(config.logging.level)
 
 POSITIVE_LABEL = config.llms.papertypes[0]  # SCIENCE
 NEGATIVE_LABEL = config.llms.papertypes[1]  # NONSCIENCE
-IGNORED_RAW_LABEL = "IGNORED"
-LLM_METADATA_KEYS = {"confidence", "probability"}
 
 
 @dataclass(frozen=True)
@@ -25,164 +36,6 @@ class MissionSample:
     human_label: str
     llm_label: str
     mission_in_text: bool
-
-
-@dataclass(frozen=True)
-class LlmRunPrediction:
-    papertype: str
-    confidence: list[float] | None
-
-
-def normalize_mission(name: str | None) -> str | None:
-    """Normalize a mission name to uppercase.
-
-    Parameters
-    ----------
-    name : str or None
-        Mission name to normalize.
-
-    Returns
-    -------
-    str or None
-        Uppercased mission name with surrounding whitespace removed, or
-        ``None`` if ``name`` is ``None``.
-    """
-    if name is None:
-        return None
-    return name.strip().upper()
-
-
-def normalize_missions(missions: list[str]) -> list[str]:
-    """Normalize a list of mission names.
-
-    Parameters
-    ----------
-    missions : list[str]
-        Mission names to normalize.
-
-    Returns
-    -------
-    list[str]
-        Normalized mission names.
-    """
-    return [m for m in (normalize_mission(mission) for mission in missions) if m is not None]
-
-
-def has_no_mission_output(item: dict[str, Any]) -> bool:
-    """Check whether an eval item indicates missing mission output.
-
-    Parameters
-    ----------
-    item : dict[str, Any]
-        Eval-data entry for one bibcode.
-
-    Returns
-    -------
-    bool
-        ``True`` if the entry error indicates no mission output.
-    """
-    error = str(item.get("error") or "").strip()
-    return "No mission output found" in error
-
-
-def has_no_paper_source(item: dict[str, Any]) -> bool:
-    """Check whether an eval item indicates missing paper source.
-
-    Parameters
-    ----------
-    item : dict[str, Any]
-        Eval-data entry for one bibcode.
-
-    Returns
-    -------
-    bool
-        ``True`` if the entry error indicates no source paper.
-    """
-    error = str(item.get("error") or "").strip()
-    return "No paper source found" in error
-
-
-def map_papertype(raw: str | None) -> str:
-    """Map a raw papertype label to configured output label.
-
-    Parameters
-    ----------
-    raw : str or None
-        Raw papertype label.
-
-    Returns
-    -------
-    str
-        Uppercased mapped papertype. Defaults to nonscience mapping when
-        ``raw`` is missing or unknown.
-    """
-    if raw is None:
-        return NEGATIVE_LABEL
-    mapped = config.llms.map_papertypes.get(str(raw).lower(), "nonscience")
-    return str(mapped).upper()
-
-
-def to_binary_from_raw(raw: str | None) -> str:
-    """Convert a raw papertype to binary science/nonscience label.
-
-    Parameters
-    ----------
-    raw : str or None
-        Raw papertype label.
-
-    Returns
-    -------
-    str
-        ``POSITIVE_LABEL`` for science-class mapping, otherwise
-        ``NEGATIVE_LABEL``.
-    """
-    mapped = map_papertype(raw)
-    return POSITIVE_LABEL if mapped == POSITIVE_LABEL else NEGATIVE_LABEL
-
-
-def normalize_human_labels(human: dict[str, str] | None) -> dict[str, str]:
-    """Normalize human labels to uppercased mission keys.
-
-    Parameters
-    ----------
-    human : dict[str, str] or None
-        Human mission-to-papertype mapping.
-
-    Returns
-    -------
-    dict[str, str]
-        Human mapping with normalized mission keys.
-    """
-    out: dict[str, str] = {}
-    for mission, label in (human or {}).items():
-        normalized = normalize_mission(mission)
-        if normalized is not None:
-            out[normalized] = label
-    return out
-
-
-def extract_llm_labels(llm_list: list[dict[str, Any]] | None) -> dict[str, str]:
-    """Extract mission-to-papertype labels from llm summary entries.
-
-    Parameters
-    ----------
-    llm_list : list[dict[str, Any]] or None
-        LLM summary output list, where each item includes mission labels and
-        metadata keys.
-
-    Returns
-    -------
-    dict[str, str]
-        Mapping of normalized mission names to raw LLM papertypes.
-    """
-    out: dict[str, str] = {}
-    for item in llm_list or []:
-        for key, value in item.items():
-            if key not in LLM_METADATA_KEYS:
-                mission = normalize_mission(key)
-                if mission is not None:
-                    out[mission] = str(value)
-    return out
 
 
 def extract_mission_in_text(df_rows: list[dict[str, Any]] | None) -> dict[str, bool]:
@@ -206,29 +59,6 @@ def extract_mission_in_text(df_rows: list[dict[str, Any]] | None) -> dict[str, b
     return out
 
 
-def extract_mission_confidence_map(mission_conf_rows: list[dict[str, Any]] | None) -> dict[str, list[float]]:
-    """Extract mission confidence vectors by mission.
-
-    Parameters
-    ----------
-    mission_conf_rows : list[dict[str, Any]] or None
-        Rows from the ``mission_conf`` field in evaluation summary output.
-
-    Returns
-    -------
-    dict[str, list[float]]
-        Mapping of normalized mission names to confidence vectors ordered as
-        ``[p_science, p_nonscience]``.
-    """
-    out: dict[str, list[float]] = {}
-    for row in mission_conf_rows or []:
-        mission = normalize_mission(row.get("llm_mission"))
-        prob = row.get("prob_papertype")
-        if mission is not None and isinstance(prob, list):
-            out[mission] = prob
-    return out
-
-
 def safe_divide(numerator: float, denominator: float) -> float:
     """Safely divide two numbers.
 
@@ -248,7 +78,7 @@ def safe_divide(numerator: float, denominator: float) -> float:
 
 
 def build_entry(sample: MissionSample) -> dict[str, str]:
-    """Build a case-entry payload (confusion matrix entry) from a mission sample.
+    """Build a confusion-matrix case entry from a mission sample.
 
     Parameters
     ----------
@@ -409,7 +239,7 @@ def compute_metrics(confusion: dict[str, Any]) -> dict[str, float | int]:
     Parameters
     ----------
     confusion : dict[str, Any]
-        Confusion payload containing ``tp``, ``tn``, ``fp``, and ``fn``.
+        Confusion data containing ``tp``, ``tn``, ``fp``, and ``fn``.
 
     Returns
     -------
@@ -457,7 +287,7 @@ def extract_eval_data(data: dict[str, dict[str, Any]], missions: list[str]) -> d
     Returns
     -------
     dict[str, Any]
-        Combined summary containing labels, confusion-case payloads, and
+        Combined summary containing labels, confusion-case entries, and
         computed metric values.
     """
     samples, summary = extract_samples_and_summary(data, missions)
@@ -497,7 +327,7 @@ def extract_eval_data_for_run(
     Returns
     -------
     dict[str, Any]
-        Single-run confusion-matrix payload matching ``extract_eval_data``.
+        Single-run confusion-matrix metrics data matching ``extract_eval_data``.
     """
     eval_data = build_eval_data_for_run(
         llm_runs_data=llm_runs_data,
@@ -507,70 +337,63 @@ def extract_eval_data_for_run(
     return extract_eval_data(data=eval_data, missions=missions)
 
 
-def get_llm_run_or_empty(llm_runs: list[dict[str, Any]], run_index: int) -> dict[str, Any]:
-    """Get one run item or an empty default payload.
+def _append_cm_mission_samples(
+    samples: list[MissionSample],
+    bibcode: str,
+    missions: list[str],
+    human_labels: dict[str, str],
+    llm_labels: dict[str, str],
+) -> None:
+    """Append flattened confusion-matrix mission samples for one bibcode.
 
     Parameters
     ----------
-    llm_runs : list[dict[str, Any]]
-        Run outputs for one bibcode.
-    run_index : int
-        Zero-based run index.
-
-    Returns
-    -------
-    dict[str, Any]
-        Run output at ``run_index`` if available, otherwise ``{"missions": []}``.
+    samples : list[MissionSample]
+        Target list receiving mission-level rows.
+    bibcode : str
+        Bibcode for the source paper.
+    missions : list[str]
+        Normalized missions to flatten.
+    human_labels : dict[str, str]
+        Normalized human mission labels for this bibcode.
+    llm_labels : dict[str, str]
+        Normalized LLM mission labels for this bibcode.
     """
-    if run_index < len(llm_runs):
-        return llm_runs[run_index]
-    return {"missions": []}
+    for mission in missions:
+        human_raw = human_labels.get(mission, IGNORED_RAW_LABEL)
+        llm_raw = llm_labels.get(mission, IGNORED_RAW_LABEL)
+
+        samples.append(
+            MissionSample(
+                bibcode=bibcode,
+                mission=mission,
+                human_raw=human_raw,
+                llm_raw=llm_raw,
+                human_label=to_binary_from_raw(human_raw),
+                llm_label=to_binary_from_raw(llm_raw),
+                mission_in_text=False,
+            )
+        )
 
 
-def extract_llm_run_predictions(run_item: dict[str, Any]) -> dict[str, LlmRunPrediction]:
-    """Extract normalized mission predictions from one run item.
-
-    Parameters
-    ----------
-    run_item : dict[str, Any]
-        One run response containing a ``missions`` list.
-
-    Returns
-    -------
-    dict[str, LlmRunPrediction]
-        Mapping of normalized mission names to prediction payloads.
-    """
-    predictions: dict[str, LlmRunPrediction] = {}
-    for mission_item in run_item.get("missions", []) or []:
-        mission = normalize_mission(mission_item.get("mission"))
-        if mission is None:
-            continue
-        papertype = str(mission_item.get("papertype", IGNORED_RAW_LABEL))
-        confidence = mission_item.get("confidence")
-        conf = confidence if isinstance(confidence, list) else None
-        predictions[mission] = LlmRunPrediction(papertype=papertype, confidence=conf)
-    return predictions
-
-
-def build_samples_for_run(
+def build_cm_mission_samples_from_eval_data(
     eval_data: dict[str, dict[str, Any]],
     missions: list[str],
 ) -> list[MissionSample]:
-    """Build mission samples for a single run-specific evaluation snapshot.
+    """Flatten summary-shaped eval data into confusion-matrix mission samples.
 
     Parameters
     ----------
     eval_data : dict[str, dict[str, Any]]
-        Run-specific evaluation data keyed by bibcode. Expected to follow the same
-        shape as summary output entries produced during evaluation.
+        Run-specific evaluation data keyed by bibcode, using the same shape as
+        evaluation summary entries.
     missions : list[str]
-        Missions to evaluate.
+        Missions to flatten into mission-level rows.
 
     Returns
     -------
     list[MissionSample]
-        Flattened mission-level samples used for confusion-matrix metric
-        calculations.
+        Mission-level rows consumed by confusion-matrix counting.
     """
     normalized_missions = normalize_missions(missions)
     samples: list[MissionSample] = []
@@ -586,23 +409,70 @@ def build_samples_for_run(
         else:
             llm_labels = extract_llm_labels(item.get("llm"))
 
-        for mission in normalized_missions:
-            human_raw = human.get(mission, IGNORED_RAW_LABEL)
-            llm_raw = llm_labels.get(mission, IGNORED_RAW_LABEL)
-
-            samples.append(
-                MissionSample(
-                    bibcode=bibcode,
-                    mission=mission,
-                    human_raw=human_raw,
-                    llm_raw=llm_raw,
-                    human_label=to_binary_from_raw(human_raw),
-                    llm_label=to_binary_from_raw(llm_raw),
-                    mission_in_text=False,
-                )
-            )
+        _append_cm_mission_samples(
+            samples=samples,
+            bibcode=bibcode,
+            missions=normalized_missions,
+            human_labels=human,
+            llm_labels=llm_labels,
+        )
 
     return samples
+
+
+def build_cm_mission_samples_from_run_evaluations(
+    run_evaluations: list[Any],
+    missions: list[str],
+) -> list[MissionSample]:
+    """Flatten raw run evaluations into confusion-matrix mission samples.
+
+    Parameters
+    ----------
+    run_evaluations : list[Any]
+        Run-specific evaluation inputs for the selected bibcodes.
+    missions : list[str]
+        Missions to flatten into mission-level rows.
+
+    Returns
+    -------
+    list[MissionSample]
+        Mission-level rows consumed by confusion-matrix counting.
+    """
+    normalized_missions = normalize_missions(missions)
+    samples: list[MissionSample] = []
+
+    for evaluation in run_evaluations:
+        if not evaluation.has_source:
+            continue
+
+        human = evaluation.human_labels
+        llm_labels = {mission: prediction.papertype for mission, prediction in evaluation.llm_predictions.items()}
+
+        _append_cm_mission_samples(
+            samples=samples,
+            bibcode=evaluation.bibcode,
+            missions=normalized_missions,
+            human_labels=human,
+            llm_labels=llm_labels,
+        )
+
+    return samples
+
+
+def build_samples_for_run(
+    eval_data: dict[str, dict[str, Any]],
+    missions: list[str],
+) -> list[MissionSample]:
+    """Compatibility wrapper for summary-shaped confusion-matrix sample building."""
+    return build_cm_mission_samples_from_eval_data(eval_data=eval_data, missions=missions)
+
+
+def build_samples_for_run_evaluations(
+    run_evaluations: list[Any],
+    missions: list[str],
+) -> list[MissionSample]:
+    """Compatibility wrapper for raw run confusion-matrix sample building."""
+    return build_cm_mission_samples_from_run_evaluations(run_evaluations=run_evaluations, missions=missions)
 
 
 def aggregate_metrics_across_runs(per_run_metrics: list[dict[str, float | int]]) -> dict[str, dict[str, float]]:
@@ -628,46 +498,11 @@ def aggregate_metrics_across_runs(per_run_metrics: list[dict[str, float | int]])
     return aggregated
 
 
-def compute_run_coverage(
-    bibcodes: list[str],
-    llm_runs_data: dict[str, list[dict[str, Any]]],
-    n_runs: int,
-) -> float:
-    """Compute fraction of expected run outputs that are present.
-
-    Parameters
-    ----------
-    bibcodes : list[str]
-        Bibcode roster to evaluate.
-    llm_runs_data : dict[str, list[dict[str, Any]]]
-        Multi-run LLM output data keyed by bibcode.
-    n_runs : int
-        Total number of runs considered.
-
-    Returns
-    -------
-    float
-        Ratio of present run outputs to expected run outputs for bibcodes with
-        available source papers.
-    """
-    source_bibcodes = {item["bibcode"] for item in load_source_dataset(do_verbose=False)}
-    total = 0
-    present = 0
-    for bibcode in bibcodes:
-        if bibcode not in source_bibcodes:
-            continue
-        llm_runs = llm_runs_data.get(bibcode, [])
-        for run_index in range(n_runs):
-            total += 1
-            if run_index < len(llm_runs):
-                present += 1
-    return safe_divide(present, total)
-
-
 def evaluate_multiple_llm_runs(
     llm_runs_data: dict[str, list[dict[str, Any]]],
     missions: list[str],
     bibcodes: list[str],
+    source_lookup: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Evaluate aggregate confusion-matrix metrics across LLM runs.
 
@@ -689,18 +524,22 @@ def evaluate_multiple_llm_runs(
         Aggregate multi-run metric summary including run count, run coverage,
         per-run metrics, and mean/std aggregate metrics.
     """
+    if source_lookup is None:
+        source_lookup = build_source_lookup(load_source_dataset(do_verbose=False))
+
     n_runs = max((len(runs) for runs in llm_runs_data.values()), default=0)
     per_run_metrics: list[dict[str, float | int]] = []
 
     for run_index in range(n_runs):
         logger.info(f"Compute confusion matrix metrics for run {run_index + 1}/{n_runs}...")
-        eval_data_for_run = build_eval_data_for_run(
+        run_evaluations = build_run_paper_evaluations(
             llm_runs_data=llm_runs_data,
-            run_index=run_index,
             bibcodes=bibcodes,
+            run_index=run_index,
+            source_lookup=source_lookup,
         )
-        samples = build_samples_for_run(
-            eval_data=eval_data_for_run,
+        samples = build_cm_mission_samples_from_run_evaluations(
+            run_evaluations=run_evaluations,
             missions=missions,
         )
         confusion = compute_confusion(samples)
@@ -709,7 +548,7 @@ def evaluate_multiple_llm_runs(
 
     return {
         "n_runs": n_runs,
-        "run_coverage": compute_run_coverage(bibcodes, llm_runs_data, n_runs),
+        "run_coverage": compute_run_coverage(bibcodes, llm_runs_data, n_runs, set(source_lookup)),
         "aggregate_metrics": aggregate_metrics_across_runs(per_run_metrics),
         "per_run_metrics": per_run_metrics,
     }

@@ -24,6 +24,7 @@
   - Fixed aggregate handling when LLM mission output is missing.
   - Increased plot output resolution.
   - Guarded dataframe-to-string evaluation summary formatting so aggregate runs skip that work when the chosen summary log level is disabled.
+    - Fixed GitHub Actions lint/workflow error due to PLW0108.
 
 
 ### Deprecated

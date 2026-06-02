@@ -1,42 +1,65 @@
 import pathlib
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import ConfusionMatrixDisplay
 
 from bibcat import config
-from bibcat.llm.llm_io import read_output
-from bibcat.llm.metrics import extract_eval_data
-from bibcat.llm.roc import extract_roc_data, get_roc_metrics, prepare_roc_inputs
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__)
 logger.setLevel(config.logging.level)
 
 
-# create a confusion matrix plot
-def confusion_matrix_plot(summary_output_path: str | pathlib.Path, missions: list[str]) -> None:
-    """Create a confusion matrix figure
-
-    Create confusion matrix plots (counts and normalized) given a threshold value.
+def _plot_output_path(plot_name: str, metrics_type: str, threshold: float | None = None) -> pathlib.Path:
+    """Build a saved plot path with run-aware naming.
 
     Parameters
     ----------
-    summary_output_path: str or pathlib.Path
-        the filepath of the evaluation *summary_output.json
+    plot_name : str
+        Configured base plot filename.
+    metrics_type : str
+        Run or aggregation label such as ``single_r0`` or ``aggregate``.
+    threshold : float or None, optional
+        Threshold value to include in the saved name when applicable.
+
+    Returns
+    -------
+    pathlib.Path
+        Output path under the model-specific llm directory.
+    """
+    plot_path = pathlib.Path(plot_name)
+    suffix = plot_path.suffix or ".png"
+    stem = plot_path.stem if plot_path.suffix else plot_path.name
+    threshold_suffix = f"_t{threshold}" if threshold is not None else ""
+    filename = f"{stem}_{metrics_type}{threshold_suffix}{suffix}"
+    return pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}" / filename
+
+
+# create a confusion matrix plot
+def confusion_matrix_plot(metrics_data: dict[str, Any], missions: list[str], metrics_type: str) -> None:
+    """Create a confusion matrix figure
+
+    Create confusion matrix plots (counts and normalized) from a prepared
+    single-run confusion-matrix metrics data.
+
+    Parameters
+    ----------
+    metrics_data: dict[str, Any]
+        Single-run confusion-matrix metrics data.
     missions: list[str]
-        list of the mission names to extract the classification labels.
+        Mission names requested by the CLI.
+    metrics_type: str
+        Run label used for the saved figure name.
 
     Returns
     -------
 
     """
 
-    data = read_output(filename=summary_output_path)
-
     # capitalize all mission names just in case when is not
     missions = [mission.upper() for mission in missions]
-    metrics_data = extract_eval_data(missions=missions, data=data)
 
     human = metrics_data["human_labels"]
     llm = metrics_data["llm_labels"]
@@ -100,42 +123,42 @@ def confusion_matrix_plot(summary_output_path: str | pathlib.Path, missions: lis
     # plt.tight_layout(rect=[0, 0.05, 1, 0.95])
 
     # Saving the figure
-    cm_plot = (
-        pathlib.Path(config.paths.output)
-        / f"llms/openai_{config.llms.openai.model}/{config.llms.cm_plot}_t{config.llms.performance.threshold}.png"
+    cm_plot = _plot_output_path(
+        plot_name=config.llms.cm_plot,
+        metrics_type=metrics_type,
+        threshold=config.llms.performance.threshold,
     )
     plt.savefig(cm_plot, dpi=300, bbox_inches="tight")
     logger.info(f"The confusion matrix plot is saved on {cm_plot}!")
 
 
 # create a ROC curve plot
-def roc_plot(summary_output_path: str | pathlib.Path, missions: list[str]) -> None:
+def roc_plot(roc_data: dict[str, Any], missions: list[str], metrics_type: str) -> None:
     """Create a Receiver Operating Characteristic (ROC) curve plot
 
     Parameters
     ----------
-    summary_output_path: str or pathlib.Path
-        the filepath of the evaluation *summary_output.json
+    roc_data: dict[str, Any]
+        Single-run ROC metrics data.
     missions: list[str]
-        list of the mission names to extract the classification labels.
+        Mission names requested by the CLI.
+    metrics_type: str
+        Run label used for the saved figure name.
 
     Returns
     -------
 
     """
 
-    # read the evaluation summary output file
-    data = read_output(filename=summary_output_path)
-
     # capitalize all mission names just in case when is not
     missions = [mission.upper() for mission in missions]
 
-    human_labels, llm_confidences, human_llm_missions = extract_roc_data(missions=missions, data=data)
-
-    binarized_human_labels, llm_confidences, n_verdicts = prepare_roc_inputs(human_labels, llm_confidences)
-
-    # compute binary ROC curve and ROC AUC (area under curve)
-    fpr, tpr, thresholds, roc_auc = get_roc_metrics(llm_confidences, binarized_human_labels)
+    fpr = roc_data["fpr"]
+    tpr = roc_data["tpr"]
+    thresholds = roc_data["thresholds"]
+    roc_auc = roc_data["roc_auc"]
+    n_verdicts = roc_data["n_verdicts"]
+    human_llm_missions = roc_data["human_llm_missions"]
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     bbox_args = dict(boxstyle="round", fc="0.8")
@@ -208,7 +231,10 @@ def roc_plot(summary_output_path: str | pathlib.Path, missions: list[str]) -> No
     plt.tight_layout(rect=[0, 0.05, 1, 0.95])
 
     # Saving the figure
-    roc = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.roc_plot}"
+    roc = _plot_output_path(
+        plot_name=config.llms.roc_plot,
+        metrics_type=metrics_type,
+    )
     plt.savefig(roc, dpi=300, bbox_inches="tight")
 
     logger.info(f"The roc plot is saved on {roc}!")

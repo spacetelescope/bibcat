@@ -12,7 +12,7 @@ from pathlib import Path
 import click
 
 from bibcat import config
-from bibcat.data.build_dataset import build_dataset
+from bibcat.data.build_dataset import build_dataset, load_source_dataset
 from bibcat.llm.chunker import ChunkPlanner, SubmissionManager
 from bibcat.llm.evaluate import evaluate_output
 from bibcat.llm.llm_io import adjust_model, read_output
@@ -20,6 +20,7 @@ from bibcat.llm.metrics import evaluate_multiple_llm_runs, extract_eval_data_for
 from bibcat.llm.openai import OpenAIHelper, classify_paper
 from bibcat.llm.plots import confusion_matrix_plot, roc_plot
 from bibcat.llm.roc import evaluate_multiple_llm_runs_with_roc, extract_roc_metrics_for_run
+from bibcat.llm.run_eval import build_source_lookup
 from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import save_json_file
 
@@ -36,6 +37,18 @@ def _summary_output_path() -> Path:
     return _llm_output_dir() / f"{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
 
 
+def _cm_metrics_output_path(metrics_type: str) -> Path:
+    """Return the confusion-matrix metrics output path."""
+    return _llm_output_dir() / f"{config.llms.cm_metrics_file}_{metrics_type}_t{config.llms.performance.threshold}.json"
+
+
+def _roc_metrics_output_path(metrics_type: str) -> Path:
+    """Return the ROC metrics output path."""
+    return (
+        _llm_output_dir() / f"{config.llms.roc_metrics_file}_{metrics_type}_t{config.llms.performance.threshold}.json"
+    )
+
+
 def _prompt_output_path() -> Path:
     """Return the raw llm prompt output path."""
     return _llm_output_dir() / config.llms.prompt_output_file
@@ -47,6 +60,13 @@ def _read_bibcodes_file(filename) -> list[str]:
     if not bibcodes:
         raise click.UsageError("Bibcode file is empty.")
     return bibcodes
+
+
+def _read_required_metrics_json(path: Path, description: str) -> dict:
+    """Read a required saved metrics JSON file or raise a CLI error."""
+    if not path.exists():
+        raise click.ClickException(f"{description} not found at {path}.")
+    return read_output(filename=path)
 
 
 @click.group("bibcat")
@@ -255,24 +275,33 @@ def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, thre
     show_default=False,
     help="Create plots for all missions, command example for a confusion matrix plot for all missions: 'bibcat llm plot -c -a'",
 )
-def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
+@click.option(
+    "--run-index",
+    default=0,
+    type=click.IntRange(min=0),
+    show_default=True,
+    help="Run index to plot from saved single-run metrics JSON.",
+)
+def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False, run_index: int = 0):
     """Create the evaluation plots from a LLM model"""
     logger.debug("CLI option: 'llm plot' selected")
-    summary_output_path = _summary_output_path()
 
-    if cm and all_missions:
-        missions = config.missions
-        confusion_matrix_plot(summary_output_path=summary_output_path, missions=missions)
+    requested_missions = config.missions if all_missions else list(missions)
+    metrics_type = f"single_r{run_index}"
 
-    elif cm and missions:
-        confusion_matrix_plot(summary_output_path=summary_output_path, missions=list(missions))
+    if cm and requested_missions:
+        metrics_data = _read_required_metrics_json(
+            _cm_metrics_output_path(metrics_type),
+            "Confusion matrix metrics file",
+        )
+        confusion_matrix_plot(metrics_data=metrics_data, missions=requested_missions, metrics_type=metrics_type)
 
-    if roc and all_missions:
-        missions = config.missions
-        roc_plot(summary_output_path=summary_output_path, missions=missions)
-
-    elif roc and missions:
-        roc_plot(summary_output_path=summary_output_path, missions=list(missions))
+    if roc and requested_missions:
+        roc_data = _read_required_metrics_json(
+            _roc_metrics_output_path(metrics_type),
+            "ROC metrics file",
+        )
+        roc_plot(roc_data=roc_data, missions=requested_missions, metrics_type=metrics_type)
 
 
 @llmcli.command("cm-metrics", help="Save Confusion Matrix metrics for llm performance")
@@ -320,10 +349,12 @@ def cm_metrics(filename, run_index, missions: str, aggregate: bool):
     if aggregate:
         logger.info("Calculating aggregate metrics across mutiple runs.")
         metrics_type = "aggregate"
+        source_lookup = build_source_lookup(load_source_dataset(do_verbose=False))
         metrics_data = evaluate_multiple_llm_runs(
             llm_runs_data=llm_multi_runs_data,
             missions=missions,
             bibcodes=bibcodes,
+            source_lookup=source_lookup,
         )
         metrics_data_to_save = metrics_data
 
@@ -338,9 +369,7 @@ def cm_metrics(filename, run_index, missions: str, aggregate: bool):
         )
         metrics_type = f"single_r{selected_run_index}"
 
-    output_path = (
-        _llm_output_dir() / f"{config.llms.cm_metrics_file}_{metrics_type}_t{config.llms.performance.threshold}.json"
-    )
+    output_path = _cm_metrics_output_path(metrics_type)
 
     save_json_file(
         path=output_path,
@@ -396,10 +425,12 @@ def roc_metrics(filename, run_index, missions: str, aggregate: bool):
     if aggregate:
         logger.info("Calculating aggregate ROC metrics across multiple runs.")
         metrics_type = "aggregate"
+        source_lookup = build_source_lookup(load_source_dataset(do_verbose=False))
         roc_data = evaluate_multiple_llm_runs_with_roc(
             llm_runs_data=llm_multi_runs_data,
             missions=missions,
             bibcodes=bibcodes,
+            source_lookup=source_lookup,
         )
     else:
         selected_run_index = 0 if run_index is None else run_index
@@ -412,9 +443,7 @@ def roc_metrics(filename, run_index, missions: str, aggregate: bool):
             bibcodes=bibcodes,
         )
 
-    output_path = (
-        _llm_output_dir() / f"{config.llms.roc_metrics_file}_{metrics_type}_t{config.llms.performance.threshold}.json"
-    )
+    output_path = _roc_metrics_output_path(metrics_type)
 
     save_json_file(
         path=output_path,

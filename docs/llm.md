@@ -300,9 +300,11 @@ llms:
   agent_prompt: null
   prompt_output_file: paper_output.json # llm classification primary output
   eval_output_file: summary_output # llm evaluation summary output
-  metrics_file: metrics_summary # confusion-matrix metrics summary output
+  cm_metrics_file: cm_metrics_summary # confusion-matrix metrics summary output
   roc_metrics_file: roc_metrics_summary # ROC metrics summary output
   batch_file: batch_file.jsonl # llm batch jsonl file
+  cm_plot: confusion_matrix_llm.png # confusion matrix plot image
+  roc_plot: roc_plot_llm.png # ROC plot image
   llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
   llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
   openai:
@@ -742,20 +744,42 @@ You can assess model performance using confusion matrix plots or Receiver Operat
 A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curve evaluates a model's ability to distinguish between classes by plotting the true positive rate against the false positive rate at various thresholds, with the area under the curve (AUC) which represents the degree of separability between classes. For instance, AUC = 1.0 indicates perfect and AUC =0.5 is as good as random guessing. To provide more reliable and stable performance metrics, larger datasets (hundreds or thousands) are recommended. With small datasets, you make interpreations less reliable.
 
 ### Confusion Matrix Plot
-To plot confusion matrices for specific missions (default threshold probability = 0.5), run:
+`llm plot` reads precomputed single-run metrics JSON files. Generate the required metrics file first with `llm cm-metrics`, then plot that saved run.
+
+To plot confusion matrices for specific missions for the default saved run (`--run-index 0`), run:
 ```bash
+bibcat llm cm-metrics -f bibcodes.txt -m HST -m JWST
 bibcat llm plot -c -m HST -m JWST
+```
+
+To plot a non-default saved run, use the same `--run-index` value for both commands:
+```bash
+bibcat llm cm-metrics -f bibcodes.txt -r 2 -m HST -m JWST
+bibcat llm plot -c --run-index 2 -m HST -m JWST
 ```
 
 To plot confusion matrices for all missions, run:
 ```bash
+bibcat llm cm-metrics -f bibcodes.txt
 bibcat llm plot -c -a
 ```
 ![confusion matrix example](images/example_confusion_matrix_plot_t0.5.png)
 
-In the example confusion matrix (CM) plot, we have both counts (left panel) and normalized counts (right panel). All counts were considered if the confidence value of each LLM classification is >= 0.5 (`threshold = 0.5`). We can see the distribution of true positives (top left quadrant), false positives (bottom left quadrant), true negatives (bottom right quadrant), and false negatives (top right quadrant) for the specified missions. This visualization helps in understanding the model's performance and identifying areas for improvement. Note that in this figure, all MAST missions were considered to create CM, but only a subset of the missions in the annotation, `Mission(s) found:` were actually called out by human and LLM as seen in. The missions not found in the sample only contribute to true negatives.
+In the example confusion matrix (CM) plot, we have both counts (left panel) and normalized counts (right panel). We can see the distribution of true positives (top left quadrant), false positives (bottom left quadrant), true negatives (bottom right quadrant), and false negatives (top right quadrant) for the specified missions. This visualization helps in understanding the model's performance and identifying areas for improvement. Note that in this figure, all MAST missions were considered to create the CM, but only a subset of the missions in the annotation, `Mission(s) found:`, were actually called out by both human and LLM. Missions not found in the sample only contribute to true negatives.
 
-Plot commands only generate image files. To save JSON summaries, use `llm cm-metrics` (confusion-matrix metrics) and `llm roc-metrics` (ROC metrics).
+Plot commands only generate image files and require an existing single-run metrics JSON file. If the expected metrics file is missing, `llm plot` fails with a clear error instead of recomputing metrics inline. Aggregate metrics JSON files are not used by `llm plot`.
+
+Saved confusion-matrix plot filename pattern:
+
+```text
+{configured cm_plot name with the run label inserted before .png}_t{threshold}
+```
+
+For example, with the default config this becomes:
+
+```text
+confusion_matrix_llm_single_r2_t0.5.png
+```
 
 ## Metrics Output
 There are two sets of metrics output: confusion matrix metrics and ROC metrics. Both can be saved as JSON files for single runs or aggregate runs across multiple papers.
@@ -912,13 +936,36 @@ For both single-run and aggregate `roc-metrics`, bibcat builds ROC inputs from r
 Like aggregate CM evaluation, aggregate ROC evaluation demotes the per-bibcode in-memory evaluation summaries to `DEBUG`, leaving only the top-level aggregate progress logs at `INFO`.
 
 ### Receiver Operating Characteristic (ROC) Plot
-To plot ROC for specific missions, run:
+`llm plot -r` also reads precomputed single-run ROC metrics JSON files. Generate the saved ROC metrics file first with `llm roc-metrics`.
+
+To plot ROC for specific missions for the default saved run (`--run-index 0`), run:
 ```bash
+bibcat llm roc-metrics -f bibcodes.txt -m HST -m JWST
 bibcat llm plot -r -m HST -m JWST
 ```
+
+To plot a non-default saved run, use the same `--run-index` value for both commands:
+```bash
+bibcat llm roc-metrics -f bibcodes.txt -r 2 -m HST -m JWST
+bibcat llm plot -r --run-index 2 -m HST -m JWST
+```
+
 To plot ROC for all missions, run:
 ```bash
+bibcat llm roc-metrics -f bibcodes.txt
 bibcat llm plot -r -a
+```
+
+Saved ROC plot filename pattern:
+
+```text
+{configured roc_plot name with the run label inserted before .png}
+```
+
+For example, with the default config this becomes:
+
+```text
+roc_plot_llm_single_r2.png
 ```
 
 `bibcat llm stats` and `bibcat llm audit` were removed. Use `bibcat llm cm-metrics` and `bibcat llm roc-metrics` for JSON metric outputs.
