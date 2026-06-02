@@ -1,5 +1,6 @@
 from bibcat import config
-from bibcat.llm.metrics import evaluate_multiple_llm_runs, extract_eval_data, extract_eval_data_for_run, map_papertype
+from bibcat.llm.metrics import evaluate_multiple_llm_runs, extract_eval_data, extract_eval_data_for_run
+from bibcat.llm.run_eval import map_papertype
 
 
 def test_map_papertype(single_run_eval_data) -> None:
