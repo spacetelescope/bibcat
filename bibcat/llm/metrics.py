@@ -21,7 +21,6 @@ from bibcat.llm.run_eval import (
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__, level=config.logging.level)
-
 POSITIVE_LABEL = config.llms.papertypes[0]  # SCIENCE
 NEGATIVE_LABEL = config.llms.papertypes[1]  # NONSCIENCE
 
