@@ -127,7 +127,7 @@ def extract_roc_metrics_for_run(
         Compact ROC payload for the selected run.
     """
     if source_lookup is None:
-        source_lookup = build_source_lookup(load_source_dataset(do_verbose=False))
+        source_lookup = build_source_lookup(load_source_dataset())
 
     run_evaluations = build_run_paper_evaluations(
         llm_runs_data=llm_runs_data,
@@ -186,7 +186,7 @@ def evaluate_multiple_llm_runs_with_roc(
     aggregate payload fields are intentionally excluded from this return value.
     """
     if source_lookup is None:
-        source_lookup = build_source_lookup(load_source_dataset(do_verbose=False))
+        source_lookup = build_source_lookup(load_source_dataset())
 
     n_runs = max((len(runs) for runs in llm_runs_data.values()), default=0)
 

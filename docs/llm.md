@@ -748,20 +748,20 @@ A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curve e
 
 To plot confusion matrices for specific missions for the default saved run (`--run-index 0`), run:
 ```bash
-bibcat llm cm-metrics -f bibcodes.txt -m HST -m JWST
-bibcat llm plot -c -m HST -m JWST
+bibcat llm cm-metrics -f bibcodes.txt -m [HST, JWST]
+bibcat llm plot -c -m [HST, JWST]
 ```
 
 To plot a non-default saved run, use the same `--run-index` value for both commands:
 ```bash
-bibcat llm cm-metrics -f bibcodes.txt -r 2 -m HST -m JWST
-bibcat llm plot -c --run-index 2 -m HST -m JWST
+bibcat llm cm-metrics -f bibcodes.txt -r 2 -m [HST, JWST]
+bibcat llm plot -c --run-index 2 -m [HST, JWST]
 ```
 
-To plot confusion matrices for all missions, run:
+To plot confusion matrices for **all missions** (default when `-m` is not provided), run:
 ```bash
 bibcat llm cm-metrics -f bibcodes.txt
-bibcat llm plot -c -a
+bibcat llm plot -c
 ```
 ![confusion matrix example](images/example_confusion_matrix_plot_t0.5.png)
 
@@ -793,7 +793,7 @@ Save single-run confusion-matrix metrics for specific missions (default threshol
 ```bash
 bibcat llm cm-metrics -f bibcodes.txt -m HST -m JWST
 ```
-You can save single-run confusion-matrix metrics for all missions without `-m` flag:
+You can save single-run confusion-matrix metrics for **all missions** without `-m` flag:
 
 ```bash
 bibcat llm cm-metrics -f bibcodes.txt
@@ -876,7 +876,7 @@ Save single-run ROC metrics:
 ```bash
 bibcat llm roc-metrics -f bibcodes.txt -m HST -m JWST
 ```
-Save single-run ROC metrics for all missions without `-m` flag:
+Save single-run ROC metrics for **all missions** without `-m` flag:
 
 ```bash
 bibcat llm roc-metrics -f bibcodes.txt
@@ -940,20 +940,20 @@ Like aggregate CM evaluation, aggregate ROC evaluation demotes the per-bibcode i
 
 To plot ROC for specific missions for the default saved run (`--run-index 0`), run:
 ```bash
-bibcat llm roc-metrics -f bibcodes.txt -m HST -m JWST
-bibcat llm plot -r -m HST -m JWST
+bibcat llm roc-metrics -f bibcodes.txt -m [HST, JWST]
+bibcat llm plot -r -m [HST, JWST]
 ```
 
 To plot a non-default saved run, use the same `--run-index` value for both commands:
 ```bash
-bibcat llm roc-metrics -f bibcodes.txt -r 2 -m HST -m JWST
-bibcat llm plot -r --run-index 2 -m HST -m JWST
+bibcat llm roc-metrics -f bibcodes.txt -r 2 -m [HST, JWST]
+bibcat llm plot -r --run-index 2 -m [HST, JWST]
 ```
 
-To plot ROC for all missions, run:
+To plot ROC for **all missions** (default when `-m` is not provided), run:
 ```bash
 bibcat llm roc-metrics -f bibcodes.txt
-bibcat llm plot -r -a
+bibcat llm plot -r
 ```
 
 Saved ROC plot filename pattern:

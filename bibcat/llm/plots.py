@@ -33,7 +33,10 @@ def _plot_output_path(plot_name: str, metrics_type: str, threshold: float | None
     stem = plot_path.stem if plot_path.suffix else plot_path.name
     threshold_suffix = f"_t{threshold}" if threshold is not None else ""
     filename = f"{stem}_{metrics_type}{threshold_suffix}{suffix}"
-    return pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}" / filename
+    base = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}"
+    output_path = base / plot_path.parent / filename
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    return output_path
 
 
 # create a confusion matrix plot

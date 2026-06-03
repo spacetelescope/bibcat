@@ -131,7 +131,7 @@ def test_plot_cm_requires_saved_metrics_file(tmp_path, mocker) -> None:
     runner = CliRunner()
     mocker.patch.object(main.config.paths, "output", str(tmp_path))
 
-    result = runner.invoke(cli, ["llm", "plot", "--cm", "-m", "JWST"])
+    result = runner.invoke(cli, ["llm", "plot", "--cm", "-m", "[JWST]"])
 
     assert result.exit_code != 0
     assert "Confusion matrix metrics file not found" in result.output
@@ -154,7 +154,7 @@ def test_plot_cm_reads_saved_metrics_data(tmp_path, mocker) -> None:
     }
     metrics_path.write_text(json.dumps(data), encoding="utf-8")
 
-    result = runner.invoke(cli, ["llm", "plot", "--cm", "--run-index", "2", "-m", "JWST"])
+    result = runner.invoke(cli, ["llm", "plot", "--cm", "--run-index", "2", "-m", "[JWST]"])
 
     assert result.exit_code == 0
     plot_mock.assert_called_once_with(metrics_data=data, missions=["JWST"], metrics_type="single_r2")
@@ -180,7 +180,7 @@ def test_plot_roc_reads_saved_metrics_data(tmp_path, mocker) -> None:
     }
     metrics_path.write_text(json.dumps(data), encoding="utf-8")
 
-    result = runner.invoke(cli, ["llm", "plot", "--roc", "--run-index", "1", "-m", "JWST"])
+    result = runner.invoke(cli, ["llm", "plot", "--roc", "--run-index", "1", "-m", "[JWST]"])
 
     assert result.exit_code == 0
     plot_mock.assert_called_once_with(roc_data=data, missions=["JWST"], metrics_type="single_r1")

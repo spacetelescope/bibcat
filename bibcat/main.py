@@ -5,6 +5,7 @@
 Main entry point into bibcat
 """
 
+import ast
 import os
 import time
 from pathlib import Path
@@ -25,6 +26,50 @@ from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import save_json_file
 
 logger = setup_logger(__name__)
+
+
+class MissionList(click.ParamType):
+    """Custom Click parameter type for parsing mission lists in format [MISSION1, MISSION2, ...]"""
+
+    name = "missionlist"
+
+    def convert(
+        self, value: str | list[str] | None, param: click.Parameter | None, ctx: click.Context | None
+    ) -> list[str] | None:
+        """Convert a mission list CLI value into a Python list.
+
+        Accepts an already-parsed list or a bracket-delimited string like
+        ``[HST, JWST]`` (with or without quoted items). Returns ``None`` when
+        the input value is ``None``. Raises a Click parameter error for invalid
+        formats.
+        """
+        if isinstance(value, list):
+            return value
+        if value is None:
+            return None
+
+        # Handle bracket-delimited format
+        value = value.strip()
+        if not value.startswith("[") or not value.endswith("]"):
+            self.fail(f"{value} is not valid. Use format: [MISSION1, MISSION2] (e.g., [HST, JWST])", param, ctx)
+
+        try:
+            # Try to parse as Python literal first (for quoted strings)
+            result = ast.literal_eval(value)
+            if isinstance(result, list):
+                return result
+        except (ValueError, SyntaxError):
+            # Fall back to manual parsing for unquoted mission names
+            try:
+                inner = value[1:-1].strip()  # Remove brackets
+                if not inner:
+                    return []
+                missions = [m.strip() for m in inner.split(",")]
+                return missions
+            except Exception:
+                pass
+
+        self.fail(f"{value} is not valid. Use format: [MISSION1, MISSION2] (e.g., [HST, JWST])", param, ctx)
 
 
 def _llm_output_dir() -> Path:
@@ -262,18 +307,10 @@ def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, thre
 @click.option(
     "-m",
     "--missions",
-    type=str,
-    multiple=True,
+    type=MissionList(),
     default=None,
     show_default=True,
-    help="List mission names; this flag works with the '-c' flag, for instance, 'bibcat llm plot -c -m JWST -m HST -m TESS' ",
-)
-@click.option(
-    "-a",
-    "--all-missions",
-    is_flag=True,
-    show_default=False,
-    help="Create plots for all missions, command example for a confusion matrix plot for all missions: 'bibcat llm plot -c -a'",
+    help="List mission names in format [MISSION1, MISSION2, ...], e.g., '[HST, JWST, TESS]'; if not provided, plots are created for all missions by default.",
 )
 @click.option(
     "--run-index",
@@ -282,11 +319,14 @@ def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, thre
     show_default=True,
     help="Run index to plot from saved single-run metrics JSON.",
 )
-def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False, run_index: int = 0):
+def eval_plot(cm: bool, roc: bool, missions, run_index: int = 0):
     """Create the evaluation plots from a LLM model"""
     logger.debug("CLI option: 'llm plot' selected")
 
-    requested_missions = config.missions if all_missions else list(missions)
+    if missions:
+        requested_missions = missions
+    else:
+        requested_missions = config.missions
     metrics_type = f"single_r{run_index}"
 
     if cm and requested_missions:
@@ -324,13 +364,12 @@ def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False, ru
 @click.option(
     "-m",
     "--missions",
-    type=str,
-    multiple=True,
+    type=MissionList(),
     default=None,
     show_default=True,
-    help="List mission names; this flag works with the '-m' flag, for instance, 'bibcat llm cm-metrics -m JWST -m HST -m TESS'; if not provided, the metrics will be extracted for all missions by default.",
+    help="List mission names in format [MISSION1, MISSION2, ...], e.g., '[HST, JWST, TESS]'; if not provided, the metrics will be extracted for all missions by default.",
 )
-def cm_metrics(filename, run_index, missions: str, aggregate: bool):
+def cm_metrics(filename, run_index, missions, aggregate: bool):
     """Extract evaluation metrics from a LLM model and save to a JSON file"""
     logger.debug("CLI option: 'llm cm-metrics' selected")
 
@@ -338,7 +377,7 @@ def cm_metrics(filename, run_index, missions: str, aggregate: bool):
         raise click.UsageError("--run-index cannot be used with -a/--aggregate.")
 
     if missions:
-        missions = list(missions)
+        pass  # missions is already a list from the custom parameter type
     else:
         missions = config.missions
 
@@ -349,7 +388,7 @@ def cm_metrics(filename, run_index, missions: str, aggregate: bool):
     if aggregate:
         logger.info("Calculating aggregate metrics across mutiple runs.")
         metrics_type = "aggregate"
-        source_lookup = build_source_lookup(load_source_dataset(do_verbose=False))
+        source_lookup = build_source_lookup(load_source_dataset())
         metrics_data = evaluate_multiple_llm_runs(
             llm_runs_data=llm_multi_runs_data,
             missions=missions,
@@ -400,13 +439,12 @@ def cm_metrics(filename, run_index, missions: str, aggregate: bool):
 @click.option(
     "-m",
     "--missions",
-    type=str,
-    multiple=True,
+    type=MissionList(),
     default=None,
     show_default=True,
-    help="List mission names; for instance, 'bibcat llm roc-metrics -m JWST -m HST -m TESS'; if not provided, metrics are extracted for all missions by default.",
+    help="List mission names in format [MISSION1, MISSION2, ...], e.g., '[HST, JWST, TESS]'; if not provided, metrics are extracted for all missions by default.",
 )
-def roc_metrics(filename, run_index, missions: str, aggregate: bool):
+def roc_metrics(filename, run_index, missions, aggregate: bool):
     """Extract ROC metrics from a LLM model and save to a JSON file"""
     logger.debug("CLI option: 'llm roc-metrics' selected")
 
@@ -425,7 +463,7 @@ def roc_metrics(filename, run_index, missions: str, aggregate: bool):
     if aggregate:
         logger.info("Calculating aggregate ROC metrics across multiple runs.")
         metrics_type = "aggregate"
-        source_lookup = build_source_lookup(load_source_dataset(do_verbose=False))
+        source_lookup = build_source_lookup(load_source_dataset)
         roc_data = evaluate_multiple_llm_runs_with_roc(
             llm_runs_data=llm_multi_runs_data,
             missions=missions,
