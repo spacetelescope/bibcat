@@ -463,7 +463,7 @@ def roc_metrics(filename, run_index, missions, aggregate: bool):
     if aggregate:
         logger.info("Calculating aggregate ROC metrics across multiple runs.")
         metrics_type = "aggregate"
-        source_lookup = build_source_lookup(load_source_dataset)
+        source_lookup = build_source_lookup(load_source_dataset())
         roc_data = evaluate_multiple_llm_runs_with_roc(
             llm_runs_data=llm_multi_runs_data,
             missions=missions,

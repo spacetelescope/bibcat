@@ -791,7 +791,7 @@ There are two sets of metrics output: confusion matrix metrics and ROC metrics. 
 Save single-run confusion-matrix metrics for specific missions (default threshold probability = 0.5):
 
 ```bash
-bibcat llm cm-metrics -f bibcodes.txt -m HST -m JWST
+bibcat llm cm-metrics -f bibcodes.txt -m [HST,JWST]
 ```
 You can save single-run confusion-matrix metrics for **all missions** without `-m` flag:
 
@@ -801,13 +801,13 @@ bibcat llm cm-metrics -f bibcodes.txt
 To select a non-default run in non-aggregate mode, use `--run-index`:
 
 ```bash
-bibcat llm cm-metrics -f bibcodes.txt -r 3 -m HST -m JWST
+bibcat llm cm-metrics -f bibcodes.txt -r 3 -m [HST,JWST]
 ```
 
 Save aggregate metrics across multiple runs:
 
 ```bash
-bibcat llm cm-metrics -a -f bibcodes.txt -m HST -m JWST
+bibcat llm cm-metrics -a -f bibcodes.txt -m [HST,JWST]
 ```
 
 `--run-index` is only valid without `-a`. If omitted in non-aggregate mode, bibcat evaluates run `0`.
@@ -874,7 +874,7 @@ During aggregate CM evaluation, the per-bibcode evaluation summaries built for e
 Save single-run ROC metrics:
 
 ```bash
-bibcat llm roc-metrics -f bibcodes.txt -m HST -m JWST
+bibcat llm roc-metrics -f bibcodes.txt -m [HST,JWST]
 ```
 Save single-run ROC metrics for **all missions** without `-m` flag:
 
@@ -885,13 +885,13 @@ bibcat llm roc-metrics -f bibcodes.txt
 To select a non-default run in non-aggregate mode, use `--run-index`:
 
 ```bash
-bibcat llm roc-metrics -f bibcodes.txt -r 3 -m HST -m JWST
+bibcat llm roc-metrics -f bibcodes.txt -r 3 -m [HST,JWST]
 ```
 
 Save aggregate ROC metrics across multiple runs:
 
 ```bash
-bibcat llm roc-metrics -a -f bibcodes.txt -m HST -m JWST
+bibcat llm roc-metrics -a -f bibcodes.txt -m [HST,JWST]
 ```
 
 `--run-index` is only valid without `-a`. If omitted in non-aggregate mode, bibcat evaluates run `0`.
