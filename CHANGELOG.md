@@ -16,6 +16,18 @@
 
 ### Security
 
+## [0.2.6] - 2026-5-20
+### Added
+- [PR #97](https://github.com/spacetelescope/bibcat/pull/97)
+    - Docstrings and type checking added to headers where needed.
+### Changed
+- [PR #97](https://github.com/spacetelescope/bibcat/pull/97)
+    - All references to do_verbose were replaced with logger.info or logger.debug.
+    - Existing docstrings are compliant with numpydoc standards.
+### Removed
+- [PR #97](https://github.com/spacetelescope/bibcat/pull/97)
+    - Removed base.py. All functions were moved to other core libraries or to a new utility module, core_utils.py, with no storage dependencies.
+
 ## [0.2.5] - 2026-3-31
 ### Removed
 - [PR #93](https://github.com/spacetelescope/bibcat/pull/93)
