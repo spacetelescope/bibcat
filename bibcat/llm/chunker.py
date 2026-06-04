@@ -20,8 +20,7 @@ from bibcat import config
 from bibcat.llm.openai import OpenAIHelper
 from bibcat.utils.logger_config import setup_logger
 
-logger = setup_logger(__name__)
-logger.setLevel(config.logging.level)
+logger = setup_logger(__name__, level=config.logging.level)
 
 
 class ChunkPlanner:

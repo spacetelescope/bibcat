@@ -92,7 +92,9 @@ class TestGrammar(unittest.TestCase):
 
                 # Prepare and run test for bibcat class instance
                 testbase = Grammar(
-                    text=phrase, keyword_obj=params.kobj_hubble, do_check_truematch=True, do_verbose=False
+                    text=phrase,
+                    keyword_obj=params.kobj_hubble,
+                    do_check_truematch=True,
                 )
                 testbase.run_modifications(which_modes=config.textprocessing.which_modes)
                 # Iterate through modes
@@ -195,7 +197,9 @@ class TestGrammar(unittest.TestCase):
 
                 # Prepare and run test for bibcat class instance
                 testbase = Grammar(
-                    text=phrase, keyword_obj=params.kobj_hubble, do_check_truematch=True, do_verbose=False
+                    text=phrase,
+                    keyword_obj=params.kobj_hubble,
+                    do_check_truematch=True,
                 )
                 testbase.run_modifications(which_modes=config.textprocessing.which_modes)
                 # Iterate through modes
@@ -308,7 +312,9 @@ class TestGrammar(unittest.TestCase):
 
                 # Prepare and run test for bibcat class instance
                 testbase = Grammar(
-                    text=phrase, keyword_obj=params.kobj_hubble, do_check_truematch=True, do_verbose=False
+                    text=phrase,
+                    keyword_obj=params.kobj_hubble,
+                    do_check_truematch=True,
                 )
                 testbase.run_modifications(which_modes=config.textprocessing.which_modes)
                 # Iterate through modes
