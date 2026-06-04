@@ -293,13 +293,13 @@ def extract_eval_data(data: dict[str, dict[str, Any]], missions: list[str]) -> d
     metrics = compute_metrics(confusion)
     return {
         **summary,
-        "human_labels": [sample.human_label for sample in samples],
-        "llm_labels": [sample.llm_label for sample in samples],
         "metrics": metrics,
         "fp_bibcodes": confusion["fp_cases"],
         "fn_bibcodes": confusion["fn_cases"],
         "tp_bibcodes": confusion["tp_cases"],
         "tn_bibcodes": confusion["tn_cases"],
+        "human_labels": [sample.human_label for sample in samples],
+        "llm_labels": [sample.llm_label for sample in samples],
     }
 
 

@@ -358,7 +358,7 @@ class Keyword:
         """
 
         # Print some notes
-        logger.info(f"> Running _fetch_keyword_object() for lookup term {lookup}.")
+        logger.debug(f"> Running _fetch_keyword_object() for lookup term {lookup}.")
 
         # Find keyword object that matches to given lookup term
         match = None

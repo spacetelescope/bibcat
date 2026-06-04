@@ -35,9 +35,9 @@ llms:
   eval_output_file: summary_output # llm classification summary output
   batch_file: batch_file.jsonl # llm batch jsonl file
   cm_metrics_file: cm_metrics_summary # metrics summary file with the implemented threshold
-  roc_metrics_file: roc_metrics_summary # ROC metrics summary file with the implemented threshold
-  cm_plot: confusion_matrix_llm.png # confusion matrix plot
-  roc_plot: roc_plot_llm.png # receiver operating charateristic curve
+  roc_metrics_file: roc_metrics_summary # ROC metrics summary file with the implemented threshold, saved in .png
+  cm_plot: confusion_matrix_llm # confusion matrix plot, saved in .png
+  roc_plot: roc_plot_llm # receiver operating charateristic curve
   llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
   llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
   openai:

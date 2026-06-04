@@ -14,6 +14,8 @@ from bibcat.utils.logger_config import setup_logger
 
 # set up logger
 logger = setup_logger(__name__, level=config.logging.level)
+
+
 def _filter_valid_responses(response_runs: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
     """Filter successful run responses with mission outputs.
 
@@ -501,7 +503,7 @@ def identify_missions_in_text(missions: list, text: str) -> list:
     """
     # get the paper object
     # this is slow, only do this once for all missions
-    paper = Paper(text, keyword_objs=params.all_kobjs, do_check_truematch=True)
+    paper = Paper(text, keyword_objs=params.all_kobjs, do_check_truematch=False)
     try:
         paper.process_paragraphs()
         paragraphs = paper.get_paragraphs()
