@@ -251,7 +251,7 @@ def test_build_eval_data_for_run_uses_debug_summary_level(mocker):
     assert evaluate_mock.call_args.kwargs["summary_log_level"] == logging.DEBUG
 
 
-def test_evaluate_output_from_runs_skips_to_string_when_summary_level_disabled(mocker):
+def test_evaluate_output_from_runs_skips_to_string_and_counts_no_mission_note_in_n_runs(mocker):
     mocker.patch("bibcat.llm.evaluate.identify_missions_in_text", return_value=[True])
     mocker.patch("bibcat.llm.evaluate.logger.isEnabledFor", return_value=False)
     to_string_mock = mocker.patch("pandas.DataFrame.to_string", autospec=True)
@@ -270,11 +270,15 @@ def test_evaluate_output_from_runs_skips_to_string_when_summary_level_disabled(m
                         "quotes": ["We use TESS data."],
                     }
                 ],
-            }
+            },
+            {"notes": "No mission-relevant content found.", "missions": []},
         ],
         summary_log_level=logging.DEBUG,
     )
 
     assert grouped_df is not None
     assert output_item["human"] == {"TESS": "SCIENCE"}
+    assert grouped_df.iloc[0]["n_runs"] == 2
+    assert grouped_df.iloc[0]["count"] == 1
+    assert grouped_df.iloc[0]["weighted_confs"].tolist() == [0.45, 0.05]
     to_string_mock.assert_not_called()

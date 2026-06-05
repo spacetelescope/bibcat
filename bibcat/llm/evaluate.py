@@ -14,6 +14,7 @@ from bibcat.utils.logger_config import setup_logger
 
 # set up logger
 logger = setup_logger(__name__, level=config.logging.level)
+NO_MISSION_RELEVANT_CONTENT_NOTE = "No mission-relevant content found."
 
 
 def _filter_valid_responses(response_runs: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
@@ -73,6 +74,11 @@ def evaluate_output_from_runs(
     # - notes: str
     # - missions: [{mission: str, papertype: str, confidence: list[float], reason: str, quotes: list[str]}]
     valid_responses = _filter_valid_responses(response_runs)
+    countable_responses = [
+        item
+        for item in response_runs or []
+        if "error" not in item and (item.get("missions") or item.get("notes") == NO_MISSION_RELEVANT_CONTENT_NOTE)
+    ]
 
     if not valid_responses:
         logger.warning(f"No mission output found for {bibcode}")
@@ -82,7 +88,7 @@ def evaluate_output_from_runs(
             "human": {k: v["papertype"] for k, v in human_classes.items()},
         }
 
-    n_runs = len(valid_responses)
+    n_runs = len(countable_responses)
 
     logger.log(summary_log_level, "Evaluating output for %s", bibcode)
     logger.log(summary_log_level, "Number of runs: %s", n_runs)
