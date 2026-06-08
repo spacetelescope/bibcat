@@ -124,7 +124,7 @@ def extract_roc_metrics_for_run(
     Returns
     -------
     dict[str, Any]
-        Compact ROC payload for the selected run.
+        Compact ROC metrics data for the selected run.
     """
     if source_lookup is None:
         source_lookup = build_source_lookup(load_source_dataset())
@@ -183,11 +183,12 @@ def evaluate_multiple_llm_runs_with_roc(
     Notes
     -----
     This function returns ROC-focused aggregate output only. Confusion-matrix
-    aggregate payload fields are intentionally excluded from this return value.
+    aggregate summary fields are intentionally excluded from this return value.
     """
     if source_lookup is None:
         source_lookup = build_source_lookup(load_source_dataset())
 
+    normalized_missions = normalize_missions(missions)
     n_runs = max((len(runs) for runs in llm_runs_data.values()), default=0)
 
     per_run_roc: list[dict[str, Any]] = []
@@ -220,6 +221,7 @@ def evaluate_multiple_llm_runs_with_roc(
         auc_values.append(roc_auc)
 
     return {
+        "missions": normalized_missions,
         "n_runs": n_runs,
         "run_coverage": compute_run_coverage(bibcodes, llm_runs_data, n_runs, set(source_lookup)),
         "aggregate_auc": {

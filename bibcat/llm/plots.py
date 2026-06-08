@@ -39,8 +39,24 @@ def _plot_output_path(plot_name: str, metrics_type: str, threshold: float | None
     return output_path
 
 
+def _required_missions(metrics_data: dict[str, Any], metrics_data_name: str, regenerate_cmd: str) -> list[str]:
+    """Return required mission list from saved metrics data.
+
+    Raises
+    ------
+    ValueError
+        If the metrics data does not include the required ``missions`` field.
+    """
+    missions = metrics_data.get("missions")
+    if missions is None:
+        raise ValueError(
+            f"{metrics_data_name} is missing required field 'missions'. Regenerate it with '{regenerate_cmd}'."
+        )
+    return [mission.upper() for mission in missions]
+
+
 # create a confusion matrix plot
-def confusion_matrix_plot(metrics_data: dict[str, Any], missions: list[str], metrics_type: str) -> None:
+def confusion_matrix_plot(metrics_data: dict[str, Any], metrics_type: str) -> None:
     """Create a confusion matrix figure
 
     Create confusion matrix plots (counts and normalized) from a prepared
@@ -50,8 +66,6 @@ def confusion_matrix_plot(metrics_data: dict[str, Any], missions: list[str], met
     ----------
     metrics_data: dict[str, Any]
         Single-run confusion-matrix metrics data.
-    missions: list[str]
-        Mission names requested by the CLI.
     metrics_type: str
         Run label used for the saved figure name.
 
@@ -60,8 +74,11 @@ def confusion_matrix_plot(metrics_data: dict[str, Any], missions: list[str], met
 
     """
 
-    # capitalize all mission names just in case when is not
-    missions = [mission.upper() for mission in missions]
+    missions = _required_missions(
+        metrics_data=metrics_data,
+        metrics_data_name="Confusion matrix metrics file",
+        regenerate_cmd="bibcat llm cm-metrics -f <bibcodes.txt>",
+    )
 
     human = metrics_data["human_labels"]
     llm = metrics_data["llm_labels"]
@@ -135,15 +152,13 @@ def confusion_matrix_plot(metrics_data: dict[str, Any], missions: list[str], met
 
 
 # create a ROC curve plot
-def roc_plot(roc_data: dict[str, Any], missions: list[str], metrics_type: str) -> None:
+def roc_plot(roc_data: dict[str, Any], metrics_type: str) -> None:
     """Create a Receiver Operating Characteristic (ROC) curve plot
 
     Parameters
     ----------
     roc_data: dict[str, Any]
         Single-run ROC metrics data.
-    missions: list[str]
-        Mission names requested by the CLI.
     metrics_type: str
         Run label used for the saved figure name.
 
@@ -152,8 +167,11 @@ def roc_plot(roc_data: dict[str, Any], missions: list[str], metrics_type: str) -
 
     """
 
-    # capitalize all mission names just in case when is not
-    missions = [mission.upper() for mission in missions]
+    _required_missions(
+        metrics_data=roc_data,
+        metrics_data_name="ROC metrics file",
+        regenerate_cmd="bibcat llm roc-metrics -f <bibcodes.txt>",
+    )
 
     fpr = roc_data["fpr"]
     tpr = roc_data["tpr"]

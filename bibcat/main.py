@@ -29,7 +29,7 @@ logger = setup_logger(__name__)
 
 
 class MissionList(click.ParamType):
-    """Custom Click parameter type for parsing mission lists in format [MISSION1, MISSION2, ...]"""
+    """Custom Click parameter type for parsing mission lists in format [MISSION1,MISSION2,...]"""
 
     name = "missionlist"
 
@@ -39,9 +39,8 @@ class MissionList(click.ParamType):
         """Convert a mission list CLI value into a Python list.
 
         Accepts an already-parsed list or a bracket-delimited string like
-        ``[HST, JWST]`` (with or without quoted items). Returns ``None`` when
-        the input value is ``None``. Raises a Click parameter error for invalid
-        formats.
+        ``[HST,JWST]`` (no whitespace). Returns ``None`` when the input value
+        is ``None``. Raises a Click parameter error for invalid formats.
         """
         if isinstance(value, list):
             return value
@@ -50,8 +49,15 @@ class MissionList(click.ParamType):
 
         # Handle bracket-delimited format
         value = value.strip()
+        if any(ch.isspace() for ch in value):
+            self.fail(
+                f"{value} is not valid. Whitespace is not allowed. Use format: [MISSION1,MISSION2]"
+                + " (e.g., [HST,JWST])",
+                param,
+                ctx,
+            )
         if not value.startswith("[") or not value.endswith("]"):
-            self.fail(f"{value} is not valid. Use format: [MISSION1, MISSION2] (e.g., [HST, JWST])", param, ctx)
+            self.fail(f"{value} is not valid. Use format: [MISSION1,MISSION2] (e.g., [HST,JWST])", param, ctx)
 
         try:
             # Try to parse as Python literal first (for quoted strings)
@@ -69,7 +75,7 @@ class MissionList(click.ParamType):
             except Exception:
                 pass
 
-        self.fail(f"{value} is not valid. Use format: [MISSION1, MISSION2] (e.g., [HST, JWST])", param, ctx)
+        self.fail(f"{value} is not valid. Use format: [MISSION1,MISSION2] (e.g., [HST,JWST])", param, ctx)
 
 
 def _llm_output_dir() -> Path:
@@ -112,6 +118,14 @@ def _read_required_metrics_json(path: Path, description: str) -> dict:
     if not path.exists():
         raise click.ClickException(f"{description} not found at {path}.")
     return read_output(filename=path)
+
+
+def _require_plot_missions(metrics_data: dict, description: str, regenerate_cmd: str) -> None:
+    """Validate required missions metadata for plotting from saved metrics."""
+    if "missions" not in metrics_data:
+        raise click.ClickException(
+            f"{description} is missing required field 'missions'. Regenerate metrics with: {regenerate_cmd}"
+        )
 
 
 @click.group("bibcat")
@@ -295,22 +309,14 @@ def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, thre
     "--cm",
     is_flag=True,
     show_default=False,
-    help="Create a confusion matrix plot. This flag works with the '-m' flag with a mission name, for example, 'bibcat llm plot -c -m JWST'",
+    help="Create a confusion matrix plot from a saved metrics file.",
 )
 @click.option(
     "-r",
     "--roc",
     is_flag=True,
     show_default=False,
-    help="Create ROC curves. This flag works with the '-m' flag with a mission name, for example,'bibcat llm plot -r -m JWST'",
-)
-@click.option(
-    "-m",
-    "--missions",
-    type=MissionList(),
-    default=None,
-    show_default=True,
-    help="List mission names in format [MISSION1, MISSION2, ...], e.g., '[HST, JWST, TESS]'; if not provided, plots are created for all missions by default.",
+    help="Create ROC curves from a saved metrics file.",
 )
 @click.option(
     "--run-index",
@@ -319,29 +325,27 @@ def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, thre
     show_default=True,
     help="Run index to plot from saved single-run metrics JSON.",
 )
-def eval_plot(cm: bool, roc: bool, missions, run_index: int = 0):
+def eval_plot(cm: bool, roc: bool, run_index: int = 0):
     """Create the evaluation plots from a LLM model"""
     logger.debug("CLI option: 'llm plot' selected")
 
-    if missions:
-        requested_missions = missions
-    else:
-        requested_missions = config.missions
     metrics_type = f"single_r{run_index}"
 
-    if cm and requested_missions:
+    if cm:
         metrics_data = _read_required_metrics_json(
             _cm_metrics_output_path(metrics_type),
             "Confusion matrix metrics file",
         )
-        confusion_matrix_plot(metrics_data=metrics_data, missions=requested_missions, metrics_type=metrics_type)
+        _require_plot_missions(metrics_data, "Confusion matrix metrics file", "bibcat llm cm-metrics -f <bibcodes.txt>")
+        confusion_matrix_plot(metrics_data=metrics_data, metrics_type=metrics_type)
 
-    if roc and requested_missions:
+    if roc:
         roc_data = _read_required_metrics_json(
             _roc_metrics_output_path(metrics_type),
             "ROC metrics file",
         )
-        roc_plot(roc_data=roc_data, missions=requested_missions, metrics_type=metrics_type)
+        _require_plot_missions(roc_data, "ROC metrics file", "bibcat llm roc-metrics -f <bibcodes.txt>")
+        roc_plot(roc_data=roc_data, metrics_type=metrics_type)
 
 
 @llmcli.command("cm-metrics", help="Save Confusion Matrix metrics for llm performance")
@@ -367,7 +371,7 @@ def eval_plot(cm: bool, roc: bool, missions, run_index: int = 0):
     type=MissionList(),
     default=None,
     show_default=True,
-    help="List mission names in format [MISSION1, MISSION2, ...], e.g., '[HST, JWST, TESS]'; if not provided, the metrics will be extracted for all missions by default.",
+    help="List mission names in format [MISSION1,MISSION2,...], e.g., '[HST,JWST,TESS]'; if not provided, the metrics will be extracted for all missions by default.",
 )
 def cm_metrics(filename, run_index, missions, aggregate: bool):
     """Extract evaluation metrics from a LLM model and save to a JSON file"""
@@ -442,7 +446,7 @@ def cm_metrics(filename, run_index, missions, aggregate: bool):
     type=MissionList(),
     default=None,
     show_default=True,
-    help="List mission names in format [MISSION1, MISSION2, ...], e.g., '[HST, JWST, TESS]'; if not provided, metrics are extracted for all missions by default.",
+    help="List mission names in format [MISSION1,MISSION2,...], e.g., '[HST,JWST,TESS]'; if not provided, metrics are extracted for all missions by default.",
 )
 def roc_metrics(filename, run_index, missions, aggregate: bool):
     """Extract ROC metrics from a LLM model and save to a JSON file"""

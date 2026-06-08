@@ -131,7 +131,7 @@ def test_plot_cm_requires_saved_metrics_file(tmp_path, mocker) -> None:
     runner = CliRunner()
     mocker.patch.object(main.config.paths, "output", str(tmp_path))
 
-    result = runner.invoke(cli, ["llm", "plot", "--cm", "-m", "[JWST]"])
+    result = runner.invoke(cli, ["llm", "plot", "--cm"])
 
     assert result.exit_code != 0
     assert "Confusion matrix metrics file not found" in result.output
@@ -150,14 +150,15 @@ def test_plot_cm_reads_saved_metrics_data(tmp_path, mocker) -> None:
         "human_labels": ["SCIENCE"],
         "llm_labels": ["SCIENCE"],
         "threshold": 0.5,
+        "missions": ["JWST"],
         "human_llm_missions": ["JWST"],
     }
     metrics_path.write_text(json.dumps(data), encoding="utf-8")
 
-    result = runner.invoke(cli, ["llm", "plot", "--cm", "--run-index", "2", "-m", "[JWST]"])
+    result = runner.invoke(cli, ["llm", "plot", "--cm", "--run-index", "2"])
 
     assert result.exit_code == 0
-    plot_mock.assert_called_once_with(metrics_data=data, missions=["JWST"], metrics_type="single_r2")
+    plot_mock.assert_called_once_with(metrics_data=data, metrics_type="single_r2")
 
 
 def test_plot_roc_reads_saved_metrics_data(tmp_path, mocker) -> None:
@@ -180,10 +181,32 @@ def test_plot_roc_reads_saved_metrics_data(tmp_path, mocker) -> None:
     }
     metrics_path.write_text(json.dumps(data), encoding="utf-8")
 
-    result = runner.invoke(cli, ["llm", "plot", "--roc", "--run-index", "1", "-m", "[JWST]"])
+    result = runner.invoke(cli, ["llm", "plot", "--roc", "--run-index", "1"])
 
     assert result.exit_code == 0
-    plot_mock.assert_called_once_with(roc_data=data, missions=["JWST"], metrics_type="single_r1")
+    plot_mock.assert_called_once_with(roc_data=data, metrics_type="single_r1")
+
+
+def test_plot_cm_rejects_legacy_metrics_without_missions(tmp_path, mocker) -> None:
+    runner = CliRunner()
+    mocker.patch.object(main.config.paths, "output", str(tmp_path))
+
+    output_dir = tmp_path / f"llms/openai_{main.config.llms.openai.model}"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    metrics_path = main._cm_metrics_output_path("single_r0")
+    metrics_path.parent.mkdir(parents=True, exist_ok=True)
+    data = {
+        "human_labels": ["SCIENCE"],
+        "llm_labels": ["SCIENCE"],
+        "threshold": 0.5,
+        "human_llm_missions": ["JWST"],
+    }
+    metrics_path.write_text(json.dumps(data), encoding="utf-8")
+
+    result = runner.invoke(cli, ["llm", "plot", "--cm"])
+
+    assert result.exit_code != 0
+    assert "missing required field 'missions'" in result.output
 
 
 def test_batch_submit() -> None:

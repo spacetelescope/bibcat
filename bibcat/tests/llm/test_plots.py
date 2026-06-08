@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from bibcat.llm.plots import confusion_matrix_plot, roc_plot
 
 
-def test_confusion_matrix_plot_uses_prepared_metrics_payload(mocker) -> None:
+def test_confusion_matrix_plot_uses_prepared_metrics_data(mocker) -> None:
     from_predictions = mocker.patch("bibcat.llm.plots.ConfusionMatrixDisplay.from_predictions")
     savefig = mocker.patch("bibcat.llm.plots.plt.savefig")
 
@@ -12,9 +12,9 @@ def test_confusion_matrix_plot_uses_prepared_metrics_payload(mocker) -> None:
             "human_labels": ["SCIENCE", "NONSCIENCE"],
             "llm_labels": ["SCIENCE", "NONSCIENCE"],
             "threshold": 0.5,
+            "missions": ["JWST"],
             "human_llm_missions": ["JWST"],
         },
-        missions=["jwst"],
         metrics_type="single_r3",
     )
 
@@ -24,7 +24,7 @@ def test_confusion_matrix_plot_uses_prepared_metrics_payload(mocker) -> None:
     plt.close("all")
 
 
-def test_roc_plot_uses_prepared_roc_payload(mocker) -> None:
+def test_roc_plot_uses_prepared_roc_data(mocker) -> None:
     savefig = mocker.patch("bibcat.llm.plots.plt.savefig")
 
     roc_plot(
@@ -34,12 +34,48 @@ def test_roc_plot_uses_prepared_roc_payload(mocker) -> None:
             "thresholds": [1.9, 0.9, 0.1],
             "roc_auc": 1.0,
             "n_verdicts": 2,
+            "missions": ["JWST"],
             "human_llm_missions": ["JWST"],
         },
-        missions=["jwst"],
         metrics_type="single_r4",
     )
 
     savefig.assert_called_once()
     assert savefig.call_args.args[0].name.endswith("_single_r4.png")
     plt.close("all")
+
+
+def test_confusion_matrix_plot_requires_missions() -> None:
+    try:
+        confusion_matrix_plot(
+            metrics_data={
+                "human_labels": ["SCIENCE"],
+                "llm_labels": ["SCIENCE"],
+                "threshold": 0.5,
+                "human_llm_missions": ["JWST"],
+            },
+            metrics_type="single_r0",
+        )
+    except ValueError as error:
+        assert "missing required field 'missions'" in str(error)
+    else:
+        raise AssertionError("Expected ValueError for missing missions field")
+
+
+def test_roc_plot_requires_missions() -> None:
+    try:
+        roc_plot(
+            roc_data={
+                "fpr": [0.0, 1.0],
+                "tpr": [0.0, 1.0],
+                "thresholds": [1.0, 0.0],
+                "roc_auc": 0.5,
+                "n_verdicts": 2,
+                "human_llm_missions": ["JWST"],
+            },
+            metrics_type="single_r0",
+        )
+    except ValueError as error:
+        assert "missing required field 'missions'" in str(error)
+    else:
+        raise AssertionError("Expected ValueError for missing missions field")

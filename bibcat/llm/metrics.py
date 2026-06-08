@@ -170,6 +170,7 @@ def extract_samples_and_summary(
 
     summary = {
         "threshold": config.llms.performance.threshold,
+        "missions": normalized_missions,
         "n_bibcodes": len(data),
         "n_human_callouts": n_human_callouts,
         "n_llm_callouts": n_llm_callouts,
@@ -525,6 +526,7 @@ def evaluate_multiple_llm_runs(
     if source_lookup is None:
         source_lookup = build_source_lookup(load_source_dataset(do_verbose=False))
 
+    normalized_missions = normalize_missions(missions)
     n_runs = max((len(runs) for runs in llm_runs_data.values()), default=0)
     per_run_metrics: list[dict[str, float | int]] = []
 
@@ -545,6 +547,7 @@ def evaluate_multiple_llm_runs(
         per_run_metrics.append(metrics)
 
     return {
+        "missions": normalized_missions,
         "n_runs": n_runs,
         "run_coverage": compute_run_coverage(bibcodes, llm_runs_data, n_runs, set(source_lookup)),
         "aggregate_metrics": aggregate_metrics_across_runs(per_run_metrics),

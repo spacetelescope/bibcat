@@ -746,16 +746,16 @@ A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curve e
 ### Confusion Matrix Plot
 `llm plot` reads precomputed single-run metrics JSON files. Generate the required metrics file first with `llm cm-metrics`, then plot that saved run.
 
-To plot confusion matrices for specific missions for the default saved run (`--run-index 0`), run:
+To plot confusion matrices from saved metrics for the default saved run (`--run-index 0`), run:
 ```bash
-bibcat llm cm-metrics -f bibcodes.txt -m [HST, JWST]
-bibcat llm plot -c -m [HST, JWST]
+bibcat llm cm-metrics -f bibcodes.txt -m [HST,JWST]
+bibcat llm plot -c
 ```
 
 To plot a non-default saved run, use the same `--run-index` value for both commands:
 ```bash
-bibcat llm cm-metrics -f bibcodes.txt -r 2 -m [HST, JWST]
-bibcat llm plot -c --run-index 2 -m [HST, JWST]
+bibcat llm cm-metrics -f bibcodes.txt -r 2 -m [HST,JWST]
+bibcat llm plot -c --run-index 2
 ```
 
 To plot confusion matrices for **all missions** (default when `-m` is not provided), run:
@@ -765,9 +765,9 @@ bibcat llm plot -c
 ```
 ![confusion matrix example](images/example_confusion_matrix_plot_t0.5.png)
 
-In the example confusion matrix (CM) plot, we have both counts (left panel) and normalized counts (right panel). We can see the distribution of true positives (top left quadrant), false positives (bottom left quadrant), true negatives (bottom right quadrant), and false negatives (top right quadrant) for the specified missions. This visualization helps in understanding the model's performance and identifying areas for improvement. Note that in this figure, all MAST missions were considered to create the CM, but only a subset of the missions in the annotation, `Mission(s) found:`, were actually called out by both human and LLM. Missions not found in the sample only contribute to true negatives.
+In the example confusion matrix (CM) plot, we have both counts (left panel) and normalized counts (right panel). We can see the distribution of true positives (top left quadrant), false positives (bottom left quadrant), true negatives (bottom right quadrant), and false negatives (top right quadrant) for the missions stored in the saved metrics JSON. This visualization helps in understanding the model's performance and identifying areas for improvement. In the annotation, `Mission(s) considered:` comes from the metrics file `missions` field, while `Mission(s) found:` is the subset called out by both human and LLM.
 
-Plot commands only generate image files and require an existing single-run metrics JSON file. If the expected metrics file is missing, `llm plot` fails with a clear error instead of recomputing metrics inline. Aggregate metrics JSON files are not used by `llm plot`.
+Plot commands only generate image files and require an existing single-run metrics JSON file. If the expected metrics file is missing, `llm plot` fails with a clear error instead of recomputing metrics inline. Plotting also requires the metrics JSON to include a `missions` field; regenerate metrics with `cm-metrics` or `roc-metrics` if this field is missing. Aggregate metrics JSON files are not used by `llm plot`.
 
 Saved confusion-matrix plot filename pattern:
 
@@ -823,6 +823,7 @@ Output filename pattern:
 Single-run (`cm-metrics` without `-a`) column definitions:
 
 - **threshold**: Confidence threshold used to accept LLM papertype classification.
+- **missions**: Mission list requested by CLI (normalized to uppercase).
 - **n_bibcodes**: Number of bibcodes evaluated (including items with missing-output conditions tracked below).
 - **n_human_callouts**: Number of human mission callouts.
 - **n_llm_callouts**: Number of LLM mission callouts.
@@ -854,6 +855,7 @@ Nested **metrics** column definitions:
 
 Aggregate (`cm-metrics -a`) column definitions:
 
+- **missions**: Mission list requested by CLI (normalized to uppercase).
 - **n_runs**: Number of run indices found across the multi-run output.
 - **run_coverage**: Fraction of bibcode-run slots with available LLM run data.
 - **aggregate_metrics**: Mean and population standard deviation for each per-run metric (`{"mean": ..., "std": ...}`).
@@ -917,6 +919,7 @@ Single-run (`roc-metrics` without `-a`) column definitions:
 
 Aggregate (`roc-metrics -a`) column definitions:
 
+- **missions**: Mission list requested by CLI (normalized to uppercase).
 - **n_runs**: Number of run indices found across the multi-run output.
 - **run_coverage**: Fraction of bibcode-run slots with available LLM run data.
 - **per_run_roc**: ROC summary for each run. Each item contains:
@@ -938,16 +941,16 @@ Like aggregate CM evaluation, aggregate ROC evaluation demotes the per-bibcode i
 ### Receiver Operating Characteristic (ROC) Plot
 `llm plot -r` also reads precomputed single-run ROC metrics JSON files. Generate the saved ROC metrics file first with `llm roc-metrics`.
 
-To plot ROC for specific missions for the default saved run (`--run-index 0`), run:
+To plot ROC from saved metrics for the default saved run (`--run-index 0`), run:
 ```bash
-bibcat llm roc-metrics -f bibcodes.txt -m [HST, JWST]
-bibcat llm plot -r -m [HST, JWST]
+bibcat llm roc-metrics -f bibcodes.txt -m [HST,JWST]
+bibcat llm plot -r
 ```
 
 To plot a non-default saved run, use the same `--run-index` value for both commands:
 ```bash
-bibcat llm roc-metrics -f bibcodes.txt -r 2 -m [HST, JWST]
-bibcat llm plot -r --run-index 2 -m [HST, JWST]
+bibcat llm roc-metrics -f bibcodes.txt -r 2 -m [HST,JWST]
+bibcat llm plot -r --run-index 2
 ```
 
 To plot ROC for **all missions** (default when `-m` is not provided), run:

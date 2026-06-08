@@ -15,6 +15,7 @@ def test_extract_eval_data_single_run(mocker, single_run_eval_data, single_run_m
     metrics_data = extract_eval_data(single_run_eval_data, single_run_missions)
 
     assert metrics_data["threshold"] == 0.7
+    assert metrics_data["missions"] == ["HST", "JWST", "ROMAN"]
     assert metrics_data["n_bibcodes"] == 3
     assert metrics_data["n_human_callouts"] == 3
     assert metrics_data["n_llm_callouts"] == 2
@@ -80,6 +81,7 @@ def test_evaluate_multiple_llm_runs(mocker, multi_run_eval_data, multi_run_llm_r
         source_lookup=source_lookup,
     )
 
+    assert summary["missions"] == ["HST"]
     assert summary["n_runs"] == 2
     assert summary["run_coverage"] == 0.75
     assert len(summary["per_run_metrics"]) == 2

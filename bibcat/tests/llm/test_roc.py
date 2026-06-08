@@ -51,6 +51,7 @@ def test_evaluate_multiple_llm_runs_with_roc(
         source_lookup=source_lookup,
     )
 
+    assert summary["missions"] == ["HST"]
     assert summary["n_runs"] == 2
     assert len(summary["per_run_roc"]) == 2
     assert summary["aggregate_auc"]["mean"] == 1.0

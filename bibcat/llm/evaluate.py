@@ -66,7 +66,7 @@ def evaluate_output_from_runs(
           mission output exists.
         - output_item: in-memory summary dictionary with the same shape as a
           single bibcode entry produced by :func:`prepare_output`, or an
-          ``error`` payload when output is missing.
+                    ``error`` entry when output is missing.
     """
     bibcode = paper["bibcode"]
 
