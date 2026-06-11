@@ -414,11 +414,14 @@ def cm_metrics(filename, run_index, missions, aggregate: bool):
 
     output_path = _cm_metrics_output_path(metrics_type)
 
-    save_json_file(
-        path=output_path,
-        dataset=metrics_data_to_save,
-    )
-    logger.info(f"Evaluation metrics saved to {output_path}")
+    try:
+        save_json_file(
+            path=output_path,
+            dataset=metrics_data_to_save,
+        )
+        logger.info(f"Evaluation metrics saved to {output_path}")
+    except IOError as e:
+        raise click.ClickException(f"Failed to save metrics to {output_path}: {e}")
 
 
 @llmcli.command("roc-metrics", help="Save ROC metrics for llm performance")

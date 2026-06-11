@@ -44,6 +44,7 @@ def save_json_file(path: Path, dataset: list[dict] | dict, indent: int = 2) -> N
             json.dump(dataset, openfile, indent=indent, cls=NumpyEncoder)
     except IOError as e:
         logger.error(f"An error occurred while saving the file: {e}")
+        raise
 
 
 # Create a class for numpy encoder to convert numpy types into native data types

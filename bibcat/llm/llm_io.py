@@ -177,7 +177,8 @@ def write_output(paper_key: str, response: dict):
     else:
         # append to an existing file
         with open(out, "r") as f:
-            data = json.load(f)
+            content = f.read()
+            data = json.loads(content) if content.strip() else {}
 
         # append response to an existing file entry, or add a new one with a new paper_key or in the OPS mode
         if paper_key in data and not config.llms.ops:
