@@ -151,6 +151,7 @@ class Paper:
 
         # Process ambig. phrase data, if not given
         if do_check_truematch:
+            logger.debug("checking truematch using processing database_ambig")
             if dict_ambigs is None:
                 dict_ambigs = self._process_database_ambig()
 
