@@ -63,9 +63,6 @@ llms:
   ops: false # false if in evaluation, true if in operation
 
 textprocessing:
-  do_verify_truematch: true  # used in Performance class
-  lookup: HST  # Prepare some Keyword objects
-  buffer: 0  # the number of sentences to include within paragraph around each sentence with target terms
   placeholder_anon: "OBJ" # For text that is anonymized against user's target missions, this is the text that the mission terms are replaced with.
   placeholder_number: "000" # For text that is anonymized against numbers, this is the text that the numbers are replaced with.
   placeholder_author: "Authorsetal" # For text that is anonymized against authors, this is the text that the authors are replaced with.
