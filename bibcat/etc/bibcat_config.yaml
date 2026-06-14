@@ -60,7 +60,6 @@ llms:
   performance: # used for both evaluation and operation
     threshold: 0.5
     inspection: 0.45
-  ops: false # false if in evaluation, true if in operation
 
 textprocessing:
   placeholder_anon: "OBJ" # For text that is anonymized against user's target missions, this is the text that the mission terms are replaced with.
