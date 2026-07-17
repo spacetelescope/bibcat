@@ -301,10 +301,8 @@ llms:
   prompt_output_file: paper_output.json # llm classification primary output
   eval_output_file: summary_output # llm evaluation summary output
   cm_metrics_file: cm_metrics_summary # confusion-matrix metrics summary output
-  roc_metrics_file: roc_metrics_summary # ROC metrics summary output
-  batch_file: batch_file.jsonl # llm batch jsonl file
-  cm_plot: confusion_matrix_llm.png # confusion matrix plot image
-  roc_plot: roc_plot_llm.png # ROC plot image
+  cm_plot: confusion_matrix_llm # confusion matrix plot image (.png is appended if omitted)
+  roc_plot: roc_plot_llm # ROC plot image (.png is appended if omitted)
   llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
   llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
   openai:
