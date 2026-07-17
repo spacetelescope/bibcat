@@ -490,11 +490,14 @@ def roc_metrics(filename, run_index, missions, aggregate: bool):
 
     output_path = _roc_metrics_output_path(metrics_type)
 
-    save_json_file(
-        path=output_path,
-        dataset=roc_data,
-    )
-    logger.info(f"ROC metrics saved to {output_path}")
+    try:
+        save_json_file(
+            path=output_path,
+            dataset=roc_data,
+        )
+        logger.info(f"ROC metrics saved to {output_path}")
+    except IOError as e:
+        raise click.ClickException(f"Failed to save metrics to {output_path}: {e}")
 
 
 # Batch LLM command group

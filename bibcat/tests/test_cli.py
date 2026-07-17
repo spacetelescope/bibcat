@@ -127,6 +127,23 @@ def test_roc_metrics_rejects_run_index_with_aggregate(tmp_path) -> None:
     assert "--run-index cannot be used with -a/--aggregate." in result.output
 
 
+def test_roc_metrics_reports_save_errors(tmp_path, mocker) -> None:
+    """test roc-metrics wraps save errors in a ClickException"""
+    bibcodes = tmp_path / "bibcodes.txt"
+    bibcodes.write_text("B1\n", encoding="utf-8")
+
+    mocker.patch("bibcat.main.read_output", return_value=[{"dummy": "data"}])
+    mocker.patch("bibcat.main.extract_roc_metrics_for_run", return_value={"roc_auc": 0.5})
+    mocker.patch("bibcat.main.save_json_file", side_effect=IOError("disk full"))
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["llm", "roc-metrics", "-f", str(bibcodes)])
+
+    assert result.exit_code != 0
+    assert "Failed to save metrics to" in result.output
+    assert "disk full" in result.output
+
+
 def test_plot_cm_requires_saved_metrics_file(tmp_path, mocker) -> None:
     runner = CliRunner()
     mocker.patch.object(main.config.paths, "output", str(tmp_path))
