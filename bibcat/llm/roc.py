@@ -49,7 +49,10 @@ def get_roc_metrics(
         raise ValueError("Each confidence vector must have exactly two values: [p_science, p_nonscience].")
 
     science_scores = [float(conf[0]) for conf in llm_confidences]
-    fpr, tpr, thresholds = roc_curve(y_true, science_scores)
+    try:
+        fpr, tpr, thresholds = roc_curve(y_true, science_scores)
+    except ValueError as exc:
+        raise ValueError("ROC requires at least one positive and one negative sample in y_true.") from exc
     roc_auc = auc(fpr, tpr)
     return fpr.tolist(), tpr.tolist(), thresholds.tolist(), float(roc_auc)
 
