@@ -6,7 +6,7 @@ from bibcat import config
 POSITIVE_LABEL = config.llms.papertypes[0]  # SCIENCE
 NEGATIVE_LABEL = config.llms.papertypes[1]  # NONSCIENCE
 IGNORED_RAW_LABEL = "IGNORED"
-LLM_METADATA_KEYS = {"confidence", "probability"}
+LLM_METADATA_KEYS = {"confidence", "mission_probability"}
 
 
 @dataclass(frozen=True)
