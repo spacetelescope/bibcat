@@ -390,7 +390,7 @@ def cm_metrics(filename, run_index, missions, aggregate: bool):
     llm_multi_runs_data = read_output(filename=llm_output_path)
 
     if aggregate:
-        logger.info("Calculating aggregate metrics across mutiple runs.")
+        logger.info("Calculating aggregate metrics across multiple runs.")
         metrics_type = "aggregate"
         source_lookup = build_source_lookup(load_source_dataset())
         metrics_data = evaluate_multiple_llm_runs(
