@@ -1,6 +1,7 @@
 from statistics import mean, pstdev
 from typing import Any
 
+import numpy as np
 from sklearn.metrics import auc, roc_curve
 
 from bibcat import config
@@ -53,6 +54,10 @@ def get_roc_metrics(
         fpr, tpr, thresholds = roc_curve(y_true, science_scores)
     except ValueError as exc:
         raise ValueError("ROC requires at least one positive and one negative sample in y_true.") from exc
+
+    # Replace infinity with sentinel value for JSON serialization
+    thresholds = np.where(np.isinf(thresholds), 9999.0, thresholds)
+
     roc_auc = auc(fpr, tpr)
     return fpr.tolist(), tpr.tolist(), thresholds.tolist(), float(roc_auc)
 
