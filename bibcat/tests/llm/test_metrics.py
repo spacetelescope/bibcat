@@ -93,5 +93,3 @@ def test_evaluate_multiple_llm_runs(mocker, multi_run_eval_data, multi_run_llm_r
     assert aggregate["accuracy"]["std"] == 0.25
     assert aggregate["precision"]["mean"] == 0.5
     assert aggregate["recall"]["mean"] == 0.5
-    assert aggregate["recall"]["mean"] == 0.5
-    assert aggregate["recall"]["mean"] == 0.5
