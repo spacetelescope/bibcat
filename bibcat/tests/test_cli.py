@@ -71,64 +71,64 @@ def test_eval_plot() -> None:
     assert "--run-index" in result.output
 
 
-def test_cm_metrics() -> None:
-    """test the cli cm-metrics help command"""
+def test_cm() -> None:
+    """test the cli cm help command"""
     runner = CliRunner()
-    result = runner.invoke(cli, ["llm", "cm-metrics", "--help"])
+    result = runner.invoke(cli, ["llm", "cm", "--help"])
     assert "Save Confusion Matrix metrics for llm performance" in result.output
     assert "-f, --filename" in result.output
     assert "-r, --run-index" in result.output
 
 
-def test_roc_metrics() -> None:
-    """test the cli roc-metrics help command"""
+def test_roc() -> None:
+    """test the cli roc help command"""
     runner = CliRunner()
-    result = runner.invoke(cli, ["llm", "roc-metrics", "--help"])
+    result = runner.invoke(cli, ["llm", "roc", "--help"])
     assert "Save ROC metrics for llm performance" in result.output
     assert "-f, --filename" in result.output
     assert "-r, --run-index" in result.output
 
 
-def test_cm_metrics_requires_filename() -> None:
-    """test cm-metrics requires a bibcode file"""
+def test_cm_requires_filename() -> None:
+    """test cm requires a bibcode file"""
     runner = CliRunner()
-    result = runner.invoke(cli, ["llm", "cm-metrics"])
+    result = runner.invoke(cli, ["llm", "cm"])
     assert result.exit_code != 0
     assert "Missing option '-f'" in result.output
 
 
-def test_roc_metrics_requires_filename() -> None:
-    """test roc-metrics requires a bibcode file"""
+def test_roc_requires_filename() -> None:
+    """test roc requires a bibcode file"""
     runner = CliRunner()
-    result = runner.invoke(cli, ["llm", "roc-metrics"])
+    result = runner.invoke(cli, ["llm", "roc"])
     assert result.exit_code != 0
     assert "Missing option '-f'" in result.output
 
 
-def test_cm_metrics_rejects_run_index_with_aggregate(tmp_path) -> None:
-    """test cm-metrics rejects run-index in aggregate mode"""
+def test_cm_rejects_run_index_with_aggregate(tmp_path) -> None:
+    """test cm rejects run-index in aggregate mode"""
     bibcodes = tmp_path / "bibcodes.txt"
     bibcodes.write_text("B1\n", encoding="utf-8")
 
     runner = CliRunner()
-    result = runner.invoke(cli, ["llm", "cm-metrics", "-a", "-r", "0", "-f", str(bibcodes)])
+    result = runner.invoke(cli, ["llm", "cm", "-a", "-r", "0", "-f", str(bibcodes)])
     assert result.exit_code != 0
     assert "--run-index cannot be used with -a/--aggregate." in result.output
 
 
-def test_roc_metrics_rejects_run_index_with_aggregate(tmp_path) -> None:
-    """test roc-metrics rejects run-index in aggregate mode"""
+def test_roc_rejects_run_index_with_aggregate(tmp_path) -> None:
+    """test roc rejects run-index in aggregate mode"""
     bibcodes = tmp_path / "bibcodes.txt"
     bibcodes.write_text("B1\n", encoding="utf-8")
 
     runner = CliRunner()
-    result = runner.invoke(cli, ["llm", "roc-metrics", "-a", "-r", "0", "-f", str(bibcodes)])
+    result = runner.invoke(cli, ["llm", "roc", "-a", "-r", "0", "-f", str(bibcodes)])
     assert result.exit_code != 0
     assert "--run-index cannot be used with -a/--aggregate." in result.output
 
 
-def test_roc_metrics_reports_save_errors(tmp_path, mocker) -> None:
-    """test roc-metrics wraps save errors in a ClickException"""
+def test_roc_reports_save_errors(tmp_path, mocker) -> None:
+    """test roc wraps save errors in a ClickException"""
     bibcodes = tmp_path / "bibcodes.txt"
     bibcodes.write_text("B1\n", encoding="utf-8")
 
@@ -137,7 +137,7 @@ def test_roc_metrics_reports_save_errors(tmp_path, mocker) -> None:
     mocker.patch("bibcat.main.save_json_file", side_effect=IOError("disk full"))
 
     runner = CliRunner()
-    result = runner.invoke(cli, ["llm", "roc-metrics", "-f", str(bibcodes)])
+    result = runner.invoke(cli, ["llm", "roc", "-f", str(bibcodes)])
 
     assert result.exit_code != 0
     assert "Failed to save metrics to" in result.output
@@ -161,7 +161,7 @@ def test_plot_cm_reads_saved_metrics_data(tmp_path, mocker) -> None:
 
     output_dir = tmp_path / f"llms/openai_{main.config.llms.openai.model}"
     output_dir.mkdir(parents=True, exist_ok=True)
-    metrics_path = main._cm_metrics_output_path("single_r2")
+    metrics_path = main._cm_output_path("single_r2")
     metrics_path.parent.mkdir(parents=True, exist_ok=True)
     data = {
         "human_labels": ["SCIENCE"],
@@ -185,7 +185,7 @@ def test_plot_roc_reads_saved_metrics_data(tmp_path, mocker) -> None:
 
     output_dir = tmp_path / f"llms/openai_{main.config.llms.openai.model}"
     output_dir.mkdir(parents=True, exist_ok=True)
-    metrics_path = main._roc_metrics_output_path("single_r1")
+    metrics_path = main._roc_output_path("single_r1")
     metrics_path.parent.mkdir(parents=True, exist_ok=True)
     data = {
         "fpr": [0.0, 1.0],
@@ -210,7 +210,7 @@ def test_plot_cm_rejects_legacy_metrics_without_missions(tmp_path, mocker) -> No
 
     output_dir = tmp_path / f"llms/openai_{main.config.llms.openai.model}"
     output_dir.mkdir(parents=True, exist_ok=True)
-    metrics_path = main._cm_metrics_output_path("single_r0")
+    metrics_path = main._cm_output_path("single_r0")
     metrics_path.parent.mkdir(parents=True, exist_ok=True)
     data = {
         "human_labels": ["SCIENCE"],

@@ -77,7 +77,7 @@ def confusion_matrix_plot(metrics_data: dict[str, Any], metrics_type: str) -> No
     missions = _required_missions(
         metrics_data=metrics_data,
         metrics_data_name="Confusion matrix metrics file",
-        regenerate_cmd="bibcat llm cm-metrics -f <bibcodes.txt>",
+        regenerate_cmd="bibcat llm cm -f <bibcodes.txt>",
     )
 
     human = metrics_data["human_labels"]
@@ -170,7 +170,7 @@ def roc_plot(roc_data: dict[str, Any], metrics_type: str) -> None:
     _required_missions(
         metrics_data=roc_data,
         metrics_data_name="ROC metrics file",
-        regenerate_cmd="bibcat llm roc-metrics -f <bibcodes.txt>",
+        regenerate_cmd="bibcat llm roc -f <bibcodes.txt>",
     )
 
     fpr = roc_data["fpr"]

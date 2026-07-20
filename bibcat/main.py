@@ -88,16 +88,14 @@ def _summary_output_path() -> Path:
     return _llm_output_dir() / f"{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
 
 
-def _cm_metrics_output_path(metrics_type: str) -> Path:
+def _cm_output_path(metrics_type: str) -> Path:
     """Return the confusion-matrix metrics output path."""
-    return _llm_output_dir() / f"{config.llms.cm_metrics_file}_{metrics_type}_t{config.llms.performance.threshold}.json"
+    return _llm_output_dir() / f"{config.llms.cm_file}_{metrics_type}_t{config.llms.performance.threshold}.json"
 
 
-def _roc_metrics_output_path(metrics_type: str) -> Path:
+def _roc_output_path(metrics_type: str) -> Path:
     """Return the ROC metrics output path."""
-    return (
-        _llm_output_dir() / f"{config.llms.roc_metrics_file}_{metrics_type}_t{config.llms.performance.threshold}.json"
-    )
+    return _llm_output_dir() / f"{config.llms.roc_file}_{metrics_type}_t{config.llms.performance.threshold}.json"
 
 
 def _prompt_output_path() -> Path:
@@ -333,22 +331,22 @@ def eval_plot(cm: bool, roc: bool, run_index: int = 0):
 
     if cm:
         metrics_data = _read_required_metrics_json(
-            _cm_metrics_output_path(metrics_type),
+            _cm_output_path(metrics_type),
             "Confusion matrix metrics file",
         )
-        _require_plot_missions(metrics_data, "Confusion matrix metrics file", "bibcat llm cm-metrics -f <bibcodes.txt>")
+        _require_plot_missions(metrics_data, "Confusion matrix metrics file", "bibcat llm cm -f <bibcodes.txt>")
         confusion_matrix_plot(metrics_data=metrics_data, metrics_type=metrics_type)
 
     if roc:
         roc_data = _read_required_metrics_json(
-            _roc_metrics_output_path(metrics_type),
+            _roc_output_path(metrics_type),
             "ROC metrics file",
         )
-        _require_plot_missions(roc_data, "ROC metrics file", "bibcat llm roc-metrics -f <bibcodes.txt>")
+        _require_plot_missions(roc_data, "ROC metrics file", "bibcat llm roc -f <bibcodes.txt>")
         roc_plot(roc_data=roc_data, metrics_type=metrics_type)
 
 
-@llmcli.command("cm-metrics", help="Save Confusion Matrix metrics for llm performance")
+@llmcli.command("cm", help="Save Confusion Matrix metrics for llm performance")
 @click.option("-a", "--aggregate", is_flag=True, show_default=False, help="Calculate aggregate metrics across missions")
 @click.option(
     "-f",
@@ -373,9 +371,9 @@ def eval_plot(cm: bool, roc: bool, run_index: int = 0):
     show_default=True,
     help="List mission names in format [MISSION1,MISSION2,...], e.g., '[HST,JWST,TESS]'; if not provided, the metrics will be extracted for all missions by default.",
 )
-def cm_metrics(filename, run_index, missions, aggregate: bool):
+def cm(filename, run_index, missions, aggregate: bool):
     """Extract evaluation metrics from a LLM model and save to a JSON file"""
-    logger.debug("CLI option: 'llm cm-metrics' selected")
+    logger.debug("CLI option: 'llm cm' selected")
 
     if aggregate and run_index is not None:
         raise click.UsageError("--run-index cannot be used with -a/--aggregate.")
@@ -412,7 +410,7 @@ def cm_metrics(filename, run_index, missions, aggregate: bool):
         )
         metrics_type = f"single_r{selected_run_index}"
 
-    output_path = _cm_metrics_output_path(metrics_type)
+    output_path = _cm_output_path(metrics_type)
 
     try:
         save_json_file(
@@ -424,7 +422,7 @@ def cm_metrics(filename, run_index, missions, aggregate: bool):
         raise click.ClickException(f"Failed to save metrics to {output_path}: {e}")
 
 
-@llmcli.command("roc-metrics", help="Save ROC metrics for llm performance")
+@llmcli.command("roc", help="Save ROC metrics for llm performance")
 @click.option(
     "-a", "--aggregate", is_flag=True, show_default=False, help="Calculate aggregate ROC metrics across missions"
 )
@@ -451,9 +449,9 @@ def cm_metrics(filename, run_index, missions, aggregate: bool):
     show_default=True,
     help="List mission names in format [MISSION1,MISSION2,...], e.g., '[HST,JWST,TESS]'; if not provided, metrics are extracted for all missions by default.",
 )
-def roc_metrics(filename, run_index, missions, aggregate: bool):
+def roc(filename, run_index, missions, aggregate: bool):
     """Extract ROC metrics from a LLM model and save to a JSON file"""
-    logger.debug("CLI option: 'llm roc-metrics' selected")
+    logger.debug("CLI option: 'llm roc' selected")
 
     if aggregate and run_index is not None:
         raise click.UsageError("--run-index cannot be used with -a/--aggregate.")
@@ -488,7 +486,7 @@ def roc_metrics(filename, run_index, missions, aggregate: bool):
             bibcodes=bibcodes,
         )
 
-    output_path = _roc_metrics_output_path(metrics_type)
+    output_path = _roc_output_path(metrics_type)
 
     try:
         save_json_file(

@@ -300,7 +300,7 @@ llms:
   agent_prompt: null
   prompt_output_file: paper_output.json # llm classification primary output
   eval_output_file: summary_output # llm evaluation summary output
-  cm_metrics_file: cm_metrics_summary # confusion-matrix metrics summary output
+  cm_file: cm_metrics_summary # confusion-matrix metrics summary output
   cm_plot: confusion_matrix_llm # confusion matrix plot image (.png is appended if omitted)
   roc_plot: roc_plot_llm # ROC plot image (.png is appended if omitted)
   llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
@@ -725,9 +725,10 @@ with 20 runs each paper, then batch evaluate them, run:
 bibcat llm batch evaluate -p bibcode_list.txt -s -n 20
 ```
 
-## Plotting Evaluation Plots
+## Metrics Output
+There are two sets of metrics for performance evaluation: confusion matrix metrics and ROC metrics.
 
-You can assess model performance using confusion matrix plots or Receiver Operating Characteristic (ROC) curves. A [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) plot helps evaluation classification model performance by showing true positives ($TP$), true negatives ($TN$), false positives ($FP$), and false negatives ($FN$), making it useful for understanding evaluation metrics such as
+You can assess model performance using confusion matrix or Receiver Operating Characteristic (ROC). A [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) helps evaluate classification model performance by showing true positives ($TP$), true negatives ($TN$), false positives ($FP$), and false negatives ($FN$), making it useful for understanding evaluation metrics such as
 
 
    $\text{Accuracy} = \dfrac{TP + TN}{TP + TN + FP + FN}$
@@ -739,86 +740,48 @@ You can assess model performance using confusion matrix plots or Receiver Operat
    $F_1 = 2 \times \dfrac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}$
 
 
-A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curve evaluates a model's ability to distinguish between classes by plotting the true positive rate against the false positive rate at various thresholds, with the area under the curve (AUC) which represents the degree of separability between classes. For instance, AUC = 1.0 indicates perfect and AUC =0.5 is as good as random guessing. To provide more reliable and stable performance metrics, larger datasets (hundreds or thousands) are recommended. With small datasets, you make interpreations less reliable.
+A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) evaluates a model's ability to distinguish between classes by plotting the true positive rate against the false positive rate at various thresholds, with the area under the curve (AUC) which represents the degree of separability between classes. For instance, AUC = 1.0 indicates perfect and AUC =0.5 is as good as random guessing. To provide more reliable and stable performance metrics, larger datasets (hundreds or thousands) are recommended. With small datasets, you make interpreations less reliable.
 
-### Confusion Matrix Plot
-`llm plot` reads precomputed single-run metrics JSON files. Generate the required metrics file first with `llm cm-metrics`, then plot that saved run.
-
-To plot confusion matrices from saved metrics for the default saved run (`--run-index 0`), run:
-```bash
-bibcat llm cm-metrics -f bibcodes.txt -m [HST,JWST]
-bibcat llm plot -c
-```
-
-To plot a non-default saved run, use the same `--run-index` value for both commands:
-```bash
-bibcat llm cm-metrics -f bibcodes.txt -r 2 -m [HST,JWST]
-bibcat llm plot -c --run-index 2
-```
-
-To plot confusion matrices for **all missions** (default when `-m` is not provided), run:
-```bash
-bibcat llm cm-metrics -f bibcodes.txt
-bibcat llm plot -c
-```
-![confusion matrix example](images/example_confusion_matrix_plot_t0.5.png)
-
-In the example confusion matrix (CM) plot, we have both counts (left panel) and normalized counts (right panel). We can see the distribution of true positives (top left quadrant), false positives (bottom left quadrant), true negatives (bottom right quadrant), and false negatives (top right quadrant) for the missions stored in the saved metrics JSON. This visualization helps in understanding the model's performance and identifying areas for improvement. In the annotation, `Mission(s) considered:` comes from the metrics file `missions` field, while `Mission(s) found:` is the subset called out by both human and LLM.
-
-Plot commands only generate image files and require an existing single-run metrics JSON file. If the expected metrics file is missing, `llm plot` fails with a clear error instead of recomputing metrics inline. Plotting also requires the metrics JSON to include a `missions` field; regenerate metrics with `cm-metrics` or `roc-metrics` if this field is missing. Aggregate metrics JSON files are not used by `llm plot`.
-
-Saved confusion-matrix plot filename pattern:
-
-```text
-{configured cm_plot name with the run label inserted before .png}_t{threshold}
-```
-
-For example, with the default config this becomes:
-
-```text
-confusion_matrix_llm_single_r2_t0.5.png
-```
-
-## Metrics Output
-There are two sets of metrics output: confusion matrix metrics and ROC metrics. Both can be saved as JSON files for single runs or aggregate runs across multiple papers.
+Both confusion matrix and ROC metrics can be saved as JSON files for single runs or aggregate runs across multiple papers.
 
 ### Confusion Matrix Metrics JSON
 
-`cm-metrics` builds metrics directly from raw `llm_output` plus an explicit bibcode roster file.
+`cm` builds metrics directly from raw `llm_output` plus an explicit bibcode roster file.
 
-Save single-run confusion-matrix metrics for specific missions (default threshold probability = 0.5):
+Save single-run (run `0` by default) confusion-matrix metrics for specific missions (default threshold probability = 0.5):
 
 ```bash
-bibcat llm cm-metrics -f bibcodes.txt -m [HST,JWST]
+bibcat llm cm -f bibcodes.txt -m [HST,JWST]
 ```
 You can save single-run confusion-matrix metrics for **all missions** without `-m` flag:
 
 ```bash
-bibcat llm cm-metrics -f bibcodes.txt
+bibcat llm cm -f bibcodes.txt
 ```
-To select a non-default run in non-aggregate mode, use `--run-index`:
+
+To select a specific run index in non-aggregate mode, use `--run-index` (or `-r`). The default run index is `0`, so `--run-index` allows you to evaluate results from other runs (e.g., run 1, run 2, etc.) when multiple runs were executed for the same papers. For instance, to evaluate run 3, run:
 
 ```bash
-bibcat llm cm-metrics -f bibcodes.txt -r 3 -m [HST,JWST]
+bibcat llm cm -f bibcodes.txt -r 3 -m [HST,JWST]
 ```
 
 Save aggregate metrics across multiple runs:
 
 ```bash
-bibcat llm cm-metrics -a -f bibcodes.txt -m [HST,JWST]
+bibcat llm cm -a -f bibcodes.txt -m [HST,JWST]
 ```
 
-`--run-index` is only valid without `-a`. If omitted in non-aggregate mode, bibcat evaluates run `0`.
+Note that `--run-index` is only valid without `-a`.
 
 Output filename pattern:
 
 ```text
-{config.llms.cm_metrics_file}_{single_r{run_index}|aggregate}_t{threshold}.json
+{config.llms.cm_file}_{single_r{run_index}|aggregate}_t{threshold}.json
 ```
 
 #### Confusion Matrix JSON Output Columns
 
-Single-run (`cm-metrics` without `-a`) column definitions:
+Single-run (`cm` without `-a`) column definitions:
 
 - **threshold**: Confidence threshold used to accept LLM papertype classification.
 - **missions**: Mission list requested by CLI (normalized to uppercase).
@@ -851,7 +814,7 @@ Nested **metrics** column definitions:
 - **f1**: Harmonic mean of precision and recall.
 - **accuracy**: Overall accuracy (`(tp + tn) / (tp + tn + fp + fn)`).
 
-Aggregate (`cm-metrics -a`) column definitions:
+Aggregate (`cm` -a) column definitions:
 
 - **missions**: Mission list requested by CLI (normalized to uppercase).
 - **n_runs**: Number of run indices found across the multi-run output.
@@ -863,38 +826,38 @@ Aggregate CM output remains compact and does not include the single-run label ar
 
 **How aggregate CM metrics are computed**
 
-For both single-run and aggregate `cm-metrics`, bibcat builds evaluation data from raw multi-run `llm_output` for the requested bibcodes and compares it against the current source dataset at `config.inputs.path_source_data`. In aggregate mode, bibcat computes metrics per run index using a run-specific in-memory evaluation snapshot built from that raw output.
+For both single-run and aggregate `cm`, bibcat builds evaluation data from raw multi-run `llm_output` for the requested bibcodes and compares it against the current source dataset at `config.inputs.path_source_data`. In aggregate mode, bibcat computes metrics per run index using a run-specific in-memory evaluation snapshot built from that raw output.
 
 During aggregate CM evaluation, the per-bibcode evaluation summaries built for each run are logged at `DEBUG` rather than `INFO`. High-level aggregate progress messages still appear at `INFO`.
 
 ### ROC Metrics JSON
 
-`roc-metrics` follows the same input contract as `cm-metrics`: it builds metrics directly from raw `llm_output` plus a required bibcode roster file, and does not use the saved `summary_output` file.
+`roc` follows the same input contract as `cm`: it builds metrics directly from raw `llm_output` plus a required bibcode roster file, and does not use the saved `summary_output` file.
 
-Save single-run ROC metrics:
+Save single-run (run `0` by default) ROC metrics:
 
 ```bash
-bibcat llm roc-metrics -f bibcodes.txt -m [HST,JWST]
+bibcat llm roc -f bibcodes.txt -m [HST,JWST]
 ```
 Save single-run ROC metrics for **all missions** without `-m` flag:
 
 ```bash
-bibcat llm roc-metrics -f bibcodes.txt
+bibcat llm roc -f bibcodes.txt
 ```
 
-To select a non-default run in non-aggregate mode, use `--run-index`:
+To select a specific run index in non-aggregate mode, use `--run-index` (or `-r`). The default run index is `0`, so `--run-index` allows you to evaluate results from other runs (e.g., run 1, run 2, etc.) when multiple runs were executed for the same papers. For instance, to evaluate run 3, run:
 
 ```bash
-bibcat llm roc-metrics -f bibcodes.txt -r 3 -m [HST,JWST]
+bibcat llm roc -f bibcodes.txt -r 3 -m [HST,JWST]
 ```
 
 Save aggregate ROC metrics across multiple runs:
 
 ```bash
-bibcat llm roc-metrics -a -f bibcodes.txt -m [HST,JWST]
+bibcat llm roc -a -f bibcodes.txt -m [HST,JWST]
 ```
 
-`--run-index` is only valid without `-a`. If omitted in non-aggregate mode, bibcat evaluates run `0`.
+Same as CM metrics, `--run-index` is only valid without `-a`.
 
 Output filename pattern:
 
@@ -904,7 +867,7 @@ Output filename pattern:
 
 #### ROC JSON Output Columns
 
-Single-run (`roc-metrics` without `-a`) column definitions:
+Single-run (`roc` without `-a`) column definitions:
 
 - **threshold**: Confidence threshold from config used for the evaluation context.
 - **missions**: Mission list requested by CLI (normalized to uppercase).
@@ -915,7 +878,7 @@ Single-run (`roc-metrics` without `-a`) column definitions:
 - **thresholds**: ROC decision thresholds corresponding to **fpr**/**tpr** points.
 - **roc_auc**: Area under ROC curve.
 
-Aggregate (`roc-metrics -a`) column definitions:
+Aggregate (`roc -a`) column definitions:
 
 - **missions**: Mission list requested by CLI (normalized to uppercase).
 - **n_runs**: Number of run indices found across the multi-run output.
@@ -932,28 +895,70 @@ Both single-run and aggregate ROC outputs remain compact. ROC output does not in
 
 **How aggregate ROC metrics are computed**
 
-For both single-run and aggregate `roc-metrics`, bibcat builds ROC inputs from raw multi-run `llm_output` for the requested bibcodes and compares them against the current source dataset at `config.inputs.path_source_data`. In aggregate mode, bibcat computes ROC/AUC per run index from isolated run-specific in-memory evaluation snapshots.
+For both single-run and aggregate `roc`, bibcat builds ROC inputs from raw multi-run `llm_output` for the requested bibcodes and compares them against the current source dataset at `config.inputs.path_source_data`. In aggregate mode, bibcat computes ROC/AUC per run index from isolated run-specific in-memory evaluation snapshots.
 
 Like aggregate CM evaluation, aggregate ROC evaluation demotes the per-bibcode in-memory evaluation summaries to `DEBUG`, leaving only the top-level aggregate progress logs at `INFO`.
 
+
+## Creating Evaluation Plots
+
+### Confusion Matrix Plot
+`llm plot` reads precomputed single-run metrics JSON files. Generate the required metrics file first with `llm cm`, then plot that saved run.
+
+To plot confusion matrices from saved metrics for the default saved run (`--run-index 0`), run:
+```bash
+bibcat llm cm -f bibcodes.txt -m [HST,JWST]
+bibcat llm plot -c
+```
+
+To plot a non-default saved run, use the same `--run-index` value for both commands. For instance, to plot confusion matrices for run index 2, run:
+```bash
+bibcat llm cm -f bibcodes.txt -r 2 -m [HST,JWST]
+bibcat llm plot -c --run-index 2
+```
+
+To plot confusion matrices for **all missions** (default when `-m` is not provided), run:
+```bash
+bibcat llm cm -f bibcodes.txt
+bibcat llm plot -c
+```
+![confusion matrix example](images/example_confusion_matrix_plot_t0.5.png)
+
+In the example confusion matrix (CM) plot, we have both counts (left panel) and normalized counts (right panel). We can see the distribution of true positives (top left quadrant), false positives (bottom left quadrant), true negatives (bottom right quadrant), and false negatives (top right quadrant) for the missions stored in the saved metrics JSON. This visualization helps in understanding the model's performance and identifying areas for improvement. In the annotation, `Mission(s) considered:` comes from the metrics file `missions` field, while `Mission(s) found:` is the subset called out by both human and LLM.
+
+Plot commands only generate image files and require an existing single-run metrics JSON file. If the expected metrics file is missing, `llm plot` fails with a clear error instead of recomputing metrics inline. Plotting also requires the metrics JSON to include a `missions` field; regenerate metrics with `cm` or `roc` if this field is missing. Aggregate metrics JSON files are not used by `llm plot`.
+
+Saved confusion-matrix plot filename pattern:
+
+```text
+{configured cm_plot name with the run label inserted before .png}_t{threshold}
+```
+
+For example, with the default config this becomes:
+
+```text
+confusion_matrix_llm_single_r2_t0.5.png
+```
+
+
 ### Receiver Operating Characteristic (ROC) Plot
-`llm plot -r` also reads precomputed single-run ROC metrics JSON files. Generate the saved ROC metrics file first with `llm roc-metrics`.
+`llm plot -r` also reads precomputed single-run ROC metrics JSON files. Generate the saved ROC metrics file first with `llm roc`.
 
 To plot ROC from saved metrics for the default saved run (`--run-index 0`), run:
 ```bash
-bibcat llm roc-metrics -f bibcodes.txt -m [HST,JWST]
+bibcat llm roc -f bibcodes.txt -m [HST,JWST]
 bibcat llm plot -r
 ```
 
-To plot a non-default saved run, use the same `--run-index` value for both commands:
+To plot a non-default saved run, use the same `--run-index` value for both commands. To plot ROC for run index 2, run:
 ```bash
-bibcat llm roc-metrics -f bibcodes.txt -r 2 -m [HST,JWST]
+bibcat llm roc -f bibcodes.txt -r 2 -m [HST,JWST]
 bibcat llm plot -r --run-index 2
 ```
 
 To plot ROC for **all missions** (default when `-m` is not provided), run:
 ```bash
-bibcat llm roc-metrics -f bibcodes.txt
+bibcat llm roc -f bibcodes.txt
 bibcat llm plot -r
 ```
 
@@ -968,5 +973,3 @@ For example, with the default config this becomes:
 ```text
 roc_plot_llm_single_r2.png
 ```
-
-`bibcat llm stats` and `bibcat llm audit` were removed. Use `bibcat llm cm-metrics` and `bibcat llm roc-metrics` for JSON metric outputs.
