@@ -1,13 +1,13 @@
 import matplotlib.pyplot as plt
 
-from bibcat.llm.plots import confusion_matrix_plot, roc_plot
+from bibcat.llm.plots import cm_plot, roc_plot
 
 
-def test_confusion_matrix_plot_uses_prepared_metrics_data(mocker) -> None:
+def test_cm_plot_uses_prepared_metrics_data(mocker) -> None:
     from_predictions = mocker.patch("bibcat.llm.plots.ConfusionMatrixDisplay.from_predictions")
     savefig = mocker.patch("bibcat.llm.plots.plt.savefig")
 
-    confusion_matrix_plot(
+    cm_plot(
         metrics_data={
             "human_labels": ["SCIENCE", "NONSCIENCE"],
             "llm_labels": ["SCIENCE", "NONSCIENCE"],
@@ -28,7 +28,7 @@ def test_roc_plot_uses_prepared_roc_data(mocker) -> None:
     savefig = mocker.patch("bibcat.llm.plots.plt.savefig")
 
     roc_plot(
-        roc_data={
+        metrics_data={
             "fpr": [0.0, 0.0, 1.0],
             "tpr": [0.0, 1.0, 1.0],
             "thresholds": [1.9, 0.9, 0.1],
@@ -45,9 +45,9 @@ def test_roc_plot_uses_prepared_roc_data(mocker) -> None:
     plt.close("all")
 
 
-def test_confusion_matrix_plot_requires_missions() -> None:
+def test_cm_plot_requires_missions() -> None:
     try:
-        confusion_matrix_plot(
+        cm_plot(
             metrics_data={
                 "human_labels": ["SCIENCE"],
                 "llm_labels": ["SCIENCE"],
@@ -65,7 +65,7 @@ def test_confusion_matrix_plot_requires_missions() -> None:
 def test_roc_plot_requires_missions() -> None:
     try:
         roc_plot(
-            roc_data={
+            metrics_data={
                 "fpr": [0.0, 1.0],
                 "tpr": [0.0, 1.0],
                 "thresholds": [1.0, 0.0],

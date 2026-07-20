@@ -5,7 +5,6 @@
 Main entry point into bibcat
 """
 
-import ast
 import os
 import time
 from pathlib import Path
@@ -18,8 +17,8 @@ from bibcat.llm.chunker import ChunkPlanner, SubmissionManager
 from bibcat.llm.evaluate import evaluate_output
 from bibcat.llm.llm_io import adjust_model, read_output
 from bibcat.llm.metrics import evaluate_multiple_llm_runs, extract_eval_data_for_run
-from bibcat.llm.openai import OpenAIHelper, classify_paper
-from bibcat.llm.plots import confusion_matrix_plot, roc_plot
+from bibcat.llm.openai import MissionEnum, OpenAIHelper, classify_paper
+from bibcat.llm.plots import cm_plot, roc_plot
 from bibcat.llm.roc import evaluate_multiple_llm_runs_with_roc, extract_roc_metrics_for_run
 from bibcat.llm.run_eval import build_source_lookup
 from bibcat.utils.logger_config import setup_logger
@@ -28,54 +27,14 @@ from bibcat.utils.utils import save_json_file
 logger = setup_logger(__name__)
 
 
-class MissionList(click.ParamType):
-    """Custom Click parameter type for parsing mission lists in format [MISSION1,MISSION2,...]"""
-
-    name = "missionlist"
-
-    def convert(
-        self, value: str | list[str] | None, param: click.Parameter | None, ctx: click.Context | None
-    ) -> list[str] | None:
-        """Convert a mission list CLI value into a Python list.
-
-        Accepts an already-parsed list or a bracket-delimited string like
-        ``[HST,JWST]`` (no whitespace). Returns ``None`` when the input value
-        is ``None``. Raises a Click parameter error for invalid formats.
-        """
-        if isinstance(value, list):
-            return value
-        if value is None:
-            return None
-
-        # Handle bracket-delimited format
-        value = value.strip()
-        if any(ch.isspace() for ch in value):
-            self.fail(
-                f"{value} is not valid. Whitespace is not allowed. Use format: [MISSION1,MISSION2]"
-                + " (e.g., [HST,JWST])",
-                param,
-                ctx,
-            )
-        if not value.startswith("[") or not value.endswith("]"):
-            self.fail(f"{value} is not valid. Use format: [MISSION1,MISSION2] (e.g., [HST,JWST])", param, ctx)
-
-        try:
-            # Try to parse as Python literal first (for quoted strings)
-            result = ast.literal_eval(value)
-            if isinstance(result, list):
-                return result
-        except (ValueError, SyntaxError):
-            # Fall back to manual parsing for unquoted mission names
-            try:
-                inner = value[1:-1].strip()  # Remove brackets
-                if not inner:
-                    return []
-                missions = [m.strip() for m in inner.split(",")]
-                return missions
-            except Exception:
-                pass
-
-        self.fail(f"{value} is not valid. Use format: [MISSION1,MISSION2] (e.g., [HST,JWST])", param, ctx)
+def _parse_missions(ctx: click.Context, param: click.Parameter, value: str | None) -> list[str] | None:
+    """Parse a comma-separated mission string and validate each against config.missions."""
+    if value is None:
+        return None
+    try:
+        return [MissionEnum(m.strip()).value for m in value.split(",") if m.strip()]
+    except ValueError as e:
+        raise click.BadParameter(f"{e}. Valid missions: {[m.value for m in MissionEnum]}")
 
 
 def _llm_output_dir() -> Path:
@@ -83,29 +42,36 @@ def _llm_output_dir() -> Path:
     return Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}"
 
 
-def _summary_output_path() -> Path:
-    """Return the thresholded summary output path."""
-    return _llm_output_dir() / f"{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
+def _output_path(kind: str, metrics_type: str | None = None) -> Path:
+    """Return the output path for the given file kind and metrics type."""
+    match kind:
+        case "cm":
+            return _llm_output_dir() / f"{config.llms.cm_file}_{metrics_type}_t{config.llms.performance.threshold}.json"
+        case "roc":
+            return (
+                _llm_output_dir() / f"{config.llms.roc_file}_{metrics_type}_t{config.llms.performance.threshold}.json"
+            )
+        case "summary":
+            return _llm_output_dir() / f"{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
+        case "prompt":
+            return _llm_output_dir() / config.llms.prompt_output_file
+        case _:
+            raise ValueError(f"Unknown output kind: {kind!r}")
 
 
-def _cm_output_path(metrics_type: str) -> Path:
-    """Return the confusion-matrix metrics output path."""
-    return _llm_output_dir() / f"{config.llms.cm_file}_{metrics_type}_t{config.llms.performance.threshold}.json"
+def _read_lines_from_file(filename) -> list[str] | None:
+    """Read non-empty stripped lines from a file, return None if file is None.
 
-
-def _roc_output_path(metrics_type: str) -> Path:
-    """Return the ROC metrics output path."""
-    return _llm_output_dir() / f"{config.llms.roc_file}_{metrics_type}_t{config.llms.performance.threshold}.json"
-
-
-def _prompt_output_path() -> Path:
-    """Return the raw llm prompt output path."""
-    return _llm_output_dir() / config.llms.prompt_output_file
+    Strips whitespace and filters blank lines from each line read.
+    """
+    if filename is None:
+        return None
+    return [line.strip() for line in filename.read().splitlines() if line.strip()]
 
 
 def _read_bibcodes_file(filename) -> list[str]:
     """Read non-empty bibcodes from a CLI file option."""
-    bibcodes = [line.strip() for line in filename.read().splitlines() if line.strip()]
+    bibcodes = _read_lines_from_file(filename)
     if not bibcodes:
         raise click.UsageError("Bibcode file is empty.")
     return bibcodes
@@ -329,21 +295,15 @@ def eval_plot(cm: bool, roc: bool, run_index: int = 0):
 
     metrics_type = f"single_r{run_index}"
 
-    if cm:
-        metrics_data = _read_required_metrics_json(
-            _cm_output_path(metrics_type),
-            "Confusion matrix metrics file",
-        )
-        _require_plot_missions(metrics_data, "Confusion matrix metrics file", "bibcat llm cm -f <bibcodes.txt>")
-        confusion_matrix_plot(metrics_data=metrics_data, metrics_type=metrics_type)
-
-    if roc:
-        roc_data = _read_required_metrics_json(
-            _roc_output_path(metrics_type),
-            "ROC metrics file",
-        )
-        _require_plot_missions(roc_data, "ROC metrics file", "bibcat llm roc -f <bibcodes.txt>")
-        roc_plot(roc_data=roc_data, metrics_type=metrics_type)
+    # for each requested plot type, load the saved metrics JSON and render the plot
+    for kind, request, description, plot_fn in [
+        ("cm", cm, "CM metrics file", cm_plot),
+        ("roc", roc, "ROC metrics file", roc_plot),
+    ]:
+        if request:
+            metrics_data = _read_required_metrics_json(_output_path(kind, metrics_type), description)
+            _require_plot_missions(metrics_data, description, f"bibcat llm {kind} -f <bibcodes.txt>")
+            plot_fn(metrics_data=metrics_data, metrics_type=metrics_type)
 
 
 @llmcli.command("cm", help="Save Confusion Matrix metrics for llm performance")
@@ -366,10 +326,11 @@ def eval_plot(cm: bool, roc: bool, run_index: int = 0):
 @click.option(
     "-m",
     "--missions",
-    type=MissionList(),
+    type=str,
     default=None,
+    callback=_parse_missions,
     show_default=True,
-    help="List mission names in format [MISSION1,MISSION2,...], e.g., '[HST,JWST,TESS]'; if not provided, the metrics will be extracted for all missions by default.",
+    help="Comma-separated mission names, e.g., 'HST,JWST,TESS'; if not provided, the metrics will be extracted for all missions by default.",
 )
 def cm(filename, run_index, missions, aggregate: bool):
     """Extract evaluation metrics from a LLM model and save to a JSON file"""
@@ -378,15 +339,15 @@ def cm(filename, run_index, missions, aggregate: bool):
     if aggregate and run_index is not None:
         raise click.UsageError("--run-index cannot be used with -a/--aggregate.")
 
-    if missions:
-        pass  # missions is already a list from the custom parameter type
-    else:
-        missions = config.missions
+    # fall back to all configured missions if none were specified via CLI
+    missions = missions or config.missions
 
-    llm_output_path = _prompt_output_path()
+    # load the raw LLM output produced by `bibcat llm run`
+    llm_output_path = _output_path("prompt")
     bibcodes = _read_bibcodes_file(filename)
     llm_multi_runs_data = read_output(filename=llm_output_path)
 
+    # compute either aggregate metrics across all runs, or single-run metrics
     if aggregate:
         logger.info("Calculating aggregate metrics across multiple runs.")
         metrics_type = "aggregate"
@@ -410,7 +371,8 @@ def cm(filename, run_index, missions, aggregate: bool):
         )
         metrics_type = f"single_r{selected_run_index}"
 
-    output_path = _cm_output_path(metrics_type)
+    # save metrics to a thresholded JSON file
+    output_path = _output_path("cm", metrics_type)
 
     try:
         save_json_file(
@@ -444,10 +406,11 @@ def cm(filename, run_index, missions, aggregate: bool):
 @click.option(
     "-m",
     "--missions",
-    type=MissionList(),
+    type=str,
     default=None,
+    callback=_parse_missions,
     show_default=True,
-    help="List mission names in format [MISSION1,MISSION2,...], e.g., '[HST,JWST,TESS]'; if not provided, metrics are extracted for all missions by default.",
+    help="Comma-separated mission names, e.g., 'HST,JWST,TESS'; if not provided, metrics are extracted for all missions by default.",
 )
 def roc(filename, run_index, missions, aggregate: bool):
     """Extract ROC metrics from a LLM model and save to a JSON file"""
@@ -456,15 +419,15 @@ def roc(filename, run_index, missions, aggregate: bool):
     if aggregate and run_index is not None:
         raise click.UsageError("--run-index cannot be used with -a/--aggregate.")
 
-    if missions:
-        missions = [mission.upper() for mission in missions]
-    else:
-        missions = [mission.upper() for mission in config.missions]
+    # fall back to all configured missions if none were specified via CLI
+    missions = [m.upper() for m in (missions or config.missions)]
 
-    llm_output_path = _prompt_output_path()
+    # load the raw LLM output produced by `bibcat llm run`
+    llm_output_path = _output_path("prompt")
     bibcodes = _read_bibcodes_file(filename)
     llm_multi_runs_data = read_output(filename=llm_output_path)
 
+    # compute either aggregate ROC metrics across all runs, or single-run ROC metrics
     if aggregate:
         logger.info("Calculating aggregate ROC metrics across multiple runs.")
         metrics_type = "aggregate"
@@ -486,7 +449,8 @@ def roc(filename, run_index, missions, aggregate: bool):
             bibcodes=bibcodes,
         )
 
-    output_path = _roc_output_path(metrics_type)
+    # save ROC metrics to a thresholded JSON file
+    output_path = _output_path("roc", metrics_type)
 
     try:
         save_json_file(
@@ -567,7 +531,7 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
         logger.info("Run in the OPS MODE!")
 
     # get the list of files
-    files = files or filename.read().splitlines()
+    files = files or _read_lines_from_file(filename) or []
     if filename:
         logger.info(f"batch filename: {filename.name}")
 
@@ -619,7 +583,7 @@ def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
         config.llms.openai.model = model
 
     # get the list of files
-    files = files or filename.read().splitlines()
+    files = files or _read_lines_from_file(filename) or []
 
     # submit the paper for classification, if requested
     if submit:
@@ -665,8 +629,8 @@ def submit(filename, batch_file, model, verbose):
         if batch_file:
             batch_file = adjust_model(batch_file, orig, model)
 
-    # get the list of files
-    bibcodes = filename.read().splitlines() if filename else None
+    # get the list of bibcodes
+    bibcodes = _read_lines_from_file(filename)
 
     oa = OpenAIHelper(verbose=verbose)
     oa.submit_batch(bibcodes=bibcodes, batch_file=str(batch_file))
@@ -725,7 +689,7 @@ def process(filename, batch_file, model, test, retrieve_batch, check, eval_batch
 
     # get the bibcodes
     if filename:
-        bibcodes = filename.read().splitlines() if filename else None
+        bibcodes = _read_lines_from_file(filename)
         oa = OpenAIHelper()
         batch_file = oa.create_batch_file(bibcodes)
 

@@ -204,17 +204,17 @@ def has_no_paper_source(item: dict[str, Any]) -> bool:
 
 
 def build_source_lookup(source_dataset: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
-    """Build a source-paper lookup keyed by bibcode.
+    """Build a source paper (from combined dataset) lookup keyed by bibcode.
 
     Parameters
     ----------
     source_dataset : list[dict[str, Any]]
-        Source paper dataset rows.
+        Source paper dataset rows from the combined dataset.
 
     Returns
     -------
     dict[str, dict[str, Any]]
-        Mapping from bibcode to source paper row.
+        Mapping from bibcode to source paper row from the combined dataset.
     """
     return {str(item["bibcode"]): item for item in source_dataset if "bibcode" in item}
 

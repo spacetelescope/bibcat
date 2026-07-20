@@ -151,17 +151,17 @@ def test_plot_cm_requires_saved_metrics_file(tmp_path, mocker) -> None:
     result = runner.invoke(cli, ["llm", "plot", "--cm"])
 
     assert result.exit_code != 0
-    assert "Confusion matrix metrics file not found" in result.output
+    assert "CM metrics file not found" in result.output
 
 
 def test_plot_cm_reads_saved_metrics_data(tmp_path, mocker) -> None:
     runner = CliRunner()
     mocker.patch.object(main.config.paths, "output", str(tmp_path))
-    plot_mock = mocker.patch("bibcat.main.confusion_matrix_plot")
+    plot_mock = mocker.patch("bibcat.main.cm_plot")
 
     output_dir = tmp_path / f"llms/openai_{main.config.llms.openai.model}"
     output_dir.mkdir(parents=True, exist_ok=True)
-    metrics_path = main._cm_output_path("single_r2")
+    metrics_path = main._output_path("cm", "single_r2")
     metrics_path.parent.mkdir(parents=True, exist_ok=True)
     data = {
         "human_labels": ["SCIENCE"],
@@ -185,7 +185,7 @@ def test_plot_roc_reads_saved_metrics_data(tmp_path, mocker) -> None:
 
     output_dir = tmp_path / f"llms/openai_{main.config.llms.openai.model}"
     output_dir.mkdir(parents=True, exist_ok=True)
-    metrics_path = main._roc_output_path("single_r1")
+    metrics_path = main._output_path("roc", "single_r1")
     metrics_path.parent.mkdir(parents=True, exist_ok=True)
     data = {
         "fpr": [0.0, 1.0],
@@ -201,7 +201,7 @@ def test_plot_roc_reads_saved_metrics_data(tmp_path, mocker) -> None:
     result = runner.invoke(cli, ["llm", "plot", "--roc", "--run-index", "1"])
 
     assert result.exit_code == 0
-    plot_mock.assert_called_once_with(roc_data=data, metrics_type="single_r1")
+    plot_mock.assert_called_once_with(metrics_data=data, metrics_type="single_r1")
 
 
 def test_plot_cm_rejects_legacy_metrics_without_missions(tmp_path, mocker) -> None:
@@ -210,7 +210,7 @@ def test_plot_cm_rejects_legacy_metrics_without_missions(tmp_path, mocker) -> No
 
     output_dir = tmp_path / f"llms/openai_{main.config.llms.openai.model}"
     output_dir.mkdir(parents=True, exist_ok=True)
-    metrics_path = main._cm_output_path("single_r0")
+    metrics_path = main._output_path("cm", "single_r0")
     metrics_path.parent.mkdir(parents=True, exist_ok=True)
     data = {
         "human_labels": ["SCIENCE"],

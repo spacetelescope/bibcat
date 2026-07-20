@@ -524,7 +524,7 @@ def evaluate_multiple_llm_runs(
         per-run metrics, and mean/std aggregate metrics.
     """
     if source_lookup is None:
-        source_lookup = build_source_lookup(load_source_dataset(do_verbose=False))
+        source_lookup = build_source_lookup(load_source_dataset())
 
     normalized_missions = normalize_missions(missions)
     n_runs = max((len(runs) for runs in llm_runs_data.values()), default=0)

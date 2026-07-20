@@ -56,7 +56,7 @@ def _required_missions(metrics_data: dict[str, Any], metrics_data_name: str, reg
 
 
 # create a confusion matrix plot
-def confusion_matrix_plot(metrics_data: dict[str, Any], metrics_type: str) -> None:
+def cm_plot(metrics_data: dict[str, Any], metrics_type: str) -> None:
     """Create a confusion matrix figure
 
     Create confusion matrix plots (counts and normalized) from a prepared
@@ -142,22 +142,22 @@ def confusion_matrix_plot(metrics_data: dict[str, Any], metrics_type: str) -> No
     # plt.tight_layout(rect=[0, 0.05, 1, 0.95])
 
     # Saving the figure
-    cm_plot = _plot_output_path(
+    cm = _plot_output_path(
         plot_name=config.llms.cm_plot,
         metrics_type=metrics_type,
         threshold=config.llms.performance.threshold,
     )
-    plt.savefig(cm_plot, dpi=300, bbox_inches="tight")
-    logger.info(f"The confusion matrix plot is saved on {cm_plot}!")
+    plt.savefig(cm, dpi=300, bbox_inches="tight")
+    logger.info(f"The confusion matrix plot is saved on {cm}!")
 
 
 # create a ROC curve plot
-def roc_plot(roc_data: dict[str, Any], metrics_type: str) -> None:
+def roc_plot(metrics_data: dict[str, Any], metrics_type: str) -> None:
     """Create a Receiver Operating Characteristic (ROC) curve plot
 
     Parameters
     ----------
-    roc_data: dict[str, Any]
+    metrics_data: dict[str, Any]
         Single-run ROC metrics data.
     metrics_type: str
         Run label used for the saved figure name.
@@ -168,17 +168,17 @@ def roc_plot(roc_data: dict[str, Any], metrics_type: str) -> None:
     """
 
     _required_missions(
-        metrics_data=roc_data,
+        metrics_data=metrics_data,
         metrics_data_name="ROC metrics file",
         regenerate_cmd="bibcat llm roc -f <bibcodes.txt>",
     )
 
-    fpr = roc_data["fpr"]
-    tpr = roc_data["tpr"]
-    thresholds = roc_data["thresholds"]
-    roc_auc = roc_data["roc_auc"]
-    n_verdicts = roc_data["n_verdicts"]
-    human_llm_missions = roc_data["human_llm_missions"]
+    fpr = metrics_data["fpr"]
+    tpr = metrics_data["tpr"]
+    thresholds = metrics_data["thresholds"]
+    roc_auc = metrics_data["roc_auc"]
+    n_verdicts = metrics_data["n_verdicts"]
+    human_llm_missions = metrics_data["human_llm_missions"]
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     bbox_args = dict(boxstyle="round", fc="0.8")
