@@ -35,9 +35,9 @@ llms:
   eval_output_file: summary_output # llm classification summary output
   cm_file: cm_metrics_summary # confusion-matrix metrics summary JSON output (includes the configured threshold)
   cm_plot: confusion_matrix_llm # confusion matrix plot image (.png is used if no extension is configured)
+  roc_file: roc_metrics_summary # ROC metrics summary JSON output (includes the configured threshold)
   roc_plot: roc_plot_llm # ROC plot image (.png is used if no extension is configured)
   batch_file: batch_file.jsonl # llm batch jsonl file
-  roc_file: roc_metrics_summary # ROC metrics summary JSON output (includes the configured threshold)
   llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
   llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
   openai:
