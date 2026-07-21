@@ -77,7 +77,7 @@ def test_cm() -> None:
     result = runner.invoke(cli, ["llm", "cm", "--help"])
     assert "Save Confusion Matrix metrics for llm performance" in result.output
     assert "-f, --filename" in result.output
-    assert "-r, --run-index" in result.output
+    assert "-i, --run-index" in result.output
 
 
 def test_roc() -> None:
@@ -86,7 +86,7 @@ def test_roc() -> None:
     result = runner.invoke(cli, ["llm", "roc", "--help"])
     assert "Save ROC metrics for llm performance" in result.output
     assert "-f, --filename" in result.output
-    assert "-r, --run-index" in result.output
+    assert "-i, --run-index" in result.output
 
 
 def test_cm_requires_filename() -> None:
@@ -111,7 +111,7 @@ def test_cm_rejects_run_index_with_aggregate(tmp_path) -> None:
     bibcodes.write_text("B1\n", encoding="utf-8")
 
     runner = CliRunner()
-    result = runner.invoke(cli, ["llm", "cm", "-a", "-r", "0", "-f", str(bibcodes)])
+    result = runner.invoke(cli, ["llm", "cm", "-a", "-i", "0", "-f", str(bibcodes)])
     assert result.exit_code != 0
     assert "--run-index cannot be used with -a/--aggregate." in result.output
 
@@ -122,7 +122,7 @@ def test_roc_rejects_run_index_with_aggregate(tmp_path) -> None:
     bibcodes.write_text("B1\n", encoding="utf-8")
 
     runner = CliRunner()
-    result = runner.invoke(cli, ["llm", "roc", "-a", "-r", "0", "-f", str(bibcodes)])
+    result = runner.invoke(cli, ["llm", "roc", "-a", "-i", "0", "-f", str(bibcodes)])
     assert result.exit_code != 0
     assert "--run-index cannot be used with -a/--aggregate." in result.output
 

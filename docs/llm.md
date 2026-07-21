@@ -759,10 +759,10 @@ You can save single-run confusion-matrix metrics for **all missions** without `-
 bibcat llm cm -f bibcodes.txt
 ```
 
-To select a specific run index in non-aggregate mode, use `--run-index` (or `-r`). The default run index is `0`, so `--run-index` allows you to evaluate results from other runs (e.g., run 1, run 2, etc.) when multiple runs were executed for the same papers. For instance, to evaluate run 3, run:
+To select a specific run index in non-aggregate mode, use `--run-index` (or `-i`). The default run index is `0`, so `--run-index` allows you to evaluate results from other runs (e.g., run 1, run 2, etc.) when multiple runs were executed for the same papers. For instance, to evaluate run 3, run:
 
 ```bash
-bibcat llm cm -f bibcodes.txt -r 3 -m [HST,JWST]
+bibcat llm cm -f bibcodes.txt -i 3 -m [HST,JWST]
 ```
 
 Save aggregate metrics across multiple runs:
@@ -845,10 +845,10 @@ Save single-run ROC metrics for **all missions** without `-m` flag:
 bibcat llm roc -f bibcodes.txt
 ```
 
-To select a specific run index in non-aggregate mode, use `--run-index` (or `-r`). The default run index is `0`, so `--run-index` allows you to evaluate results from other runs (e.g., run 1, run 2, etc.) when multiple runs were executed for the same papers. For instance, to evaluate run 3, run:
+To select a specific run index in non-aggregate mode, use `--run-index` (or `-i`). The default run index is `0`, so `--run-index` allows you to evaluate results from other runs (e.g., run 1, run 2, etc.) when multiple runs were executed for the same papers. For instance, to evaluate run 3, run:
 
 ```bash
-bibcat llm roc -f bibcodes.txt -r 3 -m [HST,JWST]
+bibcat llm roc -f bibcodes.txt -i 3 -m [HST,JWST]
 ```
 
 Save aggregate ROC metrics across multiple runs:
@@ -911,9 +911,9 @@ bibcat llm cm -f bibcodes.txt -m [HST,JWST]
 bibcat llm plot -c
 ```
 
-To plot a non-default saved run, use the same `--run-index` value for both commands. For instance, to plot confusion matrices for run index 2, run:
+To plot a non-default saved run, use the same `--run-index` or `-i`value for both commands. For instance, to plot confusion matrices for run index 2, run:
 ```bash
-bibcat llm cm -f bibcodes.txt -r 2 -m [HST,JWST]
+bibcat llm cm -f bibcodes.txt -i 2 -m [HST,JWST]
 bibcat llm plot -c --run-index 2
 ```
 
@@ -950,9 +950,9 @@ bibcat llm roc -f bibcodes.txt -m [HST,JWST]
 bibcat llm plot -r
 ```
 
-To plot a non-default saved run, use the same `--run-index` value for both commands. To plot ROC for run index 2, run:
+To plot a non-default saved run, use the same `--run-index` or `-i`value for both commands. To plot ROC for run index 2, run:
 ```bash
-bibcat llm roc -f bibcodes.txt -r 2 -m [HST,JWST]
+bibcat llm roc -f bibcodes.txt -i 2 -m [HST,JWST]
 bibcat llm plot -r --run-index 2
 ```
 

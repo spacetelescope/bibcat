@@ -91,6 +91,16 @@ def to_binary_from_raw(raw: str | None) -> str:
     return POSITIVE_LABEL if mapped == POSITIVE_LABEL else NEGATIVE_LABEL
 
 
+def has_no_paper_source(item: dict[str, Any]) -> bool:
+    """Return True if the eval item has no paper source."""
+    return "No paper source found" in str(item.get("error") or "")
+
+
+def has_no_mission_output(item: dict[str, Any]) -> bool:
+    """Return True if the eval item has no mission output."""
+    return "No mission output found" in str(item.get("error") or "")
+
+
 def normalize_human_labels(human: dict[str, str] | None) -> dict[str, str]:
     """Normalize human labels to uppercased mission keys.
 

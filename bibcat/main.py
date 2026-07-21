@@ -283,6 +283,7 @@ def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, thre
     help="Create ROC curves from a saved metrics file.",
 )
 @click.option(
+    "-i",
     "--run-index",
     default=0,
     type=click.IntRange(min=0),
@@ -316,7 +317,7 @@ def eval_plot(cm: bool, roc: bool, run_index: int = 0):
     help="A file containing bibcodes to evaluate, one per line.",
 )
 @click.option(
-    "-r",
+    "-i",
     "--run-index",
     default=None,
     type=click.IntRange(min=0),
@@ -396,7 +397,7 @@ def cm(filename, run_index, missions, aggregate: bool):
     help="A file containing bibcodes to evaluate, one per line.",
 )
 @click.option(
-    "-r",
+    "-i",
     "--run-index",
     default=None,
     type=click.IntRange(min=0),
