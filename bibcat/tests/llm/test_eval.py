@@ -2,7 +2,8 @@ import logging
 
 import pytest  # noqa: F401
 
-from bibcat.llm.evaluate import build_eval_data_for_run, evaluate_output, evaluate_output_from_runs, group_by_mission
+from bibcat.llm.evaluate import evaluate_output, evaluate_output_from_runs, group_by_mission
+from bibcat.llm.metrics import build_eval_data_for_run
 
 SOURCE_PAPER_WITH_MISSIONS = {
     "bibcode": "2022Sci...377.1211L",
@@ -206,7 +207,7 @@ def test_build_eval_data_for_run_in_memory(mocker):
     def get_source_for_bibcode(*, bibcode, **kwargs):
         return source_papers_by_bibcode.get(bibcode)
 
-    mocker.patch("bibcat.llm.evaluate.get_source", side_effect=get_source_for_bibcode)
+    mocker.patch("bibcat.llm.metrics.get_source", side_effect=get_source_for_bibcode)
     mocker.patch("bibcat.llm.evaluate.identify_missions_in_text", return_value=[True])
 
     eval_data = build_eval_data_for_run(
@@ -234,9 +235,9 @@ def test_build_eval_data_for_run_in_memory(mocker):
 
 
 def test_build_eval_data_for_run_uses_debug_summary_level(mocker):
-    mocker.patch("bibcat.llm.evaluate.get_source", return_value=SOURCE_PAPER_WITH_MISSIONS)
+    mocker.patch("bibcat.llm.metrics.get_source", return_value=SOURCE_PAPER_WITH_MISSIONS)
     evaluate_mock = mocker.patch(
-        "bibcat.llm.evaluate.evaluate_output_from_runs",
+        "bibcat.llm.metrics.evaluate_output_from_runs",
         return_value=(None, {"human": {"TESS": "SCIENCE"}, "llm": []}),
     )
 

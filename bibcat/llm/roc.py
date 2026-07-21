@@ -5,7 +5,6 @@ import numpy as np
 from sklearn.metrics import auc, roc_curve
 
 from bibcat import config
-from bibcat.data.build_dataset import load_source_dataset
 from bibcat.llm.run_eval import (
     IGNORED_RAW_LABEL,
     POSITIVE_LABEL,
@@ -49,6 +48,7 @@ def get_roc_metrics(
     if any(len(conf) != 2 for conf in llm_confidences):
         raise ValueError("Each confidence vector must have exactly two values: [p_science, p_nonscience].")
 
+    # Extract science class probabilities and compute ROC curve
     science_scores = [float(conf[0]) for conf in llm_confidences]
     try:
         fpr, tpr, thresholds = roc_curve(y_true, science_scores)
@@ -81,6 +81,7 @@ def build_roc_inputs_for_run_evaluations(
         Binary ground truth, confidence vectors, and missions called out by both
         human and LLM in the selected run.
     """
+    # Normalize mission names for consistent comparison across human and LLM
     normalized_missions = normalize_missions(missions)
     y_true: list[int] = []
     confidences: list[list[float]] = []
@@ -93,6 +94,7 @@ def build_roc_inputs_for_run_evaluations(
         human = evaluation.human_labels
 
         for mission in normalized_missions:
+            # Track missions that both human and LLM evaluated
             prediction = evaluation.llm_predictions.get(mission)
             if mission in human and prediction is not None:
                 human_llm_missions_seen.add(mission)
@@ -101,6 +103,7 @@ def build_roc_inputs_for_run_evaluations(
             human_label = to_binary_from_raw(human_raw)
             y_true.append(1 if human_label == POSITIVE_LABEL else 0)
 
+            # Use predicted confidence or default to non-science if missing
             if prediction is not None and prediction.confidence is not None and len(prediction.confidence) == 2:
                 confidences.append(list(prediction.confidence))
             else:
@@ -128,6 +131,8 @@ def extract_roc_metrics_for_run(
         Explicit bibcode roster to evaluate.
     run_index : int, optional
         Zero-based run index to evaluate, by default 0.
+    source_lookup : dict[str, dict[str, Any]], optional
+        Pre-built bibcode-to-paper lookup. If not provided, loaded from disk.
 
     Returns
     -------
@@ -135,7 +140,7 @@ def extract_roc_metrics_for_run(
         Compact ROC metrics data for the selected run.
     """
     if source_lookup is None:
-        source_lookup = build_source_lookup(load_source_dataset())
+        source_lookup = build_source_lookup()
 
     run_evaluations = build_run_paper_evaluations(
         llm_runs_data=llm_runs_data,
@@ -181,6 +186,8 @@ def evaluate_multiple_llm_runs_with_roc(
         Missions to evaluate.
     bibcodes : list[str]
         Explicit bibcode roster to evaluate.
+    source_lookup : dict[str, dict[str, Any]], optional
+        Pre-built bibcode-to-paper lookup. If not provided, loaded from disk.
 
     Returns
     -------
@@ -194,7 +201,7 @@ def evaluate_multiple_llm_runs_with_roc(
     aggregate summary fields are intentionally excluded from this return value.
     """
     if source_lookup is None:
-        source_lookup = build_source_lookup(load_source_dataset())
+        source_lookup = build_source_lookup()
 
     normalized_missions = normalize_missions(missions)
     n_runs = max((len(runs) for runs in llm_runs_data.values()), default=0)
@@ -202,6 +209,7 @@ def evaluate_multiple_llm_runs_with_roc(
     per_run_roc: list[dict[str, Any]] = []
     auc_values: list[float] = []
 
+    # Evaluate each run independently and collect per-run ROC metrics
     for run_index in range(n_runs):
         run_evaluations = build_run_paper_evaluations(
             llm_runs_data=llm_runs_data,

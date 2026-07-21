@@ -931,7 +931,7 @@ Plot commands only generate image files and require an existing single-run metri
 Saved confusion-matrix plot filename pattern:
 
 ```text
-{configured cm_plot name with the run label inserted before .png}_t{threshold}
+{base_cm_plot_name}_llm_single_r{run_index}_t{threshold}.png
 ```
 
 For example, with the default config this becomes:
@@ -965,7 +965,7 @@ bibcat llm plot -r
 Saved ROC plot filename pattern:
 
 ```text
-{configured roc_plot name with the run label inserted before .png}
+{base_roc_plot_name}_llm_single_r{run_index}.png
 ```
 
 For example, with the default config this becomes:

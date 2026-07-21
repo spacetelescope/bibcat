@@ -12,7 +12,7 @@ from pathlib import Path
 import click
 
 from bibcat import config
-from bibcat.data.build_dataset import build_dataset, load_source_dataset
+from bibcat.data.build_dataset import build_dataset
 from bibcat.llm.chunker import ChunkPlanner, SubmissionManager
 from bibcat.llm.evaluate import evaluate_output
 from bibcat.llm.llm_io import adjust_model, read_output
@@ -351,7 +351,7 @@ def cm(filename, run_index, missions, aggregate: bool):
     if aggregate:
         logger.info("Calculating aggregate metrics across multiple runs.")
         metrics_type = "aggregate"
-        source_lookup = build_source_lookup(load_source_dataset())
+        source_lookup = build_source_lookup()
         metrics_data = evaluate_multiple_llm_runs(
             llm_runs_data=llm_multi_runs_data,
             missions=missions,
@@ -431,7 +431,7 @@ def roc(filename, run_index, missions, aggregate: bool):
     if aggregate:
         logger.info("Calculating aggregate ROC metrics across multiple runs.")
         metrics_type = "aggregate"
-        source_lookup = build_source_lookup(load_source_dataset())
+        source_lookup = build_source_lookup()
         roc_data = evaluate_multiple_llm_runs_with_roc(
             llm_runs_data=llm_multi_runs_data,
             missions=missions,

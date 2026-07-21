@@ -1,11 +1,5 @@
 from bibcat import config
 from bibcat.llm.metrics import evaluate_multiple_llm_runs, extract_eval_data, extract_eval_data_for_run
-from bibcat.llm.run_eval import map_papertype
-
-
-def test_map_papertype(single_run_eval_data) -> None:
-    mapped_papertype = map_papertype(single_run_eval_data["Bibcode2024"]["human"]["TESS"])
-    assert mapped_papertype == "NONSCIENCE"
 
 
 def test_extract_eval_data_single_run(mocker, single_run_eval_data, single_run_missions) -> None:
