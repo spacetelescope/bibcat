@@ -77,21 +77,6 @@ def _read_bibcodes_file(filename) -> list[str]:
     return bibcodes
 
 
-def _read_required_metrics_json(path: Path, description: str) -> dict:
-    """Read a required saved metrics JSON file or raise a CLI error."""
-    if not path.exists():
-        raise click.ClickException(f"{description} not found at {path}.")
-    return read_output(filename=path)
-
-
-def _require_plot_missions(metrics_data: dict, description: str, regenerate_cmd: str) -> None:
-    """Validate required missions metadata for plotting from saved metrics."""
-    if "missions" not in metrics_data:
-        raise click.ClickException(
-            f"{description} is missing required field 'missions'. Regenerate metrics with: {regenerate_cmd}"
-        )
-
-
 @click.group("bibcat")
 def cli() -> None:
     """Command-line tool for running the bibcat package
@@ -302,8 +287,18 @@ def eval_plot(cm: bool, roc: bool, run_index: int = 0):
         ("roc", roc, "ROC metrics file", roc_plot),
     ]:
         if request:
-            metrics_data = _read_required_metrics_json(_output_path(kind, metrics_type), description)
-            _require_plot_missions(metrics_data, description, f"bibcat llm {kind} -f <bibcodes.txt>")
+            path = _output_path(kind, metrics_type)
+            if not path.exists():
+                raise click.ClickException(f"{description} not found at {path}.")
+
+            # load metrics
+            metrics_data = read_output(filename=path)
+            if "missions" not in metrics_data:
+                raise click.ClickException(
+                    f"{description} is missing required field 'missions'. Regenerate metrics with: bibcat llm {kind} -f <bibcodes.txt>"
+                )
+
+            # plot metrics data
             plot_fn(metrics_data=metrics_data, metrics_type=metrics_type)
 
 
