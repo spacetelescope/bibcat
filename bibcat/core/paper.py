@@ -151,6 +151,7 @@ class Paper:
 
         # Process ambig. phrase data, if not given
         if do_check_truematch:
+            logger.debug("checking truematch using processing database_ambig")
             if dict_ambigs is None:
                 dict_ambigs = self._process_database_ambig()
 
@@ -561,7 +562,7 @@ class Paper:
         text = re.sub(r"-\b[0-9]+\b", ("-" + placeholder_number), text_orig)
 
         # Print some notes
-        logger.info(
+        logger.debug(
             "\n> Running `_check_truematch` for text: '%s'\n"
             "Original text: '%s'\n"
             "Available mission lookups for the ambiguous phrase database: %s",

@@ -1,40 +1,84 @@
 import pathlib
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import ConfusionMatrixDisplay
 
 from bibcat import config
-from bibcat.llm.io import read_output
-from bibcat.llm.metrics import extract_eval_data, extract_roc_data, get_roc_metrics, prepare_roc_inputs
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__, level=config.logging.level)
 
 
-# create a confusion matrix plot
-def confusion_matrix_plot(summary_output_path: str | pathlib.Path, missions: list[str]) -> None:
-    """Create a confusion matrix figure
-
-    Create confusion matrix plots (counts and normalized) given a threshold value.
+def _plot_output_path(plot_name: str, metrics_type: str, threshold: float | None = None) -> pathlib.Path:
+    """Build a saved plot path with run-aware naming.
 
     Parameters
     ----------
-    summary_output_path: str | pathlib.Path
-        the filepath of the evaluation *summary_output.json
-    missions: list[str]
-        list of the mission names to extract the classification labels.
+    plot_name : str
+        Configured base plot filename.
+    metrics_type : str
+        Run or aggregation label such as ``single_r0`` or ``aggregate``.
+    threshold : float or None, optional
+        Threshold value to include in the saved name when applicable.
+
+    Returns
+    -------
+    pathlib.Path
+        Output path under the model-specific llm directory.
+    """
+    plot_path = pathlib.Path(plot_name)
+    suffix = plot_path.suffix or ".png"
+    stem = plot_path.stem if plot_path.suffix else plot_path.name
+    threshold_suffix = f"_t{threshold}" if threshold is not None else ""
+    filename = f"{stem}_{metrics_type}{threshold_suffix}{suffix}"
+    base = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}"
+    output_path = base / plot_path.parent / filename
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    return output_path
+
+
+def _required_missions(metrics_data: dict[str, Any], metrics_data_name: str, regenerate_cmd: str) -> list[str]:
+    """Return required mission list from saved metrics data.
+
+    Raises
+    ------
+    ValueError
+        If the metrics data does not include the required ``missions`` field.
+    """
+    missions = metrics_data.get("missions")
+    if missions is None:
+        raise ValueError(
+            f"{metrics_data_name} is missing required field 'missions'. Regenerate it with '{regenerate_cmd}'."
+        )
+    return [mission.upper() for mission in missions]
+
+
+# create a confusion matrix plot
+def cm_plot(metrics_data: dict[str, Any], metrics_type: str) -> None:
+    """Create a confusion matrix figure
+
+    Create confusion matrix plots (counts and normalized) from a prepared
+    single-run confusion-matrix metrics data.
+
+    Parameters
+    ----------
+    metrics_data: dict[str, Any]
+        Single-run confusion-matrix metrics data.
+    metrics_type: str
+        Run label used for the saved figure name.
 
     Returns
     -------
 
     """
 
-    data = read_output(filename=summary_output_path)
-
-    # capitalize all mission names just in case when is not
-    missions = [mission.upper() for mission in missions]
-    metrics_data = extract_eval_data(missions=missions, data=data)
+    missions = _required_missions(
+        metrics_data=metrics_data,
+        metrics_data_name="Confusion matrix metrics file",
+        regenerate_cmd="bibcat llm cm -f <bibcodes.txt>",
+    )
 
     human = metrics_data["human_labels"]
     llm = metrics_data["llm_labels"]
@@ -98,84 +142,56 @@ def confusion_matrix_plot(summary_output_path: str | pathlib.Path, missions: lis
     # plt.tight_layout(rect=[0, 0.05, 1, 0.95])
 
     # Saving the figure
-    cm_plot = (
-        pathlib.Path(config.paths.output)
-        / f"llms/openai_{config.llms.openai.model}/{config.llms.cm_plot}_t{config.llms.performance.threshold}.png"
+    cm = _plot_output_path(
+        plot_name=config.llms.cm_plot,
+        metrics_type=metrics_type,
+        threshold=config.llms.performance.threshold,
     )
-    plt.savefig(cm_plot)
-    logger.info(f"The confusion matrix plot is saved on {cm_plot}!")
+    plt.savefig(cm, dpi=300, bbox_inches="tight")
+    logger.info(f"The confusion matrix plot is saved on {cm}!")
 
 
 # create a ROC curve plot
-def roc_plot(summary_output_path: str | pathlib.Path, missions: list[str]) -> None:
+def roc_plot(metrics_data: dict[str, Any], metrics_type: str) -> None:
     """Create a Receiver Operating Characteristic (ROC) curve plot
 
     Parameters
     ----------
-    summary_output_path: str | pathlib.Path
-        the filepath of the evaluation *summary_output.json
-    missions: list[str]
-        list of the mission names to extract the classification labels.
+    metrics_data: dict[str, Any]
+        Single-run ROC metrics data.
+    metrics_type: str
+        Run label used for the saved figure name.
 
     Returns
     -------
 
     """
 
-    # read the evaluation summary output file
-    data = read_output(filename=summary_output_path)
-
-    # capitalize all mission names just in case when is not
-    missions = [mission.upper() for mission in missions]
-
-    human_labels, llm_confidences, human_llm_missions = extract_roc_data(missions=missions, data=data)
-
-    binarized_human_labels, llm_confidences, n_papertypes, n_verdicts = prepare_roc_inputs(
-        human_labels, llm_confidences
+    _required_missions(
+        metrics_data=metrics_data,
+        metrics_data_name="ROC metrics file",
+        regenerate_cmd="bibcat llm roc -f <bibcodes.txt>",
     )
 
-    # compute ROC curve and ROC AUC (area under curve) for each class
-    if n_papertypes > 2:
-        fpr, tpr, thresholds, roc_auc, macro_roc_auc_ovr, micro_roc_auc_ovr = get_roc_metrics(
-            llm_confidences, binarized_human_labels, n_papertypes
-        )
-    else:
-        fpr, tpr, thresholds, roc_auc = get_roc_metrics(llm_confidences, binarized_human_labels, n_papertypes)
+    fpr = metrics_data["fpr"]
+    tpr = metrics_data["tpr"]
+    thresholds = metrics_data["thresholds"]
+    roc_auc = metrics_data["roc_auc"]
+    n_verdicts = metrics_data["n_verdicts"]
+    human_llm_missions = metrics_data["human_llm_missions"]
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     bbox_args = dict(boxstyle="round", fc="0.8")
 
-    if n_papertypes > 2:
-        colors = plt.cm.viridis(np.linspace(0, 1, n_papertypes))
-
-        for i in range(n_papertypes):
-            ax.plot(
-                fpr[i],
-                tpr[i],
-                color=colors[i],
-                lw=2,
-                label=f"{config.llms.papertypes[i]} (AUC = {roc_auc[i]:.2f})",
-            )
-        ax.annotate(
-            f" : macro_roc_auc_ovr = {macro_roc_auc_ovr}\n micro_roc_auc_ovr = {micro_roc_auc_ovr}",
-            xy=(1, 0.35),
-            xycoords="axes fraction",
-            xytext=(-10, -10),
-            textcoords="offset points",
-            ha="right",
-            va="top",
-            bbox=bbox_args,
-        )
-
-    else:
-        ax.plot(fpr, tpr, color="b", lw=2, label=f"SCIENCE (AUC={roc_auc:.2f})")
+    ax.plot(fpr, tpr, color="b", lw=2, label=f"SCIENCE (AUC={roc_auc:.2f})")
 
     # Define the target threshold values to mark
     target_thresholds = np.arange(0.1, 1.0, 0.1)
+    thresholds_arr = np.array(thresholds)
 
     # For each target threshold, find the index of the closest threshold in the computed array
     for p in target_thresholds:
-        idx = np.abs(thresholds - p).argmin()
+        idx = np.abs(thresholds_arr - p).argmin()
         ax.scatter(fpr[idx], tpr[idx], marker="o", color="r")
         ax.annotate(
             f"{thresholds[idx]:.1f}",
@@ -235,7 +251,10 @@ def roc_plot(summary_output_path: str | pathlib.Path, missions: list[str]) -> No
     plt.tight_layout(rect=[0, 0.05, 1, 0.95])
 
     # Saving the figure
-    roc = pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.roc_plot}"
-    plt.savefig(roc)
+    roc = _plot_output_path(
+        plot_name=config.llms.roc_plot,
+        metrics_type=metrics_type,
+    )
+    plt.savefig(roc, dpi=300, bbox_inches="tight")
 
     logger.info(f"The roc plot is saved on {roc}!")

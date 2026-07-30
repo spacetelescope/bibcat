@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, Dict, Generator
 
-import pytest
+import pytest  # type: ignore
 import yaml  # type: ignore
 
 from bibcat.core.config import get_config, get_default_config

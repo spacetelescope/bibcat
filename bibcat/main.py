@@ -15,13 +15,66 @@ from bibcat import config
 from bibcat.data.build_dataset import build_dataset
 from bibcat.llm.chunker import ChunkPlanner, SubmissionManager
 from bibcat.llm.evaluate import evaluate_output
-from bibcat.llm.io import adjust_model
-from bibcat.llm.openai import OpenAIHelper, classify_paper
-from bibcat.llm.plots import confusion_matrix_plot, roc_plot
-from bibcat.llm.stats import inconsistent_classifications, save_evaluation_stats, save_operation_stats
+from bibcat.llm.llm_io import adjust_model, read_output
+from bibcat.llm.metrics import evaluate_multiple_llm_runs, extract_eval_data_for_run
+from bibcat.llm.openai import MissionEnum, OpenAIHelper, classify_paper
+from bibcat.llm.plots import cm_plot, roc_plot
+from bibcat.llm.roc import evaluate_multiple_llm_runs_with_roc, extract_roc_metrics_for_run
+from bibcat.llm.run_eval import build_source_lookup
 from bibcat.utils.logger_config import setup_logger
+from bibcat.utils.utils import save_json_file
 
 logger = setup_logger(__name__)
+
+
+def _parse_missions(ctx: click.Context, param: click.Parameter, value: str | None) -> list[str] | None:
+    """Parse a comma-separated mission string and validate each against config.missions."""
+    if value is None:
+        return None
+    try:
+        return [MissionEnum(m.strip()).value for m in value.split(",") if m.strip()]
+    except ValueError as e:
+        raise click.BadParameter(f"{e}. Valid missions: {[m.value for m in MissionEnum]}")
+
+
+def _llm_output_dir() -> Path:
+    """Return the model-specific llm output directory."""
+    return Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}"
+
+
+def _output_path(kind: str, metrics_type: str | None = None) -> Path:
+    """Return the output path for the given file kind and metrics type."""
+    match kind:
+        case "cm":
+            return _llm_output_dir() / f"{config.llms.cm_file}_{metrics_type}_t{config.llms.performance.threshold}.json"
+        case "roc":
+            return (
+                _llm_output_dir() / f"{config.llms.roc_file}_{metrics_type}_t{config.llms.performance.threshold}.json"
+            )
+        case "summary":
+            return _llm_output_dir() / f"{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
+        case "prompt":
+            return _llm_output_dir() / config.llms.prompt_output_file
+        case _:
+            raise ValueError(f"Unknown output kind: {kind!r}")
+
+
+def _read_lines_from_file(filename) -> list[str] | None:
+    """Read non-empty stripped lines from a file, return None if file is None.
+
+    Strips whitespace and filters blank lines from each line read.
+    """
+    if filename is None:
+        return None
+    return [line.strip() for line in filename.read().splitlines() if line.strip()]
+
+
+def _read_bibcodes_file(filename) -> list[str]:
+    """Read non-empty bibcodes from a CLI file option."""
+    bibcodes = _read_lines_from_file(filename)
+    if not bibcodes:
+        raise click.UsageError("Bibcode file is empty.")
+    return bibcodes
 
 
 @click.group("bibcat")
@@ -205,130 +258,204 @@ def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, thre
     "--cm",
     is_flag=True,
     show_default=False,
-    help="Create a confusion matrix plot. This flag works with the '-m' flag with a mission name, for example, 'bibcat llm plot -c -m JWST'",
+    help="Create a confusion matrix plot from a saved metrics file.",
 )
 @click.option(
     "-r",
     "--roc",
     is_flag=True,
     show_default=False,
-    help="Create ROC curves. This flag works with the '-m' flag with a mission name, for example,'bibcat llm plot -r -m JWST'",
+    help="Create ROC curves from a saved metrics file.",
+)
+@click.option(
+    "-i",
+    "--run-index",
+    default=0,
+    type=click.IntRange(min=0),
+    show_default=True,
+    help="Run index to plot from saved single-run metrics JSON.",
+)
+def eval_plot(cm: bool, roc: bool, run_index: int = 0):
+    """Create the evaluation plots from a LLM model"""
+    logger.debug("CLI option: 'llm plot' selected")
+
+    metrics_type = f"single_r{run_index}"
+
+    # for each requested plot type, load the saved metrics JSON and render the plot
+    for kind, request, description, plot_fn in [
+        ("cm", cm, "CM metrics file", cm_plot),
+        ("roc", roc, "ROC metrics file", roc_plot),
+    ]:
+        if request:
+            path = _output_path(kind, metrics_type)
+            if not path.exists():
+                raise click.ClickException(f"{description} not found at {path}.")
+
+            # load metrics
+            metrics_data = read_output(filename=path)
+            if "missions" not in metrics_data:
+                raise click.ClickException(
+                    f"{description} is missing required field 'missions'. Regenerate metrics with: bibcat llm {kind} -f <bibcodes.txt>"
+                )
+
+            # plot metrics data
+            plot_fn(metrics_data=metrics_data, metrics_type=metrics_type)
+
+
+@llmcli.command("cm", help="Save Confusion Matrix metrics for llm performance")
+@click.option("-a", "--aggregate", is_flag=True, show_default=False, help="Calculate aggregate metrics across missions")
+@click.option(
+    "-f",
+    "--filename",
+    required=True,
+    type=click.File("r"),
+    help="A file containing bibcodes to evaluate, one per line.",
+)
+@click.option(
+    "-i",
+    "--run-index",
+    default=None,
+    type=click.IntRange(min=0),
+    show_default=True,
+    help="Run index to evaluate in non-aggregate mode. Defaults to 0.",
 )
 @click.option(
     "-m",
     "--missions",
     type=str,
-    multiple=True,
     default=None,
+    callback=_parse_missions,
     show_default=True,
-    help="List mission names; this flag works with the '-c' flag, for instance, 'bibcat llm plot -c -m JWST -m HST -m TESS' ",
+    help="Comma-separated mission names, e.g., 'HST,JWST,TESS'; if not provided, the metrics will be extracted for all missions by default.",
+)
+def cm(filename, run_index, missions, aggregate: bool):
+    """Extract evaluation metrics from a LLM model and save to a JSON file"""
+    logger.debug("CLI option: 'llm cm' selected")
+
+    if aggregate and run_index is not None:
+        raise click.UsageError("--run-index cannot be used with -a/--aggregate.")
+
+    # fall back to all configured missions if none were specified via CLI
+    missions = missions or config.missions
+
+    # load the raw LLM output produced by `bibcat llm run`
+    llm_output_path = _output_path("prompt")
+    bibcodes = _read_bibcodes_file(filename)
+    llm_multi_runs_data = read_output(filename=llm_output_path)
+
+    # compute either aggregate metrics across all runs, or single-run metrics
+    if aggregate:
+        logger.info("Calculating aggregate metrics across multiple runs.")
+        metrics_type = "aggregate"
+        source_lookup = build_source_lookup()
+        metrics_data = evaluate_multiple_llm_runs(
+            llm_runs_data=llm_multi_runs_data,
+            missions=missions,
+            bibcodes=bibcodes,
+            source_lookup=source_lookup,
+        )
+        metrics_data_to_save = metrics_data
+
+    else:
+        selected_run_index = 0 if run_index is None else run_index
+        logger.info(f"Calculating metrics for run index {selected_run_index}.")
+        metrics_data_to_save = extract_eval_data_for_run(
+            llm_runs_data=llm_multi_runs_data,
+            missions=missions,
+            run_index=selected_run_index,
+            bibcodes=bibcodes,
+        )
+        metrics_type = f"single_r{selected_run_index}"
+
+    # save metrics to a thresholded JSON file
+    output_path = _output_path("cm", metrics_type)
+
+    try:
+        save_json_file(
+            path=output_path,
+            dataset=metrics_data_to_save,
+        )
+        logger.info(f"Evaluation metrics saved to {output_path}")
+    except IOError as e:
+        raise click.ClickException(f"Failed to save metrics to {output_path}: {e}")
+
+
+@llmcli.command("roc", help="Save ROC metrics for llm performance")
+@click.option(
+    "-a", "--aggregate", is_flag=True, show_default=False, help="Calculate aggregate ROC metrics across missions"
 )
 @click.option(
-    "-a",
-    "--all-missions",
-    is_flag=True,
-    show_default=False,
-    help="Create plots for all missions, command example for a confusion matrix plot for all missions: 'bibcat llm plot -c -a'",
-)
-def eval_plot(cm: bool, roc: bool, missions: str, all_missions: bool = False):
-    """Create the evaluation plots from a LLM model"""
-    logger.debug("CLI option: 'llm plot' selected")
-    summary_output_path = (
-        Path(config.paths.output)
-        / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
-    )
-
-    if cm and all_missions:
-        missions = config.missions
-        confusion_matrix_plot(summary_output_path=summary_output_path, missions=missions)
-
-    elif cm and missions:
-        confusion_matrix_plot(summary_output_path=summary_output_path, missions=list(missions))
-
-    if roc and all_missions:
-        missions = config.missions
-        roc_plot(summary_output_path=summary_output_path, missions=missions)
-
-    elif roc and missions:
-        roc_plot(summary_output_path=summary_output_path, missions=list(missions))
-
-
-@llmcli.command("stats", help="Create a statisics table for classification")
-@click.option(
-    "-o",
-    "--ops",
-    is_flag=True,
-    show_default=False,
-    help="Create a OPS statistics table for llm mission-papertype pairs. This flag works with the '-o' flag. e.g., 'bibcat llm stat -o'",
+    "-f",
+    "--filename",
+    required=True,
+    type=click.File("r"),
+    help="A file containing bibcodes to evaluate, one per line.",
 )
 @click.option(
-    "-e",
-    "--evaluation",
-    is_flag=True,
-    show_default=False,
-    help="Create an Evaluation statistics table for llm and human mission-papertype pairs. This flag works with the '-e' flag. e.g., 'bibcat llm stat -e'",
-)
-@click.option(
-    "-t",
-    "--threshold",
-    type=float,
+    "-i",
+    "--run-index",
+    default=None,
+    type=click.IntRange(min=0),
     show_default=True,
-    help="The threshold value to accept the llm papertype",
+    help="Run index to evaluate in non-aggregate mode. Defaults to 0.",
 )
-def stats_llm(evaluation: bool, ops: bool, threshold: float):
-    # override config threshold value
-    logger.debug("CLI option: 'llm stats' selected")
-    if threshold:
-        config.llms.performance.threshold = threshold
+@click.option(
+    "-m",
+    "--missions",
+    type=str,
+    default=None,
+    callback=_parse_missions,
+    show_default=True,
+    help="Comma-separated mission names, e.g., 'HST,JWST,TESS'; if not provided, metrics are extracted for all missions by default.",
+)
+def roc(filename, run_index, missions, aggregate: bool):
+    """Extract ROC metrics from a LLM model and save to a JSON file"""
+    logger.debug("CLI option: 'llm roc' selected")
 
-    threshold_inspection = config.llms.performance.inspection
-    threshold_acceptance = config.llms.performance.threshold
-    logger.info(f"threshold for accepting llm classification: {threshold_acceptance} ")
-    logger.info(f"threshold for inspecting llm classification: {threshold_inspection} ")
+    if aggregate and run_index is not None:
+        raise click.UsageError("--run-index cannot be used with -a/--aggregate.")
 
-    if evaluation:
-        # read the evaluation summary output file
-        input_filepath = (
-            Path(config.paths.output)
-            / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
+    # fall back to all configured missions if none were specified via CLI
+    missions = [m.upper() for m in (missions or config.missions)]
+
+    # load the raw LLM output produced by `bibcat llm run`
+    llm_output_path = _output_path("prompt")
+    bibcodes = _read_bibcodes_file(filename)
+    llm_multi_runs_data = read_output(filename=llm_output_path)
+
+    # compute either aggregate ROC metrics across all runs, or single-run ROC metrics
+    if aggregate:
+        logger.info("Calculating aggregate ROC metrics across multiple runs.")
+        metrics_type = "aggregate"
+        source_lookup = build_source_lookup()
+        roc_data = evaluate_multiple_llm_runs_with_roc(
+            llm_runs_data=llm_multi_runs_data,
+            missions=missions,
+            bibcodes=bibcodes,
+            source_lookup=source_lookup,
+        )
+    else:
+        selected_run_index = 0 if run_index is None else run_index
+        logger.info(f"Calculating ROC metrics for run index {selected_run_index}.")
+        metrics_type = f"single_r{selected_run_index}"
+        roc_data = extract_roc_metrics_for_run(
+            llm_runs_data=llm_multi_runs_data,
+            missions=missions,
+            run_index=selected_run_index,
+            bibcodes=bibcodes,
         )
 
-        output_filepath = (
-            Path(config.paths.output)
-            / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_stats_file}_t{config.llms.performance.threshold}.json"
+    # save ROC metrics to a thresholded JSON file
+    output_path = _output_path("roc", metrics_type)
+
+    try:
+        save_json_file(
+            path=output_path,
+            dataset=roc_data,
         )
-        save_evaluation_stats(input_filepath, output_filepath, threshold_acceptance, threshold_inspection)
-
-    # override the config ops to True
-    if ops:
-        config.llms.ops = ops
-        # read the operational paper_output file
-        input_filepath = (
-            Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}/{config.llms.prompt_output_file}"
-        )
-
-        output_filepath = (
-            Path(config.paths.output)
-            / f"llms/openai_{config.llms.openai.model}/{config.llms.ops_stats_file}_t{config.llms.performance.threshold}.json"
-        )
-        save_operation_stats(input_filepath, output_filepath, threshold_acceptance, threshold_inspection)
-
-
-@llmcli.command("audit", help="Create a JSON file to audit LLM classification")
-def audit_llms():
-    """Create a JSON file of misclassified papers by LLM for auditing"""
-    logger.debug("CLI option: 'llm audit' selected")
-
-    input_filepath = (
-        Path(config.paths.output)
-        / f"llms/openai_{config.llms.openai.model}/{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
-    )
-
-    output_filepath = (
-        Path(config.paths.output)
-        / f"llms/openai_{config.llms.openai.model}/{config.llms.inconsistent_classifications_file}_t{config.llms.performance.threshold}.json"
-    )
-    inconsistent_classifications(input_filepath, output_filepath)
+        logger.info(f"ROC metrics saved to {output_path}")
+    except IOError as e:
+        raise click.ClickException(f"Failed to save metrics to {output_path}: {e}")
 
 
 # Batch LLM command group
@@ -400,7 +527,7 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
         logger.info("Run in the OPS MODE!")
 
     # get the list of files
-    files = files or filename.read().splitlines()
+    files = files or _read_lines_from_file(filename) or []
     if filename:
         logger.info(f"batch filename: {filename.name}")
 
@@ -452,7 +579,7 @@ def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
         config.llms.openai.model = model
 
     # get the list of files
-    files = files or filename.read().splitlines()
+    files = files or _read_lines_from_file(filename) or []
 
     # submit the paper for classification, if requested
     if submit:
@@ -498,8 +625,8 @@ def submit(filename, batch_file, model, verbose):
         if batch_file:
             batch_file = adjust_model(batch_file, orig, model)
 
-    # get the list of files
-    bibcodes = filename.read().splitlines() if filename else None
+    # get the list of bibcodes
+    bibcodes = _read_lines_from_file(filename)
 
     oa = OpenAIHelper(verbose=verbose)
     oa.submit_batch(bibcodes=bibcodes, batch_file=str(batch_file))
@@ -538,7 +665,7 @@ def retrieve(batchid, verbose):
 )
 @click.option("-e", "--eval-batch", is_flag=True, show_default=True, help="Evaulate individual chunk results")
 @click.option("-g", "--merge", is_flag=True, show_default=True, help="Merge chunks into final single output file")
-def process(filename, batch_file, model, test, retrieve_batch, check, eval_batch, merge):
+def process(filename, batch_file, model, test, retrieve_batch, check, eval_batch, merge):  # noqa: C901
     """Process a batch of papers using the OpenAI Batch API
 
     Process a large batch of papers, with proper file chunking, for
@@ -558,7 +685,7 @@ def process(filename, batch_file, model, test, retrieve_batch, check, eval_batch
 
     # get the bibcodes
     if filename:
-        bibcodes = filename.read().splitlines() if filename else None
+        bibcodes = _read_lines_from_file(filename)
         oa = OpenAIHelper()
         batch_file = oa.create_batch_file(bibcodes)
 

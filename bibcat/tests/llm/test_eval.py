@@ -1,15 +1,18 @@
+import logging
+
 import pytest  # noqa: F401
 
-from bibcat.llm.evaluate import evaluate_output, group_by_mission
+from bibcat.llm.evaluate import evaluate_output, evaluate_output_from_runs, group_by_mission
+from bibcat.llm.metrics import build_eval_data_for_run
 
-paper = {
+SOURCE_PAPER_WITH_MISSIONS = {
     "bibcode": "2022Sci...377.1211L",
     "title": ["Density, not radius, separates rocky and water-rich small planets orbiting M dwarf stars"],
     "abstract": "This is the abstract",
     "body": "This is the paper text of the source dataset. I am a TESS paper.",
     "class_missions": {"TESS": {"bibcode": "2022Sci...377.1211L", "papertype": "SCIENCE"}},
 }
-paper2 = {
+SOURCE_PAPER_WITHOUT_MISSIONS = {
     "bibcode": "2024Sci...123.3451L",
     "title": ["This paper does not call out mission"],
     "abstract": "This is the abstract",
@@ -17,7 +20,7 @@ paper2 = {
     "class_missions": {},
 }
 
-output = {
+LLM_RUN_OUTPUTS_BY_BIBCODE = {
     "2022Sci...377.1211L": [
         {
             "notes": "",
@@ -120,8 +123,8 @@ output = {
 
 def test_evaluate_df(mocker):
     bibcode = "2022Sci...377.1211L"
-    mocker.patch("bibcat.llm.evaluate.get_source", return_value=paper)
-    mocker.patch("bibcat.llm.evaluate.read_output", return_value=output[bibcode])
+    mocker.patch("bibcat.llm.evaluate.get_source", return_value=SOURCE_PAPER_WITH_MISSIONS)
+    mocker.patch("bibcat.llm.evaluate.read_output", return_value=LLM_RUN_OUTPUTS_BY_BIBCODE[bibcode])
 
     df = evaluate_output(bibcode, write_file=False)
 
@@ -155,8 +158,8 @@ def test_evaluate_df(mocker):
 
 def test_group_by_mission(mocker):
     bibcode = "2022Sci...377.1211L"
-    mocker.patch("bibcat.llm.evaluate.get_source", return_value=paper)
-    mocker.patch("bibcat.llm.evaluate.read_output", return_value=output[bibcode])
+    mocker.patch("bibcat.llm.evaluate.get_source", return_value=SOURCE_PAPER_WITH_MISSIONS)
+    mocker.patch("bibcat.llm.evaluate.read_output", return_value=LLM_RUN_OUTPUTS_BY_BIBCODE[bibcode])
 
     df = evaluate_output(bibcode, write_file=False)
     mm = group_by_mission(df)
@@ -178,14 +181,105 @@ def test_group_by_mission(mocker):
 
 @pytest.mark.parametrize(
     "bibcode, return_source_value",
-    [("2024Sci...123.3451L", paper2), ("2019arXiv190205569A", None)],
+    [("2024Sci...123.3451L", SOURCE_PAPER_WITHOUT_MISSIONS), ("2019arXiv190205569A", None)],
 )
 def test_not_found(mocker, bibcode: str, return_source_value: dict | None):
     """test evaluate when either 'error': 'no mission output found' or 'error': 'No paper source found' in llm_output"""
 
-    bibcode = "2024Sci...123.3451L"
     mocker.patch("bibcat.llm.evaluate.get_source", return_value=return_source_value)
-    mocker.patch("bibcat.llm.evaluate.read_output", return_value=output[bibcode])
+    mocker.patch("bibcat.llm.evaluate.read_output", return_value=LLM_RUN_OUTPUTS_BY_BIBCODE[bibcode])
 
     df = evaluate_output(bibcode, write_file=False)
     assert df is None, "Expected df to be None"
+
+
+def test_build_eval_data_for_run_in_memory(mocker):
+    llm_runs_data = {
+        SOURCE_PAPER_WITH_MISSIONS["bibcode"]: LLM_RUN_OUTPUTS_BY_BIBCODE[SOURCE_PAPER_WITH_MISSIONS["bibcode"]],
+        SOURCE_PAPER_WITHOUT_MISSIONS["bibcode"]: LLM_RUN_OUTPUTS_BY_BIBCODE[SOURCE_PAPER_WITHOUT_MISSIONS["bibcode"]],
+        "2019arXiv190205569A": LLM_RUN_OUTPUTS_BY_BIBCODE["2019arXiv190205569A"],
+    }
+    source_papers_by_bibcode = {
+        SOURCE_PAPER_WITH_MISSIONS["bibcode"]: SOURCE_PAPER_WITH_MISSIONS,
+        SOURCE_PAPER_WITHOUT_MISSIONS["bibcode"]: SOURCE_PAPER_WITHOUT_MISSIONS,
+    }
+
+    def get_source_for_bibcode(*, bibcode, **kwargs):
+        return source_papers_by_bibcode.get(bibcode)
+
+    mocker.patch("bibcat.llm.metrics.get_source", side_effect=get_source_for_bibcode)
+    mocker.patch("bibcat.llm.evaluate.identify_missions_in_text", return_value=[True])
+
+    eval_data = build_eval_data_for_run(
+        llm_runs_data=llm_runs_data,
+        run_index=1,
+        bibcodes=[
+            SOURCE_PAPER_WITH_MISSIONS["bibcode"],
+            SOURCE_PAPER_WITHOUT_MISSIONS["bibcode"],
+            "2019arXiv190205569A",
+        ],
+    )
+
+    assert set(eval_data) == {
+        SOURCE_PAPER_WITH_MISSIONS["bibcode"],
+        SOURCE_PAPER_WITHOUT_MISSIONS["bibcode"],
+        "2019arXiv190205569A",
+    }
+    assert eval_data[SOURCE_PAPER_WITH_MISSIONS["bibcode"]]["human"] == {"TESS": "SCIENCE"}
+    assert eval_data[SOURCE_PAPER_WITH_MISSIONS["bibcode"]]["llm"] == [
+        {"TESS": "MENTION", "confidence": [0.3, 0.7], "mission_probability": 1.0}
+    ]
+    assert "No mission output found" in eval_data[SOURCE_PAPER_WITHOUT_MISSIONS["bibcode"]]["error"]
+    assert eval_data[SOURCE_PAPER_WITHOUT_MISSIONS["bibcode"]]["human"] == {}
+    assert eval_data["2019arXiv190205569A"]["error"] == "No paper source found"
+
+
+def test_build_eval_data_for_run_uses_debug_summary_level(mocker):
+    mocker.patch("bibcat.llm.metrics.get_source", return_value=SOURCE_PAPER_WITH_MISSIONS)
+    evaluate_mock = mocker.patch(
+        "bibcat.llm.metrics.evaluate_output_from_runs",
+        return_value=(None, {"human": {"TESS": "SCIENCE"}, "llm": []}),
+    )
+
+    build_eval_data_for_run(
+        llm_runs_data={
+            SOURCE_PAPER_WITH_MISSIONS["bibcode"]: LLM_RUN_OUTPUTS_BY_BIBCODE[SOURCE_PAPER_WITH_MISSIONS["bibcode"]]
+        },
+        run_index=0,
+        bibcodes=[SOURCE_PAPER_WITH_MISSIONS["bibcode"]],
+    )
+
+    assert evaluate_mock.call_args.kwargs["summary_log_level"] == logging.DEBUG
+
+
+def test_evaluate_output_from_runs_skips_to_string_and_counts_no_mission_note_in_n_runs(mocker):
+    mocker.patch("bibcat.llm.evaluate.identify_missions_in_text", return_value=[True])
+    mocker.patch("bibcat.llm.evaluate.logger.isEnabledFor", return_value=False)
+    to_string_mock = mocker.patch("pandas.DataFrame.to_string", autospec=True)
+
+    grouped_df, output_item = evaluate_output_from_runs(
+        SOURCE_PAPER_WITH_MISSIONS,
+        [
+            {
+                "notes": "",
+                "missions": [
+                    {
+                        "mission": "TESS",
+                        "papertype": "SCIENCE",
+                        "confidence": [0.9, 0.1],
+                        "reason": "They use TESS data",
+                        "quotes": ["We use TESS data."],
+                    }
+                ],
+            },
+            {"notes": "No mission-relevant content found.", "missions": []},
+        ],
+        summary_log_level=logging.DEBUG,
+    )
+
+    assert grouped_df is not None
+    assert output_item["human"] == {"TESS": "SCIENCE"}
+    assert grouped_df.iloc[0]["n_runs"] == 2
+    assert grouped_df.iloc[0]["count"] == 1
+    assert grouped_df.iloc[0]["weighted_confs"].tolist() == [0.45, 0.05]
+    to_string_mock.assert_not_called()

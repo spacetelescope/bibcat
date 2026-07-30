@@ -97,7 +97,7 @@ def extract_papertrack_info(dataset: list[dict]) -> tuple[list[None | dict], lis
 
     Returns
     -------
-    tuple[list[None | dict], list[None | str], list[None | dict]]
+    tuple[list[dict or None], list[str or None], list[dict or None]]
         the tuple of a list of the ``searches`` dict, the ``bibcode`` dict, and the ``missions_and_papertypes`` dict
 
     Raises
@@ -134,7 +134,7 @@ def missing_bibcodes_in_papertext(
 
     Returns
     -------
-    list[str] | None
+    list[str] or None
         the list of the bibcodes are not in the papertext
     """
 

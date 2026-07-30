@@ -1,4 +1,6 @@
+import logging
 import pathlib
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -7,11 +9,128 @@ from bibcat import config
 from bibcat.core import parameters as params
 from bibcat.core.keyword import Keyword
 from bibcat.core.paper import Paper
-from bibcat.llm.io import get_source, read_output, write_summary
+from bibcat.llm.llm_io import get_source, read_output, write_summary
 from bibcat.utils.logger_config import setup_logger
 
 # set up logger
 logger = setup_logger(__name__, level=config.logging.level)
+
+
+def evaluate_output_from_runs(
+    paper: dict[str, Any], response_runs: list[dict[str, Any]] | None, summary_log_level: int = logging.INFO
+) -> tuple[pd.DataFrame | None, dict]:
+    """Evaluate LLM run outputs for a paper and compute performance metrics.
+
+    This function evaluates one or more LLM run outputs against human classifications
+    for a single paper using the same workflow as :func:`evaluate_output`. It computes
+    grouped statistics (mean/std confidence by mission and papertype), checks for
+    hallucinated missions, measures consistency with human labels, and identifies
+    missing missions. Unlike :func:`evaluate_output`, this function keeps results
+    in-memory without writing summary output files.
+
+    The function returns both a detailed grouped dataframe with per-mission statistics
+    and a summary dictionary suitable for downstream metrics computation (confusion
+    matrix, ROC analysis).
+
+    Parameters
+    ----------
+    paper : dict[str, Any]
+        Source paper record, including ``bibcode`` and ``class_missions``.
+    response_runs : list[dict[str, Any]] or None
+        Run-level LLM outputs associated with ``paper``.
+    summary_log_level : int, optional
+        Logging level used for evaluation summary messages emitted by this
+        function and :func:`get_human_classification`. Defaults to
+        ``logging.INFO`` so direct :func:`evaluate_output` calls keep their
+        current verbosity, while aggregate callers can demote per-bibcode
+        summaries to ``logging.DEBUG``.
+
+    Returns
+    -------
+    tuple[pd.DataFrame or None, dict]
+        Two-item tuple containing:
+
+        - grouped_df: grouped evaluation dataframe, or ``None`` when no valid
+          mission output exists.
+        - output_item: in-memory summary dictionary with the same shape as a
+          single bibcode entry produced by :func:`prepare_output`, or an
+                    ``error`` entry when output is missing.
+    """
+    bibcode = paper["bibcode"]
+
+    # Distinguish between two response categories:
+    # - valid_responses: actual mission predictions (stricter filter for statistical analysis)
+    # - countable_responses: broader inclusion counting all run attempts (includes "no content" responses)
+    # Structure: {notes: str, missions: [{mission, papertype, confidence: list[float], reason, quotes}]}
+    valid_responses = (
+        [] if not response_runs else [item for item in response_runs if "error" not in item and item.get("missions")]
+    )
+    countable_responses = [
+        item
+        for item in response_runs or []
+        if "error" not in item and (item.get("missions") or item.get("notes") == "No mission-relevant content found.")
+    ]
+
+    if not valid_responses:
+        logger.warning(f"No mission output found for {bibcode}")
+        # get the human paper classifications for record, even if no mission llm output
+        human_classes = get_human_classification(paper, summary_log_level=summary_log_level)
+        return None, {
+            "error": f"No mission output found for {bibcode}.",
+            "human": {k: v["papertype"] for k, v in human_classes.items()},
+        }
+
+    n_runs = len(countable_responses)
+
+    logger.log(summary_log_level, "Evaluating output for %s", bibcode)
+    logger.log(summary_log_level, "Number of runs: %s", n_runs)
+
+    # convert output to a dataframe
+    df = pd.DataFrame([j | {"notes": i["notes"]} for i in valid_responses for j in i["missions"]])
+    df = df.rename(columns={"confidence": "llm_confidences"})
+    df = df.sort_values("mission").reset_index(drop=True)
+
+    # group by mission and paper type,
+    grouped_df = group_by_mission_papertype(df)
+    grouped_df["n_runs"] = n_runs
+
+    # Compute weighted confidence scores: combine mean confidence with frequency of occurrence.
+    # This produces a combined measure of frequency and confidence across multiple independent trials.
+    # Missions that appear consistently and confidently across runs receive higher weighted scores.
+    grouped_df["weighted_confs"] = grouped_df.apply(
+        lambda row: (row["mean_llm_confidences"] * (row["count"] / row["n_runs"])).round(3), axis=1
+    )
+
+    # Compute three parallel analyses:
+    # 1. Mission-level probabilities (frequency + confidence by mission)
+    # 2. Consistency with human labels (which LLM predictions match human classifications)
+    # 3. Hallucinated missions (predictions without supporting text in the paper)
+    mission_group = group_by_mission(grouped_df)
+    human_classes = get_human_classification(paper, summary_log_level=summary_log_level)
+    missing_by_human, missing_by_llm = compute_consistency(paper, grouped_df, human_classes)
+    hallucinated_missions = check_hallucination(grouped_df)
+
+    # Skip building the dataframe summary string when this log level is disabled.
+    if logger.isEnabledFor(summary_log_level):
+        logger.log(
+            summary_log_level, "Output Stats by LLM Mission and Paper Type:\n%s", grouped_df.to_string(index=False)
+        )
+    logger.log(summary_log_level, "Missing missions by humans: %s", ", ".join(missing_by_human))
+    logger.log(summary_log_level, "Missing missions by LLM: %s", ", ".join(missing_by_llm))
+    logger.log(summary_log_level, "Hallucination by LLM: %s", ", ".join(set(hallucinated_missions)))
+    # write the summary output
+    output = prepare_output(
+        bibcode,
+        config.llms.performance.threshold,
+        config.llms.performance.inspection,
+        grouped_df,
+        mission_group,
+        human_classes,
+        missing_by_human,
+        missing_by_llm,
+        hallucinated_missions,
+    )
+    return grouped_df, output[bibcode]
 
 
 def evaluate_output(
@@ -63,93 +182,27 @@ def evaluate_output(
         return None
 
     bibcode = paper["bibcode"]
+
+    # Load LLM outputs for this paper
     response = read_output(bibcode=bibcode, filename=paper_output)
 
     # Prevent iteration error when bibcode doesn't exist in paper_output
     if response is None:
         response = []
 
-    # filter out any cases where the llm returns an error, or there is no missions in output
-    response = [i for i in response if "error" not in i.keys() and i["missions"]]
+    # Evaluate LLM predictions against human classifications
+    grouped_df, output_item = evaluate_output_from_runs(paper, response)
 
-    # response is structured as:
-    # - notes: str
-    # - missions: [{mission: str, papertype: str, confidence: list[float], reason: str, quotes: list[str]}]
+    # Write results (if requested)
+    # Both success cases (full metrics) and error cases (error dict + human labels for audit trail)
+    # should be recorded for complete evaluation history.
+    if write_file:
+        write_summary({bibcode: output_item}, output_path=base_path)
 
-    # exit if no bibcode found in output
-    if not response:
-        logger.warning(f"No mission output found for {bibcode}")
-        # get the human paper classifications for record, even if no mission llm output
-        human_classes = get_human_classification(paper)
-        if write_file:
-            write_summary(
-                {
-                    bibcode: {
-                        "error": f"No mission output found for {bibcode}.",
-                        "human": {k: v["papertype"] for k, v in human_classes.items()},
-                    }
-                }
-            )
+    # Return grouped dataframe or None if evaluation failed
+    if grouped_df is None:
         return None
 
-    n_runs = len(response)
-
-    logger.info(f"Evaluating output for {bibcode}")
-    logger.info(f"Number of runs: {n_runs}")
-
-    # convert output to a dataframe
-    df = pd.DataFrame([j | {"notes": i["notes"]} for i in response for j in i["missions"]])
-    df = df.rename(columns={"confidence": "llm_confidences"})
-
-    df = df.sort_values("mission").reset_index(drop=True)
-
-    # group by mission and paper type,
-    grouped_df = group_by_mission_papertype(df)
-    grouped_df["n_runs"] = n_runs
-
-    # weight the mean confidences by the frequency of occurrence
-    # these represent a combined measure of frequency and confidence across multiple independent trials and categories
-    grouped_df["weighted_confs"] = grouped_df.apply(
-        lambda df: (df["mean_llm_confidences"] * (df["count"] / df["n_runs"])).round(3), axis=1
-    )
-
-    # group by mission and compute final probabilities and confidences
-    mission_group = group_by_mission(grouped_df)
-
-    # get the human paper classifications
-    human_classes = get_human_classification(paper)
-
-    # compute consistency of matches to human classification and identify missing missions
-    missing_by_human, missing_by_llm = compute_consistency(paper, grouped_df, human_classes)
-
-    # check if llm hallucinates mission classification
-    hallucinated_missions = check_hallucination(grouped_df)
-
-    # log the output
-    logger.info("Output Stats by LLM Mission and Paper Type:\n" + grouped_df.to_string(index=False))
-    logger.info("Missing missions by humans: " + ", ".join(missing_by_human))
-    logger.info("Missing missions by LLM: " + ", ".join(missing_by_llm))
-    logger.info("Hallucination by LLM: " + ", ".join(set(hallucinated_missions)))
-
-    threshold = config.llms.performance.threshold
-    inspection = config.llms.performance.inspection
-
-    # write the summary output
-    if write_file:
-        output = prepare_output(
-            bibcode,
-            threshold,
-            inspection,
-            grouped_df,
-            mission_group,
-            human_classes,
-            missing_by_human,
-            missing_by_llm,
-            hallucinated_missions,
-        )
-        write_summary(output, output_path=base_path)
-
-    # return the dataframe
     return grouped_df
 
 
@@ -215,13 +268,15 @@ def group_by_mission(grouped_df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def get_human_classification(paper: dict | str):
+def get_human_classification(paper: dict | str, summary_log_level: int = logging.INFO):
     """Get human's mission and paper types
 
     Parameters
     ----------
-    paper: dict | str
+    paper: dict or str
         dictionary or text (a row from the source dataset)
+    summary_log_level : int, optional
+        Logging level used for the human-classification summary message.
 
     Returns
     -------
@@ -229,8 +284,10 @@ def get_human_classification(paper: dict | str):
         human's mission and paper type
     """
     human_classes = {key.upper(): value for key, value in paper.get("class_missions", {}).items()}
-    formatted_output = "\n".join([f"{mission}: {info['papertype']}" for mission, info in human_classes.items()])
-    logger.info(f"Human Classifications:\n{formatted_output}")
+    # Skip formatting the human classification summary when this log level is disabled.
+    if logger.isEnabledFor(summary_log_level):
+        formatted_output = "\n".join([f"{mission}: {info['papertype']}" for mission, info in human_classes.items()])
+        logger.log(summary_log_level, "Human Classifications:\n%s", formatted_output)
     return human_classes
 
 
@@ -242,7 +299,7 @@ def compute_consistency(paper: dict | str, grouped_df: pd.DataFrame, human_class
 
     Parameters
     ----------
-    paper: dict | str
+    paper: dict or str
         dictionary or text (a row from the source dataset)
     grouped_df: pd.DataFrame
         pandas data frame grouped by mission and papertype
@@ -254,7 +311,8 @@ def compute_consistency(paper: dict | str, grouped_df: pd.DataFrame, human_class
     tuple
         missing missions by human and those by llm
     """
-    # compute consistency of matches to human classification
+    # Match LLM predictions against human labels using (mission, papertype) tuples.
+    # Compute consistency score: percentage of runs where LLM matched human classification.
     vv = [(k, v["papertype"]) for k, v in human_classes.items()]
     grouped_df["consistency"] = grouped_df.apply(
         lambda x: (x["count"] / x["n_runs"]) * 100 if (x["llm_mission"], x["llm_papertype"]) in vv else 0, axis=1
@@ -264,11 +322,13 @@ def compute_consistency(paper: dict | str, grouped_df: pd.DataFrame, human_class
         lambda x: (x["llm_mission"].upper(), x["llm_papertype"]) in vv, axis=1
     )
 
-    # get missing missions
+    # Identify discrepancies: missions predicted by LLM but not labeled by humans, and vice versa.
+    # Set difference captures asymmetric gaps in coverage.
     missing_by_human = set(grouped_df["llm_mission"].str.upper()) - set(human_classes)
     missing_by_llm = set(human_classes) - set(grouped_df["llm_mission"].str.upper())
 
-    # check if missions are in the paper text body
+    # Validate predictions against paper content: check if mission names appear in title, abstract, or body.
+    # This catches hallucinations (missions predicted without textual support).
     text = f"{paper['title'][0]}; {paper.get('abstract', '')}; {paper['body']}"
     in_text = identify_missions_in_text(grouped_df["llm_mission"], text)
     grouped_df["mission_in_text"] = in_text
@@ -409,9 +469,9 @@ def identify_missions_in_text(missions: list, text: str) -> list:
     list
         a list of boolean values indicating if the mission is in the text
     """
-    # get the paper object
-    # this is slow, only do this once for all missions
-    paper = Paper(text, keyword_objs=params.all_kobjs, do_check_truematch=True)
+    # Create Paper object once for all missions (slow due to expensive search text operation).
+    # Parse and retrieve keyword-matched paragraphs to validate mission mentions.
+    paper = Paper(text, keyword_objs=params.all_kobjs, do_check_truematch=False)
     try:
         paper.process_paragraphs()
         paragraphs = paper.get_paragraphs()

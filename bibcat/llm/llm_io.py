@@ -28,7 +28,7 @@ def get_source(bibcode: str | None = None, index: int | None = None, body_only: 
 
     Returns
     -------
-    dict | str
+    dict or str
         a row from the source dataset
     """
     # load the source dataset
@@ -177,10 +177,11 @@ def write_output(paper_key: str, response: dict):
     else:
         # append to an existing file
         with open(out, "r") as f:
-            data = json.load(f)
+            content = f.read()
+            data = json.loads(content) if content.strip() else {}
 
-        # append response to an existing file entry, or add a new one with a new paper_key or in the OPS mode
-        if paper_key in data and not config.llms.ops:
+        # append response to an existing file entry, or add a new one with a new paper_key
+        if paper_key in data:
             # logger.info(f"Appending the new run to {paper_key}")
             data[paper_key].append(response)
         else:
@@ -257,9 +258,11 @@ def write_summary(output: dict, output_path: str = None):
             json.dump(output, f, indent=2, sort_keys=False, cls=NumpyEncoder)
     else:
         # append to an existing file
-        with open(filename, "r") as f:
-            data = json.load(f)
-
+        try:
+            with open(filename, "r") as f:
+                data = json.load(f)
+        except json.JSONDecodeError:
+            data = {}
         # update response to an existing bibcode, or add a new one
         data.update(output)
 

@@ -2,6 +2,7 @@ import importlib
 import json
 import os
 import tempfile
+from copy import deepcopy
 
 import pytest
 
@@ -97,3 +98,79 @@ def batchfile(tmp_path):
         return path
 
     return _make_batch
+
+
+@pytest.fixture()
+def single_run_eval_data() -> dict[str, dict]:
+    data = {
+        "Bibcode2024": {
+            "human": {"JWST": "SCIENCE", "ROMAN": "SCIENCE", "TESS": "SUPERMENTION"},
+            "llm": [{"JWST": "SCIENCE"}, {"ROMAN": "SUPERMENTION"}, {"LAMOST": "SCIENCE"}],
+            "threshold_acceptance": 0.7,
+            "df": [
+                {
+                    "llm_mission": "JWST",
+                    "llm_papertype": "MENTION",
+                    "mission_in_text": True,
+                },
+                {
+                    "llm_mission": "ROMAN",
+                    "llm_papertype": "MENTION",
+                    "mission_in_text": True,
+                },
+                {
+                    "llm_mission": "HST",
+                    "llm_papertype": "SCIENCE",
+                    "mission_in_text": False,
+                },
+                {
+                    "llm_mission": "LAMOST",
+                    "llm_papertype": "MENTION",
+                    "mission_in_text": True,
+                },
+            ],
+            "mission_conf": [
+                {"llm_mission": "JWST", "prob_papertype": [0.8, 0.2]},
+                {"llm_mission": "ROMAN", "prob_papertype": [0.3, 0.7]},
+                {"llm_mission": "HST", "prob_papertype": [0.55, 0.45]},
+                {"llm_mission": "LAMOST", "prob_papertype": [0.4, 0.6]},
+            ],
+        },
+        "2024Sci...377.1211L": {
+            "error": "No mission output found for 2024Sci...377.1211L.",
+            "human": {"HST": "SCIENCE"},
+        },
+        "2019arXiv190205569A": {"error": "No paper source found"},
+    }
+    return deepcopy(data)
+
+
+@pytest.fixture()
+def single_run_missions() -> list[str]:
+    return ["HST", "JWST", "ROMAN"]
+
+
+@pytest.fixture()
+def multi_run_eval_data() -> dict[str, dict]:
+    return {
+        "B1": {"human": {"HST": "SCIENCE"}},
+        "B2": {"human": {"HST": "MENTION"}},
+    }
+
+
+@pytest.fixture()
+def multi_run_llm_runs_data() -> dict[str, list[dict]]:
+    return {
+        "B1": [
+            {"missions": [{"mission": "HST", "papertype": "SCIENCE", "confidence": [0.9, 0.1]}]},
+            {"missions": [{"mission": "HST", "papertype": "MENTION", "confidence": [0.2, 0.8]}]},
+        ],
+        "B2": [
+            {"missions": [{"mission": "HST", "papertype": "MENTION", "confidence": [0.1, 0.9]}]},
+        ],
+    }
+
+
+@pytest.fixture()
+def multi_run_missions() -> list[str]:
+    return ["HST"]

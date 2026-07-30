@@ -3,7 +3,7 @@ import re
 import pytest
 
 from bibcat import config
-from bibcat.llm.io import adjust_model, get_file, get_llm_prompt, get_source, write_summary
+from bibcat.llm.llm_io import adjust_model, get_file, get_llm_prompt, get_source, write_summary
 
 # expected data
 data = [
@@ -48,7 +48,7 @@ def make_tempfile(monkeypatch, tmp_path):
 )
 def test_get_source(mocker, bibcode, index, body_only, exp):
     """test we can get source data"""
-    mocker.patch("bibcat.llm.io.load_source_dataset", return_value=data)
+    mocker.patch("bibcat.llm.llm_io.load_source_dataset", return_value=data)
 
     result = get_source(bibcode=bibcode, index=index, body_only=body_only)
     assert isinstance(result, dict) or isinstance(result, str)
@@ -69,7 +69,7 @@ def test_get_source(mocker, bibcode, index, body_only, exp):
 )
 def test_get_file(mocker, make_paper, filepath, bibcode, index, expfile):
     """test we can get a file"""
-    mocker.patch("bibcat.llm.io.load_source_dataset", return_value=data)
+    mocker.patch("bibcat.llm.llm_io.load_source_dataset", return_value=data)
 
     if filepath is not None:
         filepath = str(make_paper)
@@ -100,7 +100,7 @@ def test_default_get_llm_prompt(prompt, exp):
 def test_custom_config_llm_prompt(fixconfig, monkeypatch, prompt, exp):
     """test we get the correct prompt from a custom config"""
     # mock the config data dir, so we can test the config prompts
-    config = fixconfig("", "bibcat.llm.io")
+    config = fixconfig("", "bibcat.llm.llm_io")
 
     monkeypatch.setitem(config.llms, f"{prompt}_prompt", exp)
 
@@ -158,7 +158,7 @@ def test_write_summary(fixconfig, tmp_path):
     """test we can write a summary"""
     d = tmp_path / "llm"
     d.mkdir()
-    config = fixconfig(str(d), "bibcat.llm.io")
+    config = fixconfig(str(d), "bibcat.llm.llm_io")
 
     filename = d / f"{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
     output = {"test": "data"}

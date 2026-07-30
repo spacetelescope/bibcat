@@ -299,7 +299,10 @@ llms:
   user_prompt: null
   agent_prompt: null
   prompt_output_file: paper_output.json # llm classification primary output
-  batch_file: batch_file.jsonl # llm batch jsonl file
+  eval_output_file: summary_output # llm evaluation summary output
+  cm_file: cm_metrics_summary # confusion-matrix metrics summary output
+  cm_plot: confusion_matrix_llm # confusion matrix plot image (.png is appended if omitted)
+  roc_plot: roc_plot_llm # ROC plot image (.png is appended if omitted)
   llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
   llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
   openai:
@@ -722,9 +725,10 @@ with 20 runs each paper, then batch evaluate them, run:
 bibcat llm batch evaluate -p bibcode_list.txt -s -n 20
 ```
 
-## Plotting Evaluation Plots
+## Metrics Output
+There are two sets of metrics for performance evaluation: confusion matrix metrics and ROC metrics.
 
-You can assess model performance using confusion matrix plots or Receiver Operating Characteristic (ROC) curves. A [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) plot helps evaluation classification model performance by showing true positives ($TP$), true negatives ($TN$), false positives ($FP$), and false negatives ($FN$), making it useful for understanding evaluation metrics such as
+You can assess model performance using confusion matrix or Receiver Operating Characteristic (ROC). A [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) helps evaluate classification model performance by showing true positives ($TP$), true negatives ($TN$), false positives ($FP$), and false negatives ($FN$), making it useful for understanding evaluation metrics such as
 
 
    $\text{Accuracy} = \dfrac{TP + TN}{TP + TN + FP + FN}$
@@ -736,342 +740,236 @@ You can assess model performance using confusion matrix plots or Receiver Operat
    $F_1 = 2 \times \dfrac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}$
 
 
-A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curve evaluates a model's ability to distinguish between classes by plotting the true positive rate against the false positive rate at various thresholds, with the area under the curve (AUC) which represents the degree of separability between classes. For instance, AUC = 1.0 indicates perfect and AUC =0.5 is as good as random guessing. To provide more reliable and stable performance metrics, larger datasets (hundreds or thousands) are recommended. With small datasets, you make interpreations less reliable.
+A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) evaluates a model's ability to distinguish between classes by plotting the true positive rate against the false positive rate at various thresholds, with the area under the curve (AUC) which represents the degree of separability between classes. For instance, AUC = 1.0 indicates perfect and AUC =0.5 is as good as random guessing. To provide more reliable and stable performance metrics, larger datasets (hundreds or thousands) are recommended. With small datasets, you make interpreations less reliable.
 
-### Confusion Matrix Plot
-To plot confusion matrices for specific missions (default threshold probability = 0.5), run:
+Both confusion matrix and ROC metrics can be saved as JSON files for single runs or aggregate runs across multiple papers.
+
+### Confusion Matrix Metrics JSON
+
+`cm` builds metrics directly from raw `llm_output` plus an explicit bibcode roster file.
+
+Save single-run (run `0` by default) confusion-matrix metrics for specific missions (default threshold probability = 0.5):
+
 ```bash
-bibcat llm plot -c -m HST -m JWST
+bibcat llm cm -f bibcodes.txt -m [HST,JWST]
+```
+You can save single-run confusion-matrix metrics for **all missions** without `-m` flag:
+
+```bash
+bibcat llm cm -f bibcodes.txt
 ```
 
-To plot confusion matrices for all missions, run:
+To select a specific run index in non-aggregate mode, use `--run-index` (or `-i`). The default run index is `0`, so `--run-index` allows you to evaluate results from other runs (e.g., run 1, run 2, etc.) when multiple runs were executed for the same papers. For instance, to evaluate run 3, run:
+
 ```bash
-bibcat llm plot -c -a
+bibcat llm cm -f bibcodes.txt -i 3 -m [HST,JWST]
+```
+
+Save aggregate metrics across multiple runs:
+
+```bash
+bibcat llm cm -a -f bibcodes.txt -m [HST,JWST]
+```
+
+Note that `--run-index` is only valid without `-a`.
+
+Output filename pattern:
+
+```text
+{config.llms.cm_file}_{single_r{run_index}|aggregate}_t{threshold}.json
+```
+
+#### Confusion Matrix JSON Output Columns
+
+Single-run (`cm` without `-a`) column definitions:
+
+- **threshold**: Confidence threshold used to accept LLM papertype classification.
+- **missions**: Mission list requested by CLI (normalized to uppercase).
+- **n_bibcodes**: Number of bibcodes evaluated (including items with missing-output conditions tracked below).
+- **n_human_callouts**: Number of human mission callouts.
+- **n_llm_callouts**: Number of LLM mission callouts.
+- **n_missing_paper_sources**: Number of bibcodes skipped due to missing paper source.
+- **n_missing_output_bibcodes**: Number of bibcodes with no LLM mission output.
+- **human_llm_missions**: Missions called out by both human and LLM in the evaluated sample.
+- **n_human_llm_mission_callouts**: Count of mission callouts in **human_llm_missions**.
+- **n_human_llm_hallucination**: Count of hallucinations by both human and LLM for missions in scope.
+- **human_labels**: Flattened binary ground-truth labels (`SCIENCE`/`NONSCIENCE`) across mission-by-paper samples.
+- **llm_labels**: Flattened binary LLM labels aligned with **human_labels**.
+- **metrics**: Confusion-matrix metric summary dictionary.
+- **fp_bibcodes**: False-positive sample records (`llm=SCIENCE`, `human=NONSCIENCE`).
+- **fn_bibcodes**: False-negative sample records (`llm=NONSCIENCE`, `human=SCIENCE`).
+- **tp_bibcodes**: True-positive sample records (`llm=SCIENCE`, `human=SCIENCE`).
+- **tn_bibcodes**: True-negative sample records (`llm=NONSCIENCE`, `human=NONSCIENCE`).
+
+
+Nested **metrics** column definitions:
+
+- **tn**, **fp**, **fn**, **tp**: Confusion-matrix counts.
+- **tnr**: True negative rate (`tn / (tn + fp)`), alias of **specificity**.
+- **fpr**: False positive rate (`fp / (fp + tn)`).
+- **fnr**: False negative rate (`fn / (fn + tp)`).
+- **tpr**: True positive rate (same as **recall**).
+- **precision**: Positive predictive value (`tp / (tp + fp)`).
+- **recall**: Sensitivity (`tp / (tp + fn)`).
+- **f1**: Harmonic mean of precision and recall.
+- **accuracy**: Overall accuracy (`(tp + tn) / (tp + tn + fp + fn)`).
+
+Aggregate (`cm` -a) column definitions:
+
+- **missions**: Mission list requested by CLI (normalized to uppercase).
+- **n_runs**: Number of run indices found across the multi-run output.
+- **run_coverage**: Fraction of bibcode-run slots with available LLM run data.
+- **aggregate_metrics**: Mean and population standard deviation for each per-run metric (`{"mean": ..., "std": ...}`).
+- **per_run_metrics**: List of per-run **metrics** dictionaries (same metric keys as above).
+
+Aggregate CM output remains compact and does not include the single-run label arrays or TP/TN/FP/FN bibcode lists.
+
+**How aggregate CM metrics are computed**
+
+For both single-run and aggregate `cm`, bibcat builds evaluation data from raw multi-run `llm_output` for the requested bibcodes and compares it against the current source dataset at `config.inputs.path_source_data`. In aggregate mode, bibcat computes metrics per run index using a run-specific in-memory evaluation snapshot built from that raw output.
+
+During aggregate CM evaluation, the per-bibcode evaluation summaries built for each run are logged at `DEBUG` rather than `INFO`. High-level aggregate progress messages still appear at `INFO`.
+
+### ROC Metrics JSON
+
+`roc` follows the same input contract as `cm`: it builds metrics directly from raw `llm_output` plus a required bibcode roster file, and does not use the saved `summary_output` file.
+
+Save single-run (run `0` by default) ROC metrics:
+
+```bash
+bibcat llm roc -f bibcodes.txt -m [HST,JWST]
+```
+Save single-run ROC metrics for **all missions** without `-m` flag:
+
+```bash
+bibcat llm roc -f bibcodes.txt
+```
+
+To select a specific run index in non-aggregate mode, use `--run-index` (or `-i`). The default run index is `0`, so `--run-index` allows you to evaluate results from other runs (e.g., run 1, run 2, etc.) when multiple runs were executed for the same papers. For instance, to evaluate run 3, run:
+
+```bash
+bibcat llm roc -f bibcodes.txt -i 3 -m [HST,JWST]
+```
+
+Save aggregate ROC metrics across multiple runs:
+
+```bash
+bibcat llm roc -a -f bibcodes.txt -m [HST,JWST]
+```
+
+Same as CM metrics, `--run-index` is only valid without `-a`.
+
+Output filename pattern:
+
+```text
+{config.llms.roc_metrics_file}_{single_r{run_index}|aggregate}_t{threshold}.json
+```
+
+#### ROC JSON Output Columns
+
+Single-run (`roc` without `-a`) column definitions:
+
+- **threshold**: Confidence threshold from config used for the evaluation context.
+- **missions**: Mission list requested by CLI (normalized to uppercase).
+- **human_llm_missions**: Missions called out by both human and LLM in ROC extraction.
+- **n_verdicts**: Number of binary mission verdicts used to compute ROC.
+- **fpr**: False positive rate curve values.
+- **tpr**: True positive rate curve values.
+- **thresholds**: ROC decision thresholds corresponding to **fpr**/**tpr** points.
+- **roc_auc**: Area under ROC curve.
+
+Aggregate (`roc -a`) column definitions:
+
+- **missions**: Mission list requested by CLI (normalized to uppercase).
+- **n_runs**: Number of run indices found across the multi-run output.
+- **run_coverage**: Fraction of bibcode-run slots with available LLM run data.
+- **per_run_roc**: ROC summary for each run. Each item contains:
+  - **run_index**: Zero-based run index.
+  - **fpr**: False positive rate curve.
+  - **tpr**: True positive rate curve.
+  - **thresholds**: ROC thresholds.
+  - **roc_auc**: Run-level AUC.
+- **aggregate_auc**: Mean and population standard deviation of per-run AUC values (`{"mean": ..., "std": ...}`).
+
+Both single-run and aggregate ROC outputs remain compact. ROC output does not include CM-style label arrays or TP/TN/FP/FN bibcode lists.
+
+**How aggregate ROC metrics are computed**
+
+For both single-run and aggregate `roc`, bibcat builds ROC inputs from raw multi-run `llm_output` for the requested bibcodes and compares them against the current source dataset at `config.inputs.path_source_data`. In aggregate mode, bibcat computes ROC/AUC per run index from isolated run-specific in-memory evaluation snapshots.
+
+Like aggregate CM evaluation, aggregate ROC evaluation demotes the per-bibcode in-memory evaluation summaries to `DEBUG`, leaving only the top-level aggregate progress logs at `INFO`.
+
+
+## Creating Evaluation Plots
+
+### Confusion Matrix Plot
+`llm plot` reads precomputed single-run metrics JSON files. Generate the required metrics file first with `llm cm`, then plot that saved run.
+
+To plot confusion matrices from saved metrics for the default saved run (`--run-index 0`), run:
+```bash
+bibcat llm cm -f bibcodes.txt -m [HST,JWST]
+bibcat llm plot -c
+```
+
+To plot a non-default saved run, use the same `--run-index` or `-i`value for both commands. For instance, to plot confusion matrices for run index 2, run:
+```bash
+bibcat llm cm -f bibcodes.txt -i 2 -m [HST,JWST]
+bibcat llm plot -c --run-index 2
+```
+
+To plot confusion matrices for **all missions** (default when `-m` is not provided), run:
+```bash
+bibcat llm cm -f bibcodes.txt
+bibcat llm plot -c
 ```
 ![confusion matrix example](images/example_confusion_matrix_plot_t0.5.png)
 
-In the example confusion matrix (CM) plot, we have both counts (left panel) and normalized counts (right panel). All counts were considered if the confidence value of each LLM classification is >= 0.5 (`threshold = 0.5`). We can see the distribution of true positives (top left quadrant), false positives (bottom left quadrant), true negatives (bottom right quadrant), and false negatives (top right quadrant) for the specified missions. This visualization helps in understanding the model's performance and identifying areas for improvement. Note that in this figure, all MAST missions were considered to create CM, but only a subset of the missions in the annotation, `Mission(s) found:` were actually called out by human and LLM as seen in. The missions not found in the sample only contribute to true negatives.
+In the example confusion matrix (CM) plot, we have both counts (left panel) and normalized counts (right panel). We can see the distribution of true positives (top left quadrant), false positives (bottom left quadrant), true negatives (bottom right quadrant), and false negatives (top right quadrant) for the missions stored in the saved metrics JSON. This visualization helps in understanding the model's performance and identifying areas for improvement. In the annotation, `Mission(s) considered:` comes from the metrics file `missions` field, while `Mission(s) found:` is the subset called out by both human and LLM.
 
-These commands will also create metrics summary files ( `*metrics_summary_t0.5.txt` and `*metrics_summary_t0.5.json`).
+Plot commands only generate image files and require an existing single-run metrics JSON file. If the expected metrics file is missing, `llm plot` fails with a clear error instead of recomputing metrics inline. Plotting also requires the metrics JSON to include a `missions` field; regenerate metrics with `cm` or `roc` if this field is missing. Aggregate metrics JSON files are not used by `llm plot`.
 
-### Metrics Summary Output
-#### Text Output for Metrics Summary
-The outuput would look like
+Saved confusion-matrix plot filename pattern:
 
 ```text
-The number of bibcodes (papers) for evaluation metrics: 89
-The number of mission callouts by human: 217
-The number of mission callouts by llm with the threshold value, 0.5: 222
-
-The number of mission callouts by both human and llm: 132
-Missions called out by both human and llm: FUSE, GALEX, HUT, IUE, K2, KEPLER, PANSTARRS, TESS, WUPPE
-
-The number of non-MAST mission callouts by llm: 2
-Non-MAST missions called out by llm: EDEN, NUSTAR
-
-2 papertypes: NONSCIENCE, SCIENCE are labeled
-True Negative = 1569, False Positive = 26, False Negative = 20, True Positive = 33
-
-classification report
-               precision    recall  f1-score   support
-
-  NONSCIENCE     0.9874    0.9837    0.9856      1595
-     SCIENCE     0.5593    0.6226    0.5893        53
-
-    accuracy                         0.9721      1648
-   macro avg     0.7734    0.8032    0.7874      1648
-weighted avg     0.9736    0.9721    0.9728      1648
-
+{base_cm_plot_name}_llm_single_r{run_index}_t{threshold}.png
 ```
 
-#### Jason Output for Metrics Summary
-The definitions of the JSON output columns are following.
+For example, with the default config this becomes:
 
-- **n_bibcodes**: The total number of bibcodes (papers) for confusion matrix evaluation per given mission(s)
-- **n_human_callouts**: The number of all callouts by human found in the source dataset
-- **n_llm_callouts**: The number of all callouts by llm with the threshold value in the llm output file
-- **n_missing_output_bibcodes**: The number of bibcodes missing from the llm output file
-- **n_non_mast_callouts**: The number of non-MAST mission callouts by llm from the llm output file
-- **non_mast_missions**: The list of non-MAST missions called out by llm from the llm output file
-- **human_llm_missions**: The list of missions called out by both human and llm for given mission(s)
-- **n_human_llm_mission_callouts**: The number of callouts by both human and llm for **human_llm_missions**
-- **n_human_llm_hallucination**: The number of hallucinated callouts by llm for **human_llm_missions**
-- **NONSCIENCE**: The classification report metrics for NONSCIENCE papertype
-- **SCIENCE**: The classification report metrics for SCIENCE papertype
-- **macro avg**: The macro average metrics across all papertypes
-- **weighted avg**: The weighted average metrics across all papertypes
-- **precision**: precision score
-- **recall**: recall score
-- **f1-score**: F1-score
-- **support**: Total number of occurrences across papertype(s)
-- **accuracy**: Overall accuracy of the classification
-- **fp_bibcodes**: The list of false positive bibcodes with details
-- **fn_bibcodes**: The list of false negative bibcodes with details
-- **tp_bibcodes**: The list of true positive bibcodes with details
-- **tn_bibcodes**: The list of true negative bibcodes with details
-- **bibcode**: The bibcode of the paper
-- **mision**: The mission name
-- **human_raw**: The original human classification for the mission before mapping to SCIENCE/NONSCIENCE
-  - *SCIENCE*, *MENTION*, *DATA_INFLUENCED*, *SUPERMENTION*, *ENGINEERING*, and *GREY* or *GRAY* are available
-  - *IGNORED* is introduced to tag mission with no classification by human for that mission in the source dataset
-- **llm_raw**: The original llm classification (*SCIENCE*, *MENTION*) for the mission before mapping to SCIENCE/NONSCIENCE
-  - *IGNORED* is introduced to tag mission with no classification by human for that mission
-
-An example output file would look like:
-
-```json
-{
-  "n_bibcodes": 89,
-  "n_human_callouts": 217,
-  "n_llm_callouts": 222,
-  "n_missing_output_bibcodes": 5,
-  "n_non_mast_callouts": 0,
-  "non_mast_missions": [],
-  "human_llm_missions": [
-    "HST",
-    "JWST",
-  ],
-  "n_human_llm_mission_callouts": 80,
-  "n_human_llm_hallucination": 5,
-  "NONSCIENCE": {
-    "precision": 0.9901538461538462,
-    "recall": 0.9834963325183375,
-    "f1-score": 0.9868138607789022,
-    "support": 1636.0
-  },
-  "SCIENCE": {
-    "precision": 0.5909090909090909,
-    "recall": 0.7090909090909091,
-    "f1-score": 0.6446280991735537,
-    "support": 55.0
-  },
-  "accuracy": 0.9745712596096984,
-  "macro avg": {
-    "precision": 0.7905314685314686,
-    "recall": 0.8462936208046232,
-    "f1-score": 0.815720979976228,
-    "support": 1691.0
-  },
-  "weighted avg": {
-    "precision": 0.9771683573670563,
-    "recall": 0.9745712596096984,
-    "f1-score": 0.9756842233523534,
-    "support": 1691.0
-  },
-  "fp_bibcodes": [
-    {
-      "bibcode": "bibcode1",
-      "mision": "HST",
-      "human_raw": "MENTION",
-      "llm_raw": "SCIENCE"
-    },
-    {
-      "bibcode": "bicode12",
-      "mision": "JWST",
-      "human_raw": "IGNORED",
-      "llm_raw": "SCIENCE"
-    }
-  ],
-  "fn_bibcodes": [
-    {
-      "bibcode": "bibcode2",
-      "mision": "HST",
-      "human_raw": "SCIENCE",
-      "llm_raw": "MENTION"
-    },
-    {
-      "bibcode": "bibcode2",
-      "mision": "HST",
-      "human_raw": "SCIENCE",
-      "llm_raw": "IGNORED"
-    },
-  ],
-  "tp_bibcodes": [
-    {
-      "bibcode": "bicode30",
-      "mision": "JWST",
-      "human_raw": "SCIENCE",
-      "llm_raw": "SCIENCE"
-    },
-  ],
-   "tn_bibcodes": [
-    {
-      "bibcode": "bicode30",
-      "mision": "HST",
-      "human_raw": "IGNORED",
-      "llm_raw": "MENTION"
-    },
-    {
-      "bibcode": "bicode35",
-      "mision": "HST",
-      "human_raw": "MENTION",
-      "llm_raw": "MENTION"
-    }
-  ]
-}
+```text
+confusion_matrix_llm_single_r2_t0.5.png
 ```
+
 
 ### Receiver Operating Characteristic (ROC) Plot
-To plot a confusion matrix for specific missions, run:
+`llm plot -r` also reads precomputed single-run ROC metrics JSON files. Generate the saved ROC metrics file first with `llm roc`.
+
+To plot ROC from saved metrics for the default saved run (`--run-index 0`), run:
 ```bash
-bibcat llm plot -r -m HST -m JWST
-```
-To plot a confusion matrix for all missions, run:
-```bash
-bibcat llm plot -r -a
-```
-
-## Statistics output
-After running bibcat GPT classification using bibcat llm run, bibcat llm batch run, or bibcat llm evaluate to generate classifications for papers, you may want to review various statistics. These statistics can include the number of papers per mission and papertype, the count of accepted papertypes, and the number of papers that require human inspection due to low confidence scores.
-
-From the evaluation summary output file, you may want to see the list of the papers where human classifications are not consistent with llm classifications. The next command line will also create this file.
-
-The filenames are defined in `bibcat_config.yaml`: `eval_output_file`, `ops_output_file`, and `inconsistent_classification_file`.
-To create a statistics JSON file, use the command line options listed below.
-
-### Evaluation summary statistics for mission+papertype pairs
-
-To create a statisitics output from the *e*valuation summary output, e.g., `summary_output_t0.7.json`, run:
-```bash
-bibcat llm stats -e
-```
-The output file name will be something like `evaluation_stats_t0.7.json` where `t0.7` refers to the threshold value, `0.7` to accept the llm's papertype.
-
-This command line will also create a file for the list of the papers where human classifications are not consistent with llm classifications.
-
-### Operation classification statistics for mission+papertype pairs
-This output will provide various number counts including the number of papers with accepted papertype which meets this condition `threshold_acceptance >= confidence` and the number of papers required for human inspection (`threshold_inspection <= confidence < threshold_acceptance`) for final papertype assignment. It also includes the lists of bibcodes of accepted papertypes and inspection required for human inspection.
-
-To create statisitics output files,`operation_stats_t0.7.json` and `operation_stats_t0.7.txt` from the llm classification output for *o*peration, `paper_output.json`, run:
-```bash
-bibcat llm stats -o
-```
-```bash
-INFO - reading /Users/jyoon/GitHub/bibcat/output/output/llms/openai_gpt-4o-mini/paper_output.json
-INFO - threshold for accepting llm classification: 0.7
-INFO - threshold for inspecting llm classification: 0.4
-INFO - Production counts by LLM Mission and Paper Type:
-   mission papertype  total_count  accepted_count  inspection_count
-     GALEX   MENTION            4               4                 0
-     GALEX   SCIENCE            2               2                 0
-       HST   MENTION           22              21                 1
-       HST   SCIENCE            4               4                 0
-      JWST   MENTION            8               8                 0
-      JWST   SCIENCE           17              17                 0
-
-```
-### Statistics Output columns
-Both the evaluation and operation statistics files share the same column names.
-
-
-#### Statistics Output
-The definitions of the JSON output columns are following.
-
-- **threshold_acceptance**: The threshold value to accept the LLM papertype classification
-- **threshold_inspection**: The threshold value to require human inspection
-- **mission**: MAST mission
-- **papertype**: papertype classified by LLM
-- **total_count**: The total number of papers
-- **accepted_count**: The count of papers with accepted llm papertype
-- **accepted_bibcodes**: The bibcode list of the papers with accepted llm papertype
-- **inspection_count**: The count of papers required for human inspection
-- **inspection_bibcodes**: The bibcode list of the papers for papertype required human inspection
-
-The statistics `.txt`output file shows the table view of mission, papertype, total_count  accepted_count, and inspection_count.
-```bash
-   mission papertype  total_count  accepted_count  inspection_count
-     GALEX   MENTION            4               4                 0
-     GALEX   SCIENCE            2               2                 0
-       HST   MENTION           22              21                 1
-       HST   SCIENCE            4               4                 0
-      JWST   MENTION            8               8                 0
-      JWST   SCIENCE           17              17                 0
+bibcat llm roc -f bibcodes.txt -m [HST,JWST]
+bibcat llm plot -r
 ```
 
-### Audit inconsistent classifications
-The command line command, `bibcat llm audit`, will create a json file (`config.llms.inconsistent_classifications_file`) of failure bibcode + mission classifications and its summary counts. To create an audit summary and inconsistent classification breakdown, run this command:
-
+To plot a non-default saved run, use the same `--run-index` or `-i`value for both commands. To plot ROC for run index 2, run:
 ```bash
-bibcat llm audit
+bibcat llm roc -f bibcodes.txt -i 2 -m [HST,JWST]
+bibcat llm plot -r --run-index 2
 ```
 
-#### File output for the inconsistent classifications
+To plot ROC for **all missions** (default when `-m` is not provided), run:
+```bash
+bibcat llm roc -f bibcodes.txt
+bibcat llm plot -r
+```
 
-The command line command, `bibcat llm audit`, will create a json file (`config.llms.inconsistent_classifications_file`) of failure bibcode + mission classifications and its summary counts. It also create a json file (`llm_only_classified_list_for_audit.json`) which collects the bibcode items that human didn't classify any misisons but LLM classifies missions. You can use this list to further investigate if LLM hallucinates or human mistakenly missed classifications.
+Saved ROC plot filename pattern:
 
-The definitions of the JSON output columns are following.
-- **summary_counts** : stats summary of inconsistent classifications
-- **n_llm_only_classified_bibcodes** : the number of bibcodes that human didn't classify any missions but LLM classifies missions
-- **n_total_bibcodes**: the number of total bibcodes
-- **n_matched_classifications**: the number of matched classifications
-- **n_mismatched_bibcodes**: the number of mismatched (failure) bibcode
-- **n_mismatched_classifications**: the number of mismatched (failure) classifications
-- **false_positive**: false positive classification (e.g., human: MENTION and llm: SCIENCE)
-- **false_negative**: false negative classification (e.g., human: SCIENCE and llm: MENTION)
-- **false_negative_because_ignored**: false negative classification due to LLM ignored the paper(e.g., human: SCIENCE and llm: [])
-- **ignored**: LLM ignored the paper but human papertype is other than SCIENCE
-- The rest shows the breakdown of each failure bibcode
+```text
+{base_roc_plot_name}_llm_single_r{run_index}.png
+```
 
-The output example is as follows:
+For example, with the default config this becomes:
 
-```json
-{
-  "summary_counts": {
-    "n_total_bibcodes": 89,
-    "n_llm_only_classified_bibcodes": 1,
-    "n_matched_classifications": 81,
-    "n_mismatched_bibcodes": 65,
-    "n_mismatched_classifications": 134,
-    "false_positive": 32,
-    "false_negative": 6,
-    "false_negative_because_ignored": 20,
-    "ignored": 76
-  },
-  "bibcodes": {
-    "2018A&A...610A..11I": {
-      "failures": {
-        "GALEX": "false_positive"
-      },
-      "human": {
-        "GALEX": "MENTION",
-        "PANSTARRS": "SCIENCE"
-      },
-      "llm": [
-        {
-          "GALEX": "SCIENCE",
-          "confidence": [
-            1.0,
-            0.0
-          ],
-          "mission_probability": 0.5
-        },
-        {
-          "PANSTARRS": "SCIENCE",
-          "confidence": [
-            1.0,
-            0.0
-          ],
-          "mission_probability": 0.5
-        }
-      ],
-      "missions_not_in_text": []
-    },
-    "2020A&A...633A..48F": {
-      "failures": {
-        "flag": "llm_only_classified"
-      },
-      "human": {},
-      "llm": [
-        {
-          "HST": "MENTION",
-          "confidence": [
-            0.2,
-            0.8
-          ],
-          "mission_probability": 0.25
-        },
-      ]
-    }
-}
-
+```text
+roc_plot_llm_single_r2.png
 ```

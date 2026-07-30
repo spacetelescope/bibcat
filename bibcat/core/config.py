@@ -87,7 +87,7 @@ def get_custom_config() -> dict | None:
 
     Returns
     -------
-    dict | None
+    dict or None
         the custom yaml configuration
     """
     # build custom config path

@@ -2,19 +2,43 @@
 
 ## [Unreleased]
 ### Added
+- [PR #98](https://github.com/spacetelescope/bibcat/pull/98)
+  - Added `bibcat/llm/roc.py` and `bibcat/tests/llm/test_roc.py`.
+  - Added `llm roc` CLI support and `llms.roc_file` config entry.
+
 
 ### Changed
+- [PR #98](https://github.com/spacetelescope/bibcat/pull/98)
+  - Refactored multi-run CM/ROC evaluation to compute from run-specific in-memory evaluation snapshots.
+    - Updated `cm` and `roc` to compute exclusively from raw `llm_output`, require a bibcode roster file via `-f`, and support non-aggregate `--run-index` selection without relying on saved `summary_output` for metrics calculations.
+    - Refactored `metrics.py` and `evaluate.py` for per-run aggregation correctness.
+  - Updated plots/docs/tests to align with `cm` and `roc` outputs.
+  - Reduced aggregate CM/ROC evaluation log verbosity by demoting per-bibcode evaluation summaries to `DEBUG` while preserving direct `evaluate_output` summary logs at `INFO`.
+  - Renamed `bibcat/llm/io.py` to `bibcat/llm/llm_io.py` to avoid circular import errors.
+
 
 ### Fixed
+- [PR #98](https://github.com/spacetelescope/bibcat/pull/98)
+  - Fixed JSON decode handling in LLM output reading.
+  - Fixed circular import issues around `llm_io`.
+  - Fixed aggregate handling when LLM mission output is missing.
+  - Increased plot output resolution.
+  - Guarded dataframe-to-string evaluation summary formatting so aggregate runs skip that work when the chosen summary log level is disabled.
+    - Fixed GitHub Actions lint/workflow error due to PLW0108.
 
 
 ### Deprecated
 
 
 ### Removed
+- [PR #98](https://github.com/spacetelescope/bibcat/pull/98)
+  - Removed `bibcat/llm/stats.py`.
+  - Removed CLI commands `bibcat llm stats` and `bibcat llm audit`.
+  - Removed related tests (`test_stats.py`, stats/audit CLI tests), config keys, and docs sections.
 
 
 ### Security
+
 
 ## [0.2.6] - 2026-5-20
 ### Added

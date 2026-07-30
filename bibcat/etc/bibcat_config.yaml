@@ -33,13 +33,11 @@ llms:
   agent_prompt: null
   prompt_output_file: paper_output.json # llm classification primary output
   eval_output_file: summary_output # llm classification summary output
+  cm_file: cm_metrics_summary # confusion-matrix metrics summary JSON output (includes the configured threshold)
+  cm_plot: confusion_matrix_llm # confusion matrix plot image (.png is used if no extension is configured)
+  roc_file: roc_metrics_summary # ROC metrics summary JSON output (includes the configured threshold)
+  roc_plot: roc_plot_llm # ROC plot image (.png is used if no extension is configured)
   batch_file: batch_file.jsonl # llm batch jsonl file
-  eval_stats_file: evaluation_stats  # llm evaluation high-level statistics output
-  inconsistent_classifications_file: inconsistent_classifications # list of inconsistent classifications between llm and human
-  ops_stats_file: operation_stats  # llm operation high-level statistics output
-  metrics_file: metrics_summary # metrics summary file with the implemented threshold
-  cm_plot: confusion_matrix_llm.png # confusion matrix plot
-  roc_plot: roc_plot_llm.png # receiver operating charateristic curve
   llm_user_prompt: llm_user_prompt.txt  # file that can be used for the input user prompt
   llm_agent_prompt: llm_agent_prompt.txt  # file that can be used for the agent instructions
   openai:
@@ -62,12 +60,8 @@ llms:
   performance: # used for both evaluation and operation
     threshold: 0.5
     inspection: 0.45
-  ops: false # false if in evaluation, true if in operation
 
 textprocessing:
-  do_verify_truematch: true  # used in Performance class
-  lookup: HST  # Prepare some Keyword objects
-  buffer: 0  # the number of sentences to include within paragraph around each sentence with target terms
   placeholder_anon: "OBJ" # For text that is anonymized against user's target missions, this is the text that the mission terms are replaced with.
   placeholder_number: "000" # For text that is anonymized against numbers, this is the text that the numbers are replaced with.
   placeholder_author: "Authorsetal" # For text that is anonymized against authors, this is the text that the authors are replaced with.
