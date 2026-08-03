@@ -3,7 +3,7 @@ import logging
 import pytest  # noqa: F401
 
 from bibcat.llm.cm import build_eval_data_for_run
-from bibcat.llm.verdict_summary import summarize_verdict, summarize_verdict_from_runs, group_by_mission
+from bibcat.llm.verdict_summary import group_by_mission, summarize_verdict, summarize_verdict_from_runs
 
 SOURCE_PAPER_WITH_MISSIONS = {
     "bibcode": "2022Sci...377.1211L",
