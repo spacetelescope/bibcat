@@ -8,7 +8,7 @@ from bibcat import config
 from bibcat.llm.evaluation_base import (
     IGNORED_RAW_LABEL,
     POSITIVE_LABEL,
-    build_run_paper_evaluations,
+    build_run_paper_verdicts,
     build_source_lookup,
     compute_run_coverage,
     normalize_missions,
@@ -62,16 +62,16 @@ def get_roc_metrics(
     return fpr.tolist(), tpr.tolist(), thresholds.tolist(), float(roc_auc)
 
 
-def build_roc_inputs_for_run_evaluations(
-    run_evaluations: list[Any],
+def build_roc_inputs_for_run_verdicts(
+    run_verdicts: list[Any],
     missions: list[str],
 ) -> tuple[list[int], list[list[float]], list[str]]:
-    """Build ROC inputs from raw run-evaluation inputs.
+    """Build ROC inputs from raw run-verdict inputs.
 
     Parameters
     ----------
-    run_evaluations : list[Any]
-        Run-specific evaluation inputs for the selected bibcodes.
+    run_verdicts : list[Any]
+        Run-specific verdict inputs for the selected bibcodes.
     missions : list[str]
         Missions to evaluate.
 
@@ -87,15 +87,15 @@ def build_roc_inputs_for_run_evaluations(
     confidences: list[list[float]] = []
     human_llm_missions_seen: set[str] = set()
 
-    for evaluation in run_evaluations:
-        if not evaluation.has_source:
+    for verdict in run_verdicts:
+        if not verdict.has_source:
             continue
 
-        human = evaluation.human_labels
+        human = verdict.human_labels
 
         for mission in normalized_missions:
             # Track missions that both human and LLM evaluated
-            prediction = evaluation.llm_predictions.get(mission)
+            prediction = verdict.llm_predictions.get(mission)
             if mission in human and prediction is not None:
                 human_llm_missions_seen.add(mission)
 
@@ -112,7 +112,7 @@ def build_roc_inputs_for_run_evaluations(
     return y_true, confidences, sorted(human_llm_missions_seen)
 
 
-def extract_roc_metrics_for_run(
+def compute_roc_metrics_for_run(
     llm_runs_data: dict[str, list[dict[str, Any]]],
     missions: list[str],
     bibcodes: list[str],
@@ -142,14 +142,14 @@ def extract_roc_metrics_for_run(
     if source_lookup is None:
         source_lookup = build_source_lookup()
 
-    run_evaluations = build_run_paper_evaluations(
+    run_verdicts = build_run_paper_verdicts(
         llm_runs_data=llm_runs_data,
         bibcodes=bibcodes,
         run_index=run_index,
         source_lookup=source_lookup,
     )
-    y_true, llm_confidences, human_llm_missions = build_roc_inputs_for_run_evaluations(
-        run_evaluations=run_evaluations,
+    y_true, llm_confidences, human_llm_missions = build_roc_inputs_for_run_verdicts(
+        run_verdicts=run_verdicts,
         missions=missions,
     )
     n_verdicts = len(y_true)
@@ -167,7 +167,7 @@ def extract_roc_metrics_for_run(
     }
 
 
-def evaluate_multiple_llm_runs_with_roc(
+def compute_roc_metrics_across_runs(
     llm_runs_data: dict[str, list[dict[str, Any]]],
     missions: list[str],
     bibcodes: list[str],
@@ -176,7 +176,7 @@ def evaluate_multiple_llm_runs_with_roc(
     """Evaluate multiple LLM runs and compute ROC/AUC per run.
 
     For each run index, this function builds an in-memory run-specific
-    evaluation snapshot and computes ROC/AUC from that run only.
+    verdict snapshot and computes ROC/AUC from that run only.
 
     Parameters
     ----------
@@ -211,14 +211,14 @@ def evaluate_multiple_llm_runs_with_roc(
 
     # Evaluate each run independently and collect per-run ROC metrics
     for run_index in range(n_runs):
-        run_evaluations = build_run_paper_evaluations(
+        run_verdicts = build_run_paper_verdicts(
             llm_runs_data=llm_runs_data,
             bibcodes=bibcodes,
             run_index=run_index,
             source_lookup=source_lookup,
         )
-        y_true, confidences, _ = build_roc_inputs_for_run_evaluations(
-            run_evaluations=run_evaluations,
+        y_true, confidences, _ = build_roc_inputs_for_run_verdicts(
+            run_verdicts=run_verdicts,
             missions=missions,
         )
         fpr, tpr, thresholds, roc_auc = get_roc_metrics(

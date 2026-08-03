@@ -19,7 +19,7 @@ class LlmPrediction:
 
 
 @dataclass(frozen=True)
-class SingleRunEvaluation:
+class SingleRunVerdict:
     """Evaluation inputs for one paper in a single run."""
 
     bibcode: str
@@ -219,16 +219,16 @@ def extract_llm_run_predictions(run_item: dict[str, Any]) -> dict[str, LlmPredic
     return predictions
 
 
-def build_run_paper_evaluations(
+def build_run_paper_verdicts(
     llm_runs_data: dict[str, list[dict[str, Any]]],
     bibcodes: list[str],
     run_index: int,
     source_lookup: dict[str, dict[str, Any]],
-) -> list[SingleRunEvaluation]:
-    """Build raw run-evaluation inputs for one run across bibcodes.
+) -> list[SingleRunVerdict]:
+    """Build raw run-verdict inputs for one run across bibcodes.
 
-    This is the main evaluation data assembly function. It constructs a list of
-    ``SingleRunEvaluation`` objects by pairing LLM predictions from a specific run
+    This is the main verdict data assembly function. It constructs a list of
+    ``SingleRunVerdict`` objects by pairing LLM predictions from a specific run
     with human classifications from a source dataset. Each evaluation object
     contains normalized mission labels, papertype predictions, and metadata
     about data availability (source present, output present).
@@ -236,10 +236,10 @@ def build_run_paper_evaluations(
     The function handles three evaluation scenarios per bibcode:
 
     1. **Missing source**: Bibcode has no entry in the source dataset.
-       Returns evaluation with ``has_source=False``, empty labels and predictions.
+       Returns verdict with ``has_source=False``, empty labels and predictions.
 
     2. **Missing LLM output**: Bibcode in source but no LLM run data for the
-       requested ``run_index``. Returns evaluation with ``has_output=False``.
+       requested ``run_index``. Returns verdict with ``has_output=False``.
 
     3. **Complete**: Both source and LLM output available. Extracts and normalizes
        human mission labels and LLM run predictions for comparison.
@@ -266,8 +266,8 @@ def build_run_paper_evaluations(
 
     Returns
     -------
-    list[SingleRunEvaluation]
-        Run-specific evaluation inputs for the requested bibcodes. One entry per
+    list[SingleRunVerdict]
+        Run-specific verdict inputs for the requested bibcodes. One entry per
         bibcode in order. Each entry contains normalized human labels and LLM
         predictions, plus flags indicating data availability (``has_source``,
         ``has_output``).
@@ -291,12 +291,12 @@ def build_run_paper_evaluations(
     ...         }
     ...     ]
     ... }
-    >>> evals = build_run_paper_evaluations(
+    >>> verdicts = build_run_paper_verdicts(
     ...     llm_output, ["2023Natur.616..266L"], run_index=0, source_lookup=source_lookup
     ... )
-    >>> evals[0].has_source, evals[0].has_output
+    >>> verdicts[0].has_source, verdicts[0].has_output
     (True, True)
-    >>> evals[0].human_labels
+    >>> verdicts[0].human_labels
     {'HST': 'SCIENCE', 'JWST': 'MENTION'}
 
     Notes
@@ -306,14 +306,14 @@ def build_run_paper_evaluations(
     to uppercase. LLM predictions use the same normalization for consistent
     comparison.
     """
-    evaluations: list[SingleRunEvaluation] = []
+    verdicts: list[SingleRunVerdict] = []
     for bibcode in bibcodes:
         # Check if bibcode exists in source paper dataset
         paper = source_lookup.get(bibcode)
         if paper is None:
-            # Missing source: record empty evaluation with has_source=False
-            evaluations.append(
-                SingleRunEvaluation(
+            # Missing source: record empty verdict with has_source=False
+            verdicts.append(
+                SingleRunVerdict(
                     bibcode=bibcode,
                     human_labels={},
                     llm_predictions={},
@@ -328,8 +328,8 @@ def build_run_paper_evaluations(
         run_item = llm_runs[run_index] if run_index < len(llm_runs) else {"missions": []}
         llm_predictions = extract_llm_run_predictions(run_item)
 
-        evaluations.append(
-            SingleRunEvaluation(
+        verdicts.append(
+            SingleRunVerdict(
                 bibcode=bibcode,
                 human_labels=extract_human_labels_from_source(paper),
                 llm_predictions=llm_predictions,
@@ -337,7 +337,7 @@ def build_run_paper_evaluations(
                 has_output=bool(llm_predictions),
             )
         )
-    return evaluations
+    return verdicts
 
 
 def compute_run_coverage(

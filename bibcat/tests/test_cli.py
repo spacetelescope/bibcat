@@ -133,7 +133,7 @@ def test_roc_reports_save_errors(tmp_path, mocker) -> None:
     bibcodes.write_text("B1\n", encoding="utf-8")
 
     mocker.patch("bibcat.main.read_output", return_value=[{"dummy": "data"}])
-    mocker.patch("bibcat.main.extract_roc_metrics_for_run", return_value={"roc_auc": 0.5})
+    mocker.patch("bibcat.main.compute_roc_metrics_for_run", return_value={"roc_auc": 0.5})
     mocker.patch("bibcat.main.save_json_file", side_effect=IOError("disk full"))
 
     runner = CliRunner()

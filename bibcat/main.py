@@ -14,12 +14,12 @@ import click
 from bibcat import config
 from bibcat.data.build_dataset import build_dataset
 from bibcat.llm.chunker import ChunkPlanner, SubmissionManager
-from bibcat.llm.cm import evaluate_multiple_llm_runs, extract_eval_data_for_run
+from bibcat.llm.cm import compute_cm_metrics_across_runs, compute_cm_metrics_for_run
 from bibcat.llm.evaluation_base import build_source_lookup
 from bibcat.llm.llm_io import adjust_model, read_output
 from bibcat.llm.openai import MissionEnum, OpenAIHelper, classify_paper
 from bibcat.llm.plots import cm_plot, roc_plot
-from bibcat.llm.roc import evaluate_multiple_llm_runs_with_roc, extract_roc_metrics_for_run
+from bibcat.llm.roc import compute_roc_metrics_across_runs, compute_roc_metrics_for_run
 from bibcat.llm.verdict_summary import summarize_verdict
 from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import save_json_file
@@ -348,7 +348,7 @@ def cm(filename, run_index, missions, aggregate: bool):
         logger.info("Calculating aggregate metrics across multiple runs.")
         metrics_type = "aggregate"
         source_lookup = build_source_lookup()
-        metrics_data = evaluate_multiple_llm_runs(
+        metrics_data = compute_cm_metrics_across_runs(
             llm_runs_data=llm_multi_runs_data,
             missions=missions,
             bibcodes=bibcodes,
@@ -359,7 +359,7 @@ def cm(filename, run_index, missions, aggregate: bool):
     else:
         selected_run_index = 0 if run_index is None else run_index
         logger.info(f"Calculating metrics for run index {selected_run_index}.")
-        metrics_data_to_save = extract_eval_data_for_run(
+        metrics_data_to_save = compute_cm_metrics_for_run(
             llm_runs_data=llm_multi_runs_data,
             missions=missions,
             run_index=selected_run_index,
@@ -428,7 +428,7 @@ def roc(filename, run_index, missions, aggregate: bool):
         logger.info("Calculating aggregate ROC metrics across multiple runs.")
         metrics_type = "aggregate"
         source_lookup = build_source_lookup()
-        roc_data = evaluate_multiple_llm_runs_with_roc(
+        roc_data = compute_roc_metrics_across_runs(
             llm_runs_data=llm_multi_runs_data,
             missions=missions,
             bibcodes=bibcodes,
@@ -438,7 +438,7 @@ def roc(filename, run_index, missions, aggregate: bool):
         selected_run_index = 0 if run_index is None else run_index
         logger.info(f"Calculating ROC metrics for run index {selected_run_index}.")
         metrics_type = f"single_r{selected_run_index}"
-        roc_data = extract_roc_metrics_for_run(
+        roc_data = compute_roc_metrics_for_run(
             llm_runs_data=llm_multi_runs_data,
             missions=missions,
             run_index=selected_run_index,

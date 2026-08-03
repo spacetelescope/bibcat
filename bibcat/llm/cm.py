@@ -6,7 +6,7 @@ from typing import Any
 from bibcat import config
 from bibcat.llm.evaluation_base import (
     IGNORED_RAW_LABEL,
-    build_run_paper_evaluations,
+    build_run_paper_verdicts,
     build_source_lookup,
     compute_run_coverage,
     extract_llm_labels,
@@ -37,12 +37,12 @@ class MissionSample:
     mission_in_text: bool
 
 
-def build_eval_data_for_run(
+def build_verdict_summary_for_run(
     llm_runs_data: dict[str, list[dict[str, Any]]],
     run_index: int,
     bibcodes: list[str] | None = None,
 ) -> dict[str, dict[str, Any]]:
-    """Build in-memory evaluation data for one run index.
+    """Build in-memory verdict summary data for one run index.
 
     Build a summary-like mapping for one run across bibcodes. The returned
     mapping mirrors ``summary_output`` entries and is used in memory only.
@@ -60,26 +60,26 @@ def build_eval_data_for_run(
     Returns
     -------
     dict[str, dict[str, Any]]
-        Evaluation-style dictionary keyed by bibcode. Each value is either an
-        evaluation summary item (including ``human`` and ``llm`` fields) or an
+        Verdict-style dictionary keyed by bibcode. Each value is either a
+        verdict summary item (including ``human`` and ``llm`` fields) or an
         ``error`` item for missing source/output cases.
     """
-    eval_data: dict[str, dict[str, Any]] = {}
+    verdict_summary_data: dict[str, dict[str, Any]] = {}
     target_bibcodes = bibcodes if bibcodes is not None else list(llm_runs_data.keys())
 
-    # Build evaluation summary for each bibcode using the specified run index.
+    # Build verdict summary for each bibcode using the specified run index.
     for bibcode in target_bibcodes:
         paper = get_source(bibcode=bibcode)
         if not paper:
-            eval_data[bibcode] = {"error": "No paper source found"}
+            verdict_summary_data[bibcode] = {"error": "No paper source found"}
             continue
 
         llm_runs = llm_runs_data.get(bibcode, [])
         run_item = llm_runs[run_index] if run_index < len(llm_runs) else {"missions": []}
         _, output_item = summarize_verdict_from_runs(paper, [run_item], summary_log_level=logging.DEBUG)
-        eval_data[bibcode] = output_item
+        verdict_summary_data[bibcode] = output_item
 
-    return eval_data
+    return verdict_summary_data
 
 
 def extract_mission_in_text(df_rows: list[dict[str, Any]] | None) -> dict[str, bool]:
@@ -329,7 +329,7 @@ def compute_metrics(confusion: dict[str, Any]) -> dict[str, float | int]:
     }
 
 
-def extract_eval_data(data: dict[str, dict[str, Any]], missions: list[str]) -> dict[str, Any]:
+def compute_cm_metrics(data: dict[str, dict[str, Any]], missions: list[str]) -> dict[str, Any]:
     """Extract confusion-matrix inputs and summary metrics for one eval set.
 
     Parameters
@@ -360,7 +360,7 @@ def extract_eval_data(data: dict[str, dict[str, Any]], missions: list[str]) -> d
     }
 
 
-def extract_eval_data_for_run(
+def compute_cm_metrics_for_run(
     llm_runs_data: dict[str, list[dict[str, Any]]],
     missions: list[str],
     bibcodes: list[str],
@@ -382,14 +382,14 @@ def extract_eval_data_for_run(
     Returns
     -------
     dict[str, Any]
-        Single-run confusion-matrix metrics data matching ``extract_eval_data``.
+        Single-run confusion-matrix metrics data matching ``compute_cm_metrics``.
     """
-    eval_data = build_eval_data_for_run(
+    verdict_summary_data = build_verdict_summary_for_run(
         llm_runs_data=llm_runs_data,
         run_index=run_index,
         bibcodes=bibcodes,
     )
-    return extract_eval_data(data=eval_data, missions=missions)
+    return compute_cm_metrics(data=verdict_summary_data, missions=missions)
 
 
 def _append_cm_mission_samples(
@@ -431,16 +431,16 @@ def _append_cm_mission_samples(
         )
 
 
-def build_cm_mission_samples_from_run_evaluations(
-    run_evaluations: list[Any],
+def build_cm_mission_samples_from_run_verdicts(
+    run_verdicts: list[Any],
     missions: list[str],
 ) -> list[MissionSample]:
-    """Flatten raw run evaluations into confusion-matrix mission samples.
+    """Flatten raw run verdicts into confusion-matrix mission samples.
 
     Parameters
     ----------
-    run_evaluations : list[Any]
-        Run-specific evaluation inputs for the selected bibcodes.
+    run_verdicts : list[Any]
+        Run-specific verdict inputs for the selected bibcodes.
     missions : list[str]
         Missions to flatten into mission-level rows.
 
@@ -452,16 +452,16 @@ def build_cm_mission_samples_from_run_evaluations(
     normalized_missions = normalize_missions(missions)
     samples: list[MissionSample] = []
 
-    for evaluation in run_evaluations:
-        if not evaluation.has_source:
+    for verdict in run_verdicts:
+        if not verdict.has_source:
             continue
 
-        human = evaluation.human_labels
-        llm_labels = {mission: prediction.papertype for mission, prediction in evaluation.llm_predictions.items()}
+        human = verdict.human_labels
+        llm_labels = {mission: prediction.papertype for mission, prediction in verdict.llm_predictions.items()}
 
         _append_cm_mission_samples(
             samples=samples,
-            bibcode=evaluation.bibcode,
+            bibcode=verdict.bibcode,
             missions=normalized_missions,
             human_labels=human,
             llm_labels=llm_labels,
@@ -493,7 +493,7 @@ def aggregate_metrics_across_runs(per_run_metrics: list[dict[str, float | int]])
     return aggregated
 
 
-def evaluate_multiple_llm_runs(
+def compute_cm_metrics_across_runs(
     llm_runs_data: dict[str, list[dict[str, Any]]],
     missions: list[str],
     bibcodes: list[str],
@@ -501,7 +501,7 @@ def evaluate_multiple_llm_runs(
 ) -> dict[str, Any]:
     """Evaluate aggregate confusion-matrix metrics across LLM runs.
 
-    For each run index, this function builds an in-memory run-specific evaluation
+    For each run index, this function builds an in-memory run-specific verdict
     snapshot and computes confusion-matrix metrics from that run only.
 
     Parameters
@@ -531,14 +531,14 @@ def evaluate_multiple_llm_runs(
     # Evaluate each run independently and collect per-run metrics.
     for run_index in range(n_runs):
         logger.info(f"Compute confusion matrix metrics for run {run_index + 1}/{n_runs}...")
-        run_evaluations = build_run_paper_evaluations(
+        run_verdicts = build_run_paper_verdicts(
             llm_runs_data=llm_runs_data,
             bibcodes=bibcodes,
             run_index=run_index,
             source_lookup=source_lookup,
         )
-        samples = build_cm_mission_samples_from_run_evaluations(
-            run_evaluations=run_evaluations,
+        samples = build_cm_mission_samples_from_run_verdicts(
+            run_verdicts=run_verdicts,
             missions=missions,
         )
         confusion = compute_confusion(samples)

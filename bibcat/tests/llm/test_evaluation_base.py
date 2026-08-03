@@ -1,13 +1,13 @@
-from bibcat.llm.evaluation_base import build_run_paper_evaluations, compute_run_coverage
+from bibcat.llm.evaluation_base import build_run_paper_verdicts, compute_run_coverage
 
 
-def test_build_run_paper_evaluations_handles_missing_source_and_output(multi_run_llm_runs_data) -> None:
+def test_build_run_paper_verdicts_handles_missing_source_and_output(multi_run_llm_runs_data) -> None:
     source_lookup = {
         "B1": {"bibcode": "B1", "class_missions": {"HST": {"papertype": "SCIENCE"}}},
         "B2": {"bibcode": "B2", "class_missions": {"HST": {"papertype": "MENTION"}}},
     }
 
-    evaluations = build_run_paper_evaluations(
+    evaluations = build_run_paper_verdicts(
         llm_runs_data=multi_run_llm_runs_data,
         bibcodes=["B1", "B2", "B3"],
         run_index=1,

@@ -1,0 +1,8 @@
+- suggest the word "payload" with something more appropriate depending on the case.
+- `main.py`, for `if cm and all_missions:` and `elif cm and missions:` the command is the same. Is there a way to consolidate them into one?
+- same as the roc CLI's case
+- in `evaluation_base.build_source_lookup` might be a duplicate of `llm_io.get_source()`. If so, use just only one and delete the other one.
+- for `cm.build_samples_for_run` and `cm.build_samples_for_run_evaluations`, they seem to be doing the same thing. the function names seem to be too generic. They return the flattened mission samples for confusion matrix, so can you modify the name appropriate for that purpose? Also, their docstrings are not much descriptive so enhance a bit to understand what they do, but do not make too verbose.
+- in `plot.py`, the output plot names should reflect run_index, shouldn't they?
+
+- Add the flowchart to the PR description.

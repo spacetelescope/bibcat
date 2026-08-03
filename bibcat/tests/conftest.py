@@ -101,7 +101,7 @@ def batchfile(tmp_path):
 
 
 @pytest.fixture()
-def single_run_eval_data() -> dict[str, dict]:
+def single_run_verdict_data() -> dict[str, dict]:
     data = {
         "Bibcode2024": {
             "human": {"JWST": "SCIENCE", "ROMAN": "SCIENCE", "TESS": "SUPERMENTION"},
@@ -151,7 +151,7 @@ def single_run_missions() -> list[str]:
 
 
 @pytest.fixture()
-def multi_run_eval_data() -> dict[str, dict]:
+def multi_run_verdict_data() -> dict[str, dict]:
     return {
         "B1": {"human": {"HST": "SCIENCE"}},
         "B2": {"human": {"HST": "MENTION"}},

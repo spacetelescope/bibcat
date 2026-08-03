@@ -1,6 +1,6 @@
 from bibcat.llm.roc import (
-    evaluate_multiple_llm_runs_with_roc,
-    extract_roc_metrics_for_run,
+    compute_roc_metrics_across_runs,
+    compute_roc_metrics_for_run,
     get_roc_metrics,
 )
 
@@ -16,13 +16,13 @@ def test_get_roc_metrics() -> None:
     assert roc_auc == 1.0
 
 
-def test_extract_roc_metrics_for_run(mocker, multi_run_llm_runs_data) -> None:
+def test_compute_roc_metrics_for_run(mocker, multi_run_llm_runs_data) -> None:
     source_lookup = {
         "B1": {"bibcode": "B1", "class_missions": {"HST": {"papertype": "SCIENCE"}}},
         "B2": {"bibcode": "B2", "class_missions": {"HST": {"papertype": "MENTION"}}},
     }
 
-    roc_data = extract_roc_metrics_for_run(
+    roc_data = compute_roc_metrics_for_run(
         llm_runs_data=multi_run_llm_runs_data,
         missions=["HST"],
         run_index=1,
@@ -36,18 +36,18 @@ def test_extract_roc_metrics_for_run(mocker, multi_run_llm_runs_data) -> None:
     assert 0.0 <= roc_data["roc_auc"] <= 1.0
 
 
-def test_evaluate_multiple_llm_runs_with_roc(
-    mocker, multi_run_eval_data, multi_run_llm_runs_data, multi_run_missions
+def test_compute_roc_metrics_across_runs(
+    mocker, multi_run_verdict_data, multi_run_llm_runs_data, multi_run_missions
 ) -> None:
     source_lookup = {
         "B1": {"bibcode": "B1", "class_missions": {"HST": {"papertype": "SCIENCE"}}},
         "B2": {"bibcode": "B2", "class_missions": {"HST": {"papertype": "MENTION"}}},
     }
 
-    summary = evaluate_multiple_llm_runs_with_roc(
+    summary = compute_roc_metrics_across_runs(
         llm_runs_data=multi_run_llm_runs_data,
         missions=multi_run_missions,
-        bibcodes=list(multi_run_eval_data.keys()),
+        bibcodes=list(multi_run_verdict_data.keys()),
         source_lookup=source_lookup,
     )
 

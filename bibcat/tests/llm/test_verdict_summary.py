@@ -2,7 +2,7 @@ import logging
 
 import pytest  # noqa: F401
 
-from bibcat.llm.cm import build_eval_data_for_run
+from bibcat.llm.cm import build_verdict_summary_for_run
 from bibcat.llm.verdict_summary import group_by_mission, summarize_verdict, summarize_verdict_from_runs
 
 SOURCE_PAPER_WITH_MISSIONS = {
@@ -193,7 +193,7 @@ def test_not_found(mocker, bibcode: str, return_source_value: dict | None):
     assert df is None, "Expected df to be None"
 
 
-def test_build_eval_data_for_run_in_memory(mocker):
+def test_build_verdict_summary_for_run_in_memory(mocker):
     llm_runs_data = {
         SOURCE_PAPER_WITH_MISSIONS["bibcode"]: LLM_RUN_OUTPUTS_BY_BIBCODE[SOURCE_PAPER_WITH_MISSIONS["bibcode"]],
         SOURCE_PAPER_WITHOUT_MISSIONS["bibcode"]: LLM_RUN_OUTPUTS_BY_BIBCODE[SOURCE_PAPER_WITHOUT_MISSIONS["bibcode"]],
@@ -210,7 +210,7 @@ def test_build_eval_data_for_run_in_memory(mocker):
     mocker.patch("bibcat.llm.cm.get_source", side_effect=get_source_for_bibcode)
     mocker.patch("bibcat.llm.verdict_summary.identify_missions_in_text", return_value=[True])
 
-    eval_data = build_eval_data_for_run(
+    eval_data = build_verdict_summary_for_run(
         llm_runs_data=llm_runs_data,
         run_index=1,
         bibcodes=[
@@ -234,14 +234,14 @@ def test_build_eval_data_for_run_in_memory(mocker):
     assert eval_data["2019arXiv190205569A"]["error"] == "No paper source found"
 
 
-def test_build_eval_data_for_run_uses_debug_summary_level(mocker):
+def test_build_verdict_summary_for_run_uses_debug_summary_level(mocker):
     mocker.patch("bibcat.llm.cm.get_source", return_value=SOURCE_PAPER_WITH_MISSIONS)
     evaluate_mock = mocker.patch(
         "bibcat.llm.cm.summarize_verdict_from_runs",
         return_value=(None, {"human": {"TESS": "SCIENCE"}, "llm": []}),
     )
 
-    build_eval_data_for_run(
+    build_verdict_summary_for_run(
         llm_runs_data={
             SOURCE_PAPER_WITH_MISSIONS["bibcode"]: LLM_RUN_OUTPUTS_BY_BIBCODE[SOURCE_PAPER_WITH_MISSIONS["bibcode"]]
         },

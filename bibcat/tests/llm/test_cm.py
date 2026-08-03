@@ -1,12 +1,12 @@
 from bibcat import config
-from bibcat.llm.cm import evaluate_multiple_llm_runs, extract_eval_data, extract_eval_data_for_run
+from bibcat.llm.cm import compute_cm_metrics, compute_cm_metrics_across_runs, compute_cm_metrics_for_run
 
 
-def test_extract_eval_data_single_run(mocker, single_run_eval_data, single_run_missions) -> None:
+def test_compute_cm_metrics_single_run(mocker, single_run_verdict_data, single_run_missions) -> None:
     mocker.patch("bibcat.llm.cm.logger")
     mocker.patch.object(config.llms.performance, "threshold", 0.7)
 
-    metrics_data = extract_eval_data(single_run_eval_data, single_run_missions)
+    metrics_data = compute_cm_metrics(single_run_verdict_data, single_run_missions)
 
     assert metrics_data["threshold"] == 0.7
     assert metrics_data["missions"] == ["HST", "JWST", "ROMAN"]
@@ -44,34 +44,38 @@ def test_extract_eval_data_single_run(mocker, single_run_eval_data, single_run_m
     assert metrics_data["metrics"]["accuracy"] == 4 / 6
 
 
-def test_extract_eval_data_for_run(mocker, single_run_eval_data, single_run_missions, multi_run_llm_runs_data) -> None:
+def test_compute_cm_metrics_for_run(
+    mocker, single_run_verdict_data, single_run_missions, multi_run_llm_runs_data
+) -> None:
     build_mock = mocker.patch(
-        "bibcat.llm.cm.build_eval_data_for_run",
-        return_value=single_run_eval_data,
+        "bibcat.llm.cm.build_verdict_summary_for_run",
+        return_value=single_run_verdict_data,
     )
 
-    metrics_data = extract_eval_data_for_run(
+    metrics_data = compute_cm_metrics_for_run(
         llm_runs_data=multi_run_llm_runs_data,
         missions=single_run_missions,
         run_index=1,
         bibcodes=["Bibcode2024"],
     )
 
-    assert metrics_data == extract_eval_data(single_run_eval_data, single_run_missions)
+    assert metrics_data == compute_cm_metrics(single_run_verdict_data, single_run_missions)
     assert build_mock.call_args.kwargs["run_index"] == 1
     assert build_mock.call_args.kwargs["bibcodes"] == ["Bibcode2024"]
 
 
-def test_evaluate_multiple_llm_runs(mocker, multi_run_eval_data, multi_run_llm_runs_data, multi_run_missions) -> None:
+def test_compute_cm_metrics_across_runs(
+    mocker, multi_run_verdict_data, multi_run_llm_runs_data, multi_run_missions
+) -> None:
     source_lookup = {
         "B1": {"bibcode": "B1", "class_missions": {"HST": {"papertype": "SCIENCE"}}},
         "B2": {"bibcode": "B2", "class_missions": {"HST": {"papertype": "MENTION"}}},
     }
 
-    summary = evaluate_multiple_llm_runs(
+    summary = compute_cm_metrics_across_runs(
         llm_runs_data=multi_run_llm_runs_data,
         missions=multi_run_missions,
-        bibcodes=list(multi_run_eval_data.keys()),
+        bibcodes=list(multi_run_verdict_data.keys()),
         source_lookup=source_lookup,
     )
 
