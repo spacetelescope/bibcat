@@ -32,7 +32,7 @@ llms:
   user_prompt: null
   agent_prompt: null
   prompt_output_file: paper_output.json # llm classification primary output
-  eval_output_file: summary_output # llm classification summary output
+  verdict_summary_file: summary_output # llm classification summary output
   cm_file: cm_metrics_summary # confusion-matrix metrics summary JSON output (includes the configured threshold)
   cm_plot: confusion_matrix_llm # confusion matrix plot image (.png is used if no extension is configured)
   roc_file: roc_metrics_summary # ROC metrics summary JSON output (includes the configured threshold)

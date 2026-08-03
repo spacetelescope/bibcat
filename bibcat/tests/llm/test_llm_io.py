@@ -160,7 +160,7 @@ def test_write_summary(fixconfig, tmp_path):
     d.mkdir()
     config = fixconfig(str(d), "bibcat.llm.llm_io")
 
-    filename = d / f"{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
+    filename = d / f"{config.llms.verdict_summary_file}_t{config.llms.performance.threshold}.json"
     output = {"test": "data"}
     write_summary(output, output_path=str(d))
 

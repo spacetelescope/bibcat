@@ -280,7 +280,7 @@ bibcat.llm.io - INFO - Writing output to /Users/bcherinka/Work/stsci/bibcat_data
 [{'chunk': 'gs_llm_batchtest_output_chunk_001.json', 'bibcode': '2018A&A...610A..11I', 'status': 'evaluated'},...]
 ```
 
-This produces chunked files (`chunk_XXX`) with the same name as `config.llms.eval_output_file`. You can merge these together with the merge command.
+This produces chunked files (`chunk_XXX`) with the same name as `config.llms.verdict_summary_file`. You can merge these together with the merge command.
 
 **Merge Chunks**
 
@@ -299,7 +299,7 @@ llms:
   user_prompt: null
   agent_prompt: null
   prompt_output_file: paper_output.json # llm classification primary output
-  eval_output_file: summary_output # llm evaluation summary output
+  verdict_summary_file: summary_output # llm evaluation summary output
   cm_file: cm_metrics_summary # confusion-matrix metrics summary output
   cm_plot: confusion_matrix_llm # confusion matrix plot image (.png is appended if omitted)
   roc_plot: roc_plot_llm # ROC plot image (.png is appended if omitted)
@@ -495,7 +495,7 @@ bibcat llm run -i 2000 -n 10
 ```
 Once it's finished, you can evaluate the LLM output with:
 ```
-bibcat llm evaluate -b "2020A&A...642A.105K"
+bibcat llm summarize -b "2020A&A...642A.105K"
 ```
 
 You should see some output similar to
@@ -516,7 +516,7 @@ INFO - Hallucination by LLM: K2
 Writing output to /path/to/output/llms/openai_gpt-4o-mini/summary_output_t0.7.json
 ```
 
-The output is also written to a file specified by `config.llms.eval_output_file`.
+The output is also written to a file specified by `config.llms.verdict_summary_file`.
 
 For now, this produces a Pandas dataframe grouped by the LLM predicted mission and papertype, with its mean confidence score and the number of times that combination was output by the LLM. It also includes the total number of trial runs, frequency-weighted confidence values, an accuracy score of how well it matched the human classification, and a boolean flag if that combination appears in the human classification. The human classification comes from the "class_missions" field in the source dataset file.
 
@@ -525,7 +525,7 @@ this will classify the paper `num_runs` times before evaluation.
 
 This example first classifies paper index 1000, 20 times, then evaluates the output.
 ```bash
-bibcat llm evaluate -i 1000 -s -n 20
+bibcat llm summarize -i 1000 -s -n 20
 ```
 
 ```bash
@@ -719,10 +719,10 @@ This evaluation command will create a file of the bibcodes missing from the sour
 
 ### Batch Evaluation
 
-You can batch evaluate a list of papers/bibcodes with the `llm batch evaluate` command.  For example, to submit a list of bibcodes to `llm batch run`,
-with 20 runs each paper, then batch evaluate them, run:
+You can batch summarize a list of papers/bibcodes with the `llm batch summarize` command.  For example, to submit a list of bibcodes to `llm batch run`,
+with 20 runs each paper, then batch summarize them, run:
 ```bash
-bibcat llm batch evaluate -p bibcode_list.txt -s -n 20
+bibcat llm batch summarize -p bibcode_list.txt -s -n 20
 ```
 
 ## Metrics Output

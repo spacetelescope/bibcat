@@ -35,18 +35,18 @@ def test_llm() -> None:
     assert "Batch processing of papers with an LLM" in result.output
 
 
-def test_evaluate_llm() -> None:
-    """test the cli evaluate help command"""
+def test_summarize_llm() -> None:
+    """test the cli summarize help command"""
     runner = CliRunner()
-    result = runner.invoke(cli, ["llm", "evaluate", "--help"])
-    assert "Evaluate the LLM output" in result.output
+    result = runner.invoke(cli, ["llm", "summarize", "--help"])
+    assert "Summarize the LLM output" in result.output
 
 
-def test_evaluate_llm_batch() -> None:
-    """test the cli evaluate help command"""
+def test_summarize_llm_batch() -> None:
+    """test the cli summarize help command"""
     runner = CliRunner()
-    result = runner.invoke(cli, ["llm", "batch", "evaluate", "--help"])
-    assert "Batch evaluate the LLM output" in result.output
+    result = runner.invoke(cli, ["llm", "batch", "summarize", "--help"])
+    assert "Batch summarize the LLM output" in result.output
 
 
 def test_run_gpt() -> None:

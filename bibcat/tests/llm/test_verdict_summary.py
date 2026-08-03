@@ -2,8 +2,8 @@ import logging
 
 import pytest  # noqa: F401
 
-from bibcat.llm.evaluate import evaluate_output, evaluate_output_from_runs, group_by_mission
-from bibcat.llm.metrics import build_eval_data_for_run
+from bibcat.llm.cm import build_eval_data_for_run
+from bibcat.llm.verdict_summary import summarize_verdict, summarize_verdict_from_runs, group_by_mission
 
 SOURCE_PAPER_WITH_MISSIONS = {
     "bibcode": "2022Sci...377.1211L",
@@ -123,10 +123,10 @@ LLM_RUN_OUTPUTS_BY_BIBCODE = {
 
 def test_evaluate_df(mocker):
     bibcode = "2022Sci...377.1211L"
-    mocker.patch("bibcat.llm.evaluate.get_source", return_value=SOURCE_PAPER_WITH_MISSIONS)
-    mocker.patch("bibcat.llm.evaluate.read_output", return_value=LLM_RUN_OUTPUTS_BY_BIBCODE[bibcode])
+    mocker.patch("bibcat.llm.verdict_summary.get_source", return_value=SOURCE_PAPER_WITH_MISSIONS)
+    mocker.patch("bibcat.llm.verdict_summary.read_output", return_value=LLM_RUN_OUTPUTS_BY_BIBCODE[bibcode])
 
-    df = evaluate_output(bibcode, write_file=False)
+    df = summarize_verdict(bibcode, write_file=False)
 
     assert len(df) == 4
     assert set(df["llm_mission"]) == {"TESS", "JWST"}
@@ -158,10 +158,10 @@ def test_evaluate_df(mocker):
 
 def test_group_by_mission(mocker):
     bibcode = "2022Sci...377.1211L"
-    mocker.patch("bibcat.llm.evaluate.get_source", return_value=SOURCE_PAPER_WITH_MISSIONS)
-    mocker.patch("bibcat.llm.evaluate.read_output", return_value=LLM_RUN_OUTPUTS_BY_BIBCODE[bibcode])
+    mocker.patch("bibcat.llm.verdict_summary.get_source", return_value=SOURCE_PAPER_WITH_MISSIONS)
+    mocker.patch("bibcat.llm.verdict_summary.read_output", return_value=LLM_RUN_OUTPUTS_BY_BIBCODE[bibcode])
 
-    df = evaluate_output(bibcode, write_file=False)
+    df = summarize_verdict(bibcode, write_file=False)
     mm = group_by_mission(df)
 
     # JWST
@@ -186,10 +186,10 @@ def test_group_by_mission(mocker):
 def test_not_found(mocker, bibcode: str, return_source_value: dict | None):
     """test evaluate when either 'error': 'no mission output found' or 'error': 'No paper source found' in llm_output"""
 
-    mocker.patch("bibcat.llm.evaluate.get_source", return_value=return_source_value)
-    mocker.patch("bibcat.llm.evaluate.read_output", return_value=LLM_RUN_OUTPUTS_BY_BIBCODE[bibcode])
+    mocker.patch("bibcat.llm.verdict_summary.get_source", return_value=return_source_value)
+    mocker.patch("bibcat.llm.verdict_summary.read_output", return_value=LLM_RUN_OUTPUTS_BY_BIBCODE[bibcode])
 
-    df = evaluate_output(bibcode, write_file=False)
+    df = summarize_verdict(bibcode, write_file=False)
     assert df is None, "Expected df to be None"
 
 
@@ -207,8 +207,8 @@ def test_build_eval_data_for_run_in_memory(mocker):
     def get_source_for_bibcode(*, bibcode, **kwargs):
         return source_papers_by_bibcode.get(bibcode)
 
-    mocker.patch("bibcat.llm.metrics.get_source", side_effect=get_source_for_bibcode)
-    mocker.patch("bibcat.llm.evaluate.identify_missions_in_text", return_value=[True])
+    mocker.patch("bibcat.llm.cm.get_source", side_effect=get_source_for_bibcode)
+    mocker.patch("bibcat.llm.verdict_summary.identify_missions_in_text", return_value=[True])
 
     eval_data = build_eval_data_for_run(
         llm_runs_data=llm_runs_data,
@@ -235,9 +235,9 @@ def test_build_eval_data_for_run_in_memory(mocker):
 
 
 def test_build_eval_data_for_run_uses_debug_summary_level(mocker):
-    mocker.patch("bibcat.llm.metrics.get_source", return_value=SOURCE_PAPER_WITH_MISSIONS)
+    mocker.patch("bibcat.llm.cm.get_source", return_value=SOURCE_PAPER_WITH_MISSIONS)
     evaluate_mock = mocker.patch(
-        "bibcat.llm.metrics.evaluate_output_from_runs",
+        "bibcat.llm.cm.summarize_verdict_from_runs",
         return_value=(None, {"human": {"TESS": "SCIENCE"}, "llm": []}),
     )
 
@@ -252,12 +252,12 @@ def test_build_eval_data_for_run_uses_debug_summary_level(mocker):
     assert evaluate_mock.call_args.kwargs["summary_log_level"] == logging.DEBUG
 
 
-def test_evaluate_output_from_runs_skips_to_string_and_counts_no_mission_note_in_n_runs(mocker):
-    mocker.patch("bibcat.llm.evaluate.identify_missions_in_text", return_value=[True])
-    mocker.patch("bibcat.llm.evaluate.logger.isEnabledFor", return_value=False)
+def test_summarize_verdict_from_runs_skips_to_string_and_counts_no_mission_note_in_n_runs(mocker):
+    mocker.patch("bibcat.llm.verdict_summary.identify_missions_in_text", return_value=[True])
+    mocker.patch("bibcat.llm.verdict_summary.logger.isEnabledFor", return_value=False)
     to_string_mock = mocker.patch("pandas.DataFrame.to_string", autospec=True)
 
-    grouped_df, output_item = evaluate_output_from_runs(
+    grouped_df, output_item = summarize_verdict_from_runs(
         SOURCE_PAPER_WITH_MISSIONS,
         [
             {

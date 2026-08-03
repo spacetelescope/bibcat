@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.metrics import auc, roc_curve
 
 from bibcat import config
-from bibcat.llm.run_eval import (
+from bibcat.llm.evaluation_base import (
     IGNORED_RAW_LABEL,
     POSITIVE_LABEL,
     build_run_paper_evaluations,

@@ -247,7 +247,7 @@ def write_summary(output: dict, output_path: str = None):
         if output_path
         else pathlib.Path(config.paths.output) / f"llms/openai_{config.llms.openai.model}"
     )
-    filename = output_path / f"{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
+    filename = output_path / f"{config.llms.verdict_summary_file}_t{config.llms.performance.threshold}.json"
 
     logger.info(f"Writing output to {filename}")
 

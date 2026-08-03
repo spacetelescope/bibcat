@@ -16,16 +16,16 @@ from bibcat.utils.logger_config import setup_logger
 logger = setup_logger(__name__, level=config.logging.level)
 
 
-def evaluate_output_from_runs(
+def summarize_verdict_from_runs(
     paper: dict[str, Any], response_runs: list[dict[str, Any]] | None, summary_log_level: int = logging.INFO
 ) -> tuple[pd.DataFrame | None, dict]:
-    """Evaluate LLM run outputs for a paper and compute performance metrics.
+    """Summarize LLM run outputs for a paper and compute performance metrics.
 
-    This function evaluates one or more LLM run outputs against human classifications
-    for a single paper using the same workflow as :func:`evaluate_output`. It computes
+    This function summarizes one or more LLM run outputs against human classifications
+    for a single paper using the same workflow as :func:`summarize_verdict`. It computes
     grouped statistics (mean/std confidence by mission and papertype), checks for
     hallucinated missions, measures consistency with human labels, and identifies
-    missing missions. Unlike :func:`evaluate_output`, this function keeps results
+    missing missions. Unlike :func:`summarize_verdict`, this function keeps results
     in-memory without writing summary output files.
 
     The function returns both a detailed grouped dataframe with per-mission statistics
@@ -39,9 +39,9 @@ def evaluate_output_from_runs(
     response_runs : list[dict[str, Any]] or None
         Run-level LLM outputs associated with ``paper``.
     summary_log_level : int, optional
-        Logging level used for evaluation summary messages emitted by this
+        Logging level used for verdict summary messages emitted by this
         function and :func:`get_human_classification`. Defaults to
-        ``logging.INFO`` so direct :func:`evaluate_output` calls keep their
+        ``logging.INFO`` so direct :func:`summarize_verdict` calls keep their
         current verbosity, while aggregate callers can demote per-bibcode
         summaries to ``logging.DEBUG``.
 
@@ -50,7 +50,7 @@ def evaluate_output_from_runs(
     tuple[pd.DataFrame or None, dict]
         Two-item tuple containing:
 
-        - grouped_df: grouped evaluation dataframe, or ``None`` when no valid
+        - grouped_df: grouped summary dataframe, or ``None`` when no valid
           mission output exists.
         - output_item: in-memory summary dictionary with the same shape as a
           single bibcode entry produced by :func:`prepare_output`, or an
@@ -82,7 +82,7 @@ def evaluate_output_from_runs(
 
     n_runs = len(countable_responses)
 
-    logger.log(summary_log_level, "Evaluating output for %s", bibcode)
+    logger.log(summary_log_level, "Summarizing output for %s", bibcode)
     logger.log(summary_log_level, "Number of runs: %s", n_runs)
 
     # convert output to a dataframe
@@ -133,13 +133,13 @@ def evaluate_output_from_runs(
     return grouped_df, output[bibcode]
 
 
-def evaluate_output(
+def summarize_verdict(
     bibcode: str = None, index: int = None, write_file: bool = False, base_path: str = None
 ) -> pd.DataFrame:
-    """Evaluate the output from the LLM model
+    """Summarize the output from the LLM model
 
     For a given paper bibcode, reads in the output from the LLM model and
-    evaluates its performance against the human paper classifications. It matches
+    summarizes its performance against the human paper classifications. It matches
     the LLM's predicted mission and papertype against the human classification, and
     computes a cursory accuracy score based on the number of runs. It also provides
     a flag indicating whether the LLM mission + papertype was in the set of human
@@ -190,8 +190,8 @@ def evaluate_output(
     if response is None:
         response = []
 
-    # Evaluate LLM predictions against human classifications
-    grouped_df, output_item = evaluate_output_from_runs(paper, response)
+    # Summarize LLM predictions against human classifications
+    grouped_df, output_item = summarize_verdict_from_runs(paper, response)
 
     # Write results (if requested)
     # Both success cases (full metrics) and error cases (error dict + human labels for audit trail)

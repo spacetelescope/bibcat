@@ -1,4 +1,4 @@
-from bibcat.llm.run_eval import build_run_paper_evaluations, compute_run_coverage
+from bibcat.llm.evaluation_base import build_run_paper_evaluations, compute_run_coverage
 
 
 def test_build_run_paper_evaluations_handles_missing_source_and_output(multi_run_llm_runs_data) -> None:

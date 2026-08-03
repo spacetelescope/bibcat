@@ -8,7 +8,7 @@ import pathlib
 
 import yaml
 
-from bibcat.llm.evaluate import evaluate_output
+from bibcat.llm.verdict_summary import summarize_verdict
 
 try:
     import tiktoken
@@ -96,7 +96,7 @@ class ChunkPlanner:
 
         # set original output names
         self.orig_prompt = copy.copy(config.llms.prompt_output_file)
-        self.orig_eval = copy.copy(config.llms.eval_output_file)
+        self.orig_eval = copy.copy(config.llms.verdict_summary_file)
         self.base_prompt = self.orig_prompt.replace(".json", "")
 
         # submission tracking
@@ -882,7 +882,7 @@ class SubmissionManager:
 
         return results
 
-    def evaluate_batch_results(self) -> list[dict]:
+    def summarize_batch_results(self) -> list[dict]:
         """Evaluate results for all completed chunk outputs.
 
         Iterates over all completed chunk files and runs bibcat evaluate
@@ -909,7 +909,7 @@ class SubmissionManager:
             config.llms.prompt_output_file = chunk_path.name
 
             # set a per-chunk eval output filename
-            config.llms.eval_output_file = f"{self.planner.orig_eval}_chunk_{idx:03d}"
+            config.llms.verdict_summary_file = f"{self.planner.orig_eval}_chunk_{idx:03d}"
 
             # read chunk JSON and iterate bibcodes
             try:
@@ -926,7 +926,7 @@ class SubmissionManager:
                 continue
 
             for bibcode in data.keys():
-                res = evaluate_output(bibcode=bibcode, write_file=True, base_path=self.planner.output_dir)
+                res = summarize_verdict(bibcode=bibcode, write_file=True, base_path=self.planner.output_dir)
                 if res is None:
                     msg = f"Error evaluating bibcode {bibcode} from {chunk_path}"
                     logger.error(msg)
@@ -936,7 +936,7 @@ class SubmissionManager:
 
         # reset output names
         config.llms.prompt_output_file = self.planner.orig_prompt
-        config.llms.eval_output_file = self.planner.orig_eval
+        config.llms.verdict_summary_file = self.planner.orig_eval
 
         return results
 
@@ -970,7 +970,7 @@ class SubmissionManager:
             param = config.llms.prompt_output_file
             filename = param
         else:
-            param = config.llms.eval_output_file
+            param = config.llms.verdict_summary_file
             filename = f"{param}_t{config.llms.performance.threshold}.json"
 
         # search for files
