@@ -14,13 +14,13 @@ import click
 from bibcat import config
 from bibcat.data.build_dataset import build_dataset
 from bibcat.llm.chunker import ChunkPlanner, SubmissionManager
-from bibcat.llm.evaluate import evaluate_output
+from bibcat.llm.cm import evaluate_multiple_llm_runs, extract_eval_data_for_run
+from bibcat.llm.evaluation_base import build_source_lookup
 from bibcat.llm.llm_io import adjust_model, read_output
-from bibcat.llm.metrics import evaluate_multiple_llm_runs, extract_eval_data_for_run
 from bibcat.llm.openai import MissionEnum, OpenAIHelper, classify_paper
 from bibcat.llm.plots import cm_plot, roc_plot
 from bibcat.llm.roc import evaluate_multiple_llm_runs_with_roc, extract_roc_metrics_for_run
-from bibcat.llm.run_eval import build_source_lookup
+from bibcat.llm.verdict_summary import summarize_verdict
 from bibcat.utils.logger_config import setup_logger
 from bibcat.utils.utils import save_json_file
 
@@ -52,7 +52,7 @@ def _output_path(kind: str, metrics_type: str | None = None) -> Path:
                 _llm_output_dir() / f"{config.llms.roc_file}_{metrics_type}_t{config.llms.performance.threshold}.json"
             )
         case "summary":
-            return _llm_output_dir() / f"{config.llms.eval_output_file}_t{config.llms.performance.threshold}.json"
+            return _llm_output_dir() / f"{config.llms.verdict_summary_file}_t{config.llms.performance.threshold}.json"
         case "prompt":
             return _llm_output_dir() / config.llms.prompt_output_file
         case _:
@@ -179,7 +179,7 @@ def run_gpt(filename, bibcode, index, model, num_runs, user_prompt_file, agent_p
     logger.info(f"Elapsed time for run_gpt for {num_runs} papers: {elapsed_time} seconds.")
 
 
-@llmcli.command("evaluate", help="Evaluate the LLM output")
+@llmcli.command("summarize", help="Summarize the LLM output")
 @click.option(
     "-b",
     "--bibcode",
@@ -231,9 +231,9 @@ def run_gpt(filename, bibcode, index, model, num_runs, user_prompt_file, agent_p
     help="The threshold value to accept the llm papertype",
 )
 @click.pass_context
-def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, threshold):
-    """Evaluate the ouput JSON from a LLM model"""
-    logger.debug("CLI option: 'llm evaluate' selected")
+def summarize_llm(ctx, bibcode, index, model, file, submit, num_runs, write, threshold):
+    """Summarize the output JSON from a LLM model"""
+    logger.debug("CLI option: 'llm summarize' selected")
     # override the config model
     if model:
         config.llms.openai.model = model
@@ -249,7 +249,7 @@ def evaluate_llm(ctx, bibcode, index, model, file, submit, num_runs, write, thre
         ctx.invoke(run_gpt, bibcode=bibcode, index=index, num_runs=num_runs)
 
     # evaluate the output
-    evaluate_output(bibcode=bibcode, index=index, write_file=write)
+    summarize_verdict(bibcode=bibcode, index=index, write_file=write)
 
 
 @llmcli.command("plot", help="Create evaluation plots for llm performance")
@@ -547,7 +547,7 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
     logger.info(f"Elapsed time for run_gpt_batch for {len(files)} papers: {elapsed_time} seconds.")
 
 
-@llmbatch.command("evaluate", help="Batch evaluate the LLM output")
+@llmbatch.command("summarize", help="Batch summarize the LLM output")
 @click.option(
     "-f",
     "--files",
@@ -569,10 +569,10 @@ def run_gpt_batch(files, filename, model, user_prompt_file, agent_prompt_file, v
 @click.option("-s", "--submit", is_flag=True, show_default=True, help="Flag to submit the paper for classification")
 @click.option("-n", "--num_runs", default=1, type=int, show_default=True, help="The number of prompt runs to execute")
 @click.pass_context
-def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
-    """Batch evaluate a list of papers"""
+def summarize_llm_batch(ctx, files, filename, model, submit, num_runs):
+    """Batch summarize a list of papers"""
     start_time = time.time()
-    logger.debug("CLI option: 'llm batch evaluate' selected")
+    logger.debug("CLI option: 'llm batch summarize' selected")
 
     # override the config model
     if model:
@@ -589,11 +589,11 @@ def evaluate_llm_batch(ctx, files, filename, model, submit, num_runs):
         # check if file, bibcode, or index
         source = "file" if os.path.isfile(file) else "index" if file.isnumeric() else "bibcode"
 
-        evaluate_output(
+        summarize_verdict(
             bibcode=file if source == "bibcode" else None, index=file if source == "index" else None, write_file=True
         )
     elapsed_time = time.time() - start_time
-    logger.info(f"Elapsed time for evaluate_llm_batch for {len(files)} papers: {elapsed_time} seconds.")
+    logger.info(f"Elapsed time for summarize_llm_batch for {len(files)} papers: {elapsed_time} seconds.")
 
 
 @llmbatch.command("submit", help="Submit a batch of papers using the OpenAI Batch API")
@@ -710,7 +710,7 @@ def process(filename, batch_file, model, test, retrieve_batch, check, eval_batch
 
     if eval_batch:
         click.echo("Evaluating batch results.")
-        click.echo(sm.evaluate_batch_results())
+        click.echo(sm.summarize_batch_results())
 
     completed = sm.all_batches_completed
     if merge and not completed:

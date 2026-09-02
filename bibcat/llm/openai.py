@@ -11,8 +11,8 @@ from openai.lib._parsing._responses import type_to_text_format_param
 from pydantic import BaseModel, Field, ValidationError, field_serializer, field_validator
 
 from bibcat import config
-from bibcat.llm.evaluate import identify_missions_in_text
 from bibcat.llm.llm_io import get_file, get_llm_prompt, get_source, write_output
+from bibcat.llm.verdict_summary import identify_missions_in_text
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__, level=config.logging.level)

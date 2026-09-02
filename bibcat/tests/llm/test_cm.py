@@ -1,9 +1,9 @@
 from bibcat import config
-from bibcat.llm.metrics import evaluate_multiple_llm_runs, extract_eval_data, extract_eval_data_for_run
+from bibcat.llm.cm import evaluate_multiple_llm_runs, extract_eval_data, extract_eval_data_for_run
 
 
 def test_extract_eval_data_single_run(mocker, single_run_eval_data, single_run_missions) -> None:
-    mocker.patch("bibcat.llm.metrics.logger")
+    mocker.patch("bibcat.llm.cm.logger")
     mocker.patch.object(config.llms.performance, "threshold", 0.7)
 
     metrics_data = extract_eval_data(single_run_eval_data, single_run_missions)
@@ -46,7 +46,7 @@ def test_extract_eval_data_single_run(mocker, single_run_eval_data, single_run_m
 
 def test_extract_eval_data_for_run(mocker, single_run_eval_data, single_run_missions, multi_run_llm_runs_data) -> None:
     build_mock = mocker.patch(
-        "bibcat.llm.metrics.build_eval_data_for_run",
+        "bibcat.llm.cm.build_eval_data_for_run",
         return_value=single_run_eval_data,
     )
 

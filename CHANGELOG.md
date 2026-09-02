@@ -8,6 +8,11 @@
 
 
 ### Changed
+- [PR #100](https://github.com/spacetelescope/bibcat/pull/100)
+    - Renamed LLM evaluation modules for clarity: `metrics.py` -> `cm.py`, `run_eval.py` -> `evaluation_base.py`, and `evaluate.py` -> `verdict_summary.py`.
+    - Renamed CLI commands `bibcat llm evaluate` -> `bibcat llm summarize` and `bibcat llm batch evaluate` -> `bibcat llm batch summarize`.
+    - Renamed config key `llms.eval_output_file` -> `llms.verdict_summary_file` and updated call sites, tests, and docs accordingly.
+
 - [PR #98](https://github.com/spacetelescope/bibcat/pull/98)
   - Refactored multi-run CM/ROC evaluation to compute from run-specific in-memory evaluation snapshots.
     - Updated `cm` and `roc` to compute exclusively from raw `llm_output`, require a bibcode roster file via `-f`, and support non-aggregate `--run-index` selection without relying on saved `summary_output` for metrics calculations.

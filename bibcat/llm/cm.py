@@ -4,9 +4,7 @@ from statistics import mean, pstdev
 from typing import Any
 
 from bibcat import config
-from bibcat.llm.evaluate import evaluate_output_from_runs
-from bibcat.llm.llm_io import get_source
-from bibcat.llm.run_eval import (
+from bibcat.llm.evaluation_base import (
     IGNORED_RAW_LABEL,
     build_run_paper_evaluations,
     build_source_lookup,
@@ -19,6 +17,8 @@ from bibcat.llm.run_eval import (
     normalize_missions,
     to_binary_from_raw,
 )
+from bibcat.llm.llm_io import get_source
+from bibcat.llm.verdict_summary import summarize_verdict_from_runs
 from bibcat.utils.logger_config import setup_logger
 
 logger = setup_logger(__name__, level=config.logging.level)
@@ -76,7 +76,7 @@ def build_eval_data_for_run(
 
         llm_runs = llm_runs_data.get(bibcode, [])
         run_item = llm_runs[run_index] if run_index < len(llm_runs) else {"missions": []}
-        _, output_item = evaluate_output_from_runs(paper, [run_item], summary_log_level=logging.DEBUG)
+        _, output_item = summarize_verdict_from_runs(paper, [run_item], summary_log_level=logging.DEBUG)
         eval_data[bibcode] = output_item
 
     return eval_data
