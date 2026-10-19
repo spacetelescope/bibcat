@@ -4,6 +4,8 @@ import json
 # -*- coding: utf-8 -*-
 #
 # pylint: disable=all
+import click
+import pytest
 from click.testing import CliRunner
 
 import bibcat.main as main
@@ -87,6 +89,29 @@ def test_roc() -> None:
     assert "Save ROC metrics for llm performance" in result.output
     assert "-f, --filename" in result.output
     assert "-i, --run-index" in result.output
+
+
+@pytest.mark.parametrize("command", ["cm", "roc"])
+@pytest.mark.parametrize("invalid_missions", ["[FUSE,GALEX]", "not-a-mission"])
+def test_missions_error_explains_input_format(command, invalid_missions, tmp_path) -> None:
+    bibcodes = tmp_path / "bibcodes.txt"
+    bibcodes.write_text("B1\n", encoding="utf-8")
+
+    result = CliRunner().invoke(cli, ["llm", command, "-f", str(bibcodes), "-m", invalid_missions])
+
+    assert result.exit_code == 2
+    output = " ".join(result.output.split())
+    assert "Use comma-separated mission names" in output
+    assert 'e.g., --missions "' in output
+    assert f"Valid missions: {', '.join(m.value for m in main.MissionEnum)}" in output
+    assert "Valid missions: [" not in output
+
+
+def test_parse_missions_preserves_case_insensitive_comma_separated_input() -> None:
+    missions = [m.value for m in main.MissionEnum][:2]
+    value = ", ".join(m.swapcase() for m in missions)
+
+    assert main._parse_missions(click.Context(cli), click.Option(["--missions"]), value) == missions
 
 
 def test_cm_requires_filename() -> None:

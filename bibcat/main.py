@@ -34,7 +34,11 @@ def _parse_missions(ctx: click.Context, param: click.Parameter, value: str | Non
     try:
         return [MissionEnum(m.strip()).value for m in value.split(",") if m.strip()]
     except ValueError as e:
-        raise click.BadParameter(f"{e}. Valid missions: {[m.value for m in MissionEnum]}")
+        valid_missions = ", ".join(m.value for m in MissionEnum)
+        example = ",".join(m.value for m in list(MissionEnum)[:3])
+        raise click.BadParameter(
+            f'{e}. Use comma-separated mission names, e.g., --missions "{example}". Valid missions: {valid_missions}'
+        ) from e
 
 
 def _llm_output_dir() -> Path:

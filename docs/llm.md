@@ -744,6 +744,7 @@ A [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) evaluat
 
 Both confusion matrix and ROC metrics can be saved as JSON files for single runs or aggregate runs across multiple papers.
 
+For both `llm cm` and `llm roc`, `-m` / `--missions` accepts a single comma-separated string, for example `--missions "HST,JWST"`. Mission names are matched case-insensitively and can be found in your configuration's `missions` list; replace the example names below with missions from your configuration. Omit `--missions` to evaluate all configured missions.
 ### Confusion Matrix Metrics JSON
 
 `cm` builds metrics directly from raw `llm_output` plus an explicit bibcode roster file.
@@ -751,7 +752,7 @@ Both confusion matrix and ROC metrics can be saved as JSON files for single runs
 Save single-run (run `0` by default) confusion-matrix metrics for specific missions (default threshold probability = 0.5):
 
 ```bash
-bibcat llm cm -f bibcodes.txt -m [HST,JWST]
+bibcat llm cm -f bibcodes.txt -m "HST,JWST"
 ```
 You can save single-run confusion-matrix metrics for **all missions** without `-m` flag:
 
@@ -762,13 +763,13 @@ bibcat llm cm -f bibcodes.txt
 To select a specific run index in non-aggregate mode, use `--run-index` (or `-i`). The default run index is `0`, so `--run-index` allows you to evaluate results from other runs (e.g., run 1, run 2, etc.) when multiple runs were executed for the same papers. For instance, to evaluate run 3, run:
 
 ```bash
-bibcat llm cm -f bibcodes.txt -i 3 -m [HST,JWST]
+bibcat llm cm -f bibcodes.txt -i 3 -m "HST,JWST"
 ```
 
 Save aggregate metrics across multiple runs:
 
 ```bash
-bibcat llm cm -a -f bibcodes.txt -m [HST,JWST]
+bibcat llm cm -a -f bibcodes.txt -m "HST,JWST"
 ```
 
 Note that `--run-index` is only valid without `-a`.
@@ -837,7 +838,7 @@ During aggregate CM evaluation, the per-bibcode evaluation summaries built for e
 Save single-run (run `0` by default) ROC metrics:
 
 ```bash
-bibcat llm roc -f bibcodes.txt -m [HST,JWST]
+bibcat llm roc -f bibcodes.txt -m "HST,JWST"
 ```
 Save single-run ROC metrics for **all missions** without `-m` flag:
 
@@ -848,13 +849,13 @@ bibcat llm roc -f bibcodes.txt
 To select a specific run index in non-aggregate mode, use `--run-index` (or `-i`). The default run index is `0`, so `--run-index` allows you to evaluate results from other runs (e.g., run 1, run 2, etc.) when multiple runs were executed for the same papers. For instance, to evaluate run 3, run:
 
 ```bash
-bibcat llm roc -f bibcodes.txt -i 3 -m [HST,JWST]
+bibcat llm roc -f bibcodes.txt -i 3 -m "HST,JWST"
 ```
 
 Save aggregate ROC metrics across multiple runs:
 
 ```bash
-bibcat llm roc -a -f bibcodes.txt -m [HST,JWST]
+bibcat llm roc -a -f bibcodes.txt -m "HST,JWST"
 ```
 
 Same as CM metrics, `--run-index` is only valid without `-a`.
@@ -907,13 +908,13 @@ Like aggregate CM evaluation, aggregate ROC evaluation demotes the per-bibcode i
 
 To plot confusion matrices from saved metrics for the default saved run (`--run-index 0`), run:
 ```bash
-bibcat llm cm -f bibcodes.txt -m [HST,JWST]
+bibcat llm cm -f bibcodes.txt -m "HST,JWST"
 bibcat llm plot -c
 ```
 
 To plot a non-default saved run, use the same `--run-index` or `-i`value for both commands. For instance, to plot confusion matrices for run index 2, run:
 ```bash
-bibcat llm cm -f bibcodes.txt -i 2 -m [HST,JWST]
+bibcat llm cm -f bibcodes.txt -i 2 -m "HST,JWST"
 bibcat llm plot -c --run-index 2
 ```
 
@@ -946,13 +947,13 @@ confusion_matrix_llm_single_r2_t0.5.png
 
 To plot ROC from saved metrics for the default saved run (`--run-index 0`), run:
 ```bash
-bibcat llm roc -f bibcodes.txt -m [HST,JWST]
+bibcat llm roc -f bibcodes.txt -m "HST,JWST"
 bibcat llm plot -r
 ```
 
 To plot a non-default saved run, use the same `--run-index` or `-i`value for both commands. To plot ROC for run index 2, run:
 ```bash
-bibcat llm roc -f bibcodes.txt -i 2 -m [HST,JWST]
+bibcat llm roc -f bibcodes.txt -i 2 -m "HST,JWST"
 bibcat llm plot -r --run-index 2
 ```
 
