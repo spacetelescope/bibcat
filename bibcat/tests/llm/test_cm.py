@@ -1,3 +1,5 @@
+from pytest_mock import mocker
+
 from bibcat import config
 from bibcat.llm.cm import evaluate_multiple_llm_runs, extract_eval_data, extract_eval_data_for_run
 
@@ -5,7 +7,7 @@ from bibcat.llm.cm import evaluate_multiple_llm_runs, extract_eval_data, extract
 def test_extract_eval_data_single_run(mocker, single_run_eval_data, single_run_missions) -> None:
     mocker.patch("bibcat.llm.cm.logger")
     mocker.patch.object(config.llms.performance, "threshold", 0.7)
-
+    mocker.patch.object(config.llms.openai, "model", "test-model")
     metrics_data = extract_eval_data(single_run_eval_data, single_run_missions)
 
     assert metrics_data["threshold"] == 0.7

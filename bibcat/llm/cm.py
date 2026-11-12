@@ -222,6 +222,8 @@ def extract_samples_and_summary(
 
     summary = {
         "threshold": config.llms.performance.threshold,
+        "model": config.llms.openai.model,
+        "prompt": config.llms.llm_user_prompt,
         "missions": normalized_missions,
         "n_bibcodes": len(data),
         "n_human_callouts": n_human_callouts,
